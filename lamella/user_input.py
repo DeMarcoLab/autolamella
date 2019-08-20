@@ -1,4 +1,24 @@
+import os
 import yaml
+
+from tkinter import Tk, filedialog
+
+
+def choose_directory():
+    """Ask the user to create or select an EMPTY directory with Tkinter.
+
+    Returns
+    -------
+    str
+        Path to directory for output files.
+    """
+    print("Create a new EMPTY directory to store your output images.")
+    root = Tk()
+    save_directory = filedialog.askdirectory()
+    while os.listdir(save_directory):  # while loop breaks for empty directory
+        save_directory = filedialog.askdirectory()
+    root.destroy()
+    return save_directory
 
 
 def _format_dictionary(dictionary):
