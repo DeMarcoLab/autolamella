@@ -1,0 +1,10 @@
+black
+coveralls
+flake8
+pre-commit
+pytest>=4.3.0
+pytest-cov
+pytest-mock
+pytest-mpl
+sphinx
+twine

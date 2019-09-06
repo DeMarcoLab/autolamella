@@ -24,7 +24,7 @@ def realspace_to_pixel_coordinate(coord, image):
     pixelsize_x = image.metadata.binary_result.pixel_size.x
     # deliberately don't use the y pixel size, any tilt will throw this off
     coord /= pixelsize_x  # to pixels
-    coord += np.array([x_shape/2, y_shape/2])  # reset origin to top left
+    coord += np.array([x_shape / 2, y_shape / 2])  # reset origin to top left
     coord[1] = y_shape - coord[1]  # flip y-axis for relative coordinate system
     pixel_coord = [int(round(i)) for i in coord]
     return pixel_coord
@@ -52,8 +52,8 @@ def pixel_to_realspace_coordinate(coord, image):
     # deliberately don't use the y pixel size, any tilt will throw this off
     coord[1] = y_shape - coord[1]  # flip y-axis for relative coordinate system
     # reset origin to center
-    coord -= np.array([x_shape/2, y_shape/2]).astype(np.int32)
-    realspace_coord = np.array(coord) * pixelsize_x  # to real space
+    coord -= np.array([x_shape / 2, y_shape / 2]).astype(np.int32)
+    realspace_coord = list(np.array(coord) * pixelsize_x)  # to real space
     return realspace_coord
 
 
@@ -79,9 +79,9 @@ def realspace_to_relative_coordinate(coord, image):
     y_shape, x_shape = image.data.shape
     pixelsize_x = image.metadata.binary_result.pixel_size.x
     coord /= pixelsize_x  # to pixels
-    coord += np.array([x_shape/2, y_shape/2])  # reset origin to top left
+    coord += np.array([x_shape / 2, y_shape / 2])  # reset origin to top left
     coord[1] = y_shape - coord[1]  # flip y-axis for relative coordinate system
-    relative_coord = coord / np.array([x_shape, y_shape])
+    relative_coord = list(coord / np.array([x_shape, y_shape]))
     return relative_coord
 
 
@@ -105,14 +105,16 @@ def relative_to_realspace_coordinate(coord, image):
     """
     coord = np.array(coord).astype(np.float64)
     if any(coord > 1) or any(coord < 0):
-        raise ValueError('Coordinate is out of bounds: '
-                         'relative coordinates must range between 0 and 1.')
+        raise ValueError(
+            "Coordinate is out of bounds: "
+            "relative coordinates must range between 0 and 1."
+        )
     coord -= np.array([0.5, 0.5])  # reset origin to center
     y_shape, x_shape = image.data.shape
     pixelsize_x = image.metadata.binary_result.pixel_size.x
     coord *= np.array([x_shape, y_shape])  # to pixels
     coord[1] = -coord[1]  # flip y-axis
-    realspace_coord = coord * pixelsize_x  # to realspace
+    realspace_coord = list(coord * pixelsize_x)  # to realspace
     return realspace_coord
 
 

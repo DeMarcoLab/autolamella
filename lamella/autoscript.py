@@ -2,7 +2,7 @@ from autoscript_sdb_microscope_client import SdbMicroscopeClient
 from autoscript_sdb_microscope_client.structures import Point
 
 
-def initialize(ip_address='localhost'):
+def initialize(ip_address="localhost"):
     """Initialize autoscript for the FIBSEM microscope.
 
     Parameters
@@ -28,15 +28,31 @@ def reset_beam_shift(microscope):
     return microscope
 
 
-class BeamSettings():
+def reset_state(microscope, settings, application_file=None):
+    microscope.patterning.clear_patterns()
+    if application_file:  # optionally specified
+        microscope.patterning.set_default_application_file(application_file)
+    reset_beam_shift(microscope)
+    resolution = settings["imaging"]["resolution"]
+    dwell_time = settings["imaging"]["dwell_time"]
+    hfw = settings["imaging"]["horizontal_field_width"]
+    microscope.beams.ion_beam.scanning.resolution.value = resolution
+    microscope.beams.ion_beam.scanning.dwell_time.value = dwell_time
+    microscope.beams.ion_beam.horizontal_field_width.value = hfw
+    microscope.imaging.set_active_view(2)  # the ion beam view
+    return microscope
+
+
+class BeamSettings:
     def __init__(self, microscope, beam_type):
-        if 'ELECTRON_BEAM' == beam_type.upper():
+        if "ELECTRON_BEAM" == beam_type.upper():
             self.beam = microscope.beams.electron_beam
-        elif 'ION_BEAM' == beam_type.upper():
+        elif "ION_BEAM" == beam_type.upper():
             self.beam = microscope.beams.ion_beam
         else:
-            raise ValueError('beam_type argument must be either'
-                             '"ELECTRON_BEAM" or "ION_BEAM".')
+            raise ValueError(
+                "beam_type argument must be either" '"ELECTRON_BEAM" or "ION_BEAM".'
+            )
         # Save all the important beam settings
         self.beam_shift = self.beam.beam_shift.value
         self.horizontal_field_width = self.beam.horizontal_field_width.value  # mag
@@ -57,11 +73,11 @@ class BeamSettings():
         self.beam.working_distance.value = self.working_distance
 
 
-class FibsemPosition():
+class FibsemPosition:
     def __init__(self, microscope):
         self.stage_position = microscope.specimen.stage.current_position
         # self.electron_beam = BeamSettings(microscope, 'ELECTRON_BEAM')
-        self.ion_beam = BeamSettings(microscope, 'ION_BEAM')
+        self.ion_beam = BeamSettings(microscope, "ION_BEAM")
 
     def restore_state(self, microscope):
         microscope.specimen.stage.absolute_move(self.stage_position)

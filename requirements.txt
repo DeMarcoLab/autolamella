@@ -1,0 +1,9 @@
+click
+ipython
+matplotlib
+numpy
+opencv-python
+pysimplegui
+pyyaml
+scipy
+scikit-image

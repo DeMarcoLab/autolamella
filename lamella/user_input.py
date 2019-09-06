@@ -1,60 +1,18 @@
-import os
+from dataclasses import dataclass
+import numpy as np
 import yaml
 
-from tkinter import Tk, filedialog
 
-
-def ask_user(message, default=None):
-    """Ask the user a question and return True if they say yes.
-
-    Parameters
-    ----------
-    message : str
-        The question to ask the user.
-    default : str, optional
-        If the user presses Enter without typing an answer,
-        the default indicates how to interpret this.
-        Choices are 'yes' or 'no'. The efault is None.
-
-    Returns
-    -------
-    bool
-        Returns True if the user answers yes, and false if they answer no.
-    """
-    yes = ['yes', 'y']
-    no = ['no', 'n']
-    if default:
-        if default.lower() == 'yes':
-            yes.append('')
-        elif default.lower() == 'no':
-            no.append('')
-    all_posiible_responses = yes + no
-    user_response = 'initial non-empty string'
-    while user_response not in all_posiible_responses:
-        user_response = input(message)
-        if user_response.lower() in yes:
-            return True
-        elif user_response.lower() in no:
-            return False
-        else:
-            print("Please enter 'yes' or 'no'")
-
-
-def choose_directory():
-    """Ask the user to create or select an EMPTY directory with Tkinter.
-
-    Returns
-    -------
-    str
-        Path to directory for output files.
-    """
-    print("Create a new EMPTY directory to store your output images.")
-    root = Tk()
-    save_directory = filedialog.askdirectory()
-    while os.listdir(save_directory):  # while loop breaks for empty directory
-        save_directory = filedialog.askdirectory()
-    root.destroy()
-    return save_directory
+def _add_missing_keys(dictionary):
+    try:
+        dictionary["lamella"]["overtilt_degrees"]
+    except KeyError:
+        dictionary["lamella"]["overtilt_degrees"] = 0
+    try:
+        dictionary["demo_mode"]
+    except KeyError:
+        dictionary["demo_mode"] = False
+    return dictionary
 
 
 def _format_dictionary(dictionary):
@@ -98,6 +56,46 @@ def load_config(yaml_filename):
         Dictionary containing user input settings.
     """
     with open(yaml_filename, "r") as f:
-        settings = yaml.safe_load(f)
-    settings = _format_dictionary(settings)
-    return settings
+        settings_dict = yaml.safe_load(f)
+    settings_dict = _add_missing_keys(settings_dict)
+    settings_dict = _format_dictionary(settings_dict)
+    # settings = Settings(**settings_dict)  # convert to python dataclass
+    return settings_dict
+
+
+def protocol_stage_settings(settings):
+    """Load settings for each milling stage, overwriting default values."""
+    protocol_stages = []
+    for stage_settings in settings["lamella"]["protocol_stages"]:
+        tmp_settings = settings["lamella"].copy()
+        tmp_settings.update(stage_settings)
+        # Autoscript actually expects tilt in radians
+        tmp_settings["overtilt_degrees"] = np.deg2rad(tmp_settings["overtilt_degrees"])
+        protocol_stages.append(tmp_settings)
+    return protocol_stages
+
+
+# @dataclass(frozen = True)  # can make instance values immutable
+@dataclass
+class Settings:
+    """Convert nested dictionray to python dataclass."""
+
+    def __init__(self, **response):
+        for k, v in response.items():
+            if isinstance(v, dict):
+                self.__dict__[k] = Settings(**v)
+            else:
+                self.__dict__[k]: type(v) = v
+
+
+def dict_from_class(cls):
+    """Conversion from python class to nested dictionary."""
+    my_dict = {}
+    for (key, value) in cls.__dict__.items():
+        try:
+            value.__dict__
+        except AttributeError:
+            my_dict[key] = value
+        else:
+            my_dict[key] = dict_from_class(value)
+    return my_dict
