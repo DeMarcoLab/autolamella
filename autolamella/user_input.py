@@ -1,9 +1,19 @@
-from dataclasses import dataclass
 import numpy as np
 import yaml
 
 
 def _add_missing_keys(dictionary):
+    """If the user leaves these keys blank, add them with these default values.
+
+    Parameters
+    ----------
+    dictionary : Dictionary of user input argument settings.
+
+    Returns
+    -------
+    dictionary
+        [description]
+    """
     try:
         dictionary["lamella"]["overtilt_degrees"]
     except KeyError:
@@ -64,38 +74,23 @@ def load_config(yaml_filename):
 
 
 def protocol_stage_settings(settings):
-    """Load settings for each milling stage, overwriting default values."""
+    """"Load settings for each milling stage, overwriting default values.
+
+    Parameters
+    ----------
+    settings :  Dictionary of user input argument settings.
+
+    Returns
+    -------
+    protocol_stages
+        List containing a dictionary of settings for each protocol stage.
+    """
     protocol_stages = []
     for stage_settings in settings["lamella"]["protocol_stages"]:
         tmp_settings = settings["lamella"].copy()
         tmp_settings.update(stage_settings)
         # Autoscript actually expects tilt in radians
-        tmp_settings["overtilt_degrees"] = np.deg2rad(tmp_settings["overtilt_degrees"])
+        radians_tilt = np.deg2rad(tmp_settings["overtilt_degrees"])
+        tmp_settings["overtilt_degrees"] = radians_tilt
         protocol_stages.append(tmp_settings)
     return protocol_stages
-
-
-# @dataclass(frozen = True)  # can make instance values immutable
-@dataclass
-class Settings:
-    """Convert nested dictionray to python dataclass."""
-
-    def __init__(self, **response):
-        for k, v in response.items():
-            if isinstance(v, dict):
-                self.__dict__[k] = Settings(**v)
-            else:
-                self.__dict__[k]: type(v) = v
-
-
-def dict_from_class(cls):
-    """Conversion from python class to nested dictionary."""
-    my_dict = {}
-    for (key, value) in cls.__dict__.items():
-        try:
-            value.__dict__
-        except AttributeError:
-            my_dict[key] = value
-        else:
-            my_dict[key] = dict_from_class(value)
-    return my_dict

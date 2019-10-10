@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-import lamella.data
-from lamella.mocktypes import MockAdornedImage
-from lamella.conversions import (
+import autolamella.data
+from autolamella.mocktypes import MockAdornedImage
+from autolamella.conversions import (
     realspace_to_pixel_coordinate,
     pixel_to_realspace_coordinate,
     realspace_to_relative_coordinate,
@@ -20,7 +20,7 @@ def image():
 
 
 def test_conversion_types():
-    image = lamella.data.adorned_image()
+    image = autolamella.data.adorned_image()
     input_coord = [0, 0]
     assert isinstance(realspace_to_pixel_coordinate(input_coord, image), list)
     assert isinstance(pixel_to_realspace_coordinate(input_coord, image), list)

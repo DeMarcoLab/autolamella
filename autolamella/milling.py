@@ -7,19 +7,18 @@ from autoscript_sdb_microscope_client.structures import (
     GrabFrameSettings,
     Rectangle,
     RunAutoCbSettings,
-    RunAutoFocusSettings,
     Point,
     StagePosition,
 )
 
-from lamella.acquire import (
-    autocontrast_autofocus,
+from autolamella.acquire import (
+    autocontrast,
     create_camera_settings,
     grab_ion_image,
     grab_sem_image,
 )
-from lamella.autoscript import reset_state
-from lamella.align import calculate_beam_shift
+from autolamella.autoscript import reset_state
+from autolamella.align import calculate_beam_shift
 
 
 def upper_milling(
@@ -105,7 +104,7 @@ def lower_milling(
         microscope,
         settings,
         stage_settings,
-        my_lamella,  # can remove
+        my_lamella,  # TODO can remove
         prefix="IB_" + filename_prefix,
         suffix="_5-after-lower-milling",
     )
@@ -282,7 +281,7 @@ def realign_fiducial(microscope, settings, image, my_lamella):
 
 
 def grab_images(microscope, settings, stage_settings, my_lamella, prefix="", suffix=""):
-    """Aquire and save images, with optional autofocus and autocontrast."""
+    """Aquire and save images, with optional autocontrast."""
     # Reduced area images (must reset camera settings each time, because different samples have different reduced areas)
     camera_settings = GrabFrameSettings(
         reduced_area=my_lamella.fiducial_reduced_area,
@@ -294,12 +293,9 @@ def grab_images(microscope, settings, stage_settings, my_lamella, prefix="", suf
         resolution=settings["fiducial"]["reduced_area_resolution"],
         dwell_time=settings["imaging"]["dwell_time"],
     )
-    autocontrast_autofocus(
-        microscope,
-        autocontrast=settings["imaging"]["autocontrast"],
-        autofocus=settings["imaging"]["autofocus"],
-        reduced_area_focus=my_lamella.fiducial_reduced_area,
-    )
+    # Optional autocontrast
+    if settings["imaging"]["autocontrast"]:
+        autocontrast(microscope)
     # Take images before alignment
     acquire_many_images = settings["imaging"]["full_field_ib_images"]
     output_dir = settings["save_directory"]

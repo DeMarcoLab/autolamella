@@ -3,7 +3,7 @@ ipython
 matplotlib
 numpy
 opencv-python
-pysimplegui
+pillow
 pyyaml
 scipy
 scikit-image

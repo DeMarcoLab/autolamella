@@ -2,14 +2,14 @@ import os
 
 import pytest
 
-import lamella.user_input
+import autolamella.user_input
 
 
 @pytest.fixture
 def expected_user_input():
     user_input_dictionary = {
         "demo_mode": False,
-        "imaging": {"autofocus": 1.0},
+        "imaging": {"autocontrast": 1.0},
         "fiducial": {"fiducial_length": 0.1, "fiducial_width": 0.02},
         "lamella": {
             "lamella_width": 5e-06,
@@ -42,7 +42,7 @@ def expected_user_input():
 def test__format_dictionary():
     input_dictionary = {"value_1": "1e6", "value_2": "2e-6", "value_3": True}
     expected_output = {"value_1": 1000000.0, "value_2": 2e-06, "value_3": 1.0}
-    result = lamella.user_input._format_dictionary(input_dictionary)
+    result = autolamella.user_input._format_dictionary(input_dictionary)
     assert result == expected_output
 
 
@@ -50,5 +50,5 @@ def test_load_config(expected_user_input):
     yaml_filename = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "test_user_input.yml"
     )
-    result = lamella.user_input.load_config(yaml_filename)
+    result = autolamella.user_input.load_config(yaml_filename)
     assert result == expected_user_input

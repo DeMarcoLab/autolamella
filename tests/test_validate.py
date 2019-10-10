@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pytest
 
-from lamella.validate import (
+from autolamella.validate import (
     validate_user_input,
     _validate_application_files,
     _validate_dwell_time,
@@ -12,7 +12,7 @@ from lamella.validate import (
     _validate_scanning_resolutions,
     _validate_scanning_rotation,
 )
-from lamella.user_input import _format_dictionary
+from autolamella.user_input import _format_dictionary
 
 autoscript = pytest.importorskip(
     "autoscript_sdb_microscope_client", reason="Autoscript is not available."

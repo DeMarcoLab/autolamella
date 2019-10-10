@@ -5,8 +5,8 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-import lamella
-from lamella.main import main
+import autolamella
+from autolamella.main import main
 
 autoscript = pytest.importorskip(
     "autoscript_sdb_microscope_client", reason="Autoscript is not available."
@@ -27,9 +27,8 @@ def settings():
     yaml_filename = os.path.join(
         os.path.dirname(os.path.realpath(__file__)), "..", "protocol_offline.yml"
     )
-    settings = lamella.user_input.load_config(yaml_filename)
+    settings = autolamella.user_input.load_config(yaml_filename)
     settings["demo_mode"] = True
-    settings["imaging"]["autofocus"] = False  # cannot test this offline
     settings["imaging"]["autocontrast"] = True
     settings["imaging"]["full_field_ib_images"] = True
     return settings
@@ -56,8 +55,8 @@ def mock_set_lamella_center(self, image, settings):
         (StringIO("y\ny\ny\n150e-6\n" + "y\ny\nn\n\n" + "n\nyes\n")),
     ],
 )
-@patch("lamella.fiducial.fiducial", new=mock_fiducial)
-@patch("lamella.sample.Lamella.set_center", new=mock_set_lamella_center)
+@patch("autolamella.fiducial.fiducial", new=mock_fiducial)
+@patch("autolamella.sample.Lamella.set_center", new=mock_set_lamella_center)
 def test_main(user_inputs, settings, tmpdir, monkeypatch):
     settings["save_directory"] = tmpdir
     settings["demo_mode"] = True

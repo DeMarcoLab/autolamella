@@ -16,6 +16,7 @@ def validate_user_input(microscope, settings):
     dwell_times = [settings["imaging"]["dwell_time"]]
     _validate_dwell_time(microscope, dwell_times)
     _validate_scanning_resolutions(microscope, scanning_resolutions)
+    # TODO
     # ion_beam_currents = [
     #     settings["fiducial"]["fiducial_milling_current"],
     #     settings["lamella"]["milling_current"],

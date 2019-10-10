@@ -1,9 +1,9 @@
 from autoscript_sdb_microscope_client.structures import GrabFrameSettings, Rectangle
 
-from lamella.acquire import grab_ion_image
-import lamella.autoscript
-from lamella.interactive import ask_user
-from lamella.sample import Lamella
+from autolamella.acquire import grab_ion_image
+import autolamella.autoscript
+from autolamella.interactive import ask_user
+from autolamella.sample import Lamella
 
 
 def add_single_sample(microscope, settings):
@@ -12,7 +12,7 @@ def add_single_sample(microscope, settings):
     Parameters
     ----------
     microscope : Autoscript microscope object.
-    settings :  User input argument settings.
+    settings :  Dictionary of user input argument settings.
 
     Returns
     -------
@@ -22,24 +22,21 @@ def add_single_sample(microscope, settings):
     demo_mode = settings["demo_mode"]
     acquire_many_images = settings["imaging"]["full_field_ib_images"]
     # Reset microscope state
-    lamella.autoscript.reset_state(microscope, settings)
+    autolamella.autoscript.reset_state(microscope, settings)
     microscope.beams.ion_beam.beam_current.value = settings["lamella"][
         "milling_current"
     ]
-    # Optional autocontrast and autofocus
-    lamella.acquire.autocontrast_autofocus(
-        microscope,
-        autocontrast=settings["imaging"]["autocontrast"],
-        autofocus=settings["imaging"]["autofocus"],
-    )
+    # Optional autocontrast
+    if settings["imaging"]["autocontrast"]:
+        autolamella.acquire.autocontrast(microscope)
     # Take full field image
-    full_field_camera_settings = lamella.acquire.create_camera_settings(
+    full_field_camera_settings = autolamella.acquire.create_camera_settings(
         settings["imaging"], reduced_area=Rectangle(0, 0, 1, 1)
     )
     original_image = grab_ion_image(microscope, full_field_camera_settings)
     # Select fiducial posiion
     print("Please select where to put a fiducial marker.")
-    my_fiducial = lamella.fiducial.fiducial(
+    my_fiducial = autolamella.fiducial.fiducial(
         microscope,
         original_image,
         settings["fiducial"]["fiducial_length"],
@@ -61,10 +58,10 @@ def add_single_sample(microscope, settings):
         settings["fiducial"]["fiducial_image_size_y"]
         / (original_image.height * pixelsize_x),
     ]
-    reduced_area_fiducial = lamella.fiducial.fiducial_reduced_area_rect(
+    reduced_area_fiducial = autolamella.fiducial.fiducial_reduced_area_rect(
         fiducial_coord_relative, fiducial_image_relative_size
     )
-    camera_settings = lamella.acquire.create_camera_settings(
+    camera_settings = autolamella.acquire.create_camera_settings(
         settings["imaging"], reduced_area=reduced_area_fiducial
     )
     cropped_original_image = grab_ion_image(microscope, camera_settings)
@@ -145,7 +142,7 @@ def add_samples(microscope, settings):
     Parameters
     ----------
     microscope : Autoscript microscope object.
-    settings :  User input argument settings.
+    settings :  Dictionary of user input argument settings.
 
     Returns
     -------

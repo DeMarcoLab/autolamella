@@ -14,7 +14,7 @@ def calculate_beam_shift(image_1, image_2):
     Parameters
     ----------
     image_1 : AdornedImage
-        Original image to compare to.
+        Original image to use as reference point.
     image_2 : AdornedImage
         Possibly shifted image to align with original.
 
@@ -42,9 +42,7 @@ def calculate_beam_shift(image_1, image_2):
     return realspace_beam_shift
 
 
-def _simple_register_translation(
-    src_image, target_image, max_shift_mask=None, bandpass_mask=None
-):
+def _simple_register_translation(src_image, target_image, max_shift_mask=None):
     """Calculate pixel shift between two input images.
 
     This function runs with numpy or cupy for GPU acceleration.
@@ -57,8 +55,6 @@ def _simple_register_translation(
         Image to register.  Must be same dimensionality as ``src_image``.
     max_shift_mask : array
         The fourier mask restricting the maximum allowable pixel shift.
-    bandpass_mask : array
-        Fourier mask image array, by default None.
 
     Returns
     -------
@@ -71,17 +67,10 @@ def _simple_register_translation(
     """
     src_freq = np.fft.fftn(src_image)
     target_freq = np.fft.fftn(target_image)
-    # Fourier bandpass filtering
-    if bandpass_mask:
-        src_freq = src_freq * bandpass_mask
-        target_freq = target_freq * bandpass_mask
     # Whole-pixel shift - Compute cross-correlation by an IFFT
     shape = src_freq.shape
     image_product = src_freq * target_freq.conj()
     cross_correlation = np.fft.ifftn(image_product)
-    # Limit maximum allowable shift
-    if max_shift_mask:
-        cross_correlation = cross_correlation * max_shift_mask
     # Locate maximum
     maxima = np.unravel_index(
         np.argmax(np.abs(cross_correlation)), cross_correlation.shape
@@ -106,7 +95,7 @@ def normalize_image(image, mask=None):
 
     Returns
     -------
-    image
+    ndarray
         The normalized image.
         The mean intensity is equal to zero and standard deviation equals one.
     """
@@ -115,44 +104,6 @@ def normalize_image(image, mask=None):
     if mask:
         image = image * mask
     return image
-
-
-def bandpass_mask(image_shape, outer_radius, inner_radius=0, sigma=5):
-    """Create a fourier bandpass mask.
-
-    Parameters
-    ----------
-    image_shape : tuple
-        Shape of the original image array
-    outer_radius : int
-        Outer radius for bandpass filter array.
-    inner_radius : int, optional
-        Inner radius for bandpass filter array, by default 0
-    sigma : int, optional
-        Sigma value for edge blending, by default 5 pixels.
-
-    Returns
-    -------
-    bandpass_mask : ndarray
-        The bandpass image mask.
-    """
-    bandpass_mask = np.zeros(image_shape)
-    r, c = np.array(image_shape) / 2
-    inner_circle_rr, inner_circle_cc = skimage.draw.circle(
-        r, c, inner_radius, shape=image_shape
-    )
-    outer_circle_rr, outer_circle_cc = skimage.draw.circle(
-        r, c, outer_radius, shape=image_shape
-    )
-    bandpass_mask[outer_circle_rr, outer_circle_cc] = 1.0
-    bandpass_mask[inner_circle_rr, inner_circle_cc] = 0.0
-    bandpass_mask = ndi.gaussian_filter(bandpass_mask, sigma)
-    bandpass_mask = np.array(bandpass_mask)
-    # fourier space origin should be in the corner
-    bandpass_mask = np.roll(
-        bandpass_mask, (np.array(image_shape) / 2).astype(int), axis=(0, 1)
-    )
-    return bandpass_mask
 
 
 def mask_circular(image_shape, sigma=5.0, *, radius=None):
@@ -215,22 +166,3 @@ def mask_rectangular(image_shape, sigma=5.0, *, start=None, extent=None):
     mask[rr.astype(int), cc.astype(int)] = 1.0
     mask = ndi.gaussian_filter(mask, sigma=sigma)
     return mask
-
-
-def max_shift_mask(image_shape, max_allowable_shift):
-    """Create a fourier mask to restrict image registration shift values.
-
-    Parameters
-    ----------
-    image_shape : tuple
-        Shape of the original image array
-    max_allowable_shift : int
-        Maximum allowable pixel shift for image registration.
-
-    Returns
-    -------
-    fourier_mask : ndarray
-        The fourier mask for restricting image registration shifts.
-    """
-    fourier_mask = bandpass_mask(image_shape, outer_radius=max_allowable_shift)
-    return fourier_mask

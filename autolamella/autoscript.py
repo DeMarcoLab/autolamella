@@ -23,12 +23,36 @@ def initialize(ip_address="localhost"):
 
 
 def reset_beam_shift(microscope):
+    """Set the beam shift to zero for the electron and ion beams.
+
+    Parameters
+    ----------
+    microscope : Autoscript microscope object.
+
+    Returns
+    -------
+    Autoscript microscope object.
+    """
     microscope.beams.electron_beam.beam_shift.value = Point(x=0, y=0)
     microscope.beams.ion_beam.beam_shift.value = Point(x=0, y=0)
     return microscope
 
 
 def reset_state(microscope, settings, application_file=None):
+    """[summary]
+
+    Parameters
+    ----------
+    microscope : Autoscript microscope object.
+    settings :  Dictionary of user input argument settings.
+    application_file : [type], optional
+        [description], by default None
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
     microscope.patterning.clear_patterns()
     if application_file:  # optionally specified
         microscope.patterning.set_default_application_file(application_file)

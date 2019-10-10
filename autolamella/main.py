@@ -2,9 +2,10 @@ import logging
 import os
 
 import click
+import yaml
 
-import lamella
-from lamella.interactive import ask_user
+import autolamella
+from autolamella.interactive import ask_user
 
 
 def configure_logging(
@@ -22,28 +23,28 @@ def configure_logging(
 
 def start_logging(settings, log_level=logging.INFO):
     configure_logging(log_directory=settings["save_directory"], log_level=log_level)
-    logging.info(settings)
+    logging.info(yaml.dump(settings))
 
 
 @click.command()
 @click.argument("config_filename")
 def run_main_cmd(config_filename):
-    settings = lamella.user_input.load_config(config_filename)
-    settings["save_directory"] = lamella.interactive.choose_directory()
+    settings = autolamella.user_input.load_config(config_filename)
+    settings["save_directory"] = autolamella.interactive.choose_directory()
     main(settings)
 
 
 def main(settings):
-    microscope = lamella.autoscript.initialize(settings["system"]["ip_address"])
-    lamella.validate.validate_user_input(microscope, settings)
+    microscope = autolamella.autoscript.initialize(settings["system"]["ip_address"])
+    autolamella.validate.validate_user_input(microscope, settings)
     start_logging(settings, log_level=logging.INFO)
-    protocol_stages = lamella.user_input.protocol_stage_settings(settings)
+    protocol_stages = autolamella.user_input.protocol_stage_settings(settings)
     # add samples
-    lamella.autoscript.reset_state(microscope, settings)
-    lamella_list = lamella.add_samples.add_samples(microscope, settings)
+    autolamella.autoscript.reset_state(microscope, settings)
+    lamella_list = autolamella.add_samples.add_samples(microscope, settings)
     message = "Do you want to mill all samples? yes/no\n"
     if ask_user(message, default=None) == True:
-        lamella.milling.mill_all_stages(
+        autolamella.milling.mill_all_stages(
             microscope,
             protocol_stages,
             lamella_list,

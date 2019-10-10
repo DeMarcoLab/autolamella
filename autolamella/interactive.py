@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tkinter import Tk, filedialog
 
-from lamella.display import quick_plot
+from autolamella.display import quick_plot
 
 
 def ask_user(message, default=None):

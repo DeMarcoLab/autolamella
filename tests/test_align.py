@@ -2,13 +2,13 @@ import pytest
 import numpy as np
 import scipy.ndimage as ndi
 
-from lamella.align import (
+from autolamella.align import (
     calculate_beam_shift,
     normalize_image,
     _simple_register_translation,
 )
-import lamella.data
-from lamella.mocktypes import MockAdornedImage
+import autolamella.data
+from autolamella.mocktypes import MockAdornedImage
 
 
 @pytest.mark.parametrize(
@@ -59,8 +59,7 @@ def test__simple_register_translation(shift):
     "image",
     [
         ((np.random.random((512, 512)) * 100) + 20),
-        (lamella.data.autoscript_image()),
-        (lamella.data.embryo()),
+        (autolamella.data.autoscript_image()),
     ],
 )
 def test_normalize_image(image):

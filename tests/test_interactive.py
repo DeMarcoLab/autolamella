@@ -2,7 +2,7 @@ from io import StringIO
 
 import pytest
 
-import lamella.interactive
+import autolamella.interactive
 
 
 @pytest.mark.parametrize(
@@ -24,5 +24,5 @@ import lamella.interactive
 )
 def test_ask_user(monkeypatch, test_input, default, expected):
     monkeypatch.setattr("sys.stdin", test_input)
-    result = lamella.interactive.ask_user("message", default=default)
+    result = autolamella.interactive.ask_user("message", default=default)
     assert result == expected

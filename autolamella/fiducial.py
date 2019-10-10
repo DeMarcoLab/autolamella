@@ -1,9 +1,9 @@
-from lamella.conversions import (
+from autolamella.conversions import (
     realspace_to_pixel_coordinate,
     realspace_to_relative_coordinate,
 )
-from lamella.display import quick_plot
-from lamella.interactive import InteractiveRectangle
+from autolamella.display import quick_plot
+from autolamella.interactive import InteractiveRectangle
 
 
 def select_fiducial_point(image, fiducial_length):
