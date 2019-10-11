@@ -1,15 +1,31 @@
 # Automatic FIBSEM lamella milling
 
+`autolamella` is a python package for automated cryo-lamella preparation
+with focused ion beam milling.
 
-## Running the tests
-To run the test suite:
-```
-pytest
-```
+## Citation
+If you find this useful, please cite our work.
+There is a bioRxiv preprint available at: https://doi.org/10.1101/797506
+See [CITATION](CITATION.md) for details.
 
-Ignore the warning about pytest not recognising `pytest.mark.mpl_image_compare`
+## Software license
+This software is released under the terms of the MIT license.
+There is NO WARRAYNTY either express or implied.
+See [LICENSE](LICENSE) for details.
 
-To generate new baseline test image results:
-```
-pytest --mpl-generate-path=tests\baseline
-```
+## Installation
+See [INSTALLATION](INSTALLATION.md) for a more detailed guide.
+
+* Ensure you have Python 3.6 available
+* Install Autoscript (a commercial product from FEI)
+and configure it for use with your FEI microscope
+* Download the latest `autolamella` release wheel from https://github.com/DeMarcoLab/autolamella/releases
+* Pip install the wheel file (`.whl`) into your python environment
+
+## Running the program
+1. Create/edit the protocol file with details appropriate for your sample.
+Protocols are YAML files with the format shown by the example `protocol.yml`
+2.  Launch the program from the terminal by typing:
+`autolamella path/to/your_protocol.yml`
+3. Follow the user prompts to interactively select new lamella locations,
+before beginning the batch ion milling.

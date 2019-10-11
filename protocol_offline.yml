@@ -1,0 +1,41 @@
+demo_mode: true
+system:
+  ip_address: localhost
+  application_file_rectangle: 'Si'
+  application_file_cleaning_cross_section: 'Si'
+imaging:
+  horizontal_field_width: 50e-6  # ion beam horizontal field of view (meters)
+  dwell_time: 1e-7
+  resolution: '1536x1024'
+  autocontrast: false  # whether to automatically run auto contrast brightness
+  full_field_ib_images: false
+fiducial:
+  reduced_area_resolution: '3072x2048'
+  fiducial_length: 5e-7  # Real space size (in meters)
+  fiducial_width: 1e-7  # Real space size (in meters)
+  fiducial_image_size_x: 15e-7  # Real space size (in meters)
+  fiducial_image_size_y: 15e-7  # Real space size (in meters)
+  fiducial_milling_depth: 100e-9  # fiducial milling depth in meters
+  fiducial_milling_current: 3e-10  # milling current for fiducial marker
+  min_distance_from_lamella: 1e-7 # in real space
+lamella:
+  lamella_width: 5e-7  # in meters
+  lamella_height: 1e-7  # in meters
+  total_cut_height: 5e-7  # in meters
+  milling_depth: 1e-6  # default milling depth, unless otherwise specified
+  milling_current: 3e-10  # default milling current
+  protocol_stages: # stages will be milled in the order they appear here
+  # rough_cut
+  - percentage_roi_height: 0.5  # fractional percentage of total_cut height
+    percentage_from_lamella_surface: 0.5  # fractional percentage
+    milling_current: 3e-10  # 0.3 nano-Amps
+    milling_depth: 5e-7
+  # regular_cut
+  - percentage_roi_height: 0.3  # fractional percentage of total_cut height
+    percentage_from_lamella_surface: 0.2  # fractional percentage
+    milling_current: 3e-10  # 0.1 nano-Amps
+  # polish_cut
+  - percentage_roi_height: 0.2
+    percentage_from_lamella_surface: 0.  # fractional percentage
+    milling_current: 3e-10  # 30 pico-Amps
+    overtilt_degrees: 2  # offset to stage tilt (ignore sample pre-tilt)
