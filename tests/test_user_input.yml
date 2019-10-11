@@ -1,5 +1,5 @@
 imaging:
-  autofocus: true
+  autocontrast: true
 fiducial:
   fiducial_length: 0.10
   fiducial_width: 0.02

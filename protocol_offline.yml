@@ -7,7 +7,6 @@ imaging:
   horizontal_field_width: 50e-6  # ion beam horizontal field of view (meters)
   dwell_time: 1e-7
   resolution: '1536x1024'
-  autofocus: false  # WARNING: Autoscript default settings will freeze machine
   autocontrast: false  # whether to automatically run auto contrast brightness
   full_field_ib_images: false
 fiducial:

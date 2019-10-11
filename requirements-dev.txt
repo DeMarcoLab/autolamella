@@ -1,6 +1,7 @@
 black
 coveralls
 flake8
+m2r
 pre-commit
 pytest>=4.3.0
 pytest-cov

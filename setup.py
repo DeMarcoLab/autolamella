@@ -1,16 +1,25 @@
 from setuptools import setup, find_packages
 
-from lamella._version import __version__
+from autolamella._version import __version__
 
 
-DISTNAME = "lamella"
-DESCRIPTION = "DeMarco lab package for automated lamella milling."
+def parse_requirements_file(filename):
+    with open(filename) as fid:
+        requires = [l.strip() for l in fid.readlines() if l]
+
+    return requires
+
+
+DISTNAME = "autolamella"
+DESCRIPTION = (
+    "Automatated ion beam milling for cryo-electron microscopy sample preparation."
+)
 MAINTAINER = "Genevieve Buckley"
-URL = "https://github.com/DeMarcoLab/lamella"
-DOWNLOAD_URL = "https://github.com/DeMarcoLab/lamella"
+URL = "https://github.com/DeMarcoLab/autolamella"
+DOWNLOAD_URL = "https://github.com/DeMarcoLab/autolamella"
 VERSION = __version__
-PYTHON_VERSION = (3, 6, 7)
-INST_DEPENDENCIES = []
+PYTHON_VERSION = (3, 6)
+INST_DEPENDENCIES = parse_requirements_file("requirements.txt")
 
 if __name__ == "__main__":
     setup(
@@ -21,4 +30,7 @@ if __name__ == "__main__":
         author=MAINTAINER,
         packages=find_packages(),
         install_requires=INST_DEPENDENCIES,
+        entry_points={
+            "console_scripts": ["autolamella = autolamella.main:run_main_cmd"]
+        },
     )

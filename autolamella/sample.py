@@ -23,6 +23,7 @@ class Lamella:
         self.pixel_size = None
         self.fibsem_position = None
         self.fiducial_image = None
+        self.fiducial_image_latest = None
         self.fiducial_reduced_area = None
         self.original_feature_center = None
         self.fiducial_coord_realspace = None
@@ -75,6 +76,7 @@ class Lamella:
         fiducial_reduced_area,
     ):
         self.fiducial_image = image
+        self.fiducial_image_latest = image
         self.fiducial_coord_realspace = coord_realspace
         self.fiducial_coord_relative = coord_relative
         self.fiducial_coord_pixels = coord_pixels
@@ -134,7 +136,7 @@ class Lamella:
     def set_custom_milling_depth(self):
         message = (
             "If you want a custom milling depth for the LAMELLA "
-            "enter it here in meters, else- slam on ENTER:\n"
+            "enter it here in meters, or press ENTER to continue.\n"
         )
         custom_depth = input(message)
         if custom_depth == "":

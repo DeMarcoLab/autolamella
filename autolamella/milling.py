@@ -307,6 +307,7 @@ def grab_images(microscope, settings, stage_settings, my_lamella, prefix="", suf
     image = grab_ion_image(microscope, camera_settings)
     filename = os.path.join(output_dir, prefix + "_" + suffix + ".tif")
     image.save(filename)
+    my_lamella.fiducial_image = image  # update fiducial image
     return image
 
 
