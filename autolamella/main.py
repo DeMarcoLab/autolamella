@@ -40,7 +40,9 @@ def main(settings):
     start_logging(settings, log_level=logging.INFO)
     protocol_stages = autolamella.user_input.protocol_stage_settings(settings)
     # add samples
-    autolamella.autoscript.reset_state(microscope, settings)
+    rect_app_file = settings["system"]['application_file_rectangle'])
+    autolamella.autoscript.reset_state(microscope, settings,
+                                       application_file=rect_app_file)
     lamella_list = autolamella.add_samples.add_samples(microscope, settings)
     message = "Do you want to mill all samples? yes/no\n"
     if ask_user(message, default=None) == True:
