@@ -200,6 +200,7 @@ def save_final_images(microscope, settings, lamella_number):
         dwell_time=settings["imaging"]["dwell_time"],
     )
     if settings["imaging"]["autocontrast"]:
+        microscope.imaging.set_active_view(2)  # the ion beam view
         microscope.auto_functions.run_auto_cb()
     if settings["imaging"]["full_field_ib_images"]:
         image = grab_ion_image(microscope, fullfield_cam_settings)
@@ -295,6 +296,7 @@ def grab_images(microscope, settings, stage_settings, my_lamella, prefix="", suf
     )
     # Optional autocontrast
     if settings["imaging"]["autocontrast"]:
+        microscope.imaging.set_active_view(2)  # the ion beam view
         autocontrast(microscope)
     # Take images before alignment
     acquire_many_images = settings["imaging"]["full_field_ib_images"]

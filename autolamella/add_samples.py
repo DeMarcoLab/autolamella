@@ -28,6 +28,7 @@ def add_single_sample(microscope, settings):
     ]
     # Optional autocontrast
     if settings["imaging"]["autocontrast"]:
+        microscope.imaging.set_active_view(2)  # the ion beam view
         autolamella.acquire.autocontrast(microscope)
     # Take full field image
     full_field_camera_settings = autolamella.acquire.create_camera_settings(
