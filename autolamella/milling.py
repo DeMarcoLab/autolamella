@@ -258,9 +258,26 @@ def setup_milling(microscope, settings, stage_settings, my_lamella):
     return microscope
 
 
+def _check_tilt_direction(microscope, tilt_in_radians):
+    """Make sure tilt is adjusted to match scanning direction."""
+    scan_rotation = microscope.beams.ion_beam.scanning.rotation.value
+    if np.isclose(scan_rotation, np.deg2rad(0.0)):
+        return +tilt_in_radians
+    if np.isclose(scan_rotation, np.deg2rad(180.0)):
+        return -tilt_in_radians
+    else:
+        raise RuntimeError(
+            "It seems that the ion beam scan direction has changed "
+            "(possibly while the program was running). "
+            "We expect either 0 or 180 degrees, but found "
+            "{} degrees instead".format(np.rad2deg(scan_rotation))
+        )
+
+
 def offset_tilt(microscope, stage_settings, move=None):
     if stage_settings["overtilt_degrees"] > 0:
         tilt_in_radians = np.deg2rad(stage_settings["overtilt_degrees"])
+        tilt_in_radians = _check_tilt_direction(microscope, tilt_in_radians)
         if move.lower() == "upper":
             microscope.specimen.stage.relative_move(StagePosition(t=-tilt_in_radians))
         elif move.lower() == "lower":
