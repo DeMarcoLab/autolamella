@@ -42,6 +42,8 @@ def add_single_sample(microscope, settings):
         original_image,
         settings["fiducial"]["fiducial_length"],
         settings["fiducial"]["fiducial_width"],
+        settings["fiducial"]["fiducial_image_size_x"],
+        settings["fiducial"]["fiducial_image_size_y"],
         settings["fiducial"]["fiducial_milling_depth"],
     )
     if my_fiducial is None:
