@@ -19,6 +19,7 @@ def add_single_sample(microscope, settings):
     my_lamella
         A single Lamella() object.
     """
+    autolamella.autoscript.reset_state(microscope, settings)
     demo_mode = settings["demo_mode"]
     acquire_many_images = settings["imaging"]["full_field_ib_images"]
     # Reset microscope state
@@ -152,6 +153,7 @@ def add_samples(microscope, settings):
     samples
         List of FIB-SEM sample objects.
     """
+    autolamella.autoscript.reset_state(microscope, settings)
     default_response_yes = ["", "yes", "y"]
     response_no = ["no", "n"]
 
