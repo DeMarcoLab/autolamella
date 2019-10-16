@@ -262,13 +262,13 @@ def offset_tilt(microscope, stage_settings, move=None):
     if stage_settings["overtilt_degrees"] > 0:
         tilt_in_radians = np.deg2rad(stage_settings["overtilt_degrees"])
         if move.lower() == "upper":
-            microscope.specimen.stage.relative_move(StagePosition(t=+tilt_in_radians))
+            microscope.specimen.stage.relative_move(StagePosition(t=-tilt_in_radians))
         elif move.lower() == "lower":
             microscope.specimen.stage.relative_move(
-                StagePosition(t=-2 * tilt_in_radians)
+                StagePosition(t=+2 * tilt_in_radians)
             )
         elif move.lower() == "restore_original":
-            microscope.specimen.stage.relative_move(StagePosition(t=+tilt_in_radians))
+            microscope.specimen.stage.relative_move(StagePosition(t=-tilt_in_radians))
         else:
             raise ValueError('Must tilt for "upper" or "lower" milling.')
     return microscope
