@@ -249,7 +249,6 @@ def realign_fiducial(microscope, settings, image, my_lamella):
         image, my_lamella.fiducial_image
     )
     microscope.beams.ion_beam.beam_shift.value += fiducial_location_shift_in_meters
-    logging.info('In realign fiducial function, after realignment')
     updated_fiducial_image = grab_images(microscope, settings, my_lamella)
     my_lamella.fiducial_image = updated_fiducial_image  # update fiducial image
     return None
