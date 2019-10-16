@@ -6,7 +6,7 @@ from autolamella.display import quick_plot
 from autolamella.interactive import InteractiveRectangle
 
 
-def select_fiducial_point(image, fiducial_length):
+def select_fiducial_point(image, fiducial_fov_x, fiducial_fov_y):
     fig, ax = quick_plot(image)
     pixelsize_x = image.metadata.binary_result.pixel_size.x
     field_of_view_x = [
@@ -17,12 +17,11 @@ def select_fiducial_point(image, fiducial_length):
         -(image.height * pixelsize_x) / 2,
         +(image.height * pixelsize_x) / 2,
     ]
-    roi_size = fiducial_length
     myfig = InteractiveRectangle(
         fig,
         ax,
-        roi_size_x=roi_size,
-        roi_size_y=roi_size,
+        roi_size_x=fiducial_fov_x,
+        roi_size_y=fiducial_fov_y,
         fov_x=field_of_view_x,
         fov_y=field_of_view_y,
     )
@@ -31,7 +30,13 @@ def select_fiducial_point(image, fiducial_length):
 
 
 def fiducial(
-    microscope, image, fiducial_length, fiducial_width, fiducial_milling_depth=300e-9
+    microscope,
+    image,
+    fiducial_length,
+    fiducial_width,
+    fiducial_fov_x,
+    fiducial_fov_y,
+    fiducial_milling_depth=300e-9,
 ):
     """Create cross to mill for drift correction fiducial.
 
@@ -48,6 +53,10 @@ def fiducial(
         Real space size, length of fiducial marker.
     fiducial_width : float
        Real space size, width of fiducial rectangle bars.
+    fiducial_fov_x :
+        Real space width of the fiducial reduced area field of view.
+    fiducial_fov_y :
+        Real space height of the fiducial reduced area field of view.
     fiducial_milling_depth : float, optional
         Depth of milling pattern in metres, by default 1e-6 (1 micron)
 
@@ -55,7 +64,13 @@ def fiducial(
     -------
     realspace_coord, relative_coord, pixel_coord
     """
-    coord = select_fiducial_point(image, fiducial_length)  # real space coord
+    if (fiducial_fov_x < fiducial_length) or (fiducial_fov_y < fiducial_length):
+        raise ValueError(
+            "'fiducial_image_size_x' and 'fiducial_image_size_y' "
+            "must be equal or greater than 'fiducial_length'. "
+            "Please check your input user settings and try again."
+        )
+    coord = select_fiducial_point(image, fiducial_fov_x, fiducial_fov_y)
     if coord == []:  # user did not select a fiducial location
         return
     rectangle_1 = microscope.patterning.create_rectangle(
