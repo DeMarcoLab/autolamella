@@ -34,11 +34,13 @@ def calculate_beam_shift(image_1, image_2):
     mask_image_2 = mask_rectangular(image_2.data.shape)
     norm_image_1 = normalize_image(image_1.data) * mask_image_1
     norm_image_2 = normalize_image(image_2.data) * mask_image_2
-    pixel_shift = _simple_register_translation(norm_image_1, norm_image_2)
+    pixel_shift = _simple_register_translation(norm_image_2, norm_image_1)
     # Autoscript y-axis has an inverted positive direction
     pixel_shift[1] = -pixel_shift[1]
     pixelsize_x = image_1.metadata.binary_result.pixel_size.x
     realspace_beam_shift = pixel_shift * pixelsize_x
+    logging.info("pixel_shift calculated = {}".format(pixel_shift))
+    logging.info("realspace_beam_shift calculated = {}".format(realspace_beam_shift))
     return realspace_beam_shift
 
 
