@@ -19,6 +19,7 @@ def add_single_sample(microscope, settings):
     my_lamella
         A single Lamella() object.
     """
+    autolamella.autoscript.reset_state(microscope, settings)
     demo_mode = settings["demo_mode"]
     acquire_many_images = settings["imaging"]["full_field_ib_images"]
     # Reset microscope state
@@ -28,6 +29,7 @@ def add_single_sample(microscope, settings):
     ]
     # Optional autocontrast
     if settings["imaging"]["autocontrast"]:
+        microscope.imaging.set_active_view(2)  # the ion beam view
         autolamella.acquire.autocontrast(microscope)
     # Take full field image
     full_field_camera_settings = autolamella.acquire.create_camera_settings(
@@ -41,6 +43,8 @@ def add_single_sample(microscope, settings):
         original_image,
         settings["fiducial"]["fiducial_length"],
         settings["fiducial"]["fiducial_width"],
+        settings["fiducial"]["fiducial_image_size_x"],
+        settings["fiducial"]["fiducial_image_size_y"],
         settings["fiducial"]["fiducial_milling_depth"],
     )
     if my_fiducial is None:
@@ -149,6 +153,7 @@ def add_samples(microscope, settings):
     samples
         List of FIB-SEM sample objects.
     """
+    autolamella.autoscript.reset_state(microscope, settings)
     default_response_yes = ["", "yes", "y"]
     response_no = ["no", "n"]
 

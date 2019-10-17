@@ -31,11 +31,11 @@ def upper_milling(
 ):
     # Setup and realign to fiducial marker
     setup_milling(microscope, settings, stage_settings, my_lamella)
-    offset_tilt(microscope, stage_settings, move="upper")
+    tilt_in_radians = np.deg2rad(stage_settings["overtilt_degrees"])
+    microscope.specimen.stage.relative_move(StagePosition(t=-tilt_in_radians))
     image_unaligned = grab_images(
         microscope,
         settings,
-        stage_settings,
         my_lamella,
         prefix="IB_" + filename_prefix,
         suffix="_0-unaligned",
@@ -44,7 +44,6 @@ def upper_milling(
     grab_images(
         microscope,
         settings,
-        stage_settings,
         my_lamella,  # can remove
         prefix="IB_" + filename_prefix,
         suffix="_1-aligned",
@@ -58,7 +57,6 @@ def upper_milling(
     grab_images(
         microscope,
         settings,
-        stage_settings,
         my_lamella,  # can remove
         prefix="IB_" + filename_prefix,
         suffix="_2-after-upper-milling",
@@ -76,11 +74,11 @@ def lower_milling(
 ):
     # Setup and realign to fiducial marker
     setup_milling(microscope, settings, stage_settings, my_lamella)
-    offset_tilt(microscope, stage_settings, move="lower")
+    tilt_in_radians = np.deg2rad(stage_settings["overtilt_degrees"])
+    microscope.specimen.stage.relative_move(StagePosition(t=+tilt_in_radians))
     image_unaligned = grab_images(
         microscope,
         settings,
-        stage_settings,
         my_lamella,
         prefix="IB_" + filename_prefix,
         suffix="_3-unaligned",
@@ -89,7 +87,6 @@ def lower_milling(
     grab_images(
         microscope,
         settings,
-        stage_settings,
         my_lamella,  # can remove
         prefix="IB_" + filename_prefix,
         suffix="_4-aligned",
@@ -103,22 +100,16 @@ def lower_milling(
     grab_images(
         microscope,
         settings,
-        stage_settings,
         my_lamella,  # TODO can remove
         prefix="IB_" + filename_prefix,
         suffix="_5-after-lower-milling",
     )
-    offset_tilt(microscope, stage_settings, move="restore_original")
     return microscope
 
 
 def _upper_milling_coords(microscope, stage_settings, my_lamella, settings):
     """Create cleaning cross section milling pattern above lamella position."""
-    reset_state(
-        microscope,
-        settings,
-        settings["system"]["application_file_cleaning_cross_section"],
-    )
+    microscope.imaging.set_active_view(2)  # the ion beam view
     lamella_center_x, lamella_center_y = my_lamella.center_coord_realspace
     if my_lamella.custom_milling_depth is not None:
         milling_depth = my_lamella.custom_milling_depth
@@ -153,11 +144,6 @@ def _upper_milling_coords(microscope, stage_settings, my_lamella, settings):
 
 def _lower_milling_coords(microscope, stage_settings, my_lamella, settings):
     """Create cleaning cross section milling pattern below lamella position."""
-    reset_state(
-        microscope,
-        settings,
-        settings["system"]["application_file_cleaning_cross_section"],
-    )
     microscope.imaging.set_active_view(2)  # the ion beam view
     lamella_center_x, lamella_center_y = my_lamella.center_coord_realspace
     if my_lamella.custom_milling_depth is not None:
@@ -200,6 +186,7 @@ def save_final_images(microscope, settings, lamella_number):
         dwell_time=settings["imaging"]["dwell_time"],
     )
     if settings["imaging"]["autocontrast"]:
+        microscope.imaging.set_active_view(2)  # the ion beam view
         microscope.auto_functions.run_auto_cb()
     if settings["imaging"]["full_field_ib_images"]:
         image = grab_ion_image(microscope, fullfield_cam_settings)
@@ -257,30 +244,17 @@ def setup_milling(microscope, settings, stage_settings, my_lamella):
     return microscope
 
 
-def offset_tilt(microscope, stage_settings, move=None):
-    if stage_settings["overtilt_degrees"] > 0:
-        tilt_in_radians = np.deg2rad(stage_settings["overtilt_degrees"])
-        if move.lower() == "upper":
-            microscope.specimen.stage.relative_move(StagePosition(t=+tilt_in_radians))
-        elif move.lower() == "lower":
-            microscope.specimen.stage.relative_move(
-                StagePosition(t=-2 * tilt_in_radians)
-            )
-        elif move.lower() == "restore_original":
-            microscope.specimen.stage.relative_move(StagePosition(t=+tilt_in_radians))
-        else:
-            raise ValueError('Must tilt for "upper" or "lower" milling.')
-    return microscope
-
-
 def realign_fiducial(microscope, settings, image, my_lamella):
     fiducial_location_shift_in_meters = calculate_beam_shift(
         image, my_lamella.fiducial_image
     )
     microscope.beams.ion_beam.beam_shift.value += fiducial_location_shift_in_meters
+    updated_fiducial_image = grab_images(microscope, settings, my_lamella)
+    my_lamella.fiducial_image = updated_fiducial_image  # update fiducial image
+    return None
 
 
-def grab_images(microscope, settings, stage_settings, my_lamella, prefix="", suffix=""):
+def grab_images(microscope, settings, my_lamella, prefix="", suffix=""):
     """Aquire and save images, with optional autocontrast."""
     # Reduced area images (must reset camera settings each time, because different samples have different reduced areas)
     camera_settings = GrabFrameSettings(
@@ -295,6 +269,7 @@ def grab_images(microscope, settings, stage_settings, my_lamella, prefix="", suf
     )
     # Optional autocontrast
     if settings["imaging"]["autocontrast"]:
+        microscope.imaging.set_active_view(2)  # the ion beam view
         autocontrast(microscope)
     # Take images before alignment
     acquire_many_images = settings["imaging"]["full_field_ib_images"]
@@ -307,7 +282,6 @@ def grab_images(microscope, settings, stage_settings, my_lamella, prefix="", suf
     image = grab_ion_image(microscope, camera_settings)
     filename = os.path.join(output_dir, prefix + "_" + suffix + ".tif")
     image.save(filename)
-    my_lamella.fiducial_image = image  # update fiducial image
     return image
 
 

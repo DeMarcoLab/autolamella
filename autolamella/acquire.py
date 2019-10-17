@@ -24,7 +24,7 @@ def autocontrast(microscope):
         resolution="768x512",  # low resolution, so as not to damage the sample
         number_of_frames=5,
     )
-    logging.info("Automatically adjusting conttrast...")
+    logging.info("Automatically adjusting contrast...")
     microscope.auto_functions.run_auto_cb()
     return autocontrast_settings
 

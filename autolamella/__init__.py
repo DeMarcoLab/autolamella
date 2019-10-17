@@ -11,3 +11,4 @@ import autolamella.milling
 import autolamella.user_input
 import autolamella.validate
 from autolamella.main import main
+from autolamella._version import __version__
