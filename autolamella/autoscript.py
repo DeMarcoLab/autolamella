@@ -39,19 +39,18 @@ def reset_beam_shift(microscope):
 
 
 def reset_state(microscope, settings, application_file=None):
-    """[summary]
+    """Reset the microscope state.
 
     Parameters
     ----------
     microscope : Autoscript microscope object.
     settings :  Dictionary of user input argument settings.
-    application_file : [type], optional
-        [description], by default None
+    application_file : str, optional
+        Name of the application file for milling, by default None
 
     Returns
     -------
-    [type]
-        [description]
+    Autoscript microscope object.
     """
     microscope.patterning.clear_patterns()
     if application_file:  # optionally specified

@@ -4,6 +4,8 @@ import os
 import click
 import yaml
 
+from autoscript_sdb_microscope_client.structures import StagePosition
+
 import autolamella
 from autolamella.interactive import ask_user
 
@@ -36,6 +38,7 @@ def run_main_cmd(config_filename):
 
 def main(settings):
     microscope = autolamella.autoscript.initialize(settings["system"]["ip_address"])
+    original_tilt = microscope.specimen.stage.current_position.t
     autolamella.validate.validate_user_input(microscope, settings)
     start_logging(settings, log_level=logging.INFO)
     protocol_stages = autolamella.user_input.protocol_stage_settings(settings)
@@ -56,6 +59,7 @@ def main(settings):
         )
     else:
         print("Cancelling ion milling.")
+    microscope.specimen.stage.absolute_move(StagePosition(t=original_tilt))
     print("Finished!")
 
 
