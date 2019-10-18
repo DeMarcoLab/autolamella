@@ -199,9 +199,7 @@ def _validate_scanning_rotation(microscope):
     if rotation is None:
         microscope.beams.ion_beam.scanning.rotation.value = 0
         rotation = microscope.beams.ion_beam.scanning.rotation.value
-    allowed_values = [np.deg2rad(0.0), np.deg2rad(180.0)]
-    matching_criterion = any([np.isclose(rotation, i) for i in allowed_values])
-    if not matching_criterion:
+    if not np.isclose(rotation, 0.):
         raise ValueError(
             "Ion beam scanning rotation must be either 0 or 180 degrees!"
             "\nPlease change your system settings and try again."
