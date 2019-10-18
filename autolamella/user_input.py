@@ -14,14 +14,10 @@ def _add_missing_keys(dictionary):
     dictionary
         Python dictionray of user input settings.
     """
-    try:
-        dictionary["lamella"]["overtilt_degrees"]
-    except KeyError:
-        dictionary["lamella"]["overtilt_degrees"] = 0
-    try:
-        dictionary["demo_mode"]
-    except KeyError:
-        dictionary["demo_mode"] = False
+    dictionary["lamella"]["overtilt_degrees"] = dictionary["lamella"].get(
+        "overtilt_degrees", 0
+    )
+    dictionary["demo_mode"] = dictionary.get("demo_mode", False)
     return dictionary
 
 
