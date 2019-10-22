@@ -1,3 +1,5 @@
+"""Module containing coordinate conversion function."""
+
 import numpy as np
 
 

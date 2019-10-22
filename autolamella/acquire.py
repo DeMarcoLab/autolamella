@@ -1,10 +1,19 @@
 import logging
+import os
 
 from autoscript_sdb_microscope_client.structures import (
     GrabFrameSettings,
     Rectangle,
     RunAutoCbSettings,
 )
+
+__all__ = [
+    "autocontrast",
+    "create_camera_settings",
+    "grab_ion_image",
+    "grab_sem_image",
+    "grab_images",
+]
 
 
 def autocontrast(microscope):
@@ -88,3 +97,34 @@ def grab_sem_image(microscope, camera_settings):
     sem_image = microscope.imaging.grab_frame(camera_settings)
     microscope.imaging.set_active_view(2)  # restore the ion beam view
     return sem_image
+
+
+def grab_images(microscope, settings, my_lamella, prefix="", suffix=""):
+    """Aquire and save images, with optional autocontrast."""
+    # Reduced area images (must reset camera settings each time, because different samples have different reduced areas)
+    camera_settings = GrabFrameSettings(
+        reduced_area=my_lamella.fiducial_reduced_area,
+        resolution=settings["fiducial"]["reduced_area_resolution"],
+        dwell_time=settings["imaging"]["dwell_time"],
+    )
+    fullfield_cam_settings = GrabFrameSettings(
+        reduced_area=Rectangle(0, 0, 1, 1),
+        resolution=settings["fiducial"]["reduced_area_resolution"],
+        dwell_time=settings["imaging"]["dwell_time"],
+    )
+    # Optional autocontrast
+    if settings["imaging"]["autocontrast"]:
+        microscope.imaging.set_active_view(2)  # the ion beam view
+        autocontrast(microscope)
+    # Take images before alignment
+    acquire_many_images = settings["imaging"]["full_field_ib_images"]
+    output_dir = settings["save_directory"]
+    if acquire_many_images:
+        fullfield_image = grab_ion_image(microscope, fullfield_cam_settings)
+        fname_fullfield = prefix + "_FullField_" + suffix + ".tif"
+        filename_fullfield = os.path.join(output_dir, fname_fullfield)
+        fullfield_image.save(filename_fullfield)
+    image = grab_ion_image(microscope, camera_settings)
+    filename = os.path.join(output_dir, prefix + "_" + suffix + ".tif")
+    image.save(filename)
+    return image

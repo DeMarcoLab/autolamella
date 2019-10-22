@@ -2,8 +2,7 @@ from autolamella.conversions import (
     realspace_to_pixel_coordinate,
     realspace_to_relative_coordinate,
 )
-from autolamella.display import quick_plot
-from autolamella.interactive import InteractiveRectangle
+from autolamella.display import quick_plot, InteractiveRectangle
 
 
 def select_fiducial_point(image, fiducial_fov_x, fiducial_fov_y):
