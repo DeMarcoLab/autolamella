@@ -152,7 +152,7 @@ def test__validate_scanning_resolutions_invalid(microscope):
         _validate_scanning_resolutions(microscope, resolutions)
 
 
-@pytest.mark.parametrize("rotation", [(np.deg2rad(0.0)), (np.deg2rad(180.0))])
+@pytest.mark.parametrize("rotation", [(np.deg2rad(0.0))])
 def test__validate_scanning_rotation(rotation):
     from autoscript_sdb_microscope_client import SdbMicroscopeClient
 

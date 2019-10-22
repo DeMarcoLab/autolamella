@@ -14,12 +14,12 @@ from autolamella.mocktypes import MockAdornedImage
 @pytest.mark.parametrize(
     "pixel_shift, pixel_size, expected_beam_shift",
     [
-        (np.array([0, 20]), 1e-6, np.array([-0.0, +20e-6])),
-        (np.array([10, 0]), 1e-6, np.array([-10e-6, +0.0])),
-        (np.array([10, 20]), 1e-6, np.array([-10e-6, +20e-6])),
-        (np.array([10, -20]), 1e-6, np.array([-10e-6, -20e-6])),
-        (np.array([-10, 20]), 1e-6, np.array([+10e-6, +20e-6])),
-        (np.array([-10, -20]), 1e-6, np.array([+10e-6, -20e-6])),
+        (np.array([0, 20]), 1e-6, np.array([0.0, -20e-6])),
+        (np.array([10, 0]), 1e-6, np.array([10e-6, -0.0])),
+        (np.array([10, 20]), 1e-6, np.array([10e-6, -20e-6])),
+        (np.array([10, -20]), 1e-6, np.array([10e-6, 20e-6])),
+        (np.array([-10, 20]), 1e-6, np.array([-10e-6, -20e-6])),
+        (np.array([-10, -20]), 1e-6, np.array([-10e-6, 20e-6])),
     ],
 )
 def test_calculate_beam_shift(pixel_shift, pixel_size, expected_beam_shift):

@@ -23,7 +23,7 @@ class Lamella:
         self.pixel_size = None
         self.fibsem_position = None
         self.fiducial_image = None
-        self.fiducial_image_latest = None
+        self.fiducial_image_original = None
         self.fiducial_reduced_area = None
         self.original_feature_center = None
         self.fiducial_coord_realspace = None

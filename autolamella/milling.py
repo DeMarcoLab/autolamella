@@ -3,6 +3,7 @@ import logging
 
 import numpy as np
 
+from autoscript_core.common import ApplicationServerException
 from autoscript_sdb_microscope_client.structures import (
     GrabFrameSettings,
     Rectangle,
@@ -49,7 +50,7 @@ def upper_milling(
         suffix="_1-aligned",
     )
     # Create and mill patterns
-    _upper_milling_coords(microscope, stage_settings, my_lamella, settings)
+    _upper_milling_coords(microscope, stage_settings, my_lamella)
     if not demo_mode:
         print("Milling pattern...")
         microscope.patterning.run()
@@ -92,7 +93,7 @@ def lower_milling(
         suffix="_4-aligned",
     )
     # Create and mill patterns
-    _lower_milling_coords(microscope, stage_settings, my_lamella, settings)
+    _lower_milling_coords(microscope, stage_settings, my_lamella)
     if not demo_mode:
         print("Milling pattern...")
         microscope.patterning.run()
@@ -107,7 +108,7 @@ def lower_milling(
     return microscope
 
 
-def _upper_milling_coords(microscope, stage_settings, my_lamella, settings):
+def _upper_milling_coords(microscope, stage_settings, my_lamella):
     """Create cleaning cross section milling pattern above lamella position."""
     microscope.imaging.set_active_view(2)  # the ion beam view
     lamella_center_x, lamella_center_y = my_lamella.center_coord_realspace
@@ -131,6 +132,14 @@ def _upper_milling_coords(microscope, stage_settings, my_lamella, settings):
     height = float(
         stage_settings["total_cut_height"] * stage_settings["percentage_roi_height"]
     )
+    if stage_settings["overtilt_degrees"] > 0:
+        scaling_factor = np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
+        height = scaling_factor * height  # shrink ROI height
+        fiducial_y = my_lamella.fiducial_coord_realspace[1]
+        hypotenuse = abs(center_y - fiducial_y)
+        adjacent = hypotenuse * scaling_factor
+        y_tilt_adjustment = hypotenuse - adjacent
+        center_y = center_y - y_tilt_adjustment  # moving closer to lamella
     milling_roi = microscope.patterning.create_cleaning_cross_section(
         lamella_center_x,
         center_y,
@@ -142,7 +151,7 @@ def _upper_milling_coords(microscope, stage_settings, my_lamella, settings):
     return milling_roi
 
 
-def _lower_milling_coords(microscope, stage_settings, my_lamella, settings):
+def _lower_milling_coords(microscope, stage_settings, my_lamella):
     """Create cleaning cross section milling pattern below lamella position."""
     microscope.imaging.set_active_view(2)  # the ion beam view
     lamella_center_x, lamella_center_y = my_lamella.center_coord_realspace
@@ -166,6 +175,14 @@ def _lower_milling_coords(microscope, stage_settings, my_lamella, settings):
     height = float(
         stage_settings["total_cut_height"] * stage_settings["percentage_roi_height"]
     )
+    if stage_settings["overtilt_degrees"] > 0:
+        scaling_factor = np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
+        height = (1.0 / scaling_factor) * height  # expand / stretch ROI height
+        fiducial_y = my_lamella.fiducial_coord_realspace[1]
+        hypotenuse = abs(center_y - fiducial_y)
+        adjacent = hypotenuse * scaling_factor
+        y_tilt_adjustment = hypotenuse - adjacent
+        center_y = center_y - y_tilt_adjustment  # negative, moving further away
     milling_roi = microscope.patterning.create_cleaning_cross_section(
         lamella_center_x,
         center_y,
@@ -245,13 +262,64 @@ def setup_milling(microscope, settings, stage_settings, my_lamella):
 
 
 def realign_fiducial(microscope, settings, image, my_lamella):
-    fiducial_location_shift_in_meters = calculate_beam_shift(
-        image, my_lamella.fiducial_image
-    )
-    microscope.beams.ion_beam.beam_shift.value += fiducial_location_shift_in_meters
+    realign(microscope, image, my_lamella.fiducial_image)
     updated_fiducial_image = grab_images(microscope, settings, my_lamella)
     my_lamella.fiducial_image = updated_fiducial_image  # update fiducial image
-    return None
+
+
+def realign(microscope, new_image, reference_image):
+    """Realign to reference image using beam shift.
+
+    Parameters
+    ----------
+    microscope : Autoscript microscope object
+    new_image : The most recent image acquired.
+        Must have the same dimensions and relative position as the reference.
+    reference_image : The reference image to align with.
+        Muast have the same dimensions and relative position as the new image
+    Returns
+    -------
+    microscope.beams.ion_beam.beam_shift.value
+        The current beam shift position (after any realignment)
+    """
+    shift_in_meters = calculate_beam_shift(new_image, reference_image)
+    try:
+        microscope.beams.ion_beam.beam_shift.value += shift_in_meters
+    except ApplicationServerException:
+        logging.warning(
+            "Cannot move beam shift beyond limits, "
+            "will continue with no beam shift applied."
+        )
+    return microscope.beams.ion_beam.beam_shift.value
+
+
+def run_drift_corrected_milling(
+    microscope, correction_interval, reduced_area=Rectangle(0, 0, 1, 1)
+):
+    """
+    Parameters
+    ----------
+    microscope : Autoscript microscope object
+    correction_interval : Time in seconds between drift correction realignment
+    reduced_area : Autoscript Rectangle() object
+        Describes the reduced area view in relative coordinates, with the
+        origin in the top left corner.
+        Default value Rectangle(0, 0, 1, 1) uses the whole field of view.
+    """
+    s = GrabFrameSettings(reduced_area=reduced_area)
+    reference_image = microscope.imaging.grab_frame(s)
+    # start drift corrected patterning (is a blocking function, not asynchronous)
+    microscope.patterning.start()
+    while microscope.patterning.state == "Running":
+        time.sleep(correction_interval)
+        try:
+            microscope.patterning.pause()
+        except ApplicationServerException:
+            continue
+        else:
+            new_image = microscope.imaging.grab_frame(s)
+            realign(microscope, new_image, reference_image)
+            microscope.patterning.resume()
 
 
 def grab_images(microscope, settings, my_lamella, prefix="", suffix=""):
