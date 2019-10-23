@@ -3,7 +3,6 @@ import logging
 
 import numpy as np
 
-from autoscript_core.common import ApplicationServerException
 from autoscript_sdb_microscope_client.structures import (
     GrabFrameSettings,
     Rectangle,
@@ -17,9 +16,10 @@ from autolamella.acquire import (
     create_camera_settings,
     grab_ion_image,
     grab_sem_image,
+    grab_images,
 )
 from autolamella.autoscript import reset_state
-from autolamella.align import calculate_beam_shift
+from autolamella.align import realign
 
 
 def upper_milling(
@@ -41,7 +41,8 @@ def upper_milling(
         prefix="IB_" + filename_prefix,
         suffix="_0-unaligned",
     )
-    realign_fiducial(microscope, settings, image_unaligned, my_lamella)
+    realign(microscope, image_unaligned, my_lamella.fiducial_image)
+    my_lamella.fiducial_image = grab_images(microscope, settings, my_lamella)
     grab_images(
         microscope,
         settings,
@@ -84,7 +85,8 @@ def lower_milling(
         prefix="IB_" + filename_prefix,
         suffix="_3-unaligned",
     )
-    realign_fiducial(microscope, settings, image_unaligned, my_lamella)
+    realign(microscope, image_unaligned, my_lamella.fiducial_image)
+    my_lamella.fiducial_image = grab_images(microscope, settings, my_lamella)
     grab_images(
         microscope,
         settings,
@@ -133,13 +135,14 @@ def _upper_milling_coords(microscope, stage_settings, my_lamella):
         stage_settings["total_cut_height"] * stage_settings["percentage_roi_height"]
     )
     if stage_settings["overtilt_degrees"] > 0:
-        scaling_factor = np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
-        height = scaling_factor * height  # shrink ROI height
-        fiducial_y = my_lamella.fiducial_coord_realspace[1]
-        hypotenuse = abs(center_y - fiducial_y)
-        adjacent = hypotenuse * scaling_factor
-        y_tilt_adjustment = hypotenuse - adjacent
-        center_y = center_y - y_tilt_adjustment  # moving closer to lamella
+        cosine = np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
+        height = cosine * height  # shrink ROI height
+        delta = abs(center_y - my_lamella.fiducial_coord_realspace[1])
+        correction = abs((delta * cosine) - delta)
+        if fiducial_y < center_y:
+            center_y = center_y - correction
+        elif fiducial_y >= center_y:
+            center_y = center_y + correction
     milling_roi = microscope.patterning.create_cleaning_cross_section(
         lamella_center_x,
         center_y,
@@ -176,13 +179,14 @@ def _lower_milling_coords(microscope, stage_settings, my_lamella):
         stage_settings["total_cut_height"] * stage_settings["percentage_roi_height"]
     )
     if stage_settings["overtilt_degrees"] > 0:
-        scaling_factor = np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
-        height = (1.0 / scaling_factor) * height  # expand / stretch ROI height
-        fiducial_y = my_lamella.fiducial_coord_realspace[1]
-        hypotenuse = abs(center_y - fiducial_y)
-        adjacent = hypotenuse * scaling_factor
-        y_tilt_adjustment = hypotenuse - adjacent
-        center_y = center_y - y_tilt_adjustment  # negative, moving further away
+        cosine = np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
+        height = height / cosine  # expand / stretch ROI height
+        delta = abs(center_y - my_lamella.fiducial_coord_realspace[1])
+        correction = abs((delta * cosine) - delta)
+        if fiducial_y < center_y:
+            center_y = center_y + correction
+        elif fiducial_y >= center_y:
+            center_y = center_y - correction
     milling_roi = microscope.patterning.create_cleaning_cross_section(
         lamella_center_x,
         center_y,
@@ -261,38 +265,6 @@ def setup_milling(microscope, settings, stage_settings, my_lamella):
     return microscope
 
 
-def realign_fiducial(microscope, settings, image, my_lamella):
-    realign(microscope, image, my_lamella.fiducial_image)
-    updated_fiducial_image = grab_images(microscope, settings, my_lamella)
-    my_lamella.fiducial_image = updated_fiducial_image  # update fiducial image
-
-
-def realign(microscope, new_image, reference_image):
-    """Realign to reference image using beam shift.
-
-    Parameters
-    ----------
-    microscope : Autoscript microscope object
-    new_image : The most recent image acquired.
-        Must have the same dimensions and relative position as the reference.
-    reference_image : The reference image to align with.
-        Muast have the same dimensions and relative position as the new image
-    Returns
-    -------
-    microscope.beams.ion_beam.beam_shift.value
-        The current beam shift position (after any realignment)
-    """
-    shift_in_meters = calculate_beam_shift(new_image, reference_image)
-    try:
-        microscope.beams.ion_beam.beam_shift.value += shift_in_meters
-    except ApplicationServerException:
-        logging.warning(
-            "Cannot move beam shift beyond limits, "
-            "will continue with no beam shift applied."
-        )
-    return microscope.beams.ion_beam.beam_shift.value
-
-
 def run_drift_corrected_milling(
     microscope, correction_interval, reduced_area=Rectangle(0, 0, 1, 1)
 ):
@@ -320,37 +292,6 @@ def run_drift_corrected_milling(
             new_image = microscope.imaging.grab_frame(s)
             realign(microscope, new_image, reference_image)
             microscope.patterning.resume()
-
-
-def grab_images(microscope, settings, my_lamella, prefix="", suffix=""):
-    """Aquire and save images, with optional autocontrast."""
-    # Reduced area images (must reset camera settings each time, because different samples have different reduced areas)
-    camera_settings = GrabFrameSettings(
-        reduced_area=my_lamella.fiducial_reduced_area,
-        resolution=settings["fiducial"]["reduced_area_resolution"],
-        dwell_time=settings["imaging"]["dwell_time"],
-    )
-    fullfield_cam_settings = GrabFrameSettings(
-        reduced_area=Rectangle(0, 0, 1, 1),
-        resolution=settings["fiducial"]["reduced_area_resolution"],
-        dwell_time=settings["imaging"]["dwell_time"],
-    )
-    # Optional autocontrast
-    if settings["imaging"]["autocontrast"]:
-        microscope.imaging.set_active_view(2)  # the ion beam view
-        autocontrast(microscope)
-    # Take images before alignment
-    acquire_many_images = settings["imaging"]["full_field_ib_images"]
-    output_dir = settings["save_directory"]
-    if acquire_many_images:
-        fullfield_image = grab_ion_image(microscope, fullfield_cam_settings)
-        fname_fullfield = prefix + "_FullField_" + suffix + ".tif"
-        filename_fullfield = os.path.join(output_dir, fname_fullfield)
-        fullfield_image.save(filename_fullfield)
-    image = grab_ion_image(microscope, camera_settings)
-    filename = os.path.join(output_dir, prefix + "_" + suffix + ".tif")
-    image.save(filename)
-    return image
 
 
 def mill_single_stage(
