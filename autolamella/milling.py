@@ -137,7 +137,8 @@ def _upper_milling_coords(microscope, stage_settings, my_lamella):
     if stage_settings["overtilt_degrees"] > 0:
         cosine = np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
         height = cosine * height  # shrink ROI height
-        delta = abs(center_y - my_lamella.fiducial_coord_realspace[1])
+        fiducial_y = my_lamella.fiducial_coord_realspace[1]
+        delta = abs(center_y - fiducial_y)
         correction = abs((delta * cosine) - delta)
         if fiducial_y < center_y:
             center_y = center_y - correction
@@ -181,7 +182,8 @@ def _lower_milling_coords(microscope, stage_settings, my_lamella):
     if stage_settings["overtilt_degrees"] > 0:
         cosine = np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
         height = height / cosine  # expand / stretch ROI height
-        delta = abs(center_y - my_lamella.fiducial_coord_realspace[1])
+        fiducial_y = my_lamella.fiducial_coord_realspace[1]
+        delta = abs(center_y - fiducial_y)
         correction = abs((delta * cosine) - delta)
         if fiducial_y < center_y:
             center_y = center_y + correction
