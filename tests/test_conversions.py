@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 import autolamella.data
-from autolamella.mocktypes import MockAdornedImage
+from autolamella.data.mocktypes import MockAdornedImage
 from autolamella.conversions import (
     realspace_to_pixel_coordinate,
     pixel_to_realspace_coordinate,

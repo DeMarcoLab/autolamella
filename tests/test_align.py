@@ -3,12 +3,12 @@ import numpy as np
 import scipy.ndimage as ndi
 
 from autolamella.align import (
-    calculate_beam_shift,
-    normalize_image,
+    _calculate_beam_shift,
+    _normalize_image,
     _simple_register_translation,
 )
 import autolamella.data
-from autolamella.mocktypes import MockAdornedImage
+from autolamella.data.mocktypes import MockAdornedImage
 
 
 @pytest.mark.parametrize(
@@ -22,7 +22,7 @@ from autolamella.mocktypes import MockAdornedImage
         (np.array([-10, -20]), 1e-6, np.array([-10e-6, 20e-6])),
     ],
 )
-def test_calculate_beam_shift(pixel_shift, pixel_size, expected_beam_shift):
+def test__calculate_beam_shift(pixel_shift, pixel_size, expected_beam_shift):
     data = np.random.random([512, 512])
     shifted_data = ndi.shift(data, np.flip(pixel_shift))
     reference_image = MockAdornedImage(
@@ -31,7 +31,7 @@ def test_calculate_beam_shift(pixel_shift, pixel_size, expected_beam_shift):
     shifted_image = MockAdornedImage(
         shifted_data, pixelsize_x=pixel_size, pixelsize_y=pixel_size
     )
-    result = calculate_beam_shift(reference_image, shifted_image)
+    result = _calculate_beam_shift(reference_image, shifted_image)
     assert np.allclose(result, expected_beam_shift)
 
 
@@ -62,7 +62,7 @@ def test__simple_register_translation(shift):
         (autolamella.data.autoscript_image()),
     ],
 )
-def test_normalize_image(image):
-    output = normalize_image(image)
+def test__normalize_image(image):
+    output = _normalize_image(image)
     assert np.isclose(np.mean(output), 0)
     assert np.isclose(np.std(output), 1)

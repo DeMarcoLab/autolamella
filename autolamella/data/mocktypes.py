@@ -1,3 +1,9 @@
+"""Module with classes approximating autoscript objects.
+
+For use when autoscript is unavailable. Limited functionality.
+"""
+
+
 class MockPixelSize:
     """Pixel size mock object, has attributes x and y.
 

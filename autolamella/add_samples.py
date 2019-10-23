@@ -2,7 +2,7 @@ from autoscript_sdb_microscope_client.structures import GrabFrameSettings, Recta
 
 from autolamella.acquire import grab_ion_image
 import autolamella.autoscript
-from autolamella.interactive import ask_user
+from autolamella.user_input import ask_user
 from autolamella.sample import Lamella
 
 

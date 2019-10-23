@@ -6,9 +6,7 @@ import autolamella.conversions
 import autolamella.data
 import autolamella.display
 import autolamella.fiducial
-import autolamella.interactive
 import autolamella.milling
 import autolamella.user_input
-import autolamella.validate
-from autolamella.main import main
+from autolamella.main import main, run_main_cmd
 from autolamella._version import __version__

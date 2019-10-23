@@ -3,7 +3,7 @@ import pickle
 
 import skimage.io
 
-from autolamella.mocktypes import MockAdornedImage
+import autolamella.data.mocktypes
 
 data_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -38,4 +38,4 @@ def load_image(filename):
 
 def mock_adorned_image():
     image = autoscript_image()
-    return MockAdornedImage(image=image)
+    return autolamella.data.mocktypes.MockAdornedImage(image=image)

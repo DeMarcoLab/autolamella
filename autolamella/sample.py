@@ -8,8 +8,7 @@ from autoscript_sdb_microscope_client.structures import (
 )
 
 from autolamella.autoscript import FibsemPosition
-from autolamella.display import quick_plot
-from autolamella.interactive import InteractiveRectangle
+from autolamella.display import quick_plot, InteractiveRectangle
 
 
 class Lamella:
