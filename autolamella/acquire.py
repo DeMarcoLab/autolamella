@@ -101,6 +101,7 @@ def grab_sem_image(microscope, camera_settings):
 
 def grab_images(microscope, settings, my_lamella, prefix="", suffix=""):
     """Aquire and save images, with optional autocontrast."""
+    output_dir = settings["save_directory"]
     # Reduced area images (must reset camera settings each time, because different samples have different reduced areas)
     camera_settings = GrabFrameSettings(
         reduced_area=my_lamella.fiducial_reduced_area,
@@ -121,7 +122,6 @@ def grab_images(microscope, settings, my_lamella, prefix="", suffix=""):
     image.save(filename)
     # Optional full field images
     acquire_many_images = settings["imaging"]["full_field_ib_images"]
-    output_dir = settings["save_directory"]
     if acquire_many_images:
         fullfield_image = grab_ion_image(microscope, fullfield_cam_settings)
         fname_fullfield = prefix + "_FullField_" + suffix + ".tif"
