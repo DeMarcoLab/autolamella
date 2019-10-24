@@ -1,3 +1,5 @@
+import numpy as np
+
 from autolamella.conversions import (
     realspace_to_pixel_coordinate,
     realspace_to_relative_coordinate,
@@ -75,9 +77,11 @@ def fiducial(
     rectangle_1 = microscope.patterning.create_rectangle(
         coord[0], coord[1], fiducial_width, fiducial_length, fiducial_milling_depth
     )
+    rectangle_1.rotation = np.deg2rad(45)
     rectangle_2 = microscope.patterning.create_rectangle(
         coord[0], coord[1], fiducial_length, fiducial_width, fiducial_milling_depth
     )
+    rectangle_2.rotation = np.deg2rad(45)
     relative_coord = realspace_to_relative_coordinate(coord, image)
     pixel_coord = realspace_to_pixel_coordinate(coord, image)
     return coord, relative_coord, pixel_coord

@@ -112,11 +112,14 @@ def grab_images(microscope, settings, my_lamella, prefix="", suffix=""):
         resolution=settings["fiducial"]["reduced_area_resolution"],
         dwell_time=settings["imaging"]["dwell_time"],
     )
-    # Optional autocontrast
+    # Optional autocontrast (you cannot do autocontrast on a reduced area)
     if settings["imaging"]["autocontrast"]:
         microscope.imaging.set_active_view(2)  # the ion beam view
         autocontrast(microscope)
-    # Take images before alignment
+    image = grab_ion_image(microscope, camera_settings)
+    filename = os.path.join(output_dir, prefix + "_" + suffix + ".tif")
+    image.save(filename)
+    # Optional full field images
     acquire_many_images = settings["imaging"]["full_field_ib_images"]
     output_dir = settings["save_directory"]
     if acquire_many_images:
@@ -124,7 +127,4 @@ def grab_images(microscope, settings, my_lamella, prefix="", suffix=""):
         fname_fullfield = prefix + "_FullField_" + suffix + ".tif"
         filename_fullfield = os.path.join(output_dir, fname_fullfield)
         fullfield_image.save(filename_fullfield)
-    image = grab_ion_image(microscope, camera_settings)
-    filename = os.path.join(output_dir, prefix + "_" + suffix + ".tif")
-    image.save(filename)
     return image

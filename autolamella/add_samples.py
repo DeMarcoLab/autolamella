@@ -1,4 +1,5 @@
 from autoscript_sdb_microscope_client.structures import GrabFrameSettings, Rectangle
+from autoscript_core.common import ApplicationServerException
 
 from autolamella.acquire import grab_ion_image
 import autolamella.autoscript
@@ -94,7 +95,13 @@ def add_single_sample(microscope, settings):
             microscope.beams.ion_beam.beam_current.value = settings["fiducial"][
                 "fiducial_milling_current"
             ]
-            microscope.patterning.run()
+            microscope.imaging.set_active_view(2)  # the ion beam view
+            try:
+                microscope.patterning.run()
+            except ApplicationServerException:
+                logging.error("ApplicationServerException: could not mill!")
+                microscope.patterning.clear_patterns()
+                return  # returns None, which gets stripped from sample list later
         if acquire_many_images:
             full_field_camera_settings = GrabFrameSettings(
                 reduced_area=Rectangle(0, 0, 1, 1),
@@ -113,13 +120,18 @@ def add_single_sample(microscope, settings):
         if ask_user(message, default="no") == True:
             print("Milling fiducial marker again...")
             if not demo_mode:
-                microscope.patterning.run()
-        reference_image = grab_ion_image(microscope, camera_settings)
+                microscope.imaging.set_active_view(2)  # the ion beam view
+                try:
+                    microscope.patterning.run()
+                except ApplicationServerException:
+                    logging.error("ApplicationServerException: could not mill!")
+                    microscope.patterning.clear_patterns()
+                    return  # returns None, which gets stripped from sample list later        reference_image = grab_ion_image(microscope, camera_settings)
         microscope.patterning.clear_patterns()
     else:
         print("Ok, deleting those milling patterns.")
-        return  # returns None, which gets stripped from sample list later
         microscope.patterning.clear_patterns()
+        return  # returns None, which gets stripped from sample list later
     # Continue on
     camera_settings = GrabFrameSettings(
         reduced_area=reduced_area_fiducial,

@@ -3,9 +3,10 @@ import os
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.ndimage as ndi
 
 
-def quick_plot(image):
+def quick_plot(image, median_smoothig=3):
     """Display image with matplotlib.pyplot
 
     Parameters
@@ -18,8 +19,10 @@ def quick_plot(image):
     fig, ax
         Matplotlib figure and axis objects.
     """
-    fig, ax = plt.subplots(1)
+    fig, ax = plt.subplots(figsize=(10, 7))
     display_image = image.data
+    if median_smoothig is not None:
+        display_image = ndi.median_filter(display_image, size=median_smoothig)
     height, width = display_image.shape
     try:
         pixelsize_x = image.metadata.binary_result.pixel_size.x

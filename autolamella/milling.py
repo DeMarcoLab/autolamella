@@ -3,6 +3,7 @@ import logging
 
 import numpy as np
 
+from autoscript_core.common import ApplicationServerException
 from autoscript_sdb_microscope_client.structures import (
     GrabFrameSettings,
     Rectangle,
@@ -54,7 +55,11 @@ def upper_milling(
     _upper_milling_coords(microscope, stage_settings, my_lamella)
     if not demo_mode:
         print("Milling pattern...")
-        microscope.patterning.run()
+        microscope.imaging.set_active_view(2)  # the ion beam view
+        try:
+            microscope.patterning.run()
+        except ApplicationServerException:
+            logging.error("ApplicationServerException: could not mill!")
     microscope.patterning.clear_patterns()
     grab_images(
         microscope,
@@ -98,7 +103,11 @@ def lower_milling(
     _lower_milling_coords(microscope, stage_settings, my_lamella)
     if not demo_mode:
         print("Milling pattern...")
-        microscope.patterning.run()
+        microscope.imaging.set_active_view(2)  # the ion beam view
+        try:
+            microscope.patterning.run()
+        except ApplicationServerException:
+            logging.error("ApplicationServerException: could not mill!")
     microscope.patterning.clear_patterns()
     grab_images(
         microscope,
@@ -132,18 +141,10 @@ def _upper_milling_coords(microscope, stage_settings, my_lamella):
         )
     )
     height = float(
-        stage_settings["total_cut_height"] * stage_settings["percentage_roi_height"]
+        stage_settings["total_cut_height"] *
+        stage_settings["percentage_roi_height"]
     )
-    if stage_settings["overtilt_degrees"] > 0:
-        cosine = np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
-        height = cosine * height  # shrink ROI height
-        fiducial_y = my_lamella.fiducial_coord_realspace[1]
-        delta = abs(center_y - fiducial_y)
-        correction = abs((delta * cosine) - delta)
-        if fiducial_y < center_y:
-            center_y = center_y - correction
-        elif fiducial_y >= center_y:
-            center_y = center_y + correction
+    #import pdb; pdb.set_trace()
     milling_roi = microscope.patterning.create_cleaning_cross_section(
         lamella_center_x,
         center_y,
@@ -177,18 +178,10 @@ def _lower_milling_coords(microscope, stage_settings, my_lamella):
         )
     )
     height = float(
-        stage_settings["total_cut_height"] * stage_settings["percentage_roi_height"]
+        stage_settings["total_cut_height"] *
+        stage_settings["percentage_roi_height"]
     )
-    if stage_settings["overtilt_degrees"] > 0:
-        cosine = np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
-        height = height / cosine  # expand / stretch ROI height
-        fiducial_y = my_lamella.fiducial_coord_realspace[1]
-        delta = abs(center_y - fiducial_y)
-        correction = abs((delta * cosine) - delta)
-        if fiducial_y < center_y:
-            center_y = center_y + correction
-        elif fiducial_y >= center_y:
-            center_y = center_y - correction
+    #import pdb; pdb.set_trace()
     milling_roi = microscope.patterning.create_cleaning_cross_section(
         lamella_center_x,
         center_y,
@@ -214,7 +207,8 @@ def save_final_images(microscope, settings, lamella_number):
     if settings["imaging"]["full_field_ib_images"]:
         image = grab_ion_image(microscope, fullfield_cam_settings)
         filename = os.path.join(
-            output_dir, "IB_lamella{}-milling-complete.tif".format(lamella_number + 1)
+            output_dir, "IB_lamella{}-milling-complete.tif".format(
+                lamella_number + 1)
         )
         image.save(filename)
     sem_adorned_image = grab_sem_image(microscope, fullfield_cam_settings)
@@ -299,7 +293,8 @@ def run_drift_corrected_milling(
 def mill_single_stage(
     microscope, settings, stage_settings, stage_number, my_lamella, lamella_number
 ):
-    filename_prefix = "lamella{}_stage{}".format(lamella_number + 1, stage_number + 1)
+    filename_prefix = "lamella{}_stage{}".format(
+        lamella_number + 1, stage_number + 1)
     demo_mode = settings["demo_mode"]
     upper_milling(
         microscope,
@@ -329,11 +324,13 @@ def mill_all_stages(
         os.mkdir(output_dir)
     for stage_number, stage_settings in enumerate(protocol_stages):
         logging.info(
-            "Protocol stage {} of {}".format(stage_number + 1, len(protocol_stages))
+            "Protocol stage {} of {}".format(
+                stage_number + 1, len(protocol_stages))
         )
         for lamella_number, my_lamella in enumerate(lamella_list):
             logging.info(
-                "Lamella number {} of {}".format(lamella_number + 1, len(lamella_list))
+                "Lamella number {} of {}".format(
+                    lamella_number + 1, len(lamella_list))
             )
             # save all the reference images you took creating the fiducial
             if stage_number == 0:
