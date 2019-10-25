@@ -9,7 +9,7 @@ __all__ = [
     "relative_to_realspace_coordinate",
     "pixel_to_relative_coordinate",
     "relative_to_pixel_coordinate",
-    ]
+]
 
 
 def realspace_to_pixel_coordinate(coord, image):
