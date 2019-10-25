@@ -7,6 +7,38 @@ from autolamella.user_input import ask_user
 from autolamella.sample import Lamella
 
 
+def add_samples(microscope, settings):
+    """Interactive function to add samples to list.
+
+    Parameters
+    ----------
+    microscope : Autoscript microscope object.
+    settings :  Dictionary of user input argument settings.
+
+    Returns
+    -------
+    samples
+        List of FIB-SEM sample objects.
+    """
+    autolamella.autoscript.reset_state(microscope, settings)
+    default_response_yes = ["", "yes", "y"]
+    response_no = ["no", "n"]
+
+    samples = []
+    user_response = ""
+    while user_response.lower() not in response_no:
+        message = (
+            " \n FIRST MOVE TO THE DESIRED POSITION \n "
+            "Do you want to select a new location for milling? [y]/n\n"
+        )
+        user_response = input(message)
+        if user_response.lower() in default_response_yes:
+            my_sample = add_single_sample(microscope, settings)
+            samples.append(my_sample)
+    samples = [s for s in samples if s is not None]
+    return samples
+
+
 def add_single_sample(microscope, settings):
     """Create a single lamella object.
 
@@ -150,35 +182,3 @@ def add_single_sample(microscope, settings):
     my_lamella.set_sem_image(microscope, settings)
     my_lamella.set_custom_milling_depth()
     return my_lamella
-
-
-def add_samples(microscope, settings):
-    """Interactive function to add samples to list.
-
-    Parameters
-    ----------
-    microscope : Autoscript microscope object.
-    settings :  Dictionary of user input argument settings.
-
-    Returns
-    -------
-    samples
-        List of FIB-SEM sample objects.
-    """
-    autolamella.autoscript.reset_state(microscope, settings)
-    default_response_yes = ["", "yes", "y"]
-    response_no = ["no", "n"]
-
-    samples = []
-    user_response = ""
-    while user_response.lower() not in response_no:
-        message = (
-            " \n FIRST MOVE TO THE DESIRED POSITION \n "
-            "Do you want to select a new location for milling? [y]/n\n"
-        )
-        user_response = input(message)
-        if user_response.lower() in default_response_yes:
-            my_sample = add_single_sample(microscope, settings)
-            samples.append(my_sample)
-    samples = [s for s in samples if s is not None]
-    return samples
