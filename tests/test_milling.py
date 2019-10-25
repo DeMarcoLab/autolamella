@@ -60,10 +60,8 @@ def test__upper_milling_coords(microscope, settings):
     assert np.isclose(result.width, stage_settings["lamella_width"])
     assert np.isclose(result.depth, stage_settings["milling_depth"])
     assert np.isclose(result.center_x, my_lamella.center_coord_realspace[0])
-    assert np.isclose(
-        result.height, np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
-    )
-    assert np.isclose(result.center_y, 1.108002035108405)
+    assert np.isclose(result.height, 1)
+    assert np.isclose(result.center_y, 1.5)
 
 
 def test__lower_milling_coords(microscope, settings):
@@ -84,7 +82,5 @@ def test__lower_milling_coords(microscope, settings):
     assert np.isclose(result.width, stage_settings["lamella_width"])
     assert np.isclose(result.depth, stage_settings["milling_depth"])
     assert np.isclose(result.center_x, my_lamella.center_coord_realspace[0])
-    assert np.isclose(
-        result.height, 1 / np.cos(np.deg2rad(stage_settings["overtilt_degrees"]))
-    )
-    assert np.isclose(result.center_y, -1.7110758272493207)
+    assert np.isclose(result.height, 1)
+    assert np.isclose(result.center_y, -1.5)
