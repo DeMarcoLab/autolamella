@@ -8,5 +8,5 @@ import autolamella.display
 import autolamella.fiducial
 import autolamella.milling
 import autolamella.user_input
-from autolamella.main import main, run_main_cmd
+from autolamella.main import main, main_cli
 from autolamella._version import __version__
