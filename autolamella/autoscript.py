@@ -86,7 +86,12 @@ class BeamSettings:
         self.working_distance = self.beam.working_distance.value  # sets the focus
 
     def restore_state(self, microscope):
-        # Restore all the important beam settings
+        """Restore all the important beam settings.
+
+        Parameters
+        ----------
+        microscope : Autoscript microscope object.
+        """
         self.beam.beam_shift.value = self.beam_shift
         self.beam.horizontal_field_width.value = self.horizontal_field_width
         self.beam.scanning.resolution.value = self.scan_resolution

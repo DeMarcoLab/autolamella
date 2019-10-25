@@ -8,6 +8,22 @@ from autolamella.display import quick_plot, InteractiveRectangle
 
 
 def select_fiducial_point(image, fiducial_fov_x, fiducial_fov_y):
+    """Interactively select a position for a fiducial marker.
+
+    Parameters
+    ----------
+    image : AdornedImage or ndarray
+        The input image to select a fiducial marker position from.
+    fiducial_fov_x : float
+        The field of view size in x for the fiducial image, in real space.
+    fiducial_fov_y : float
+        The field of view size in y for the fiducial image, in real space.
+
+    Returns
+    -------
+    tuple
+        Pixel coordinate of selected point, in x-y format.
+    """
     fig, ax = quick_plot(image)
     pixelsize_x = image.metadata.binary_result.pixel_size.x
     field_of_view_x = [
