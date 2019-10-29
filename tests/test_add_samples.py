@@ -63,7 +63,9 @@ def mock_no_lamella_center(*args, **kwargs):
 @patch("autolamella.fiducial.select_fiducial_point", new=mock_select_fiducial)
 def test_add_fiducial(microscope, settings):
     image = autolamella.data.adorned_image()
-    result = autolamella.fiducial.fiducial(microscope, image, 1e-6, 1e-6, 300e-9)
+    result = autolamella.fiducial.fiducial(
+        microscope, image, 1e-6, 1e-6, 1.5e-6, 1.5e-6, 300e-9
+    )
     expected_result_0 = [-2e-6, -2e-6]
     expected_result_1 = [0.30000000000000004, 0.7316742081447963]
     expected_result_2 = [307, 647]

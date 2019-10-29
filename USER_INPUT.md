@@ -2,7 +2,7 @@
 
 Users must provide input parameters for their experiment as a protocol YAML file, for example:
 
-`example_protocol.yml`
+`protcol_example.yml`
 
 ```yaml
 system:

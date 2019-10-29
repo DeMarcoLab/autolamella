@@ -30,7 +30,5 @@ if __name__ == "__main__":
         author=MAINTAINER,
         packages=find_packages(),
         install_requires=INST_DEPENDENCIES,
-        entry_points={
-            "console_scripts": ["autolamella = autolamella.main:run_main_cmd"]
-        },
+        entry_points={"console_scripts": ["autolamella = autolamella.main:main_cli"]},
     )

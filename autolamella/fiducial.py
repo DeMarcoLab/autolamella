@@ -1,12 +1,29 @@
+import numpy as np
+
 from autolamella.conversions import (
     realspace_to_pixel_coordinate,
     realspace_to_relative_coordinate,
 )
-from autolamella.display import quick_plot
-from autolamella.interactive import InteractiveRectangle
+from autolamella.display import quick_plot, InteractiveRectangle
 
 
 def select_fiducial_point(image, fiducial_fov_x, fiducial_fov_y):
+    """Interactively select a position for a fiducial marker.
+
+    Parameters
+    ----------
+    image : AdornedImage or ndarray
+        The input image to select a fiducial marker position from.
+    fiducial_fov_x : float
+        The field of view size in x for the fiducial image, in real space.
+    fiducial_fov_y : float
+        The field of view size in y for the fiducial image, in real space.
+
+    Returns
+    -------
+    tuple
+        Pixel coordinate of selected point, in x-y format.
+    """
     fig, ax = quick_plot(image)
     pixelsize_x = image.metadata.binary_result.pixel_size.x
     field_of_view_x = [
@@ -76,9 +93,11 @@ def fiducial(
     rectangle_1 = microscope.patterning.create_rectangle(
         coord[0], coord[1], fiducial_width, fiducial_length, fiducial_milling_depth
     )
+    rectangle_1.rotation = np.deg2rad(45)
     rectangle_2 = microscope.patterning.create_rectangle(
         coord[0], coord[1], fiducial_length, fiducial_width, fiducial_milling_depth
     )
+    rectangle_2.rotation = np.deg2rad(45)
     relative_coord = realspace_to_relative_coordinate(coord, image)
     pixel_coord = realspace_to_pixel_coordinate(coord, image)
     return coord, relative_coord, pixel_coord

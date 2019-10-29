@@ -1,4 +1,15 @@
+"""Module containing coordinate conversion function."""
+
 import numpy as np
+
+__all__ = [
+    "realspace_to_pixel_coordinate",
+    "pixel_to_realspace_coordinate",
+    "realspace_to_relative_coordinate",
+    "relative_to_realspace_coordinate",
+    "pixel_to_relative_coordinate",
+    "relative_to_pixel_coordinate",
+]
 
 
 def realspace_to_pixel_coordinate(coord, image):

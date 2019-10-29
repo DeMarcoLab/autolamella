@@ -8,8 +8,7 @@ from autoscript_sdb_microscope_client.structures import (
 )
 
 from autolamella.autoscript import FibsemPosition
-from autolamella.display import quick_plot
-from autolamella.interactive import InteractiveRectangle
+from autolamella.display import quick_plot, InteractiveRectangle
 
 
 class Lamella:
@@ -23,7 +22,7 @@ class Lamella:
         self.pixel_size = None
         self.fibsem_position = None
         self.fiducial_image = None
-        self.fiducial_image_latest = None
+        self.fiducial_image_original = None
         self.fiducial_reduced_area = None
         self.original_feature_center = None
         self.fiducial_coord_realspace = None

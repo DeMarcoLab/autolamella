@@ -1,9 +1,42 @@
 from autoscript_sdb_microscope_client.structures import GrabFrameSettings, Rectangle
+from autoscript_core.common import ApplicationServerException
 
 from autolamella.acquire import grab_ion_image
 import autolamella.autoscript
-from autolamella.interactive import ask_user
+from autolamella.user_input import ask_user
 from autolamella.sample import Lamella
+
+
+def add_samples(microscope, settings):
+    """Interactive function to add samples to list.
+
+    Parameters
+    ----------
+    microscope : Autoscript microscope object.
+    settings :  Dictionary of user input argument settings.
+
+    Returns
+    -------
+    samples
+        List of FIB-SEM sample objects.
+    """
+    autolamella.autoscript.reset_state(microscope, settings)
+    default_response_yes = ["", "yes", "y"]
+    response_no = ["no", "n"]
+
+    samples = []
+    user_response = ""
+    while user_response.lower() not in response_no:
+        message = (
+            " \n FIRST MOVE TO THE DESIRED POSITION \n "
+            "Do you want to select a new location for milling? [y]/n\n"
+        )
+        user_response = input(message)
+        if user_response.lower() in default_response_yes:
+            my_sample = add_single_sample(microscope, settings)
+            samples.append(my_sample)
+    samples = [s for s in samples if s is not None]
+    return samples
 
 
 def add_single_sample(microscope, settings):
@@ -94,7 +127,13 @@ def add_single_sample(microscope, settings):
             microscope.beams.ion_beam.beam_current.value = settings["fiducial"][
                 "fiducial_milling_current"
             ]
-            microscope.patterning.run()
+            microscope.imaging.set_active_view(2)  # the ion beam view
+            try:
+                microscope.patterning.run()
+            except ApplicationServerException:
+                logging.error("ApplicationServerException: could not mill!")
+                microscope.patterning.clear_patterns()
+                return  # returns None, which gets stripped from sample list later
         if acquire_many_images:
             full_field_camera_settings = GrabFrameSettings(
                 reduced_area=Rectangle(0, 0, 1, 1),
@@ -113,13 +152,18 @@ def add_single_sample(microscope, settings):
         if ask_user(message, default="no") == True:
             print("Milling fiducial marker again...")
             if not demo_mode:
-                microscope.patterning.run()
-        reference_image = grab_ion_image(microscope, camera_settings)
+                microscope.imaging.set_active_view(2)  # the ion beam view
+                try:
+                    microscope.patterning.run()
+                except ApplicationServerException:
+                    logging.error("ApplicationServerException: could not mill!")
+                    microscope.patterning.clear_patterns()
+                    return  # returns None, which gets stripped from sample list later        reference_image = grab_ion_image(microscope, camera_settings)
         microscope.patterning.clear_patterns()
     else:
         print("Ok, deleting those milling patterns.")
-        return  # returns None, which gets stripped from sample list later
         microscope.patterning.clear_patterns()
+        return  # returns None, which gets stripped from sample list later
     # Continue on
     camera_settings = GrabFrameSettings(
         reduced_area=reduced_area_fiducial,
@@ -138,35 +182,3 @@ def add_single_sample(microscope, settings):
     my_lamella.set_sem_image(microscope, settings)
     my_lamella.set_custom_milling_depth()
     return my_lamella
-
-
-def add_samples(microscope, settings):
-    """Interactive function to add samples to list.
-
-    Parameters
-    ----------
-    microscope : Autoscript microscope object.
-    settings :  Dictionary of user input argument settings.
-
-    Returns
-    -------
-    samples
-        List of FIB-SEM sample objects.
-    """
-    autolamella.autoscript.reset_state(microscope, settings)
-    default_response_yes = ["", "yes", "y"]
-    response_no = ["no", "n"]
-
-    samples = []
-    user_response = ""
-    while user_response.lower() not in response_no:
-        message = (
-            " \n FIRST MOVE TO THE DESIRED POSITION \n "
-            "Do you want to select a new location for milling? [y]/n\n"
-        )
-        user_response = input(message)
-        if user_response.lower() in default_response_yes:
-            my_sample = add_single_sample(microscope, settings)
-            samples.append(my_sample)
-    samples = [s for s in samples if s is not None]
-    return samples

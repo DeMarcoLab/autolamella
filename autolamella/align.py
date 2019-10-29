@@ -5,10 +5,39 @@ import scipy.ndimage as ndi
 import skimage.draw
 import skimage.io
 from autoscript_sdb_microscope_client.structures import Point
+from autoscript_core.common import ApplicationServerException
 import autoscript_toolkit.vision as vision_toolkit
 
+__all__ = ["realign"]
 
-def calculate_beam_shift(image_1, image_2):
+
+def realign(microscope, new_image, reference_image):
+    """Realign to reference image using beam shift.
+
+    Parameters
+    ----------
+    microscope : Autoscript microscope object
+    new_image : The most recent image acquired.
+        Must have the same dimensions and relative position as the reference.
+    reference_image : The reference image to align with.
+        Muast have the same dimensions and relative position as the new image
+    Returns
+    -------
+    microscope.beams.ion_beam.beam_shift.value
+        The current beam shift position (after any realignment)
+    """
+    shift_in_meters = _calculate_beam_shift(new_image, reference_image)
+    try:
+        microscope.beams.ion_beam.beam_shift.value += shift_in_meters
+    except ApplicationServerException:
+        logging.warning(
+            "Cannot move beam shift beyond limits, "
+            "will continue with no beam shift applied."
+        )
+    return microscope.beams.ion_beam.beam_shift.value
+
+
+def _calculate_beam_shift(image_1, image_2):
     """Cross correlation to find shift between two images.
 
     Parameters
@@ -30,10 +59,10 @@ def calculate_beam_shift(image_1, image_2):
     """
     if image_1.data.shape != image_2.data.shape:
         raise ValueError("Images must be the same shape for cross correlation.")
-    mask_image_1 = mask_circular(image_1.data.shape)
-    mask_image_2 = mask_rectangular(image_2.data.shape)
-    norm_image_1 = normalize_image(image_1.data) * mask_image_1
-    norm_image_2 = normalize_image(image_2.data) * mask_image_2
+    mask_image_1 = _mask_circular(image_1.data.shape)
+    mask_image_2 = _mask_rectangular(image_2.data.shape)
+    norm_image_1 = _normalize_image(image_1.data) * mask_image_1
+    norm_image_2 = _normalize_image(image_2.data) * mask_image_2
     pixel_shift = _simple_register_translation(norm_image_2, norm_image_1)
     # Autoscript y-axis has an inverted positive direction
     pixel_shift[1] = -pixel_shift[1]
@@ -84,7 +113,7 @@ def _simple_register_translation(src_image, target_image, max_shift_mask=None):
     return shifts
 
 
-def normalize_image(image, mask=None):
+def _normalize_image(image, mask=None):
     """Ensure the image mean is zero and the standard deviation is one.
 
     Parameters
@@ -108,7 +137,7 @@ def normalize_image(image, mask=None):
     return image
 
 
-def mask_circular(image_shape, sigma=5.0, *, radius=None):
+def _mask_circular(image_shape, sigma=5.0, *, radius=None):
     """Make a circular mask with soft edges for image normalization.
 
     Parameters
@@ -137,7 +166,7 @@ def mask_circular(image_shape, sigma=5.0, *, radius=None):
     return mask
 
 
-def mask_rectangular(image_shape, sigma=5.0, *, start=None, extent=None):
+def _mask_rectangular(image_shape, sigma=5.0, *, start=None, extent=None):
     """Make a rectangular mask with soft edges for image normalization.
 
     Parameters
@@ -170,7 +199,7 @@ def mask_rectangular(image_shape, sigma=5.0, *, start=None, extent=None):
     return mask
 
 
-def bandpass_mask(image_shape, outer_radius, inner_radius=0, sigma=5):
+def _bandpass_mask(image_shape, outer_radius, inner_radius=0, sigma=5):
     """Create a fourier bandpass mask.
 
     Parameters
@@ -186,23 +215,23 @@ def bandpass_mask(image_shape, outer_radius, inner_radius=0, sigma=5):
 
     Returns
     -------
-    bandpass_mask : ndarray
+    _bandpass_mask : ndarray
         The bandpass image mask.
     """
-    bandpass_mask = numpy.zeros(image_shape)
-    r, c = numpy.array(image_shape) / 2
+    _bandpass_mask = np.zeros(image_shape)
+    r, c = np.array(image_shape) / 2
     inner_circle_rr, inner_circle_cc = skimage.draw.circle(
         r, c, inner_radius, shape=image_shape
     )
     outer_circle_rr, outer_circle_cc = skimage.draw.circle(
         r, c, outer_radius, shape=image_shape
     )
-    bandpass_mask[outer_circle_rr, outer_circle_cc] = 1.0
-    bandpass_mask[inner_circle_rr, inner_circle_cc] = 0.0
-    bandpass_mask = gaussian_blur(bandpass_mask, sigma)
-    bandpass_mask = np.array(bandpass_mask)
+    _bandpass_mask[outer_circle_rr, outer_circle_cc] = 1.0
+    _bandpass_mask[inner_circle_rr, inner_circle_cc] = 0.0
+    _bandpass_mask = ndi.gaussian_filter(_bandpass_mask, sigma)
+    _bandpass_mask = np.array(_bandpass_mask)
     # fourier space origin should be in the corner
-    bandpass_mask = np.roll(
-        bandpass_mask, (np.array(image_shape) / 2).astype(int), axis=(0, 1)
+    _bandpass_mask = np.roll(
+        _bandpass_mask, (np.array(image_shape) / 2).astype(int), axis=(0, 1)
     )
-    return bandpass_mask
+    return _bandpass_mask

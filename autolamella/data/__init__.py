@@ -3,7 +3,7 @@ import pickle
 
 import skimage.io
 
-from autolamella.mocktypes import MockAdornedImage
+import autolamella.data.mocktypes
 
 data_dir = os.path.abspath(os.path.dirname(__file__))
 
@@ -11,7 +11,10 @@ __all__ = ["adorned_image", "data_dir", "load_image"]
 
 
 def autoscript_image():
-    """Demo image. Also see: mock_adorned_image"""
+    """Demo image
+
+    Also see: mock_adorned_image
+    """
     filename = os.path.join(data_dir, "autoscript.png")
     image = skimage.io.imread(filename)
     return image
@@ -37,5 +40,9 @@ def load_image(filename):
 
 
 def mock_adorned_image():
+    """Open demo image and mimic the adorned image datatype.
+
+    Not fully featured, for use when Autoscript is not available.
+    """
     image = autoscript_image()
-    return MockAdornedImage(image=image)
+    return autolamella.data.mocktypes.MockAdornedImage(image=image)
