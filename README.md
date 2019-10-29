@@ -24,7 +24,7 @@ and configure it for use with your FEI microscope
 
 ## Running the program
 1. Create/edit the protocol file with details appropriate for your sample.
-Protocols are YAML files with the format shown by the example `protocol.yml`
+Protocols are YAML files with the format shown by `protocol_example.yml` (see [USER_INPUT.md](USER_INPUT.md) for more details).
 2.  Launch the program from the terminal by typing:
 `autolamella path/to/your_protocol.yml`
 3. Follow the user prompts to interactively select new lamella locations,
