@@ -142,6 +142,7 @@ def add_single_sample(microscope, settings):
             )
             microscope.auto_functions.run_auto_cb()
             reference_image = grab_ion_image(microscope, full_field_camera_settings)
+            my_lamella.reference_image = reference_image
         camera_settings = GrabFrameSettings(
             reduced_area=reduced_area_fiducial,
             resolution=settings["fiducial"]["reduced_area_resolution"],
@@ -178,7 +179,8 @@ def add_single_sample(microscope, settings):
         fiducial_coord_pixels,
         reduced_area_fiducial,
     )
-    my_lamella.reference_image = reference_image
+    if not acquire_many_images:
+        my_lamella.reference_image = cropped_reference_image
     my_lamella.set_sem_image(microscope, settings)
     my_lamella.set_custom_milling_depth()
     return my_lamella
