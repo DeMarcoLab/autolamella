@@ -1,4 +1,7 @@
-from autoscript_sdb_microscope_client.structures import GrabFrameSettings, Rectangle
+import logging
+
+from autoscript_sdb_microscope_client.structures import (GrabFrameSettings,
+                                                         Rectangle)
 from autoscript_core.common import ApplicationServerException
 
 from autolamella.acquire import grab_ion_image
@@ -133,7 +136,7 @@ def add_single_sample(microscope, settings):
             except ApplicationServerException:
                 logging.error("ApplicationServerException: could not mill!")
                 microscope.patterning.clear_patterns()
-                return  # returns None, which gets stripped from sample list later
+                return  # returns None which gets stripped from sample list
         if acquire_many_images:
             full_field_camera_settings = GrabFrameSettings(
                 reduced_area=Rectangle(0, 0, 1, 1),
@@ -157,10 +160,19 @@ def add_single_sample(microscope, settings):
                 try:
                     microscope.patterning.run()
                 except ApplicationServerException:
-                    logging.error("ApplicationServerException: could not mill!")
+                    logging.error("ApplicationServerException: could not mill")
                     microscope.patterning.clear_patterns()
-                    return  # returns None, which gets stripped from sample list later        reference_image = grab_ion_image(microscope, camera_settings)
-        microscope.patterning.clear_patterns()
+                    return  # returns None which gets stripped from sample list
+            if acquire_many_images:
+                full_field_camera_settings = GrabFrameSettings(
+                    reduced_area=Rectangle(0, 0, 1, 1),
+                    resolution=settings["imaging"]["resolution"],
+                    dwell_time=settings["imaging"]["dwell_time"],
+                )
+                microscope.auto_functions.run_auto_cb()
+                reference_image = grab_ion_image(microscope, full_field_camera_settings)
+                my_lamella.reference_image = reference_image
+            microscope.patterning.clear_patterns()
     else:
         print("Ok, deleting those milling patterns.")
         microscope.patterning.clear_patterns()
