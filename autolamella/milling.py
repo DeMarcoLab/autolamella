@@ -43,7 +43,7 @@ def upper_milling(
         settings,
         my_lamella,
         prefix="IB_" + filename_prefix,
-        suffix="_0-unaligned",
+        suffix="_0a-unaligned",
     )
     realign(microscope, image_unaligned, my_lamella.fiducial_image)
     # Repeat realignment - in cases where the shift is large we find that
@@ -53,7 +53,7 @@ def upper_milling(
         settings,
         my_lamella,
         prefix="IB_" + filename_prefix,
-        suffix="_0-unaligned",
+        suffix="_0b-unaligned",
     )
     realign(microscope, image_unaligned, my_lamella.fiducial_image)
     # Save the newly aligned image for the next alignment stage
@@ -101,9 +101,20 @@ def lower_milling(
         settings,
         my_lamella,
         prefix="IB_" + filename_prefix,
-        suffix="_3-unaligned",
+        suffix="_3a-unaligned",
     )
     realign(microscope, image_unaligned, my_lamella.fiducial_image)
+    # Repeat realignment - in cases where the shift is large we find that
+    # the beam shift movement is less accuracte, so we make a second check
+    image_unaligned = grab_images(
+        microscope,
+        settings,
+        my_lamella,
+        prefix="IB_" + filename_prefix,
+        suffix="_3b-unaligned",
+    )
+    realign(microscope, image_unaligned, my_lamella.fiducial_image)
+    # Save the newly aligned image for the next alignment stage
     my_lamella.fiducial_image = grab_images(microscope, settings, my_lamella)
     grab_images(
         microscope,
