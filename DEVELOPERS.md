@@ -11,7 +11,7 @@ see the [LICENSE](LICENSE) terms for details.
 ## Setup your development environment
 ### Install the pre-requisites
 
-1. Autoscript 4.1.0 server and client from ThermoFisher Scientific FEI.
+1. Autoscript 4.2.2 server and client from ThermoFisher Scientific FEI.
 
 Autoscript is a commercial product for use with ThermoFisher Scientific
 microscopes.
@@ -52,6 +52,15 @@ cd autolamella
 git remote add upstream https://github.com/DeMarcoLab/autolamella.git
 ```
 
+**Switch to the "develop" branch of the repository.**
+
+To switch to the `develop` branch of the repository, type:
+```
+git fetch upstream develop
+git checkout develop
+```
+You can confirm you are on the correct `develop` branch of the autolamella repository by using the command `git branch`.
+
 ### Create your virtual environment
 It is recommended that you use conda virtual environments for development.
 See [Managing Conda Environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html) for more information.
@@ -67,32 +76,77 @@ pip install -r requirements-dev.txt
 
 ### Add the autoscript python packages to your `site-packages`
 
+To add the AutoScript python packages to your new conda environment, follow these three steps:
+
+1. Find the python environment that was created with your AutoScript installation.
+Typically, you can expect the environment is named 'Autoscript', and its installed packages should be found at: 
+`C:\Program Files\Python35\envs\AutoScript\Lib\site-packages\`
+
+***Troubleshooting:** If you're having trouble finding the location AutoScript chose to install its python packages into,*
+*you can open the *default terminal* on your machine (eg: `cmd` for Windows) and type `where python` (Windows) or `which python` (Unix).*
+*The result will be something like `C:\Program Files\Python35\envs\AutoScript\python.exe`.*
+*Navigate to the environment location (in the example here, that's `C:\Program Files\Python35\envs\AutoScript\` *
+*then change directories into `Lib`, and then the `site-packages` directory. This is where the python packages live.*
+
+2. Find the conda environment location you just made called `autolamella-dev`. 
 `...conda/envs/autolamella/Lib/site-packages/`
 
-Type `where python` (Windows) or `which python` (Unix)
-`site-packages` is
+***Troubleshooting:** If you're having trouble finding the conda environment location for `autolamella-dev`*
+*you can open the *Anaconda terminal* on your machine and type `where python` (Windows) or `which python` (Unix).*
+*The result will be something like `C:\Users\yourusername\.conda\envs\autolamella-dev\python.exe`*
+*Navigate to the environment location (in the example here, that's `C:\Users\yourusername\.conda\envs\autolamella-dev\` *
+*then change directories into `Lib`, and then the `site-packages` directory.*
+*This is where you want to add copies of the AutoScript python packages.*
+
+3. Make a copy of the relevant AutoScript python packages into the conda environment.
+You will need to copy:
+
+* autoscript_core
+* autoscript_core-5.4.1.dist-info
+* autoscript_sdb_microscope_client
+* autoscript_sdb_microscope_client_tests
+* autoscript_sdb_microscope_client_tests-4.2.2.dist-info
+* autoscript_sdb_microscope_client-4.2.2.dist-info
+* autoscript_toolkit
+* autoscript_toolkit-4.2.2.dist-info
+* thermoscientific_logging
+* thermoscientific_logging-5.4.1.dist-info
 
 
+### Check the AutoScript python packages work in your environment
+You can check that this has worked by opening the *Anaconda terminal*, then typing:
+
+```
+conda activate autolamella-dev
+python
+```
+
+And then at the python prompt:
+
+```python
+from autoscript_sdb_microscope_client import SdbMicroscopeClient
+microscope = SdbMicroscopeClient()
+```
+
+If there is no `ImportError` raised, then you have been sucessful.
 
 ### Install autolamella as an editable installation
 
 Last, pip install `autolamella` as an editable installation:
 ```
+conda activate autolamella-dev
 pip install -e .
 ```
 
-* autoscript_core
-* autoscript_sdb_microscope_client
-* autoscript_sdb_microscope_client_tests
-* autoscript_toolkit
-* thermoscientific_logging
-
-
 **Troubleshooting:** If you haven't added the autoscript python packages
-properly to your
+properly to your conda environment, you may see this error:
+
 ```python
 ModuleNotFoundError: No module named 'autoscript_sdb_microscope_client'
 ```
+
+If this is the case re-try the previous step again, 
+and check which packages (and versions) are in your conda environment using `conda list`.
 
 ## Make your changes
 1. Activate the development environment
