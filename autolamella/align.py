@@ -4,9 +4,6 @@ import numpy as np
 import scipy.ndimage as ndi
 import skimage.draw
 import skimage.io
-from autoscript_sdb_microscope_client.structures import Point
-from autoscript_core.common import ApplicationServerException
-import autoscript_toolkit.vision as vision_toolkit
 
 __all__ = ["realign"]
 
@@ -26,6 +23,8 @@ def realign(microscope, new_image, reference_image):
     microscope.beams.ion_beam.beam_shift.value
         The current beam shift position (after any realignment)
     """
+    from autoscript_core.common import ApplicationServerException
+
     shift_in_meters = _calculate_beam_shift(new_image, reference_image)
     try:
         microscope.beams.ion_beam.beam_shift.value += shift_in_meters

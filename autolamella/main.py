@@ -4,8 +4,6 @@ import os
 import click
 import yaml
 
-from autoscript_sdb_microscope_client.structures import StagePosition
-
 import autolamella
 
 
@@ -32,6 +30,8 @@ def main(settings):
     settings : dictionary
         Dictionary containing user input parameters.
     """
+    from autoscript_sdb_microscope_client.structures import StagePosition
+
     microscope = autolamella.autoscript.initialize(settings["system"]["ip_address"])
     original_tilt = microscope.specimen.stage.current_position.t
     autolamella.user_input.validate_user_input(microscope, settings)

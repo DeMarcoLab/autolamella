@@ -1,12 +1,6 @@
 import matplotlib
 import matplotlib.pyplot as plt
 
-from autoscript_sdb_microscope_client.structures import (
-    GrabFrameSettings,
-    Rectangle,
-    Point,
-)
-
 from autolamella.autoscript import FibsemPosition
 from autolamella.display import quick_plot, InteractiveRectangle
 
@@ -48,6 +42,11 @@ class Lamella:
         return self.image
 
     def set_sem_image(self, microscope, settings):
+        from autoscript_sdb_microscope_client.structures import (
+            GrabFrameSettings,
+            Rectangle,
+        )
+
         microscope.imaging.set_active_view(1)  # SEM beam view
         camera_settings = GrabFrameSettings(
             reduced_area=Rectangle(0, 0, 1, 1),
@@ -74,6 +73,8 @@ class Lamella:
         coord_pixels,
         fiducial_reduced_area,
     ):
+        from autoscript_sdb_microscope_client.structures import Point
+
         self.fiducial_image = image
         self.fiducial_image_latest = image
         self.fiducial_coord_realspace = coord_realspace

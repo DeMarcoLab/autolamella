@@ -4,15 +4,6 @@ import time
 
 import numpy as np
 
-from autoscript_core.common import ApplicationServerException
-from autoscript_sdb_microscope_client.structures import (
-    GrabFrameSettings,
-    Rectangle,
-    RunAutoCbSettings,
-    Point,
-    StagePosition,
-)
-
 from autolamella.acquire import (
     autocontrast,
     create_camera_settings,
@@ -34,6 +25,9 @@ def upper_milling(
     filename_prefix="",
     demo_mode=False,
 ):
+    from autoscript_core.common import ApplicationServerException
+    from autoscript_sdb_microscope_client.structures import StagePosition
+
     # Setup and realign to fiducial marker
     setup_milling(microscope, settings, stage_settings, my_lamella)
     tilt_in_radians = np.deg2rad(stage_settings["overtilt_degrees"])
@@ -92,6 +86,9 @@ def lower_milling(
     filename_prefix="",
     demo_mode=False,
 ):
+    from autoscript_core.common import ApplicationServerException
+    from autoscript_sdb_microscope_client.structures import StagePosition
+
     # Setup and realign to fiducial marker
     setup_milling(microscope, settings, stage_settings, my_lamella)
     tilt_in_radians = np.deg2rad(stage_settings["overtilt_degrees"])
@@ -226,8 +223,7 @@ def setup_milling(microscope, settings, stage_settings, my_lamella):
 
 
 def run_drift_corrected_milling(
-    microscope, correction_interval, reduced_area=Rectangle(0, 0, 1, 1)
-):
+    microscope, correction_interval, reduced_area=None):
     """
     Parameters
     ----------
@@ -236,8 +232,15 @@ def run_drift_corrected_milling(
     reduced_area : Autoscript Rectangle() object
         Describes the reduced area view in relative coordinates, with the
         origin in the top left corner.
-        Default value Rectangle(0, 0, 1, 1) uses the whole field of view.
+        Default value is None, which will create a Rectangle(0, 0, 1, 1),
+        which means the imaging will use the whole field of view.
     """
+    from autoscript_core.common import ApplicationServerException
+    from autoscript_sdb_microscope_client.structures import (GrabFrameSettings,
+                                                             Rectangle)
+
+    if reduced_area is None:
+        reduced_area = Rectangle(0, 0, 1, 1)
     s = GrabFrameSettings(reduced_area=reduced_area)
     reference_image = microscope.imaging.grab_frame(s)
     # start drift corrected patterning (is a blocking function, not asynchronous)

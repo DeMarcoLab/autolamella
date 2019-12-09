@@ -1,7 +1,3 @@
-from autoscript_sdb_microscope_client import SdbMicroscopeClient
-from autoscript_sdb_microscope_client.structures import Point
-
-
 def initialize(ip_address="localhost"):
     """Initialize autoscript for the FIBSEM microscope.
 
@@ -15,6 +11,8 @@ def initialize(ip_address="localhost"):
     -------
     Autoscript microscope instance
     """
+    from autoscript_sdb_microscope_client import SdbMicroscopeClient
+
     microscope = SdbMicroscopeClient()
     microscope.connect(ip_address)
     microscope = reset_beam_shift(microscope)
@@ -33,6 +31,8 @@ def reset_beam_shift(microscope):
     -------
     Autoscript microscope object.
     """
+    from autoscript_sdb_microscope_client.structures import Point
+
     microscope.beams.electron_beam.beam_shift.value = Point(x=0, y=0)
     microscope.beams.ion_beam.beam_shift.value = Point(x=0, y=0)
     return microscope
