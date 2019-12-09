@@ -5,7 +5,7 @@ platform:
 
 environment:
   matrix:
-    - PYTHON_VERSION: 3.6.7
+    - PYVER: 36
 
 init:
   - "ECHO %PYTHON_VERSION%"
@@ -13,7 +13,7 @@ init:
 install:
   - cmd: set PATH=C:\\Miniconda3;C:\\Miniconda3\\Scripts;%PATH%"
   - cmd: conda config --set always_yes yes --set changeps1 no
-  - cmd: conda create -q -n test-environment python=%PYTHON_VERSION% pip
+  - cmd: conda env create -f .appveyor_support\\environments\\tst_py%PYVER%.yml
   - cmd: activate test-environment
   - cmd: pip install .
 
