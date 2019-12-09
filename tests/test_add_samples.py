@@ -34,6 +34,18 @@ def settings():
     return settings
 
 
+@pytest.fixture
+def reduced_area_settings():
+    yaml_filename = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "..", "protocol_offline.yml"
+    )
+    reduced_area_settings = autolamella.user_input.load_config(yaml_filename)
+    reduced_area_settings["demo_mode"] = True
+    reduced_area_settings["imaging"]["autocontrast"] = True
+    reduced_area_settings["imaging"]["full_field_ib_images"] = False
+    return reduced_area_settings
+
+
 def mock_select_fiducial(*args, **kwargs):
     realspace_center_coordinate = [-2e-6, -2e-6]
     return realspace_center_coordinate
@@ -97,11 +109,11 @@ def test_add_single_sample(microscope, settings, monkeypatch):
 @pytest.mark.parametrize(
     "user_inputs, expected",
     [
-        (StringIO("n"), 0),
-        (StringIO("y\ny\nn\n\n" + "n\n"), 1),
-        (StringIO("y\ny\ny\n\n" + "n\n"), 1),  # re-mill fiducial marker
-        (StringIO("y\ny\ny\n150e-6\n" + "n\n"), 1),  # custom milling depth
-        (StringIO("y\ny\nn\n\n" + "y\ny\nn\n\n" + "n\n"), 2),
+        (StringIO("n"), 0),  # No, do not select a new location for milling
+        (StringIO("y\ny\ny\nn\n\n" + "n\n"), 1),  # regular fiducial marker
+        (StringIO("y\ny\ny\ny\n\n" + "n\n"), 1),  # re-mill fiducial marker
+        (StringIO("y\ny\ny\ny\n150e-6\n" + "n\n"), 1),  # custom milling depth
+        (StringIO("y\ny\ny\nn\n\n" + "y\ny\ny\nn\n\n" + "n\n"), 2), # 2 samples
     ],
 )
 @patch("autolamella.fiducial.fiducial", new=mock_fiducial)
@@ -114,8 +126,29 @@ def test_add_samples(user_inputs, expected, microscope, settings, monkeypatch):
 
 
 @pytest.mark.parametrize(
+    "user_inputs, expected",
+    [
+        (StringIO("n"), 0),  # No, do not select a new location for milling
+        (StringIO("y\ny\ny\nn\n\n" + "n\n"), 1),  # regular fiducial marker
+        (StringIO("y\ny\ny\ny\n\n" + "n\n"), 1),  # re-mill fiducial marker
+        (StringIO("y\ny\ny\ny\n150e-6\n" + "n\n"), 1),  # custom milling depth
+        (StringIO("y\ny\ny\nn\n\n" + "y\ny\ny\nn\n\n" + "n\n"), 2), # 2 samples
+    ],
+)
+@patch("autolamella.fiducial.fiducial", new=mock_fiducial)
+@patch("autolamella.sample.Lamella.set_center", new=mock_set_lamella_center)
+def test_add_samples_reduced_area(user_inputs, expected, microscope, reduced_area_settings, monkeypatch):
+    monkeypatch.setattr("sys.stdin", user_inputs)
+    lamella_list = autolamella.add_samples.add_samples(microscope, reduced_area_settings)
+    assert len(lamella_list) == expected
+    assert all(isinstance(i, autolamella.sample.Lamella) for i in lamella_list)
+
+
+@pytest.mark.parametrize(
     "user_inputs",
-    [(StringIO("y\ny\n" + "n\n")), (StringIO("y\ny\n" + "y\ny\n" + "n\n"))],
+    [
+        (StringIO("y\ny\n" + "n\n")),
+        (StringIO("y\ny\n" + "y\ny\n" + "n\n"))],
 )
 @patch("autolamella.fiducial.select_fiducial_point", new=mock_no_fiducial)
 def test_cancel_fiducial(user_inputs, microscope, settings, monkeypatch):
