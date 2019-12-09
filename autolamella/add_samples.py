@@ -123,44 +123,20 @@ def add_single_sample(microscope, settings):
         microscope.patterning.clear_patterns()
         return
     # Ask user for decision
-    message = "Do you want to mill a fiducial marker here? [y]/n\n"
+    message = "Are you happy with this position?"
     if ask_user(message, default="yes") == True:
-        print("Milling fiducial marker...")
-        if not demo_mode:
-            microscope.beams.ion_beam.beam_current.value = settings["fiducial"][
-                "fiducial_milling_current"
-            ]
-            microscope.imaging.set_active_view(2)  # the ion beam view
-            try:
-                microscope.patterning.run()
-            except ApplicationServerException:
-                logging.error("ApplicationServerException: could not mill!")
-                microscope.patterning.clear_patterns()
-                return  # returns None which gets stripped from sample list
-        if acquire_many_images:
-            full_field_camera_settings = GrabFrameSettings(
-                reduced_area=Rectangle(0, 0, 1, 1),
-                resolution=settings["imaging"]["resolution"],
-                dwell_time=settings["imaging"]["dwell_time"],
-            )
-            microscope.auto_functions.run_auto_cb()
-            reference_image = grab_ion_image(microscope, full_field_camera_settings)
-            my_lamella.reference_image = reference_image
-        camera_settings = GrabFrameSettings(
-            reduced_area=reduced_area_fiducial,
-            resolution=settings["fiducial"]["reduced_area_resolution"],
-            dwell_time=settings["imaging"]["dwell_time"],
-        )
-        cropped_reference_image = grab_ion_image(microscope, camera_settings)
-        message = "Do you want to re-mill the fiducial marker? y/[n]\n"
-        if ask_user(message, default="no") == True:
-            print("Milling fiducial marker again...")
+        message = "Do you want to mill a fiducial marker here? [y]/n\n"
+        if ask_user(message, default="yes") == True:
+            print("Milling fiducial marker...")
             if not demo_mode:
+                microscope.beams.ion_beam.beam_current.value = settings["fiducial"][
+                    "fiducial_milling_current"
+                ]
                 microscope.imaging.set_active_view(2)  # the ion beam view
                 try:
                     microscope.patterning.run()
                 except ApplicationServerException:
-                    logging.error("ApplicationServerException: could not mill")
+                    logging.error("ApplicationServerException: could not mill!")
                     microscope.patterning.clear_patterns()
                     return  # returns None which gets stripped from sample list
             if acquire_many_images:
@@ -172,7 +148,33 @@ def add_single_sample(microscope, settings):
                 microscope.auto_functions.run_auto_cb()
                 reference_image = grab_ion_image(microscope, full_field_camera_settings)
                 my_lamella.reference_image = reference_image
-            microscope.patterning.clear_patterns()
+            camera_settings = GrabFrameSettings(
+                reduced_area=reduced_area_fiducial,
+                resolution=settings["fiducial"]["reduced_area_resolution"],
+                dwell_time=settings["imaging"]["dwell_time"],
+            )
+            cropped_reference_image = grab_ion_image(microscope, camera_settings)
+            message = "Do you want to re-mill the fiducial marker? y/[n]\n"
+            if ask_user(message, default="no") == True:
+                print("Milling fiducial marker again...")
+                if not demo_mode:
+                    microscope.imaging.set_active_view(2)  # the ion beam view
+                    try:
+                        microscope.patterning.run()
+                    except ApplicationServerException:
+                        logging.error("ApplicationServerException: could not mill")
+                        microscope.patterning.clear_patterns()
+                        return  # returns None which gets stripped from sample list
+                if acquire_many_images:
+                    full_field_camera_settings = GrabFrameSettings(
+                        reduced_area=Rectangle(0, 0, 1, 1),
+                        resolution=settings["imaging"]["resolution"],
+                        dwell_time=settings["imaging"]["dwell_time"],
+                    )
+                    microscope.auto_functions.run_auto_cb()
+                    reference_image = grab_ion_image(microscope, full_field_camera_settings)
+                    my_lamella.reference_image = reference_image
+                microscope.patterning.clear_patterns()
     else:
         print("Ok, deleting those milling patterns.")
         microscope.patterning.clear_patterns()

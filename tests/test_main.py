@@ -62,9 +62,12 @@ def mock_set_lamella_center(self, image, settings):
 @pytest.mark.parametrize(
     "user_inputs",
     [
-        (StringIO("y\ny\nn\n\n" + "n\nno\n")),
-        (StringIO("y\ny\nn\n\n" + "y\ny\nn\n\n" + "n\nyes\n")),
-        (StringIO("y\ny\ny\n150e-6\n" + "y\ny\nn\n\n" + "n\nyes\n")),
+        # Add one regular lamella, cancel batch milling job.
+        (StringIO("y\ny\ny\nn\n\n" + "n\nno\n")),
+        # Add two regular lamellae, run batch milling job.
+        (StringIO("y\ny\ny\nn\n\n" + "y\ny\ny\nn\n\n" + "n\nyes\n")),
+        # Add two lamallae (one with custom milling depth), run batch milling.
+        (StringIO("y\ny\ny\nn\n150e-6\n" + "y\ny\ny\nn\n\n" + "n\nyes\n")),
     ],
 )
 @patch("autolamella.fiducial.fiducial", new=mock_fiducial)
@@ -79,9 +82,12 @@ def test_main(user_inputs, settings, tmpdir, monkeypatch):
 @pytest.mark.parametrize(
     "user_inputs",
     [
-        (StringIO("y\ny\nn\n\n" + "n\nno\n")),
-        (StringIO("y\ny\nn\n\n" + "y\ny\nn\n\n" + "n\nyes\n")),
-        (StringIO("y\ny\ny\n150e-6\n" + "y\ny\nn\n\n" + "n\nyes\n")),
+        # Add one regular lamella, cancel batch milling job.
+        (StringIO("y\ny\ny\nn\n\n" + "n\nno\n")),
+        # Add two regular lamellae, run batch milling job.
+        (StringIO("y\ny\ny\nn\n\n" + "y\ny\ny\nn\n\n" + "n\nyes\n")),
+        # Add two lamallae (one with custom milling depth), run batch milling.
+        (StringIO("y\ny\ny\nn\n150e-6\n" + "y\ny\ny\nn\n\n" + "n\nyes\n")),
     ],
 )
 @patch("autolamella.fiducial.fiducial", new=mock_fiducial)
