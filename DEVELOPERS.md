@@ -241,7 +241,7 @@ extensions = ['m2r',
 1. (Re-)build the html documentation
 ```
 cd docs/
-sphinx-apidoc -o source/ ../mypackage
+sphinx-apidoc -o source/ ../autolamella
 make html
 ```
 
