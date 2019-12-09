@@ -1,8 +1,5 @@
 import logging
 
-
-from autoscript_core.common import ApplicationServerException
-
 from autolamella.acquire import grab_ion_image
 import autolamella.autoscript
 from autolamella.user_input import ask_user
