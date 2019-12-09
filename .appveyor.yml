@@ -1,0 +1,22 @@
+build: false
+
+platform:
+  - x64
+
+environment:
+  matrix:
+    - PYTHON_VERSION: 3.6.7
+
+init:
+  - "ECHO %PYTHON_VERSION%"
+
+install:
+  - cmd: set PATH=C:\\Miniconda3;C:\\Miniconda3\\Scripts;%PATH%"
+  - cmd: conda config --set always_yes yes --set changeps1 no
+  - cmd: conda create -q -n test-environment python=%PYTHON_VERSION% pip
+  - cmd: activate test-environment
+  - cmd: pip install -r .appveyor_support\environments\requirements_py%PYVER%.txt
+  - cmd: pip install .
+
+test_script:
+  - pytest
