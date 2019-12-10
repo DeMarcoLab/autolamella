@@ -20,6 +20,8 @@ def image():
 
 
 def test_conversion_types():
+    pytest.importorskip("autoscript_sdb_microscope_client",
+                        reason="Autoscript is not available.")
     image = autolamella.data.adorned_image()
     input_coord = [0, 0]
     assert isinstance(realspace_to_pixel_coordinate(input_coord, image), list)
