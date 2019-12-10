@@ -1,6 +1,6 @@
 # Automatic FIBSEM lamella milling
 
-[https://ci.appveyor.com/api/projects/status/x1drgqi4528q2yg9/branch/master?svg=true](https://ci.appveyor.com/api/projects/status/x1drgqi4528q2yg9/branch/master?svg=true)
+[![Build status](https://ci.appveyor.com/api/projects/status/x1drgqi4528q2yg9/branch/master?svg=true)
 
 `autolamella` is a python package for automated cryo-lamella preparation
 with focused ion beam milling.
