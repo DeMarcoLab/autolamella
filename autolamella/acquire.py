@@ -1,12 +1,6 @@
 import logging
 import os
 
-from autoscript_sdb_microscope_client.structures import (
-    GrabFrameSettings,
-    Rectangle,
-    RunAutoCbSettings,
-)
-
 __all__ = [
     "autocontrast",
     "create_camera_settings",
@@ -28,6 +22,8 @@ def autocontrast(microscope):
     RunAutoCbSettings
         Automatic contrast brightness settings.
     """
+    from autoscript_sdb_microscope_client.structures import RunAutoCbSettings
+
     autocontrast_settings = RunAutoCbSettings(
         method="MaxContrast",
         resolution="768x512",  # low resolution, so as not to damage the sample
@@ -38,7 +34,7 @@ def autocontrast(microscope):
     return autocontrast_settings
 
 
-def create_camera_settings(imaging_settings, reduced_area=Rectangle(0, 0, 1, 1)):
+def create_camera_settings(imaging_settings, reduced_area=None):
     """Camera settings for acquiring images on the microscope.
 
     Parameters
@@ -47,13 +43,19 @@ def create_camera_settings(imaging_settings, reduced_area=Rectangle(0, 0, 1, 1))
         User input as dictionary containing keys "resolution" and "dwell_time".
     reduced_area : Rectangle, optional
         Reduced area view for image acquisition.
-        By default Rectangle(0, 0, 1, 1), which means the whole field of view.
+        By default None, which will create a Rectangle(0, 0, 1, 1),
+        which means the whole field of view will be imaged.
 
     Returns
     -------
     GrabFrameSettings
         Camera acquisition settings
     """
+    from autoscript_sdb_microscope_client.structures import (GrabFrameSettings,
+                                                             Rectangle)
+
+    if reduced_area is None:
+        reduced_area = Rectangle(0, 0, 1, 1)
     camera_settings = GrabFrameSettings(
         resolution=imaging_settings["resolution"],
         dwell_time=imaging_settings["dwell_time"],
@@ -118,6 +120,9 @@ def grab_images(microscope, settings, my_lamella, prefix="", suffix=""):
     AdornedImage
         The reduced area ion beam image (shows just the fiducial marker).
     """
+    from autoscript_sdb_microscope_client.structures import (GrabFrameSettings,
+                                                             Rectangle)
+
     output_dir = settings["save_directory"]
     # Reduced area images (must reset camera settings each time, because different samples have different reduced areas)
     camera_settings = GrabFrameSettings(
@@ -184,6 +189,9 @@ def save_reference_images(settings, my_lamella, n_lamella=None):
 
 def save_final_images(microscope, settings, lamella_number):
     """Aquire and save ion beam & SEM images after complete milling stage."""
+    from autoscript_sdb_microscope_client.structures import (GrabFrameSettings,
+                                                             Rectangle)
+
     output_dir = settings["save_directory"]
     fullfield_cam_settings = GrabFrameSettings(
         reduced_area=Rectangle(0, 0, 1, 1),

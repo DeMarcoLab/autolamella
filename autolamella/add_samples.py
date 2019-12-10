@@ -1,9 +1,5 @@
 import logging
 
-from autoscript_sdb_microscope_client.structures import (GrabFrameSettings,
-                                                         Rectangle)
-from autoscript_core.common import ApplicationServerException
-
 from autolamella.acquire import grab_ion_image
 import autolamella.autoscript
 from autolamella.user_input import ask_user
@@ -55,6 +51,10 @@ def add_single_sample(microscope, settings):
     my_lamella
         A single Lamella() object.
     """
+    from autoscript_core.common import ApplicationServerException
+    from autoscript_sdb_microscope_client.structures import (GrabFrameSettings,
+                                                             Rectangle)
+
     autolamella.autoscript.reset_state(microscope, settings)
     demo_mode = settings["demo_mode"]
     acquire_many_images = settings["imaging"]["full_field_ib_images"]
