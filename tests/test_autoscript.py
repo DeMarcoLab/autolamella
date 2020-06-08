@@ -9,7 +9,7 @@ def test_initialize():
     """Test connecting to the microscope offline with localhost."""
     import autolamella.autoscript
 
-    microscope = autolamella.autoscript.initialize("localhost")
+    microscope = autolamella.autoscript.initialize("localhost")  # noqa: F841
 
 
 @pytest.fixture

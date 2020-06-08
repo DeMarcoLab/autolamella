@@ -6,7 +6,7 @@ autoscript = pytest.importorskip(
     "autoscript_sdb_microscope_client", reason="Autoscript is not available."
 )
 
-from autoscript_sdb_microscope_client.structures import Rectangle
+from autoscript_sdb_microscope_client.structures import Rectangle  # noqa: E402
 
 
 @pytest.fixture

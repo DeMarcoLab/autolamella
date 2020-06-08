@@ -6,9 +6,6 @@ import numpy as np
 
 from autolamella.acquire import (
     autocontrast,
-    create_camera_settings,
-    grab_ion_image,
-    grab_sem_image,
     grab_images,
     save_reference_images,
     save_final_images,
@@ -222,8 +219,8 @@ def setup_milling(microscope, settings, stage_settings, my_lamella):
     return microscope
 
 
-def run_drift_corrected_milling(
-    microscope, correction_interval, reduced_area=None):
+def run_drift_corrected_milling(microscope, correction_interval,
+                                reduced_area=None):
     """
     Parameters
     ----------

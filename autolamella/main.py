@@ -44,7 +44,7 @@ def main(settings):
     )
     lamella_list = autolamella.add_samples.add_samples(microscope, settings)
     message = "Do you want to mill all samples? yes/no\n"
-    if autolamella.user_input.ask_user(message, default=None) == True:
+    if autolamella.user_input.ask_user(message, default=None):
         autolamella.milling.mill_all_stages(
             microscope,
             protocol_stages,
