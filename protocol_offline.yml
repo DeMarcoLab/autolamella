@@ -1,44 +1,44 @@
 # For offline testing (demo mode only)
 demo_mode: true
 system:
-  ip_address: localhost  # IP address to connect to the microscope.
-  application_file_rectangle: 'Si'  # Application file for rectangle milling.
+  ip_address: localhost # IP address to connect to the microscope.
+  application_file_rectangle: 'Si' # Application file for rectangle milling.
   application_file_cleaning_cross_section: 'Si'
-imaging:  # Ion beam imaging parameters
-  horizontal_field_width: 50e-6  # In meters. Horizontal field of view
-  dwell_time: 1e-7  # In seconds. Dwell time of ion beam for imaging.
-  resolution: '1536x1024'  # Must be one of the set resolutions available.
-  autocontrast: false  # whether to automatically run auto contrast adjustment
-  full_field_ib_images: false   # Whether to acquire multiple intermediate full field ion beam images (warning: high dose)
-fiducial:  # Fiducial marker parameters
+imaging: # Ion beam imaging parameters
+  horizontal_field_width: 50e-6 # In meters. Horizontal field of view
+  dwell_time: 1e-7 # In seconds. Dwell time of ion beam for imaging.
+  resolution: '1536x1024' # Must be one of the set resolutions available.
+  autocontrast: false # whether to automatically run auto contrast adjustment
+  full_field_ib_images: false # Whether to acquire multiple intermediate full field ion beam images (warning: high dose)
+fiducial: # Fiducial marker parameters
   reduced_area_resolution: '3072x2048'
-  fiducial_length: 5e-7   # In meters. Fiducial cross stroke length.
-  fiducial_width:  1e-7   # In meters. Fiducial cross stroke width.
-  fiducial_image_size_x: 15e-7  # In meters. Field of view for fiducial in x.
-  fiducial_image_size_y: 15e-7  # In meters. Field of view for fiducial in y.
-  fiducial_milling_depth: 100e-9  # In meters. Milling depth of fiducial.
-  fiducial_milling_current: 3e-10  # In Amperes. Milling current for fiducial marker.
-  min_distance_from_lamella: 1e-7  # In meters. Buffer distance separating lamella from fiducial image.
-lamella:  # Lamella parameters
-  lamella_width:  5e-7  # In meters. Width of lamella.
-  lamella_height: 1e-7  # In meters. Thickness of lamella.
-  total_cut_height: 5e-7  # In meters. Combined milling region above & below.
-  milling_depth: 1e-6  # In meters. Default milling depth.
-  milling_current: 3e-10  # In Amperes. Default milling current.
+  fiducial_length: 5e-7 # In meters. Fiducial cross stroke length.
+  fiducial_width:  1e-7 # In meters. Fiducial cross stroke width.
+  fiducial_image_size_x: 15e-7 # In meters. Field of view for fiducial in x.
+  fiducial_image_size_y: 15e-7 # In meters. Field of view for fiducial in y.
+  fiducial_milling_depth: 100e-9 # In meters. Milling depth of fiducial.
+  fiducial_milling_current: 3e-10 # In Amperes. Milling current for fiducial marker.
+  min_distance_from_lamella: 1e-7 # In meters. Buffer distance separating lamella from fiducial image.
+lamella: # Lamella parameters
+  lamella_width:  5e-7 # In meters. Width of lamella.
+  lamella_height: 1e-7 # In meters. Thickness of lamella.
+  total_cut_height: 5e-7 # In meters. Combined milling region above & below.
+  milling_depth: 1e-6 # In meters. Default milling depth.
+  milling_current: 3e-10 # In Amperes. Default milling current.
   # Protocol stages are milled in the order they appear here.
   # Stages may override the default parmeters above Eg: current, depth, etc.
   protocol_stages:
   # Rough cut, stage 1
-  - percentage_roi_height: 0.5  # Milling size as fraction of total_cut_height.
-    percentage_from_lamella_surface: 0.5  # Fraction from surface of lamella.
-    milling_current: 3e-10  # In Amperes. Overrides the default current.
-    milling_depth: 5e-7  # In meters. Overrides the default miling depth.
+  - percentage_roi_height: 0.5 # Milling size as fraction of total_cut_height.
+    percentage_from_lamella_surface: 0.5 # Fraction from surface of lamella.
+    milling_current: 3e-10 # In Amperes. Overrides the default current.
+    milling_depth: 5e-7 # In meters. Overrides the default miling depth.
   # Regular cut, stage 2
-  - percentage_roi_height: 0.3  # Milling size as fraction of total_cut_height.
-    percentage_from_lamella_surface: 0.2  # Fraction from surface of lamella.
-    milling_current: 3e-10  # In Amperes. Overrides the default current.
+  - percentage_roi_height: 0.3 # Milling size as fraction of total_cut_height.
+    percentage_from_lamella_surface: 0.2 # Fraction from surface of lamella.
+    milling_current: 3e-10 # In Amperes. Overrides the default current.
   # Polishing cut, stage 3
-  - percentage_roi_height: 0.2  # Milling size as fraction of total_cut_height.
-    percentage_from_lamella_surface: 0.  # Fraction from surface of lamella.
-    milling_current: 3e-10  # In Amperes. Overrides the default current.
-    overtilt_degrees: 2  # offset to stage tilt (ignore sample pre-tilt)
+  - percentage_roi_height: 0.2 # Milling size as fraction of total_cut_height.
+    percentage_from_lamella_surface: 0. # Fraction from surface of lamella.
+    milling_current: 3e-10 # In Amperes. Overrides the default current.
+    overtilt_degrees: 2 # offset to stage tilt (ignore sample pre-tilt)

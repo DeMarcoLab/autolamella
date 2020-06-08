@@ -5,8 +5,22 @@
 * FIB/SEM microscope (a commercial product by ThermoFisher FEI)
 * Autoscript software (a commercial product by ThermoFisher FEI)
 
-## Python
+### Python
 Python 3.6 is required.
+The [Anaconda distribution](https://www.anaconda.com/distribution/)
+of python is recommended.
+
+### Setting up your python virtual environment
+It is also highly recommended to use virtual environments for development,
+see [Managing Conda Environments](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
+for more information.
+(Optionally, you could use `virtualenv` if you prefer.)
+
+Create a new virutal environment from the Anaconda Prompt terminal:
+```
+conda create -n autolamella python=3.6 pip
+conda activate autolamella
+```
 
 ### Installing Autoscript
 Autoscript provides an API (application programming interface) for scripting
@@ -26,8 +40,9 @@ The version numbers of the python packages autoscript installs were:
 ## Install `autolamella`
 Download the latest `autolamella` release wheel from https://github.com/DeMarcoLab/autolamella/releases
 
-Pip install the wheel file (`.whl`) into your python environment.
+Pip install the wheel file (`.whl`) into your python virtual environment.
 ```
+conda activate autolamella
 pip install $AUTOLAMELLA_WHEEL_FILENAME.whl
 ```
 
