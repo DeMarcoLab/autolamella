@@ -12,7 +12,7 @@ See [CITATION](CITATION.md) for details.
 
 ## Software license
 This software is released under the terms of the MIT license.
-There is NO WARRAYNTY either express or implied.
+There is NO WARRANTY either express or implied.
 See [LICENSE](LICENSE) for details.
 
 ## Installation
