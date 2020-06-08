@@ -12,7 +12,7 @@ See [CITATION](CITATION.md) for details.
 
 ## Software license
 This software is released under the terms of the MIT license.
-There is NO WARRAYNTY either express or implied.
+There is NO WARRANTY either express or implied.
 See [LICENSE](LICENSE) for details.
 
 ## Installation
@@ -26,8 +26,14 @@ and configure it for use with your FEI microscope
 
 ## Running the program
 1. Create/edit the protocol file with details appropriate for your sample.
-Protocols are YAML files with the format shown by `protocol_example.yml` (see [USER_INPUT.md](USER_INPUT.md) for more details).
-2.  Launch the program from the terminal by typing:
+Protocols are YAML files with the format shown by `protocol_example.yml`
+(see [USER_INPUT.md](USER_INPUT.md) for more details).
+2. Activate the virtual environment where you have installed `autolamella` and
+the dependencies (eg: if you are a conda user, open the Anaconda Prompt and
+use "conda activate my-environment-name" or
+"source activate my-environment-name", substituting the name of your own
+virtual environment.)
+3. Launch the program from the terminal by typing:
 `autolamella path/to/your_protocol.yml`
-3. Follow the user prompts to interactively select new lamella locations,
+4. Follow the user prompts to interactively select new lamella locations,
 before beginning the batch ion milling.
