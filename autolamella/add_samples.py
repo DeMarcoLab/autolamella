@@ -124,9 +124,9 @@ def add_single_sample(microscope, settings):
         return
     # Ask user for decision
     message = "Are you happy with this position? [y]/n\n"
-    if ask_user(message, default="yes") == True:
+    if ask_user(message, default="yes"):
         message = "Do you want to mill a fiducial marker here? [y]/n\n"
-        if ask_user(message, default="yes") == True:
+        if ask_user(message, default="yes"):
             print("Milling fiducial marker...")
             if not demo_mode:
                 microscope.beams.ion_beam.beam_current.value = settings["fiducial"][
@@ -155,7 +155,7 @@ def add_single_sample(microscope, settings):
             )
             cropped_reference_image = grab_ion_image(microscope, camera_settings)
             message = "Do you want to re-mill the fiducial marker? y/[n]\n"
-            if ask_user(message, default="no") == True:
+            if ask_user(message, default="no"):
                 print("Milling fiducial marker again...")
                 if not demo_mode:
                     microscope.imaging.set_active_view(2)  # the ion beam view
