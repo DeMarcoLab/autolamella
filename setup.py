@@ -4,8 +4,8 @@ from autolamella._version import __version__
 
 
 def parse_requirements_file(filename):
-    with open(filename) as fid:
-        requires = [l.strip() for l in fid.readlines() if l]
+    with open(filename) as f:
+        requires = [line.strip() for line in f.readlines() if line]
 
     return requires
 

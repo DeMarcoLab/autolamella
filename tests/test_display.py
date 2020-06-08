@@ -1,5 +1,4 @@
 import pytest
-import matplotlib.pyplot as plt
 
 import autolamella.data
 import autolamella.display

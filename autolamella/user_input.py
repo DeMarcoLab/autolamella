@@ -180,7 +180,7 @@ def _validate_application_files(microscope, application_files):
     """
     available_files = microscope.patterning.list_all_application_files()
     for app_file in application_files:
-        if not app_file in available_files:
+        if app_file not in available_files:
             raise ValueError(
                 "{} not found ".format(app_file)
                 + "in list of available application files!\n"
@@ -209,7 +209,7 @@ def _validate_dwell_time(microscope, dwell_times):
     for dwell in dwell_times:
         if not isinstance(dwell, (int, float)):
             raise ValueError(
-                "Dwell time must be a number!\n".format(dwell)
+                "Dwell time {} must be a number!\n".format(dwell)
                 + "Please choose a value between the limits: \n"
                 "{}".format(dwell_limits)
             )
@@ -252,7 +252,7 @@ def _validate_ion_beam_currents(microscope, ion_beam_currents):
         microscope.beams.ion_beam.beam_current.available_values
     )
     for beam_current in ion_beam_currents:
-        if not beam_current in available_ion_beam_currents:
+        if beam_current not in available_ion_beam_currents:
             raise ValueError(
                 "{} not found ".format(beam_current)
                 + "in list of available ion beam currents!\n"
@@ -325,7 +325,7 @@ def _validate_scanning_resolutions(microscope, scanning_resolutions):
     )
     microscope.beams.ion_beam.beam_current.available_values
     for resolution in scanning_resolutions:
-        if not resolution in available_resolutions:
+        if resolution not in available_resolutions:
             raise ValueError(
                 "{} not found ".format(resolution)
                 + "in list of available scanning resolutions!\n"

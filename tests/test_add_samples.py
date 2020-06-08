@@ -113,7 +113,7 @@ def test_add_single_sample(microscope, settings, monkeypatch):
         (StringIO("y\ny\ny\nn\n\n" + "n\n"), 1),  # regular fiducial marker
         (StringIO("y\ny\ny\ny\n\n" + "n\n"), 1),  # re-mill fiducial marker
         (StringIO("y\ny\ny\ny\n150e-6\n" + "n\n"), 1),  # custom milling depth
-        (StringIO("y\ny\ny\nn\n\n" + "y\ny\ny\nn\n\n" + "n\n"), 2), # 2 samples
+        (StringIO("y\ny\ny\nn\n\n" + "y\ny\ny\nn\n\n" + "n\n"), 2),  # 2 samples
     ],
 )
 @patch("autolamella.fiducial.fiducial", new=mock_fiducial)
@@ -132,7 +132,7 @@ def test_add_samples(user_inputs, expected, microscope, settings, monkeypatch):
         (StringIO("y\ny\ny\nn\n\n" + "n\n"), 1),  # regular fiducial marker
         (StringIO("y\ny\ny\ny\n\n" + "n\n"), 1),  # re-mill fiducial marker
         (StringIO("y\ny\ny\ny\n150e-6\n" + "n\n"), 1),  # custom milling depth
-        (StringIO("y\ny\ny\nn\n\n" + "y\ny\ny\nn\n\n" + "n\n"), 2), # 2 samples
+        (StringIO("y\ny\ny\nn\n\n" + "y\ny\ny\nn\n\n" + "n\n"), 2),  # 2 samples
     ],
 )
 @patch("autolamella.fiducial.fiducial", new=mock_fiducial)
