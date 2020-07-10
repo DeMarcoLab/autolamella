@@ -113,6 +113,7 @@ def validate_user_input(microscope, settings):
         settings["fiducial"]["reduced_area_resolution"],
     ]
     _validate_scanning_rotation(microscope)
+    _validate_stage_coordinate_system(microscope)
     dwell_times = [settings["imaging"]["dwell_time"]]
     _validate_dwell_time(microscope, dwell_times)
     _validate_scanning_resolutions(microscope, scanning_resolutions)
@@ -335,6 +336,17 @@ def _validate_scanning_resolutions(microscope, scanning_resolutions):
 
 
 def _validate_scanning_rotation(microscope):
+    """Check the microscope scan rotation is zero.
+
+    Parameters
+    ----------
+    microscope : Connected Autoscrpt microscope instance.
+
+    Raises
+    ------
+    ValueError
+        Raise an error to warn the user if the scan rotation is not zero.
+    """
     rotation = microscope.beams.ion_beam.scanning.rotation.value
     if rotation is None:
         microscope.beams.ion_beam.scanning.rotation.value = 0
@@ -345,3 +357,33 @@ def _validate_scanning_rotation(microscope):
             "\nPlease change your system settings and try again."
             "\nCurrent rotation value is {}".format(rotation)
         )
+
+
+def _validate_stage_coordinate_system(microscope):
+    """Ensure the stage coordinate system is RAW.
+
+    Parameters
+    ----------
+    microscope : Connected Autoscrpt microscope instance.
+
+    Notes
+    -----
+    The two available stage coordinate systems are:
+    1. CoordinateSystem.RAW
+        Coordinate system based solely on location of stage.
+        This coordinate system is not affected by any adjustments and should
+        bring stage to the exactly same position on a particular microscope.
+    2. CoordinateSystem.SPECIMEN
+        Coordinate system based on location on specimen.
+        This coordinate system is affected by various additional adjustments
+        that make it easier to navigate on a particular specimen. The most
+        important one is link between Z coordinate and working distance.
+        Specimen coordinate system is also used in XTUI stage control panel.
+
+    Users have reported unexpected/unwanted behaviour with the operation of
+    autolamella in cases where the SPECIMEN coordinate system is used
+    (i.e. if the Z-Y link checkbox is ticked in the XT GUI). Avoiding this
+    problem is why this validation check is run.
+    """
+    from autoscript_sdb_microscope_client.enumerations import CoordinateSystem
+    microscope.specimen.stage.set_default_coordinate_system(CoordinateSystem.RAW)
