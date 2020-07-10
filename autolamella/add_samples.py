@@ -123,7 +123,7 @@ def add_single_sample(microscope, settings):
         microscope.patterning.clear_patterns()
         return
     # Ask user for decision
-    message = "Are you happy with this position?"
+    message = "Are you happy with this position? [y]/n\n"
     if ask_user(message, default="yes"):
         message = "Do you want to mill a fiducial marker here? [y]/n\n"
         if ask_user(message, default="yes"):
