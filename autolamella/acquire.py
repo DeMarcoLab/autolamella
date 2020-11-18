@@ -7,6 +7,8 @@ __all__ = [
     "grab_ion_image",
     "grab_sem_image",
     "grab_images",
+    "save_reference_images",
+    "save_final_images",
 ]
 
 
