@@ -58,11 +58,12 @@ def main(settings):
     print("Finished!")
 
 
-def start_logging(settings, log_level=logging.INFO, log_filename="logfile.log"):
+def start_logging(settings, log_level=logging.INFO, log_filename="logfile"):
     """Starts logging, outputs to the terminal and file simultaneously."""
     logging.getLogger(__name__)
     log_directory = settings["save_directory"]
-    full_filename = os.path.join(log_directory, log_filename)
+    timestamp = datetime.now().strftime("_%Y-%m-%d_%H-%M-%S")
+    full_filename = os.path.join(log_directory, log_filename+timestamp+'.log')
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s",
         level=log_level,
