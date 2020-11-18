@@ -7,8 +7,15 @@ with focused ion beam milling.
 
 ## Citation
 If you find this useful, please cite our work.
-There is a bioRxiv preprint available at: https://doi.org/10.1101/797506
-See [CITATION](CITATION.md) for details.
+
+Genevieve Buckley, Gediminas Gervinskas, Cyntia Taveneau, Hariprasad Venugopal, James C. Whisstock, Alex de Marco,
+**Automated cryo-lamella preparation for high-throughput in-situ structural biology**,
+*Journal of Structural Biology*,
+Volume 210, Issue 2,
+2020
+https://doi.org/10.1016/j.jsb.2020.107488.
+
+See [CITATION](CITATION.md) for more details.
 
 ## Software license
 This software is released under the terms of the MIT license.
