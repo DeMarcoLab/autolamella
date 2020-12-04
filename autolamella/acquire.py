@@ -204,12 +204,15 @@ def save_final_images(microscope, settings, lamella_number):
         microscope.imaging.set_active_view(2)  # the ion beam view
         microscope.auto_functions.run_auto_cb()
     if settings["imaging"]["full_field_ib_images"]:
+        original_ion_current = microscope.beams.ion_beam.beam_current.value
+        microscope.beams.ion_beam.beam_current.value = 20e-12  # ion imaging
         image = grab_ion_image(microscope, fullfield_cam_settings)
         filename = os.path.join(
             output_dir, "IB_lamella{}-milling-complete.tif".format(
                 lamella_number + 1)
         )
         image.save(filename)
+        microscope.beams.ion_beam.beam_current.value = original_ion_current
     sem_adorned_image = grab_sem_image(microscope, fullfield_cam_settings)
     sem_fname = "SEM_lamella{}-milling-complete.tif".format(lamella_number + 1)
     sem_filename = os.path.join(output_dir, sem_fname)
