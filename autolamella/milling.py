@@ -315,3 +315,5 @@ def mill_all_stages(
             reset_state(microscope, settings)
             # Return ion beam current to imaging current (20 pico-Amps)
             microscope.beams.ion_beam.beam_current.value = 20e-12
+    # Return ion beam current to imaging current (20 pico-Amps)
+    microscope.beams.ion_beam.beam_current.value = 20e-12
