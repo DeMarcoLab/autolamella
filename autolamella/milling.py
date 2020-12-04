@@ -313,7 +313,5 @@ def mill_all_stages(
             if stage_number + 1 == len(protocol_stages):
                 save_final_images(microscope, settings, lamella_number)
             reset_state(microscope, settings)
-            # Return ion beam current to imaging current (20 pico-Amps)
-            microscope.beams.ion_beam.beam_current.value = 20e-12
     # Return ion beam current to imaging current (20 pico-Amps)
     microscope.beams.ion_beam.beam_current.value = 20e-12
