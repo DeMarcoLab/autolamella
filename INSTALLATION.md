@@ -56,8 +56,8 @@ Typically, you can expect the environment is named 'Autoscript', and its install
 
 ***Troubleshooting:** If you're having trouble finding the conda environment location for `autolamella-dev`*
 *you can open the *Anaconda terminal* on your machine and type `where python` (Windows) or `which python` (Unix).*
-*The result will be something like `C:\Users\yourusername\.conda\envs\autolamella-dev\python.exe`*
-*Navigate to the environment location (in the example here, that's `C:\Users\yourusername\.conda\envs\autolamella-dev\` *
+*The result will be something like `C:\Users\yourusername\.conda\envs\autolamella\python.exe`*
+*Navigate to the environment location (in the example here, that's `C:\Users\yourusername\.conda\envs\autolamella\` *
 *then change directories into `Lib`, and then the `site-packages` directory.*
 *This is where you want to add copies of the AutoScript python packages.*
 
