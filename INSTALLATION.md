@@ -1,14 +1,22 @@
 # Installation Guide
 
 ## Dependencies
-* Python 3.6
+Hardware requirements:
 * FIB/SEM microscope (a commercial product by ThermoFisher FEI)
-* Autoscript software (a commercial product by ThermoFisher FEI)
+
+Software installed onto the **MICROSCOPE PC**:
+* Autoscript *server* software (a commercial product by ThermoFisher FEI)
+
+Software installed onto the **SUPPORT PC**:
+* Autoscript *client* software (a commercial product by ThermoFisher FEI)
+* Python 3.6 (the [Anaconda distribution](https://www.anaconda.com/distribution/)
+of python is recommended)
+* The autolamella python package (downloaded from https://github.com/DeMarcoLab/autolamella/releases)
 
 ### Python
 Python 3.6 is required.
 The [Anaconda distribution](https://www.anaconda.com/distribution/)
-of python is recommended.
+of python is recommended. This should be installed onto the SUPPORT PC.
 
 ### Setting up your python virtual environment
 It is also highly recommended to use virtual environments for development,
@@ -16,7 +24,7 @@ see [Managing Conda Environments](https://docs.conda.io/projects/conda/en/latest
 for more information.
 (Optionally, you could use `virtualenv` if you prefer.)
 
-Create a new virutal environment from the Anaconda Prompt terminal:
+Create a new virutal environment on the SUPPORT PC from the Anaconda Prompt terminal:
 ```
 conda create -n autolamella python=3.6 pip
 conda activate autolamella
@@ -27,6 +35,9 @@ Autoscript provides an API (application programming interface) for scripting
 control of compatible FEI microscope systems.
 This is a commercial product by Thermo Fisher FEI, please visit their website
 at https://fei.com for information on pricing and installation.
+
+The Autoscript *server* software is installed onto the MICROSCOPE PC,
+and the Autoscript *client* software is installed onto the SUPPORT PC.
 
 We use Autoscript version 4.1.0
 
@@ -39,7 +50,7 @@ The version numbers of the python packages Autoscript installs were:
 
 #### Add the autoscript python packages to your `site-packages`
 
-To add the AutoScript python packages to your new conda environment, follow these three steps:
+To add the AutoScript python packages to your new conda environment on the SUPPORT PC, follow these three steps:
 
 1. Find the python environment that was created with your AutoScript installation.
 Typically, you can expect the environment is named 'Autoscript', and its installed packages should be found at: 
@@ -78,7 +89,7 @@ You will need to copy:
 ## Install `autolamella`
 Download the latest `autolamella` release wheel from https://github.com/DeMarcoLab/autolamella/releases
 
-Pip install the wheel file (`.whl`) into your python virtual environment.
+Pip install the wheel file (`.whl`) into your python virtual environment on the SUPPORT PC.
 ```
 conda activate autolamella
 pip install $AUTOLAMELLA_WHEEL_FILENAME.whl
