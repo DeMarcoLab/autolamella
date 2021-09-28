@@ -1,4 +1,4 @@
-# Automatic FIBSEM lamella milling
+# Automatic cryoFIB lamella milling
 
 ![Build status](https://github.com/DeMarcoLab/autolamella/workflows/Python%20package/badge.svg)
 
