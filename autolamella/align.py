@@ -97,15 +97,19 @@ def _simple_register_translation(src_image, target_image, max_shift_mask=None):
     """
     src_freq = np.fft.fftn(src_image)
     target_freq = np.fft.fftn(target_image)
+    print('using bp mask')
+    bp_mask = _bandpass_mask(target_image.data.shape, target_image.data.shape / 3, inner_radius=2, sigma=3)
+    bp_target_freq = bp_mask * target_freq
+
     # Whole-pixel shift - Compute cross-correlation by an IFFT
     shape = src_freq.shape
-    image_product = src_freq * target_freq.conj()
+    image_product = src_freq * bp_target_freq.conj()
     cross_correlation = np.fft.ifftn(image_product)
     # Locate maximum
     maxima = np.unravel_index(
         np.argmax(np.abs(cross_correlation)), cross_correlation.shape
     )
-    midpoints = np.array([float(np.fix(axis_size / 2)) for axis_size in shape])
+    midpoints = np.array([float(np.round(axis_size / 2)) for axis_size in shape])
     shifts = np.array(maxima, dtype=np.float64)
     shifts[shifts > midpoints] -= np.array(shape)[shifts > midpoints]
     shifts = np.flip(shifts, axis=0).astype(np.int)  # x, y order
