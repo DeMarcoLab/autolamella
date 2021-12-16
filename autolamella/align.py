@@ -98,7 +98,7 @@ def _simple_register_translation(src_image, target_image, max_shift_mask=None):
     src_freq = np.fft.fftn(src_image)
     target_freq = np.fft.fftn(target_image)
     print('using bp mask')
-    bp_mask = _bandpass_mask(target_image.data.shape, target_image.data.shape / 3, inner_radius=2, sigma=3)
+    bp_mask = _bandpass_mask(target_image.data.shape, target_image.data.shape[0] / 3, inner_radius=2, sigma=3)
     bp_target_freq = bp_mask * target_freq
 
     # Whole-pixel shift - Compute cross-correlation by an IFFT
