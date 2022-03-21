@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 import autolamella
-from autolamella.milling import _upper_milling_coords, _lower_milling_coords
+from autolamella.milling import _milling_coords
 
 autoscript = pytest.importorskip(
     "autoscript_sdb_microscope_client", reason="Autoscript is not available."
@@ -55,7 +55,7 @@ def test__upper_milling_coords(microscope, settings):
     my_lamella = autolamella.sample.Lamella()
     my_lamella.center_coord_realspace = [0, 0]
     my_lamella.fiducial_coord_realspace = [-5, -5]
-    result = _upper_milling_coords(microscope, stage_settings, my_lamella)
+    result = _milling_coords(microscope, stage_settings, my_lamella, pattern="upper")
     assert result.scan_direction == "TopToBottom"
     assert np.isclose(result.width, stage_settings["lamella_width"])
     assert np.isclose(result.depth, stage_settings["milling_depth"])
@@ -77,7 +77,7 @@ def test__lower_milling_coords(microscope, settings):
     my_lamella = autolamella.sample.Lamella()
     my_lamella.center_coord_realspace = [0, 0]
     my_lamella.fiducial_coord_realspace = [-5, -5]
-    result = _lower_milling_coords(microscope, stage_settings, my_lamella)
+    result = _milling_coords(microscope, stage_settings, my_lamella, pattern="lower")
     assert result.scan_direction == "BottomToTop"
     assert np.isclose(result.width, stage_settings["lamella_width"])
     assert np.isclose(result.depth, stage_settings["milling_depth"])
