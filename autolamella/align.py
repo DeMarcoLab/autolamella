@@ -108,7 +108,7 @@ def _simple_register_translation(src_image, target_image, max_shift_mask=None):
     midpoints = np.array([float(np.fix(axis_size / 2)) for axis_size in shape])
     shifts = np.array(maxima, dtype=np.float64)
     shifts[shifts > midpoints] -= np.array(shape)[shifts > midpoints]
-    shifts = np.flip(shifts, axis=0).astype(np.int)  # x, y order
+    shifts = np.flip(shifts, axis=0).astype(int)  # x, y order
     return shifts
 
 
@@ -157,8 +157,8 @@ def _mask_circular(image_shape, sigma=5.0, *, radius=None):
     if radius is None:
         # leave at least a 5% gap on each edge
         radius = 0.45 * min(image_shape)
-    r, c = np.array(np.array(image_shape) / 2).astype(int)  # center point
-    rr, cc = skimage.draw.circle(r, c, radius=radius, shape=image_shape)
+    center = np.divide(image_shape, 2)
+    rr, cc = skimage.draw.disk(center, radius=radius, shape=image_shape)
     mask = np.zeros(image_shape)
     mask[rr, cc] = 1.0
     mask = ndi.gaussian_filter(mask, sigma=sigma)
@@ -218,12 +218,12 @@ def _bandpass_mask(image_shape, outer_radius, inner_radius=0, sigma=5):
         The bandpass image mask.
     """
     _bandpass_mask = np.zeros(image_shape)
-    r, c = np.array(image_shape) / 2
-    inner_circle_rr, inner_circle_cc = skimage.draw.circle(
-        r, c, inner_radius, shape=image_shape
+    center = np.divide(image_shape, 2)
+    inner_circle_rr, inner_circle_cc = skimage.draw.disk(
+        center, inner_radius, shape=image_shape
     )
-    outer_circle_rr, outer_circle_cc = skimage.draw.circle(
-        r, c, outer_radius, shape=image_shape
+    outer_circle_rr, outer_circle_cc = skimage.draw.disk(
+        center, outer_radius, shape=image_shape
     )
     _bandpass_mask[outer_circle_rr, outer_circle_cc] = 1.0
     _bandpass_mask[inner_circle_rr, inner_circle_cc] = 0.0
