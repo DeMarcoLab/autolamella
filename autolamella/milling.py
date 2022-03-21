@@ -44,7 +44,7 @@ def milling(
             settings,
             my_lamella,
             prefix="IB_" + filename_prefix,
-            suffix="_0{}-unaligned".format(abc),
+            suffix=f"_0{abc}-unaligned",
         )
         realign(microscope, image_unaligned, my_lamella.fiducial_image)
 
@@ -78,7 +78,7 @@ def milling(
         settings,
         my_lamella,  # can remove
         prefix="IB_" + filename_prefix,
-        suffix="_2-after-{}-milling".format(pattern),
+        suffix=f"_2-after-{pattern}-milling",
     )
     return microscope
 
@@ -211,8 +211,7 @@ def mill_single_stage(
         microscope, settings, stage_settings, stage_number, my_lamella, lamella_number
 ):
     """Run ion beam milling for a single milling stage in the protocol."""
-    filename_prefix = "lamella{}_stage{}".format(
-        lamella_number + 1, stage_number + 1)
+    filename_prefix = f"lamella{lamella_number + 1}_stage{stage_number + 1}"
     demo_mode = settings["demo_mode"]
     milling(
         microscope,
@@ -236,13 +235,11 @@ def mill_all_stages(
         os.mkdir(output_dir)
     for stage_number, stage_settings in enumerate(protocol_stages):
         logging.info(
-            "Protocol stage {} of {}".format(
-                stage_number + 1, len(protocol_stages))
+            f"Protocol stage {stage_number + 1} of {len(protocol_stages)}"
         )
         for lamella_number, my_lamella in enumerate(lamella_list):
             logging.info(
-                "Lamella number {} of {}".format(
-                    lamella_number + 1, len(lamella_list))
+                f"Lamella number {lamella_number + 1} of {len(lamella_list)}"
             )
             # save all the reference images you took creating the fiducial
             if stage_number == 0:
