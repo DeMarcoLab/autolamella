@@ -20,7 +20,6 @@ def test_autoscript_image():
     assert result.shape == (884, 1024)
 
 
-@pytest.mark.dependency(depends=["test_initialize"])
 def test_adorned_image():
     pytest.importorskip(
         "autoscript_sdb_microscope_client", reason="Autoscript is not available."
@@ -35,8 +34,15 @@ def test_load_image():
     assert result.shape == (884, 1024)
 
 
-@pytest.mark.dependency(depends=["test_connect_microscope"])
-def test_mock_adorned(microscope):
+def test_mock_adorned():
+    pytest.importorskip(
+        "autoscript_sdb_microscope_client", reason="Autoscript is not available."
+    )
+    import autolamella.autoscript
+    from autoscript_sdb_microscope_client import SdbMicroscopeClient
+
+    microscope = SdbMicroscopeClient()
+    microscope.connect("localhost")
     expected = microscope.imaging.get_image()
     output = autolamella.data.mock_adorned_image()
     assert np.allclose(output.data, expected.data)

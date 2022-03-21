@@ -1,7 +1,10 @@
 import pytest
 
+autoscript = pytest.importorskip(
+    "autoscript_sdb_microscope_client", reason="Autoscript is not available."
+)
 
-@pytest.mark.dependency()
+
 def test_initialize():
     """Test connecting to the microscope offline with localhost."""
     import autolamella.autoscript
@@ -9,7 +12,15 @@ def test_initialize():
     microscope = autolamella.autoscript.initialize("localhost")  # noqa: F841
 
 
-@pytest.mark.dependency(depends=["test_initialize"])
+@pytest.fixture
+def microscope():
+    from autoscript_sdb_microscope_client import SdbMicroscopeClient
+
+    microscope = SdbMicroscopeClient()
+    microscope.connect("localhost")
+    return microscope
+
+
 def test_reset_beam_shift(microscope):
     from autoscript_sdb_microscope_client.structures import Point
     import autolamella.autoscript

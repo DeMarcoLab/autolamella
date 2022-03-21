@@ -1,10 +1,32 @@
 import pytest
-from autoscript_sdb_microscope_client.structures import Rectangle  # noqa: E402
 
 import autolamella.acquire
 
+autoscript = pytest.importorskip(
+    "autoscript_sdb_microscope_client", reason="Autoscript is not available."
+)
 
-@pytest.mark.dependency(depends=["test_initialize"])
+from autoscript_sdb_microscope_client.structures import Rectangle  # noqa: E402
+
+
+@pytest.fixture
+def microscope():
+    from autoscript_sdb_microscope_client import SdbMicroscopeClient
+
+    microscope = SdbMicroscopeClient()
+    microscope.connect("localhost")
+    return microscope
+
+
+@pytest.fixture
+def camera_settings():
+    imaging_settings = {"resolution": "3072x2048", "dwell_time": 1e-6}
+    camera_settings = autolamella.acquire.create_camera_settings(
+        imaging_settings, reduced_area=Rectangle(0, 0, 1, 1)
+    )
+    return camera_settings
+
+
 def test_autocontrast(microscope):
     from autoscript_sdb_microscope_client.structures import RunAutoCbSettings
 
@@ -12,7 +34,6 @@ def test_autocontrast(microscope):
     assert isinstance(result, RunAutoCbSettings)
 
 
-@pytest.mark.dependency(depends=["test_initialize"])
 def test_create_camera_settings(microscope):
     from autoscript_sdb_microscope_client.structures import GrabFrameSettings
 
@@ -23,7 +44,6 @@ def test_create_camera_settings(microscope):
     assert isinstance(result, GrabFrameSettings)
 
 
-@pytest.mark.dependency(depends=["test_initialize"])
 def test_grab_ion_image(microscope, camera_settings):
     from autoscript_sdb_microscope_client.structures import AdornedImage
 
@@ -33,7 +53,6 @@ def test_grab_ion_image(microscope, camera_settings):
     # assert result.metadata.acquisition.beam_type == 'Ion'
 
 
-@pytest.mark.dependency(depends=["test_initialize"])
 def test_grab_sem_image(microscope, camera_settings):
     from autoscript_sdb_microscope_client.structures import AdornedImage
 

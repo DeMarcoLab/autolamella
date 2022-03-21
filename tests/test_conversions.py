@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 import autolamella.data
+from autolamella.data.mocktypes import MockAdornedImage
 from autolamella.conversions import (
     realspace_to_pixel_coordinate,
     pixel_to_realspace_coordinate,
@@ -10,7 +11,6 @@ from autolamella.conversions import (
     pixel_to_relative_coordinate,
     relative_to_pixel_coordinate,
 )
-from autolamella.data.mocktypes import MockAdornedImage
 
 
 @pytest.fixture
@@ -19,7 +19,6 @@ def image():
     return MockAdornedImage(image_array, pixelsize_x=1e-6, pixelsize_y=1e-6)
 
 
-@pytest.mark.dependency(depends=["test_initialize"])
 def test_conversion_types():
     pytest.importorskip("autoscript_sdb_microscope_client",
                         reason="Autoscript is not available.")

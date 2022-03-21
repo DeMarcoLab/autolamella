@@ -7,17 +7,17 @@ lamella:
   lamella_width: 5e-6
   lamella_height: 1e-6
   protocol_stages:
-    # staage 1
-    - percentage_roi_height: 0.5
-      percentage_from_lamella_surface: 0.5
-      milling_current: 3e-10
-      milling_depth: 5e-7
-    # staage 2
-    - percentage_roi_height: 0.3
-      percentage_from_lamella_surface: 0.2
-      milling_current: 3e-10
-    # staage 3
-    - percentage_roi_height: 0.2
-      percentage_from_lamella_surface: 0.
-      milling_current: 3e-10
-      overtilt_degrees: 2
+  # staage 1
+  - percentage_roi_height: 0.5
+    percentage_from_lamella_surface: 0.5
+    milling_current: 3e-10
+    milling_depth: 5e-7
+  # staage 2
+  - percentage_roi_height: 0.3
+    percentage_from_lamella_surface: 0.2
+    milling_current: 3e-10
+  # staage 3
+  - percentage_roi_height: 0.2
+    percentage_from_lamella_surface: 0.
+    milling_current: 3e-10
+    overtilt_degrees: 2
