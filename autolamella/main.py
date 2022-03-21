@@ -1,6 +1,6 @@
-from datetime import datetime
 import logging
 import os
+from datetime import datetime
 
 import click
 import yaml
@@ -31,7 +31,6 @@ def main(settings):
     settings : dictionary
         Dictionary containing user input parameters.
     """
-    from autoscript_sdb_microscope_client.structures import StagePosition
 
     microscope = autolamella.autoscript.initialize(settings["system"]["ip_address"])
     original_tilt = microscope.specimen.stage.current_position.t
@@ -53,9 +52,9 @@ def main(settings):
             settings,
             output_dir=settings["save_directory"],
         )
+        microscope.beams.ion_beam.turn_off()
     else:
         print("Cancelling ion milling.")
-    microscope.specimen.stage.absolute_move(StagePosition(t=original_tilt))
     print("Finished!")
 
 
