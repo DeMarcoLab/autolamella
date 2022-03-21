@@ -47,6 +47,8 @@ def milling(
             suffix=f"_0{abc}-unaligned",
         )
         realign(microscope, image_unaligned, my_lamella.fiducial_image)
+    # Save the refined position to prevent gradual stage-drift
+    my_lamella.fibsem_position.ion_beam.update_beam_shift()
 
     # Save the newly aligned image for the next alignment stage
     my_lamella.fiducial_image = grab_images(
