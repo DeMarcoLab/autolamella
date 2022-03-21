@@ -1,17 +1,16 @@
-import os
 import logging
+import os
 import time
 
 import numpy as np
 
 from autolamella.acquire import (
-    autocontrast,
     grab_images,
     save_reference_images,
     save_final_images,
 )
-from autolamella.autoscript import reset_state
 from autolamella.align import realign
+from autolamella.autoscript import reset_state
 
 
 def upper_milling(
@@ -56,7 +55,7 @@ def upper_milling(
         suffix="_1-aligned",
     )
     # Create and mill patterns
-    _upper_milling_coords(microscope, stage_settings, my_lamella)
+    _milling_coords(microscope, stage_settings, my_lamella, pattern='upper')
     if not demo_mode:
         print("Milling pattern...")
         microscope.imaging.set_active_view(2)  # the ion beam view
@@ -118,7 +117,7 @@ def lower_milling(
         suffix="_4-aligned",
     )
     # Create and mill patterns
-    _lower_milling_coords(microscope, stage_settings, my_lamella)
+    _milling_coords(microscope, stage_settings, my_lamella, pattern='lower')
     if not demo_mode:
         print("Milling pattern...")
         microscope.imaging.set_active_view(2)  # the ion beam view
@@ -137,75 +136,44 @@ def lower_milling(
     return microscope
 
 
-def _upper_milling_coords(microscope, stage_settings, my_lamella):
-    """Create cleaning cross section milling pattern above lamella position."""
+def _milling_coords(microscope, stage_settings, my_lamella, pattern):
+    """Create milling pattern for lamella position."""
+    # Sanity-check pattern parameter
+    if pattern not in ("upper", "lower"):
+        raise ValueError("Invalid pattern type for milling coords generation: should be \"upper\" or \"lower\", not "
+                         + pattern)
     microscope.imaging.set_active_view(2)  # the ion beam view
     lamella_center_x, lamella_center_y = my_lamella.center_coord_realspace
     if my_lamella.custom_milling_depth is not None:
         milling_depth = my_lamella.custom_milling_depth
     else:
         milling_depth = stage_settings["milling_depth"]
-    center_y = (
-        lamella_center_y
-        + (0.5 * stage_settings["lamella_height"])
-        + (
-            stage_settings["total_cut_height"]
-            * stage_settings["percentage_from_lamella_surface"]
-        )
-        + (
-            0.5
-            * stage_settings["total_cut_height"]
-            * stage_settings["percentage_roi_height"]
-        )
-    )
+
     height = float(
-        stage_settings["total_cut_height"] *
-        stage_settings["percentage_roi_height"]
+        stage_settings["total_cut_height"] * stage_settings.get(f"percentage_roi_height_{pattern}",
+                                                                stage_settings["percentage_roi_height"])
     )
-    milling_roi = microscope.patterning.create_cleaning_cross_section(
+    center_offset = (
+            (0.5 * stage_settings["lamella_height"])
+            + (stage_settings["total_cut_height"] * stage_settings["percentage_from_lamella_surface"])
+            + (0.5 * height)
+    )
+    center_y = lamella_center_y + center_offset \
+        if pattern == "upper" \
+        else lamella_center_y - center_offset
+
+    # milling_roi = microscope.patterning.create_cleaning_cross_section(
+    milling_roi = microscope.patterning.create_rectangle(
         lamella_center_x,
         center_y,
-        stage_settings["lamella_width"],
+        stage_settings.get(f'lamella_width_{pattern}', stage_settings["lamella_width"]),
         height,
         milling_depth,
     )
-    milling_roi.scan_direction = "TopToBottom"
-    return milling_roi
-
-
-def _lower_milling_coords(microscope, stage_settings, my_lamella):
-    """Create cleaning cross section milling pattern below lamella position."""
-    microscope.imaging.set_active_view(2)  # the ion beam view
-    lamella_center_x, lamella_center_y = my_lamella.center_coord_realspace
-    if my_lamella.custom_milling_depth is not None:
-        milling_depth = my_lamella.custom_milling_depth
-    else:
-        milling_depth = stage_settings["milling_depth"]
-    center_y = (
-        lamella_center_y
-        - (0.5 * stage_settings["lamella_height"])
-        - (
-            stage_settings["total_cut_height"]
-            * stage_settings["percentage_from_lamella_surface"]
-        )
-        - (
-            0.5
-            * stage_settings["total_cut_height"]
-            * stage_settings["percentage_roi_height"]
-        )
-    )
-    height = float(
-        stage_settings["total_cut_height"] *
-        stage_settings["percentage_roi_height"]
-    )
-    milling_roi = microscope.patterning.create_cleaning_cross_section(
-        lamella_center_x,
-        center_y,
-        stage_settings["lamella_width"],
-        height,
-        milling_depth,
-    )
-    milling_roi.scan_direction = "BottomToTop"
+    if pattern == "upper":
+        milling_roi.scan_direction = "TopToBottom"
+    elif pattern == "lower":
+        milling_roi.scan_direction = "BottomToTop"
     return milling_roi
 
 
