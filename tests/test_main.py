@@ -1,49 +1,9 @@
 from io import StringIO
-import os
 from unittest.mock import patch
 
-import numpy as np
 import pytest
 
-import autolamella
 from autolamella.main import main
-
-autoscript = pytest.importorskip(
-    "autoscript_sdb_microscope_client", reason="Autoscript is not available."
-)
-
-
-@pytest.fixture
-def microscope():
-    from autoscript_sdb_microscope_client import SdbMicroscopeClient
-
-    microscope = SdbMicroscopeClient()
-    microscope.connect("localhost")
-    return microscope
-
-
-@pytest.fixture
-def settings():
-    yaml_filename = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "..", "protocol_offline.yml"
-    )
-    settings = autolamella.user_input.load_config(yaml_filename)
-    settings["demo_mode"] = True
-    settings["imaging"]["autocontrast"] = True
-    settings["imaging"]["full_field_ib_images"] = True
-    return settings
-
-
-@pytest.fixture
-def reduced_area_settings():
-    yaml_filename = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "..", "protocol_offline.yml"
-    )
-    reduced_area_settings = autolamella.user_input.load_config(yaml_filename)
-    reduced_area_settings["demo_mode"] = True
-    reduced_area_settings["imaging"]["autocontrast"] = True
-    reduced_area_settings["imaging"]["full_field_ib_images"] = False
-    return reduced_area_settings
 
 
 def mock_fiducial(*args, **kwargs):
@@ -59,6 +19,7 @@ def mock_set_lamella_center(self, image, settings):
     return lamella_center_coord
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize(
     "user_inputs",
     [
@@ -79,6 +40,7 @@ def test_main(user_inputs, settings, tmpdir, monkeypatch):
     main(settings)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize(
     "user_inputs",
     [

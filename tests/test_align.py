@@ -1,13 +1,13 @@
-import pytest
 import numpy as np
+import pytest
 import scipy.ndimage as ndi
 
+import autolamella.data
 from autolamella.align import (
     _calculate_beam_shift,
     _normalize_image,
     _simple_register_translation,
 )
-import autolamella.data
 from autolamella.data.mocktypes import MockAdornedImage
 
 

@@ -1,5 +1,4 @@
 from io import StringIO
-import os
 from unittest.mock import patch
 
 import pytest
@@ -7,43 +6,6 @@ import pytest
 import autolamella.add_samples
 import autolamella.data
 import autolamella.sample
-
-autoscript = pytest.importorskip(
-    "autoscript_sdb_microscope_client", reason="Autoscript is not available."
-)
-
-
-@pytest.fixture
-def microscope():
-    from autoscript_sdb_microscope_client import SdbMicroscopeClient
-
-    microscope = SdbMicroscopeClient()
-    microscope.connect("localhost")
-    return microscope
-
-
-@pytest.fixture
-def settings():
-    yaml_filename = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "..", "protocol_offline.yml"
-    )
-    settings = autolamella.user_input.load_config(yaml_filename)
-    settings["demo_mode"] = True
-    settings["imaging"]["autocontrast"] = True
-    settings["imaging"]["full_field_ib_images"] = True
-    return settings
-
-
-@pytest.fixture
-def reduced_area_settings():
-    yaml_filename = os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "..", "protocol_offline.yml"
-    )
-    reduced_area_settings = autolamella.user_input.load_config(yaml_filename)
-    reduced_area_settings["demo_mode"] = True
-    reduced_area_settings["imaging"]["autocontrast"] = True
-    reduced_area_settings["imaging"]["full_field_ib_images"] = False
-    return reduced_area_settings
 
 
 def mock_select_fiducial(*args, **kwargs):
@@ -72,6 +34,7 @@ def mock_no_lamella_center(*args, **kwargs):
     return []
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @patch("autolamella.fiducial.select_fiducial_point", new=mock_select_fiducial)
 def test_add_fiducial(microscope, settings):
     image = autolamella.data.adorned_image()
@@ -86,6 +49,7 @@ def test_add_fiducial(microscope, settings):
     assert result[2] == expected_result_2
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @patch("autolamella.sample.Lamella.set_center", new=mock_set_lamella_center)
 def test_set_center(settings):
     expected_lamella_center = [1e-6, 1e-6]
@@ -96,6 +60,7 @@ def test_set_center(settings):
     assert result == expected_lamella_center
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @patch("autolamella.fiducial.fiducial", new=mock_fiducial)
 @patch("autolamella.sample.Lamella.set_center", new=mock_set_lamella_center)
 def test_add_single_sample(microscope, settings, monkeypatch):
@@ -106,6 +71,7 @@ def test_add_single_sample(microscope, settings, monkeypatch):
     assert my_lamella.center_coord_realspace == expected_lamella_center
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize(
     "user_inputs, expected",
     [
@@ -135,6 +101,7 @@ def test_add_samples(user_inputs, expected, microscope, settings, monkeypatch):
         (StringIO("y\ny\ny\nn\n\n" + "y\ny\ny\nn\n\n" + "n\n"), 2),  # 2 samples
     ],
 )
+@pytest.mark.dependency(depends=["test_initialize"])
 @patch("autolamella.fiducial.fiducial", new=mock_fiducial)
 @patch("autolamella.sample.Lamella.set_center", new=mock_set_lamella_center)
 def test_add_samples_reduced_area(user_inputs, expected, microscope, reduced_area_settings, monkeypatch):
@@ -144,6 +111,7 @@ def test_add_samples_reduced_area(user_inputs, expected, microscope, reduced_are
     assert all(isinstance(i, autolamella.sample.Lamella) for i in lamella_list)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize(
     "user_inputs",
     [
@@ -157,6 +125,7 @@ def test_cancel_fiducial(user_inputs, microscope, settings, monkeypatch):
     assert lamella_list == []
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize(
     "user_inputs",
     [

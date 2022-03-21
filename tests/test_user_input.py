@@ -1,16 +1,13 @@
-from io import StringIO
 import os
+from io import StringIO
 
 import numpy as np
 import pytest
 
 from autolamella.user_input import (
     ask_user,
-    choose_directory,
     load_config,
-    protocol_stage_settings,
     validate_user_input,
-    _add_missing_keys,
     _format_dictionary,
     _validate_application_files,
     _validate_dwell_time,
@@ -19,20 +16,6 @@ from autolamella.user_input import (
     _validate_scanning_resolutions,
     _validate_scanning_rotation,
 )
-
-autoscript = pytest.importorskip(
-    "autoscript_sdb_microscope_client", reason="Autoscript is not available."
-)
-
-
-@pytest.fixture
-def microscope():
-    from autoscript_sdb_microscope_client import SdbMicroscopeClient
-
-    microscope = SdbMicroscopeClient()
-    microscope.connect("localhost")
-    microscope.beams.ion_beam.scanning.rotation.value = 0.0
-    return microscope
 
 
 @pytest.fixture
@@ -100,6 +83,7 @@ def test_load_config(expected_user_input):
     assert result == expected_user_input
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 def test_validate_user_input(microscope):
     settings = {
         "system": {
@@ -118,17 +102,20 @@ def test_validate_user_input(microscope):
     validate_user_input(microscope, settings)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 def test__validate_application_files(microscope):
     application_files = ["Si"]
     _validate_application_files(microscope, application_files)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 def test__validate_application_files_invalid(microscope):
     application_files = ["involid", "invalid"]
     with pytest.raises(ValueError):
         _validate_application_files(microscope, application_files)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize(
     "dwell",
     [
@@ -149,6 +136,7 @@ def test__validate_dwell_time(microscope, dwell):
     _validate_dwell_time(microscope, dwell_times)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize(
     "dwell",
     [
@@ -165,17 +153,20 @@ def test__validate_dwell_time_invalid(microscope, dwell):
         _validate_dwell_time(microscope, dwell_times)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 def test__validate_ion_beam_currents(microscope):
     milling_currents = microscope.beams.ion_beam.beam_current.available_values
     _validate_ion_beam_currents(microscope, milling_currents)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 def test__validate_ion_beam_currents_invalid(microscope):
     milling_currents = ["invalid", "invalid"]
     with pytest.raises(ValueError):
         _validate_ion_beam_currents(microscope, milling_currents)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize(
     "hfw",
     [
@@ -196,6 +187,7 @@ def test__validate_horizontal_field_width(microscope, hfw):
     _validate_horizontal_field_width(microscope, horizontal_field_widths)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize(
     "hfw",
     [
@@ -206,40 +198,37 @@ def test__validate_horizontal_field_width(microscope, hfw):
         ("string"),  # string
     ],
 )
+@pytest.mark.dependency(depends=["test_initialize"])
 def test__validate_horizontal_field_width_invalid(microscope, hfw):
     horizontal_field_widths = [hfw]
     with pytest.raises(ValueError):
         _validate_horizontal_field_width(microscope, horizontal_field_widths)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 def test__validate_scanning_resolutions(microscope):
     resolutions = ["1536x1024", "3072x2048"]
     _validate_scanning_resolutions(microscope, resolutions)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 def test__validate_scanning_resolutions_invalid(microscope):
     resolutions = ["invalid", "invalid"]
     with pytest.raises(ValueError):
         _validate_scanning_resolutions(microscope, resolutions)
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize("rotation", [(np.deg2rad(0.0))])
-def test__validate_scanning_rotation(rotation):
-    from autoscript_sdb_microscope_client import SdbMicroscopeClient
-
-    microscope = SdbMicroscopeClient()
-    microscope.connect("localhost")
+def test__validate_scanning_rotation(microscope, rotation):
     microscope.beams.ion_beam.scanning.rotation.value = rotation
     _validate_scanning_rotation(microscope)
     microscope.beams.ion_beam.scanning.rotation.value = 0.0
 
 
+@pytest.mark.dependency(depends=["test_initialize"])
 @pytest.mark.parametrize("invalid_rotation", [(123), (-123)])
-def test__validate_scanning_rotation_invalid(invalid_rotation):
-    from autoscript_sdb_microscope_client import SdbMicroscopeClient
-
-    microscope = SdbMicroscopeClient()
-    microscope.connect("localhost")
+def test__validate_scanning_rotation_invalid(microscope, invalid_rotation):
     microscope.beams.ion_beam.scanning.rotation.value = invalid_rotation
     with pytest.raises(ValueError):
         _validate_scanning_rotation(microscope)
