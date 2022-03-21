@@ -27,7 +27,8 @@ def milling(
 
     # Sanity-check pattern parameter
     if pattern not in ("upper", "lower", "both"):
-        raise ValueError("Invalid pattern type: should be \"upper\", \"lower\" or \"both\", not " + pattern)
+        raise ValueError(f"Invalid pattern type:\n"
+                         f"Should be \"upper\", \"lower\" or \"both\", not \"{pattern}\"")
 
     # Setup and realign to fiducial marker
     setup_milling(microscope, settings, stage_settings, my_lamella)
@@ -89,8 +90,8 @@ def _milling_coords(microscope, stage_settings, my_lamella, pattern):
     """Create milling pattern for lamella position."""
     # Sanity-check pattern parameter
     if pattern not in ("upper", "lower"):
-        raise ValueError("Invalid pattern type for milling coords generation: should be \"upper\" or \"lower\", not "
-                         + pattern)
+        raise ValueError(f"Invalid pattern type for milling coords generation:\n"
+                         f"Should be \"upper\" or \"lower\", not \"{pattern}\"")
     microscope.imaging.set_active_view(2)  # the ion beam view
     lamella_center_x, lamella_center_y = my_lamella.center_coord_realspace
     if my_lamella.custom_milling_depth is not None:
