@@ -61,6 +61,8 @@ def milling(
         _milling_coords(microscope, stage_settings, my_lamella, "upper")
     if pattern == "lower" or pattern == "both":
         _milling_coords(microscope, stage_settings, my_lamella, "lower")
+    # Create microexpansion joints (if applicable)
+    _microexpansion_coords(microscope, stage_settings, my_lamella)
     if not demo_mode:
         microscope.imaging.set_active_view(2)  # the ion beam view
         print("Milling pattern...")
@@ -118,6 +120,44 @@ def _milling_coords(microscope, stage_settings, my_lamella, pattern):
     elif pattern == "lower":
         milling_roi.scan_direction = "BottomToTop"
     return milling_roi
+
+
+def _microexpansion_coords(microscope, stage_settings, my_lamella):
+    """Mill microexpansion joints (TODO: add reference)"""
+
+    if not ("microexpansion_width" in stage_settings
+            and "microexpansion_distance_from_lamella" in stage_settings
+            and "microexpansion_percentage_height" in stage_settings):
+        return None
+
+    microscope.imaging.set_active_view(2)  # the ion beam view
+    lamella_center_x, lamella_center_y = my_lamella.center_coord_realspace
+    if my_lamella.custom_milling_depth is not None:
+        milling_depth = my_lamella.custom_milling_depth
+    else:
+        milling_depth = stage_settings["milling_depth"]
+
+    height = float(
+        (
+                2 * stage_settings["total_cut_height"]
+                * (stage_settings["percentage_roi_height"] + stage_settings["percentage_from_lamella_surface"])
+                + stage_settings["lamella_height"]
+        ) * stage_settings["microexpansion_percentage_height"]
+    )
+    offset_x = (stage_settings["lamella_width"] + stage_settings["microexpansion_width"]) / 2 \
+               + stage_settings["microexpansion_distance_from_lamella"]
+    milling_rois = []
+    for scan_direction, offset_x in (("LeftToRight", -offset_x), ("RightToLeft", offset_x)):
+        milling_roi = microscope.patterning.create_rectangle(
+            lamella_center_x + offset_x,
+            lamella_center_y,
+            stage_settings["microexpansion_width"],
+            height,
+            milling_depth,
+        )
+        milling_roi.scan_direction = scan_direction
+        milling_rois.append(milling_roi)
+    return milling_rois
 
 
 def setup_milling(microscope, settings, stage_settings, my_lamella):
