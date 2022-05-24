@@ -6,4 +6,4 @@ opencv-python
 pillow
 pyyaml
 scipy
-scikit-image
+scikit-image==0.17.2
