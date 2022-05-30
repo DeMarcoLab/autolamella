@@ -39,3 +39,4 @@ lamella: # Lamella parameters
   - percentage_roi_height: 0.3 # Milling size as fraction of total_cut_height.
     percentage_from_lamella_surface: 0. # Fraction from surface of lamella.
     milling_current: 3e-10 # In Amperes. Overrides the default current.
+stress_relief_cut: False
