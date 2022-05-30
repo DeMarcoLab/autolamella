@@ -4,6 +4,9 @@ import time
 
 import numpy as np
 
+from autoscript_sdb_microscope_client import SdbMicroscopeClient
+from autoscript_core.common import ApplicationServerException
+
 from autolamella.acquire import (
     autocontrast,
     grab_images,
@@ -301,6 +304,12 @@ def mill_all_stages(
             # save all the reference images you took creating the fiducial
             if stage_number == 0:
                 save_reference_images(settings, my_lamella, lamella_number)
+
+                # mill stress relief joints
+                if "stress_relief_cut" in settings:
+                    if settings["stress_relief_cut"]:
+                        mill_stress_relief_lines(microscope, settings, stage_settings, my_lamella)
+
             mill_single_stage(
                 microscope,
                 settings,
@@ -315,3 +324,49 @@ def mill_all_stages(
             reset_state(microscope, settings)
     # Return ion beam current to imaging current (20 pico-Amps)
     microscope.beams.ion_beam.beam_current.value = 20e-12
+
+def mill_stress_relief_lines(microscope: SdbMicroscopeClient, settings, stage_settings, my_lamella):
+    """Mill vertical stress relief lines on either side of the lamella
+
+    Parameters
+    ----------
+    microscope : _type_
+        _description_
+    settings : _type_
+        _description_
+    stage_settings : _type_
+        _description_
+    my_lamella: _type_
+        _description_
+    """
+
+    """"
+    |           |
+    |   #####   |
+    |           |
+    """
+    # setup milling
+    setup_milling(microscope, settings, stage_settings, my_lamella)
+
+    # create lines
+    print("Creating stress relief patterns")
+    height = stage_settings["lamella_height"] / 2 + stage_settings["total_cut_height"]
+    width = stage_settings["lamella_width"] * 1.5
+    depth = stage_settings["milling_depth"]
+
+    x0 = -width / 2
+    x1 = width / 2
+    y0 = -height / 2
+    y1 = height / 2
+
+    left_line = microscope.patterning.create_line(x0, y0, x0, y1, depth)
+    right_line = microscope.patterning.create_line(x1, y0, x1, y1, depth)
+
+    # mill patterns
+    print("Milling stress relief pattern...")
+    microscope.imaging.set_active_view(2)  # the ion beam view
+    try:
+        microscope.patterning.run()
+    except ApplicationServerException:
+        logging.error("ApplicationServerException: could not mill!")
+    microscope.patterning.clear_patterns()
