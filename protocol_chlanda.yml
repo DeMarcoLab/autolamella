@@ -1,5 +1,5 @@
 system:
-  ip_address: '192.168.0.1' # IP address to connect to the microscope.
+  ip_address: 10.0.0.1 # IP address to connect to the microscope.
   application_file_rectangle: 'Si' # Application file for rectangle milling.
   application_file_cleaning_cross_section: 'Si'
 imaging: # Ion beam imaging parameters

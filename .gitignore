@@ -61,3 +61,7 @@ nosetests.xml
 
 # Data directories
 notes/
+
+log/*
+*.yml
+!protocol_chlanda.yml
