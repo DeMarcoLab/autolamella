@@ -18,7 +18,7 @@ MAINTAINER = "Genevieve Buckley"
 URL = "https://github.com/DeMarcoLab/autolamella"
 DOWNLOAD_URL = "https://github.com/DeMarcoLab/autolamella"
 VERSION = __version__
-PYTHON_VERSION = (3, 6)
+PYTHON_VERSION = (3, 10)
 INST_DEPENDENCIES = parse_requirements_file("requirements.txt")
 
 if __name__ == "__main__":

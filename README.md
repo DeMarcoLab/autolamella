@@ -25,7 +25,7 @@ See [LICENSE](LICENSE) for details.
 ## Installation
 See [INSTALLATION](INSTALLATION.md) for a more detailed guide.
 
-* Ensure you have Python 3.6 available
+* Ensure you have Python 3.10 available
 * Install Autoscript (a commercial product from FEI)
 and configure it for use with your FEI microscope
 * Download the latest `autolamella` release wheel from https://github.com/DeMarcoLab/autolamella/releases

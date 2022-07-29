@@ -9,12 +9,12 @@ Software installed onto the **MICROSCOPE PC**:
 
 Software installed onto the **SUPPORT PC**:
 * Autoscript *client* software (a commercial product by ThermoFisher FEI)
-* Python 3.6 (the [Anaconda distribution](https://www.anaconda.com/distribution/)
+* Python 3.10 (the [Anaconda distribution](https://www.anaconda.com/distribution/)
 of python is recommended)
 * The autolamella python package (downloaded from https://github.com/DeMarcoLab/autolamella/releases)
 
 ### Python
-Python 3.6 is required.
+Python 3.10 is required.
 The [Anaconda distribution](https://www.anaconda.com/distribution/)
 of python is recommended. This should be installed onto the SUPPORT PC.
 
@@ -26,7 +26,7 @@ for more information.
 
 Create a new virutal environment on the SUPPORT PC from the Anaconda Prompt terminal:
 ```
-conda create -n autolamella python=3.6 pip
+conda create -n autolamella python=3.10 pip
 conda activate autolamella
 ```
 

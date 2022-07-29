@@ -22,7 +22,7 @@ For offline development and testing you will need to install a copy of the
 Autoscript server on the same computer as the Autoscript client,
 which can then be connected to using localhost.
 
-2. Python 3.6
+2. Python 3.10
 (the [Anaconda distribution](https://www.anaconda.com/distribution/)
 is recommended).
 
@@ -68,7 +68,7 @@ See [Managing Conda Environments](https://docs.conda.io/projects/conda/en/latest
 
 Run these commands in your terminal to create a new development environment:
 ```
-conda create -n autolamella-dev python=3.6 pip
+conda create -n autolamella-dev python=3.10 pip
 conda activate autolamella-dev
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
