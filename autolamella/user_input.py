@@ -1,7 +1,7 @@
 import os
+from tkinter import Tk, filedialog
 
 import numpy as np
-from tkinter import Tk, filedialog
 import yaml
 
 
@@ -336,24 +336,24 @@ def _validate_scanning_resolutions(microscope, scanning_resolutions):
 
 
 def _validate_scanning_rotation(microscope):
-    """Check the microscope scan rotation is zero.
+    """Check the microscope scan rotation is zero or 180.
 
     Parameters
     ----------
-    microscope : Connected Autoscrpt microscope instance.
+    microscope : Connected Autoscript microscope instance.
 
     Raises
     ------
     ValueError
-        Raise an error to warn the user if the scan rotation is not zero.
+        Raise an error to warn the user if the scan rotation is not zero or 180.
     """
     rotation = microscope.beams.ion_beam.scanning.rotation.value
     if rotation is None:
         microscope.beams.ion_beam.scanning.rotation.value = 0
         rotation = microscope.beams.ion_beam.scanning.rotation.value
-    if not np.isclose(rotation, 0.0):
+    if not np.isclose(rotation, np.deg2rad([0.0, 180.0])).any():
         raise ValueError(
-            "Ion beam scanning rotation must be 0 degrees."
+            "Ion beam scanning rotation must be 0 or 180 degrees."
             "\nPlease change your system settings and try again."
             "\nCurrent rotation value is {}".format(rotation)
         )

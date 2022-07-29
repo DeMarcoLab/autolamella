@@ -100,6 +100,10 @@ class BeamSettings:
         self.beam.stigmator.value = self.stigmator
         self.beam.working_distance.value = self.working_distance
 
+    def update_beam_shift(self):
+        print(f'Updating stored beam shift from {self.beam_shift} to {self.beam.beam_shift.value}')
+        self.beam_shift = self.beam.beam_shift.value
+
 
 class FibsemPosition:
     def __init__(self, microscope):
