@@ -112,14 +112,22 @@ def _milling_coords(microscope, stage_settings, my_lamella, pattern):
         if pattern == "upper" \
         else lamella_center_y - center_offset
 
-    # milling_roi = microscope.patterning.create_cleaning_cross_section(
-    milling_roi = microscope.patterning.create_rectangle(
-        lamella_center_x,
-        center_y,
-        stage_settings.get(f'lamella_width_{pattern}', stage_settings["lamella_width"]),
-        height,
-        milling_depth,
-    )
+    if stage_settings["use_cleaning_cross_section"]:
+        milling_roi = microscope.patterning.create_cleaning_cross_section(
+            lamella_center_x,
+            center_y,
+            stage_settings.get(f'lamella_width_{pattern}', stage_settings["lamella_width"]),
+            height,
+            milling_depth,
+        )
+    else:
+        milling_roi = microscope.patterning.create_rectangle(
+            lamella_center_x,
+            center_y,
+            stage_settings.get(f'lamella_width_{pattern}', stage_settings["lamella_width"]),
+            height,
+            milling_depth,
+        )
     if pattern == "upper":
         milling_roi.scan_direction = "TopToBottom"
     elif pattern == "lower":
