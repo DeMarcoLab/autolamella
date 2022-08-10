@@ -24,6 +24,7 @@ lamella: # Lamella parameters
   milling_depth: 0.8e-6 # In meters. Default milling depth.
   milling_current: 1000e-12    # In Amperes. Default milling current.
   patterning_mode: 'Parallel'
+  use_cleaning_cross_section: False
   # Protocol stages are milled in the order they appear here.
   # Stages may override the default parmeters above Eg: current, depth, etc.
   protocol_stages:
