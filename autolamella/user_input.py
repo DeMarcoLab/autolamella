@@ -29,9 +29,9 @@ def ask_user(message, default=None):
             yes.append("")
         elif default.lower() == "no":
             no.append("")
-    all_posiible_responses = yes + no
+    all_possible_responses = yes + no
     user_response = "initial non-empty string"
-    while user_response not in all_posiible_responses:
+    while user_response not in all_possible_responses:
         user_response = input(message)
         if user_response.lower() in yes:
             return True

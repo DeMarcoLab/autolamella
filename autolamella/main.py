@@ -43,7 +43,7 @@ def main(settings):
         microscope, settings, application_file=rect_app_file
     )
     lamella_list = autolamella.add_samples.add_samples(microscope, settings)
-    message = "Do you want to mill all samples? yes/no\n"
+    message = "Do you want to mill all samples? y/n\n"
     if autolamella.user_input.ask_user(message, default=None):
         autolamella.milling.mill_all_stages(
             microscope,

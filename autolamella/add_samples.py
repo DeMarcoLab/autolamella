@@ -27,9 +27,9 @@ def add_samples(microscope, settings):
     user_response = ""
     while user_response.lower() not in response_no:
         message = (
-            " \n FIRST MOVE TO THE DESIRED POSITION \n "
-            "Do you want to select a new location for milling? [y]/n\n"
-        )
+        f"""Move to the desired location. {len(samples)} locations selected so far.
+            Do you want to select this location for milling? [y]/n
+        """)
         user_response = input(message)
         if user_response.lower() in default_response_yes:
             my_sample = add_single_sample(microscope, settings)
