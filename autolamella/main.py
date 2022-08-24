@@ -33,6 +33,7 @@ def main(settings):
     """
 
     microscope = autolamella.autoscript.initialize(settings["system"]["ip_address"])
+    # microscope.beams.ion_beam.turn_on()
     original_tilt = microscope.specimen.stage.current_position.t
     autolamella.user_input.validate_user_input(microscope, settings)
     start_logging(settings, log_level=logging.INFO)

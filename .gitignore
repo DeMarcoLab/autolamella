@@ -65,3 +65,4 @@ notes/
 log/*
 *.yml
 !protocol_chlanda.yml
+*/log/*
