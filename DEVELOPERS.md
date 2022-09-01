@@ -52,11 +52,22 @@ cd autolamella
 git remote add upstream https://github.com/DeMarcoLab/autolamella.git
 ```
 
+**Fetch all tags from remote repository**
+
+You need fetch the latest tags regularly.
+A new tag is created for every official release, and this is used to automatically generate the software version number.
+
+You should fetch any new tags like this  whenever you start a new feature or bugfix:
+
+```
+git fetch --all --tags
+```
+
 **Switch to the "develop" branch of the repository.**
 
 To switch to the `develop` branch of the repository, type:
 ```
-git fetch upstream develop
+git fetch upstream develop --tags
 git checkout develop
 ```
 You can confirm you are on the correct `develop` branch of the autolamella repository by using the command `git branch`.
