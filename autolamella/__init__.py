@@ -9,4 +9,4 @@ import autolamella.fiducial
 import autolamella.milling
 import autolamella.user_input  # noqa: F401
 from autolamella.main import main, main_cli  # noqa: F401
-from autolamella._version import __version__  # noqa: F401
+from autolamella._version import __version__, __version_tuple__ # noqa: F401

@@ -263,11 +263,14 @@ All current releases can be found at
 https://github.com/DeMarcoLab/autolamella/releases
 
 For a maintainer to make a new release:
-1. Increment the version number in `_version.py`
 
-2. Go to the 'Releases' tab on GitHub and create a new release tag
+1. Go to the 'Releases' tab on GitHub and create a new release tag. This project uses semantic versioning, see here for details: https://semver.org/
 
-3. Make the binary files to upload:
+2. Write a short description of the new features or bugfixes available in this release.
+
+3. Create and upload the binary files generated with this command:
 ```
 python setup.py sdist bdist_wheel
 ```
+
+4. Click the "Publish release" button. You're done!
