@@ -140,11 +140,12 @@ def _microexpansion_coords(microscope, stage_settings, my_lamella):
 
     References
     ----------
-       
-    .. [1] Wolff G, Limpens RWAL, Zheng S, Snijder EJ, Agard DA, Koster AJ, Bárcena M.
-       "Mind the gap: Micro-expansion joints drastically decrease the bending of 
-       FIB-milled cryo-lamellae." J Struct Biol. 2019 Dec 1;208(3):107389.
-       doi: 10.1016/j.jsb.2019.09.006. Epub 2019 Sep 16. PMID: 31536774.
+
+    .. [1] Wolff G, Limpens RWAL, Zheng S, Snijder EJ, Agard DA, Koster AJ,
+       Bárcena M. "Mind the gap: Micro-expansion joints drastically decrease
+       the bending of FIB-milled cryo-lamellae." J Struct Biol.
+       2019 Dec 1;208(3):107389. doi: 10.1016/j.jsb.2019.09.006.
+       Epub 2019 Sep 16. PMID: 31536774.
        https://doi.org/10.1016/j.jsb.2019.09.006
     """
     if not ("microexpansion_width" in stage_settings
