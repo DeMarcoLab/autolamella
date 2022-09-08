@@ -90,10 +90,12 @@ def fiducial(
     coord = select_fiducial_point(image, fiducial_fov_x, fiducial_fov_y)
     if coord == []:  # user did not select a fiducial location
         return
+    microscope.patterning.set_default_application_file(stage_settings['application_file_rectangle'])
     rectangle_1 = microscope.patterning.create_rectangle(
         coord[0], coord[1], fiducial_width, fiducial_length, fiducial_milling_depth
     )
     rectangle_1.rotation = np.deg2rad(45)
+    microscope.patterning.set_default_application_file(stage_settings['application_file_rectangle'])
     rectangle_2 = microscope.patterning.create_rectangle(
         coord[0], coord[1], fiducial_length, fiducial_width, fiducial_milling_depth
     )

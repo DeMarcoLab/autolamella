@@ -96,7 +96,9 @@ def protocol_stage_settings(settings):
     """
     protocol_stages = []
     for stage_settings in settings["lamella"]["protocol_stages"]:
-        tmp_settings = settings["lamella"].copy()
+        tmp_settings = {}
+        tmp_settings.update(settings['system'].copy())
+        tmp_settings.update(settings["lamella"].copy())
         tmp_settings.update(stage_settings)
         protocol_stages.append(tmp_settings)
     return protocol_stages
