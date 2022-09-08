@@ -170,22 +170,25 @@ def save_reference_images(settings, my_lamella, n_lamella=None):
     filename_original_image = os.path.join(
         output_dir, "IB_lamella{}_original.tif".format(n_lamella)
     )
-    my_lamella.original_image.save(filename_original_image)
+    if my_lamella.original_image is not None:
+        my_lamella.original_image.save(filename_original_image)
     # save reference image (full field with fiducial marker)
     filename_reference_image = os.path.join(
         output_dir, "IB_lamella{}_fiducial_fullfield.tif".format(n_lamella)
     )
-    my_lamella.reference_image.save(filename_reference_image)
+    if my_lamella.reference_image is not None:
+        my_lamella.reference_image.save(filename_reference_image)
     # save fiducial marker image (reduced area image)
     filename_fiducial_image = os.path.join(
         output_dir, "IB_lamella{}_fiducial.tif".format(n_lamella)
     )
-    my_lamella.fiducial_image.save(filename_fiducial_image)
+    if my_lamella.fiducial_image is not None:
+        my_lamella.fiducial_image.save(filename_fiducial_image)
     # save SEM image
     filename_sem_original_image = os.path.join(
         output_dir, "SEM_lamella{}_original.tif".format(n_lamella)
     )
-    if my_lamella.sem_image:
+    if my_lamella.sem_image is not None:
         my_lamella.sem_image.save(filename_sem_original_image)
 
 
