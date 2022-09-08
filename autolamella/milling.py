@@ -117,6 +117,8 @@ def _milling_coords(microscope, stage_settings, my_lamella, pattern):
     elif stage_settings.get("patterning_shape") == "CleaningCrossSection":
         microscope.patterning.set_default_application_file(stage_settings['application_file_cleaning_cross_section'])
         create_pattern_function = microscope.patterning.create_cleaning_cross_section
+    else:
+        logging.error('No patterning_shape specified, must be "Rectangle" or "CleaningCrossSection".')
 
     milling_roi = create_pattern_function(
         lamella_center_x,
