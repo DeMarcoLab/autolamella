@@ -23,8 +23,8 @@ lamella: # Lamella parameters
   total_cut_height: 5e-7 # In meters. Combined milling region above & below.
   milling_depth: 1e-6 # In meters. Default milling depth.
   milling_current: 1e-8 # In Amperes. Default milling current.
-  patterning_mode: 'Serial'
-  use_cleaning_cross_section: True # use a cleaning cross section (true) or rectangle (false) pattern 
+  patterning_shape: 'CleaningCrossSection'  # Options are "CleaningCrossSection" or "Rectangle"
+  patterning_mode: 'Serial'  # Options are "Serial" or "Parallel"
   # Protocol stages are milled in the order they appear here.
   # Stages may override the default parmeters above Eg: current, depth, etc.
   protocol_stages:

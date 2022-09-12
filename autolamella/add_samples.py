@@ -74,6 +74,7 @@ def add_single_sample(microscope, settings):
     original_image = grab_ion_image(microscope, full_field_camera_settings)
     # Select fiducial posiion
     print("Please select where to put a fiducial marker.")
+    microscope.patterning.set_default_application_file(settings['system']['application_file_rectangle'])
     my_fiducial = autolamella.fiducial.fiducial(
         microscope,
         original_image,
