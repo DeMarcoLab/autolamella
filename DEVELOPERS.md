@@ -52,11 +52,22 @@ cd autolamella
 git remote add upstream https://github.com/DeMarcoLab/autolamella.git
 ```
 
+**Fetch all tags from remote repository**
+
+You need fetch the latest tags regularly.
+A new tag is created for every official release, and this is used to automatically generate the software version number.
+
+You should fetch any new tags like this  whenever you start a new feature or bugfix:
+
+```
+git fetch --all --tags
+```
+
 **Switch to the "develop" branch of the repository.**
 
 To switch to the `develop` branch of the repository, type:
 ```
-git fetch upstream develop
+git fetch upstream develop --tags
 git checkout develop
 ```
 You can confirm you are on the correct `develop` branch of the autolamella repository by using the command `git branch`.
@@ -263,11 +274,14 @@ All current releases can be found at
 https://github.com/DeMarcoLab/autolamella/releases
 
 For a maintainer to make a new release:
-1. Increment the version number in `_version.py`
 
-2. Go to the 'Releases' tab on GitHub and create a new release tag
+1. Go to the 'Releases' tab on GitHub and create a new release tag. This project uses semantic versioning, see here for details: https://semver.org/
 
-3. Make the binary files to upload:
+2. Write a short description of the new features or bugfixes available in this release.
+
+3. Create and upload the binary files generated with this command:
 ```
 python setup.py sdist bdist_wheel
 ```
+
+4. Click the "Publish release" button. You're done!
