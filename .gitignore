@@ -1,3 +1,6 @@
+# Version number information created by setuptools-scm
+autolamella/_version.py
+
 # Testing and coverage
 cov.xml
 .pytest_cache/
