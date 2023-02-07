@@ -1,7 +1,7 @@
 import sys
 import re
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
-import autolamellaUI
+import UI
 from fibsem import utils, acquire
 import fibsem.movement as movement
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, FibsemMillingSettings, FibsemPatternSettings ,Point, FibsemPattern
@@ -29,7 +29,7 @@ class MovementType(Enum):
 
 
 
-class MainWindow(QtWidgets.QMainWindow, autolamellaUI.Ui_MainWindow):
+class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def __init__(self,*args,obj=None,**kwargs) -> None:
         super(MainWindow,self).__init__(*args,**kwargs)
         self.setupUi(self)
