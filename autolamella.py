@@ -6,7 +6,7 @@ from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 import UI
 from fibsem import utils, acquire
 import fibsem.movement as movement
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibemRectangle
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle
 import fibsem.conversions as conversions
 from enum import Enum
 import os
@@ -36,6 +36,8 @@ class Lamella:
     path: Path
     fiducial_centre: Point
     fiducial_area: FibsemRectangle
+    lamella_centre: Point
+    lamella_area: FibsemRectangle
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
