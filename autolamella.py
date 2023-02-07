@@ -182,10 +182,29 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 self.CLog8.setText(disp_str)
       
 
+    def move_to_milling_angle(self):
+
+        current_position = self.microscope.get_stage_position()
+
+        stage_position = FibsemStagePosition(
+            x=current_position.x,
+            y=current_position.y,
+            z=current_position.z,
+            r=np.deg2rad(self.microscope_settings.protocol["stage_rotation"]),
+            t=np.deg2rad(self.microscope_settings.protocol["stage_tilt"])
+    )
+
+        self.microscope.move_stage_absolute(stage_position)
+        
+
     def connect_to_microscope(self):
         
+        self.PROTOCOL_PATH = os.path.join(os.path.dirname(__file__), "protocol_autolamella.yaml")
+        self.CONFIG_PATH = os.path.join(os.path.dirname(__file__), "system.yaml")
+
+
         try:
-            self.microscope, self.microscope_settings = utils.setup_session()
+            self.microscope, self.microscope_settings = utils.setup_session(config_path = self.CONFIG_PATH,protocol_path = self.PROTOCOL_PATH)
             self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
             self.image_settings = self.microscope_settings.image
             self.milling_settings = self.microscope_settings.milling
