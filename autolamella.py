@@ -6,7 +6,7 @@ from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 import UI
 from fibsem import utils, acquire
 import fibsem.movement as movement
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState 
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibemRectangle
 import fibsem.conversions as conversions
 from enum import Enum
 import os
@@ -34,7 +34,8 @@ class Lamella:
     state: MicroscopeState
     reference_image: FibsemImage
     path: Path
-    fiducial: Point
+    fiducial_centre: Point
+    fiducial_area: FibsemRectangle
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
@@ -210,12 +211,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def connect_to_microscope(self):
         
         self.PROTOCOL_PATH = os.path.join(os.path.dirname(__file__), "protocol_autolamella.yaml")
-        self.CONFIG_PATH = os.path.join(os.path.dirname(__file__), "system.yaml")
-        print(self.CONFIG_PATH)
-
 
         try:
-            self.microscope, self.microscope_settings = utils.setup_session(config_path = self.CONFIG_PATH, protocol_path = self.PROTOCOL_PATH)
+            self.microscope, self.microscope_settings = utils.setup_session(protocol_path = self.PROTOCOL_PATH)
+            print(self.microscope_settings.protocol)
             self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
             self.image_settings = self.microscope_settings.image
             self.milling_settings = self.microscope_settings.milling
