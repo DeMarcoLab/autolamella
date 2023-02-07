@@ -10,7 +10,7 @@ import numpy as np
 from autoscript_sdb_microscope_client.structures import (AdornedImage,
                                                          StagePosition)
 from fibsem import acquire, alignment, calibration, milling, movement, utils
-from fibsem.structures import BeamType, MicroscopeState, FibsemImage
+from fibsem.structures import BeamType, MicroscopeState, FibsemImage, Point
 
 
 @dataclass
@@ -18,6 +18,7 @@ class Lamella:
     state: MicroscopeState
     reference_image: FibsemImage
     path: Path
+    fiducial: Point
 
 def main():
 
