@@ -1,7 +1,7 @@
 import sys
 import re
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
-from fibsem.ui.qtdesigner_files import autolamellaUI
+import autolamellaUI
 from fibsem import utils, acquire
 import fibsem.movement as movement
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, FibsemMillingSettings, FibsemPatternSettings ,Point, FibsemPattern
@@ -74,33 +74,7 @@ class MainWindow(QtWidgets.QMainWindow, autolamellaUI.Ui_MainWindow):
 
         # Movement controls setup
   
-    def add_line(self):
-        line = FibsemPatternSettings(
-            pattern = FibsemPattern.Line,
-            start_x = self.milling_start_x.value()*constants.MICRO_TO_SI,
-            start_y = self.milling_start_y.value()*constants.MICRO_TO_SI,
-            end_x = self.milling_end_x.value()*constants.MICRO_TO_SI,
-            end_y = self.milling_end_y.value()*constants.MICRO_TO_SI,
-            depth = self.depth_milling.value()*constants.MICRO_TO_SI,
-            rotation = self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
-        )
-        self.pattern_settings.append(line)
-        logging.info("UI | Line pattern added with start point: ({},{}), end point: ({},{}), depth: {} and rotation: {}".format(self.milling_start_x.value(),self.milling_start_y.value(),self.milling_end_x.value(),self.milling_end_y.value(),self.depth_milling.value(),self.rotation_milling.value()))
-
-    def add_rectangle(self):
-        rectangle = FibsemPatternSettings(
-            pattern = FibsemPattern.Rectangle,
-            width = self.width_milling.value()*constants.MICRO_TO_SI,
-            height = self.height_milling.value()*constants.MICRO_TO_SI,
-            depth= self.depth_milling.value()*constants.MICRO_TO_SI,
-            centre_x= self.center_x_milling.value()*constants.MICRO_TO_SI,
-            centre_y= self.center_y_milling.value()*constants.MICRO_TO_SI,
-            rotation = self.rotation_milling.value()*constants.DEGREES_TO_RADIANS,
-        )
-        self.pattern_settings.append(rectangle)
-        logging.info("UI | Rectangle pattern added with width: {}, height: {}, depth: {}, centre: ({},{}), and rotation: {}".format(self.width_milling.value(),self.height_milling.value(),self.depth_milling.value(),self.center_x_milling.value(),self.center_y_milling.value(),self.rotation_milling.value()))
-
-
+   
 ########################### Movement Functionality ##########################################
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
@@ -217,10 +191,6 @@ class MainWindow(QtWidgets.QMainWindow, autolamellaUI.Ui_MainWindow):
             self.milling_settings = self.microscope_settings.milling
             logging.info("Microscope Connected")
             self.RefImage.setEnabled(True)
-            self.ResetImage.setEnabled(True)
-            self.take_image.setEnabled(True)
-            self.move_rel_button.setEnabled(True)
-            self.move_abs_button.setEnabled(True)
             self.microscope_status.setText("Microscope Connected")
             self.microscope_status.setStyleSheet("background-color: green")
 
@@ -229,10 +199,7 @@ class MainWindow(QtWidgets.QMainWindow, autolamellaUI.Ui_MainWindow):
             self.microscope_status.setText("Microscope Disconnected")
             self.microscope_status.setStyleSheet("background-color: red")
             self.RefImage.setEnabled(False)
-            self.ResetImage.setEnabled(False)
-            self.take_image.setEnabled(False)
-            self.move_rel_button.setEnabled(False)
-            self.move_abs_button.setEnabled(False)
+
 
     def disconnect_from_microscope(self):
 

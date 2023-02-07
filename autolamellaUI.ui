@@ -74,7 +74,7 @@
         <x>0</x>
         <y>90</y>
         <width>471</width>
-        <height>111</height>
+        <height>125</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
@@ -95,15 +95,10 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="3">
-        <widget class="QCheckBox" name="check_EB">
-         <property name="font">
-          <font>
-           <pointsize>8</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Electron Beam</string>
+       <item row="1" column="2">
+        <widget class="QSpinBox" name="hfw_box">
+         <property name="maximum">
+          <number>5000</number>
          </property>
         </widget>
        </item>
@@ -117,18 +112,6 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="2">
-        <widget class="QCheckBox" name="check_IB">
-         <property name="font">
-          <font>
-           <pointsize>8</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Ion Beam</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="3">
         <widget class="QLabel" name="label_18">
          <property name="text">
@@ -136,372 +119,10 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="2">
-        <widget class="QSpinBox" name="hfw_box">
-         <property name="maximum">
-          <number>5000</number>
-         </property>
-        </widget>
-       </item>
        <item row="2" column="0" colspan="2">
         <widget class="QPushButton" name="RefImage">
          <property name="text">
-          <string>Take Reference Images</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2" colspan="2">
-        <widget class="QPushButton" name="ResetImage">
-         <property name="text">
-          <string>Reset Images</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="2">
-        <widget class="QPushButton" name="take_image">
-         <property name="text">
-          <string>Take Image</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-     <widget class="QWidget" name="gridLayoutWidget">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>210</y>
-        <width>471</width>
-        <height>202</height>
-       </rect>
-      </property>
-      <layout class="QGridLayout" name="gridLayout">
-       <property name="sizeConstraint">
-        <enum>QLayout::SetNoConstraint</enum>
-       </property>
-       <item row="7" column="2">
-        <widget class="QPushButton" name="move_abs_button">
-         <property name="text">
-          <string>MOVE</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="6">
-        <widget class="QLabel" name="label_40">
-         <property name="text">
-          <string>degrees</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="6">
-        <widget class="QLabel" name="label_42">
-         <property name="text">
-          <string>mm</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLabel" name="label_20">
-         <property name="text">
-          <string>X:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="3">
-        <widget class="QLabel" name="label_37">
-         <property name="text">
-          <string>degrees</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1" colspan="6">
-        <widget class="QLabel" name="label_26">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="layoutDirection">
-          <enum>Qt::LeftToRight</enum>
-         </property>
-         <property name="text">
-          <string>Stage Movement</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="2">
-        <widget class="QDoubleSpinBox" name="zAbs">
-         <property name="decimals">
-          <number>4</number>
-         </property>
-         <property name="minimum">
-          <double>-100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QLabel" name="label_24">
-         <property name="text">
-          <string>Tilt:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QDoubleSpinBox" name="xAbs">
-         <property name="decimals">
-          <number>4</number>
-         </property>
-         <property name="minimum">
-          <double>-100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="2">
-        <widget class="QDoubleSpinBox" name="rAbs">
-         <property name="maximum">
-          <double>360.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLabel" name="label_22">
-         <property name="text">
-          <string>Z:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="6">
-        <widget class="QLabel" name="label_38">
-         <property name="text">
-          <string>degrees</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="4">
-        <widget class="QLabel" name="label_30">
-         <property name="text">
-          <string>dY:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="6">
-        <widget class="QLabel" name="label_39">
-         <property name="text">
-          <string>mm</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="4">
-        <widget class="QLabel" name="label_28">
-         <property name="text">
-          <string>dZ:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="5">
-        <widget class="QPushButton" name="move_rel_button">
-         <property name="text">
-          <string>MOVE</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="3">
-        <widget class="QLabel" name="label_34">
-         <property name="text">
-          <string>mm</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="4">
-        <widget class="QLabel" name="label_31">
-         <property name="text">
-          <string>dR:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="4">
-        <widget class="QLabel" name="label_29">
-         <property name="text">
-          <string>dX:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="3">
-        <widget class="QLabel" name="label_33">
-         <property name="text">
-          <string>mm</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QLabel" name="label_23">
-         <property name="text">
-          <string>Rotation:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="4">
-        <widget class="QLabel" name="label_27">
-         <property name="text">
-          <string>dT:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="5">
-        <widget class="QDoubleSpinBox" name="dRchange">
-         <property name="maximum">
-          <double>360.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="6">
-        <widget class="QLabel" name="label_41">
-         <property name="text">
-          <string>mm</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="4" colspan="3">
-        <widget class="QLabel" name="label_32">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Relative Move</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="3">
-        <widget class="QLabel" name="label_36">
-         <property name="text">
-          <string>degrees</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="5">
-        <widget class="QDoubleSpinBox" name="dXchange">
-         <property name="decimals">
-          <number>4</number>
-         </property>
-         <property name="minimum">
-          <double>-100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="5">
-        <widget class="QDoubleSpinBox" name="dTchange">
-         <property name="maximum">
-          <double>360.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="5">
-        <widget class="QDoubleSpinBox" name="dYchange">
-         <property name="decimals">
-          <number>4</number>
-         </property>
-         <property name="minimum">
-          <double>-100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="3">
-        <widget class="QLabel" name="label_35">
-         <property name="text">
-          <string>mm</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="2">
-        <widget class="QDoubleSpinBox" name="tAbs">
-         <property name="maximum">
-          <double>360.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1" colspan="3">
-        <widget class="QLabel" name="label_25">
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Absolute Position</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <widget class="QDoubleSpinBox" name="yAbs">
-         <property name="decimals">
-          <number>4</number>
-         </property>
-         <property name="minimum">
-          <double>-100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLabel" name="label_21">
-         <property name="text">
-          <string>Y:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="5">
-        <widget class="QDoubleSpinBox" name="dZchange">
-         <property name="decimals">
-          <number>4</number>
-         </property>
-         <property name="minimum">
-          <double>-100.000000000000000</double>
+          <string>Take Images</string>
          </property>
         </widget>
        </item>
@@ -627,7 +248,7 @@
      <x>0</x>
      <y>0</y>
      <width>950</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAutoLamella">
