@@ -57,12 +57,6 @@ class MainWindow(QtWidgets.QMainWindow, autolamellaUI.Ui_MainWindow):
         
         self.reset_ui_settings()
 
-        
-
-        if self.microscope is not None:
-           self.update_position_ui()
-
-
         ### NAPARI settings and initialisation
 
         
@@ -77,14 +71,8 @@ class MainWindow(QtWidgets.QMainWindow, autolamellaUI.Ui_MainWindow):
         self.ConnectButton.clicked.connect(self.connect_to_microscope)
         self.DisconnectButton.clicked.connect(self.disconnect_from_microscope)
         self.RefImage.clicked.connect(self.take_reference_images)
-        self.ResetImage.clicked.connect(self.reset_images)
-        self.take_image.clicked.connect(self.take_image_beams)
 
         # Movement controls setup
-
-        self.move_rel_button.clicked.connect(self.move_microscope_rel)
-        self.move_abs_button.clicked.connect(self.move_microscope_abs)
-
   
     def add_line(self):
         line = FibsemPatternSettings(
@@ -112,132 +100,8 @@ class MainWindow(QtWidgets.QMainWindow, autolamellaUI.Ui_MainWindow):
         self.pattern_settings.append(rectangle)
         logging.info("UI | Rectangle pattern added with width: {}, height: {}, depth: {}, centre: ({},{}), and rotation: {}".format(self.width_milling.value(),self.height_milling.value(),self.depth_milling.value(),self.center_x_milling.value(),self.center_y_milling.value(),self.rotation_milling.value()))
 
-    def save_image_beams(self):
-        if self.image_label.text() != "":
-            self.image_settings.label = self.image_label.text()
-
-        if self.check_EB.isChecked():
-            self.save_EB_Image()
-        if self.check_IB.isChecked():
-            self.save_IB_Image()
-
-    def take_image_beams(self):
-        self.image_settings.label = utils.current_timestamp()
-        if self.check_EB.isChecked():
-            self.click_EB_Image()
-        if self.check_IB.isChecked():
-            self.click_IB_Image()
-
-    def milling_protocol(self):
-        from fibsem.FibsemMilling import milling_protocol
-
-        mill_settings = FibsemMillingSettings(
-            
-            milling_current= self.milling_current.value()*constants.NANO_TO_SI,
-            rate= self.rate_milling.value(),
-            dwell_time= self.dwell_time_us.value()*constants.MICRO_TO_SI,
-            spot_size= self.spot_size_um.value()*constants.MICRO_TO_SI,
-        )
-        
-        
-
-        milling_protocol(microscope = self.microscope, 
-            image_settings = self.image_settings, 
-            mill_settings = mill_settings, 
-            application_file="autolamella", 
-            patterning_mode="Serial", 
-            pattern_settings= self.pattern_settings)
 
 ########################### Movement Functionality ##########################################
-
-    def read_abs_positions_meters(self):
-        """Reads the current position of the microscope stage
-        """
-        if self.microscope_settings.system.manufacturer == "Thermo":
-            position = FibsemStagePosition(
-            x = self.xAbs.value()*constants.MILLIMETRE_TO_METRE,
-            y = self.yAbs.value()*constants.MILLIMETRE_TO_METRE,
-            z = self.zAbs.value()*constants.MILLIMETRE_TO_METRE,
-            
-            t = self.tAbs.value()*constants.DEGREES_TO_RADIANS,
-            r = self.rAbs.value()*constants.DEGREES_TO_RADIANS, 
-            coordinate_system="raw" )
-        
-
-
-
-        else:
-            position = FibsemStagePosition(
-                x = self.xAbs.value()*constants.MILLIMETRE_TO_METRE,
-                y = self.yAbs.value()*constants.MILLIMETRE_TO_METRE,
-                z = self.zAbs.value()*constants.MILLIMETRE_TO_METRE,
-                
-                t = self.tAbs.value()*constants.DEGREES_TO_RADIANS,
-                r = self.rAbs.value()*constants.DEGREES_TO_RADIANS, 
-                coordinate_system="raw" )
-        return position
-
-
-    def read_relative_move_meters(self):
-        """Reads the current position of the microscope stage
-        """
-        position = FibsemStagePosition(
-        x = self.dXchange.value()*constants.MILLIMETRE_TO_METRE,
-        y = self.dYchange.value()*constants.MILLIMETRE_TO_METRE,
-        z = self.dZchange.value()*constants.MILLIMETRE_TO_METRE,
-        t = self.dTchange.value()*constants.DEGREES_TO_RADIANS,
-        r = self.dRchange.value()*constants.DEGREES_TO_RADIANS, 
-        coordinate_system="raw" )
-        
-        return position
-
-
-    def move_microscope_abs(self):
-        """Moves microscope stage in absolute coordinates
-        """
-              
-        new_position = self.read_abs_positions_meters()
-
-        self.microscope.move_stage_absolute(new_position)
-
-        logging.info("Moving Stage in Absolute Coordinates")
-        logging.info(f"Moved to x:{(new_position.x*constants.METRE_TO_MILLIMETRE):.3f} mm y:{(new_position.y*constants.METRE_TO_MILLIMETRE):.3f} mm z:{(new_position.z*constants.METRE_TO_MILLIMETRE):.3f} mm r:{new_position.r*constants.RADIANS_TO_DEGREES} deg t:{new_position.t*constants.RADIANS_TO_DEGREES} deg")
-        self.update_position_ui()
-
-
-    def move_microscope_rel(self):
-        """Moves the microscope stage relative to the absolute position
-        """
-
-
-
-        logging.info("Moving Stage in Relative Coordinates")
-
-        move = self.read_relative_move_meters()
-        self.microscope.move_stage_relative(
-            move
-        )
-        logging.info(f"Moved by dx:{self.dXchange.value():.3f} mm dy:{self.dYchange.value():.3f} mm dz:{self.dZchange.value():.3f} mm dr:{self.dRchange.value()} degrees dt:{self.dTchange.value()} degrees")
-
-
-
-        # Get Stage Position and Set UI Display
-        self.update_position_ui()
-
-    def update_position_ui(self):
-        position = self.microscope.get_stage_position()
-
-        self.xAbs.setValue(position.x*constants.METRE_TO_MILLIMETRE)
-        self.yAbs.setValue(position.y*constants.METRE_TO_MILLIMETRE)
-        self.zAbs.setValue(position.z*constants.METRE_TO_MILLIMETRE)
-        self.tAbs.setValue(position.t*constants.RADIANS_TO_DEGREES)
-        self.rAbs.setValue(position.r*constants.RADIANS_TO_DEGREES)
-
-        self.dXchange.setValue(0)
-        self.dYchange.setValue(0)
-        self.dZchange.setValue(0)
-        self.dTchange.setValue(0)
-        self.dRchange.setValue(0)    
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
 
@@ -304,74 +168,13 @@ class MainWindow(QtWidgets.QMainWindow, autolamellaUI.Ui_MainWindow):
 
         self.take_reference_images()
 
-
-    def autosave_toggle(self):
-        """Toggles on Autosave which saves image everytime an image is acquired
-        """
-        autosave = self.autosave_enable.isChecked()
-        self.image_settings.save = autosave
-        logging.info(f"UI | Autosave Enabled: {autosave}  ")
-
-        
-
-    def save_filepath(self):
-        """Opens file explorer to choose location to save image files
-        """
-        
-        tkinter.Tk().withdraw()
-        folder_path = filedialog.askdirectory()
-        self.savepath_text.setText(folder_path)
-        self.image_settings.save_path = folder_path
-        
     ################# UI Display helper functions  ###########################################
 
     def hfw_box_change(self):
         ### field width in microns in UI!!!!!!!!
         self.image_settings.hfw = self.hfw_box.value() / 1.0e6
 
-
-    def resolution_change(self):
-
-        new_resolution = (self.res_width.value(),self.res_height.value())
-
-        self.image_settings.resolution = new_resolution
-
-
-    # def res_width_change(self):
-
-    #     res = self.image_settings.resolution
-
-    #     res[0] = self.res_width.value()
-
-    #     self.image_settings.resolution = 
-
-    # def res_height_change(self):
-
-    #     resh = self.image_settings.resolution.split("x")
-
-    #     resh[1] = str(self.res_height.value())
-
-    #     self.image_settings.resolution = "x".join(resh)
-
-    def image_dwell_time_change(self):
-        ### dwell time in microseconds!!!!! ease of use for UI!!!!
-        self.image_settings.dwell_time = self.dwell_time_setting.value()*constants.MICRO_TO_SI
-
-
-
-    def autocontrast_check(self):
-        
-        autocontrast_enabled = self.autocontrast_enable.isChecked()
-        self.image_settings.autocontrast = autocontrast_enabled
-        logging.info(f"UI | Autocontrast Enabled: {autocontrast_enabled}")
-        
-    
-    def gamma_check(self):
-        
-        gamma = self.gamma_enabled.isChecked()
-        self.image_settings.gamma_enabled = gamma
-        logging.info(f"UI | Gamma Enabled: {gamma}")
-            
+           
 
     ##################################################################
 
@@ -466,13 +269,7 @@ class MainWindow(QtWidgets.QMainWindow, autolamellaUI.Ui_MainWindow):
         viewer.layers.clear()
         self.ib_layer = viewer.add_image(self.FIB_IB.data, name="IB Image")
         self.eb_layer = viewer.add_image(self.FIB_EB.data, name="EB Image")
-        
-
-        # if self.FIB_IB.data.shape[1] != self.res_height.value() or self.FIB_IB.data.shape[0] != self.res_width.value():
-        #     logging.info("IB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
-        # if self.FIB_EB.data.shape[1] != self.res_height.value() or self.FIB_EB.data.shape[0] != self.res_width.value():
-        #     logging.info("EB | Actual Image resolution: " + str(self.FIB_IB.data.shape[1]) + "x" + str(self.FIB_IB.data.shape[0]))
-
+      
         viewer.camera.zoom = 0.4
 
         self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
@@ -483,71 +280,9 @@ class MainWindow(QtWidgets.QMainWindow, autolamellaUI.Ui_MainWindow):
         self.reset_ui_settings()
 
 
-
-    def click_EB_Image(self):
-
-
-        tmp_beam_type = self.image_settings.beam_type
-        self.image_settings.beam_type = BeamType.ELECTRON
-        eb_image = acquire.new_image(self.microscope, self.image_settings)
-
-        self.FIB_EB = eb_image
-
-        self.update_displays()
-
-        logging.info("EB Image Taken!")
-        
-    
-    def click_IB_Image(self):
-
-        tmp_beam_type = self.image_settings.beam_type
-        self.image_settings.beam_type = BeamType.ION
-        ib_image = acquire.new_image(self.microscope, self.image_settings)
-        self.FIB_IB = ib_image
-
-        
-        self.update_displays()
-        logging.info("IB Image Taken!")
-
-    def save_EB_Image(self):
-        
-        save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_eb")
-        self.FIB_EB.save(save_path=save_path)
-
-        logging.info(f"EB Image Saved to {save_path}.tif!")
-        self.image_label.clear()
-
-    def save_IB_Image(self):
-        
-        save_path = os.path.join(self.image_settings.save_path, self.image_settings.label + "_ib")
-        self.FIB_IB.save(save_path)
-
-        logging.info(f"IB Image Saved to {save_path}.tif!")
-
-    def reset_images(self):
-
-        viewer.layers['EB Image'].data = np.zeros((1,1))
-        viewer.layers['IB Image'].data = np.zeros((1,1))
-        self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
-        self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
-
-    def reset_image_and_gammaSettings(self):
-
-        settings = utils.load_settings_from_config()
-        self.image_settings = settings.image
-        
-        self.reset_ui_settings()
-        
-        logging.info("UI | Image settings returned to default values")
-
     def reset_ui_settings(self):
 
         self.hfw_box.setValue(int(self.image_settings.hfw*constants.SI_TO_MICRO))
-
-        res_ful = self.image_settings.resolution
-
-        # self.scan_direction.setCurrentText(self.milling_settings.scan_direction)
-
 
 
 if __name__ == "__main__":    
