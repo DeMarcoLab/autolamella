@@ -87,6 +87,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.DisconnectButton.clicked.connect(self.disconnect_from_microscope)
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
+        self.hfw_box.valueChanged.connect(self.hfw_box_change)
 
         # Movement controls setup
   
@@ -215,7 +216,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def hfw_box_change(self):
         ### field width in microns in UI!!!!!!!!
-        self.image_settings.hfw = self.hfw_box.value() / constants.MICRO_TO_SI
+        self.image_settings.hfw = self.hfw_box.value()*  constants.MICRO_TO_SI
         self.draw_patterns(hfw=self.image_settings.hfw)
            
 
