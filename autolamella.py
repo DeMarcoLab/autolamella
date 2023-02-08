@@ -83,7 +83,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             milling_depth = protocol["milling_depth"]
 
             centre_upper_y = 0 + (lamella_height / 2 + upper_trench_height / 2 + offset)
-            centre_lower_y = 0 + (lamella_height / 2 + trench_height / 2 + offset)
+            centre_lower_y = 0 - (lamella_height / 2 + trench_height / 2 + offset)
 
             stage.append(FibsemPatternSettings(
                 width=lamella_width,
