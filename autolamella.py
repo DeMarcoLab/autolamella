@@ -103,12 +103,27 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             self.patterns_protocol.append(stage)
         
+        # Fiducial
+        stage = []
+        protocol = self.microscope_settings.protocol["fiducial"]
+        stage.append(FibsemPatternSettings(
+            width=protocol["width"],
+            height=protocol["length"],
+            depth=protocol["depth"],
+            rotation=np.deg2rad(45),
+        ))
+        stage.append(FibsemPatternSettings(
+            width=protocol["width"],
+            height=protocol["length"],
+            depth=protocol["depth"],
+            rotation=np.deg2rad(135),
+        ))
+        self.patterns_protocol.append(stage)
 
-        
         ### NAPARI settings and initialisation
 
     
-        viewer.grid.enabled = True
+        viewer.grid.enabled = False
 
 
     def setup_connections(self):
