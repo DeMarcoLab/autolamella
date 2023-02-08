@@ -7,6 +7,7 @@ import UI
 from fibsem import utils, acquire
 import fibsem.movement as movement
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle, FibsemPatternSettings
+from fibsem.ui.utils import _draw_patterns_in_napari
 import fibsem.conversions as conversions
 from enum import Enum
 import os
@@ -71,7 +72,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.update_displays()
 
         # Initialise the Lamella and Fiducial Settings
-        patterns_protocol = []
+        self.patterns_protocol = []
         for i in len(self.microscope_settings.protocol["lamella"]["protocol_stages"]):
             stage = []
             protocol = self.microscope_settings.protocol["lamella"]["protocol_stages"][i]
@@ -101,9 +102,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 centre_y=centre_upper_y,
             ))
 
-            patterns_protocol.append(stage)
+            self.patterns_protocol.append(stage)
         
-        
+
         
         ### NAPARI settings and initialisation
 
@@ -311,7 +312,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         viewer.window.qt_viewer.dockLayerList.hide()
 
         if self.show_lamella.IsChecked():
-            pass
+            _draw_patterns_in_napari(viewer, self.FIB_IB, self.FIB_EB, self.patterns_protocol)
 
         self.reset_ui_settings()
 
