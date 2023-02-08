@@ -88,6 +88,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
+        self.save_path_button.clicked.connect(self.save_filepath)
+
 
         # Movement controls setup
   
@@ -341,6 +343,14 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         #self.reset_ui_settings()
         viewer.layers.selection.active = self.eb_layer
 
+    def save_filepath(self):
+        """Opens file explorer to choose location to save image files
+        """
+        
+        tkinter.Tk().withdraw()
+        folder_path = filedialog.askdirectory()
+        self.label_5.setText(folder_path)
+        self.save_path = folder_path
 
     def reset_ui_settings(self):
 
