@@ -106,17 +106,20 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Fiducial
         stage = []
         protocol = self.microscope_settings.protocol["fiducial"]
+        pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
         stage.append(FibsemPatternSettings(
             width=protocol["width"],
             height=protocol["length"],
             depth=protocol["depth"],
             rotation=np.deg2rad(45),
+            centre_x= -((self.image_settings.resolution[0]/4) * pixelsize) 
         ))
         stage.append(FibsemPatternSettings(
             width=protocol["width"],
             height=protocol["length"],
             depth=protocol["depth"],
             rotation=np.deg2rad(135),
+            centre_x= -((self.image_settings.resolution[0]/4) * pixelsize)
         ))
         self.patterns_protocol.append(stage)
 
