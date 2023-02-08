@@ -96,6 +96,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
         self.add_lamella_button.clicked.connect(self.add_lamella)
         self.save_path_button.clicked.connect(self.save_filepath)
+        self.run_button.clicked.connect(self.run_autolamella)
 
 
         # Movement controls setup
@@ -217,7 +218,31 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 logging.error(f"Unable to draw/mill the fiducial: {e}")
         else:
             return
+    
+    def run_autolamella(self):
+        
+        for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]):
+            for lamella in enumerate(self.experiment.positions):
 
+                self.microscope.move_stage_absolute(lamella.state.stage_position)
+                logging.info("Moving to lamella position")
+                mill_settings = FibsemMillingSettings(
+                    milling_current=protocol["milling_current"]
+                ) 
+
+                try:
+
+                    milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
+                    milling.draw_trench(microscope = self.microscope, protocol = protocol, point = Point(0.0,0.0))
+                    milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
+                    milling.finish_milling(self.microscope)
+
+                    self.microscope_settings.image.save_path = lamella.path
+                    self.microscope_settings.image.label = f"ref_mill_stage_{i}"
+                    lamella.reference_image = acquire.new_image(self.microscope, self.microscope_settings.image)
+                except Exception as e:
+                    logging.error(f"Unable to draw/mill the lamella: {e}")
+        
    
 ########################### Movement Functionality ##########################################
 

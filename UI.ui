@@ -180,7 +180,7 @@
         </widget>
        </item>
        <item row="5" column="0">
-        <widget class="QPushButton" name="pushButton_3">
+        <widget class="QPushButton" name="run_button">
          <property name="text">
           <string>Run Milling</string>
          </property>
