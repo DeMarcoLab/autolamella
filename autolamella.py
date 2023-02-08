@@ -2,12 +2,12 @@ import sys
 import re
 from pathlib import Path
 from dataclasses import dataclass
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 import UI
 from fibsem import utils, acquire
 import fibsem.movement as movement
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle, FibsemPatternSettings
-from fibsem.ui.utils import _draw_patterns_in_napari
+import fibsem.milling as milling
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle, FibsemPatternSettings, FibsemMillingSettings
+from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 import fibsem.conversions as conversions
 from enum import Enum
 import os
@@ -30,11 +30,13 @@ class MovementType(Enum):
     EucentricEnabled = 1
     TiltEnabled = 2
 
+
 @dataclass
 class Lamella:
     state: MicroscopeState
     reference_image: FibsemImage
     path: Path
+    fiducial_milled: bool
     fiducial_centre: Point
     fiducial_area: FibsemRectangle
     lamella_centre: Point
@@ -88,6 +90,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
+        self.add_lamella.clicked.connect(self.add_lamella)
         self.save_path_button.clicked.connect(self.save_filepath)
 
 
@@ -146,6 +149,58 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             centre_x= -((self.image_settings.resolution[0]/4) * pixelsize)
         ))
         self.patterns_protocol.append(stage)
+
+    def add_lamella(self):
+        # check to mill fiducial
+        response = message_box_ui(
+            title="Begin milling fiducial?",
+            text="If you are happy with the placement of the trench of fiducal, press yes.",
+        )
+
+        if response:
+            pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
+            lamella = Lamella(
+                state = self.microscope.get_current_microscope_state(),
+                reference_image = self.FIB_IB, # Should this include patterns?
+                path = self.path, # TODO
+                fiducial_milled = False,
+                fiducial_centre = Point((self.image_settings.resolution[0]/4)*pixelsize, 0),
+                fiducial_area = FibsemRectangle(0,0,0,0), # TODO
+                lamella_centre = Point(0,0), # Currently always at centre of image
+                lamella_area = FibsemRectangle(0,0,0,0), # TODO 
+            )
+
+            lamella.save() # TODO
+
+            try:
+                protocol = self.microscope_settings.protocol["fiducial"]
+                fiducial_pattern = FibsemPatternSettings(
+                    width=protocol["width"],
+                    height=protocol["length"],
+                    depth=protocol["depth"],
+                    centre_x= -((self.image_settings.resolution[0]/4) * pixelsize) 
+                )
+                fiducial_milling = FibsemMillingSettings(
+                    milling_current=protocol["milling_current"]
+                ) 
+
+                milling.setup_milling(self.microscope)
+                milling.draw_fiducial(
+                    self.microscope, 
+                    fiducial_pattern,
+                    fiducial_milling,
+                )
+                milling.run_milling(self.microscope) # specify milling current? TODO
+                milling.finish_milling(self.microscope)
+
+                lamella.fiducial_milled = True
+                lamella.save()
+
+            except Exception as e:
+                logging.error(f"Unable to draw/mill the fiducial: {e}")
+        else:
+            return
+
    
 ########################### Movement Functionality ##########################################
 
