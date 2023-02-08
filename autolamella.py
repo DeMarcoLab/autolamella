@@ -6,7 +6,7 @@ from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 import UI
 from fibsem import utils, acquire
 import fibsem.movement as movement
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle, FibsemPatternSettings
 import fibsem.conversions as conversions
 from enum import Enum
 import os
@@ -70,7 +70,41 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.reset_ui_settings()
             self.update_displays()
 
+        # Initialise the Lamella and Fiducial Settings
+        patterns_protocol = []
+        for i in len(self.microscope_settings.protocol["lamella"]["protocol_stages"]):
+            stage = []
+            protocol = self.microscope_settings.protocol["lamella"]["protocol_stages"][i]
+            lamella_width = protocol["lamella_width"]
+            lamella_height = protocol["lamella_height"]
+            trench_height = protocol["trench_height"]
+            upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
+            offset = protocol["offset"]
+            milling_depth = protocol["milling_depth"]
 
+            centre_upper_y = 0 + (lamella_height / 2 + upper_trench_height / 2 + offset)
+            centre_lower_y = 0 + (lamella_height / 2 + trench_height / 2 + offset)
+
+            stage.append(FibsemPatternSettings(
+                width=lamella_width,
+                height=trench_height,
+                depth=milling_depth,
+                centre_x=0,
+                centre_y=centre_lower_y,
+            ))
+
+            stage.append(FibsemPatternSettings(
+                width=lamella_width,
+                height=upper_trench_height,
+                depth=milling_depth,
+                centre_x=0,
+                centre_y=centre_upper_y,
+            ))
+
+            patterns_protocol.append(stage)
+        
+        
+        
         ### NAPARI settings and initialisation
 
     
