@@ -59,7 +59,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
         self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
 
-        self.CLog8.setText("Welcome to OpenFIBSEM! Begin by Connecting to a Microscope")
+        self.CLog8.setText("Welcome to OpenFIBSEM AutoLamella! Begin by Connecting to a Microscope")
 
         # Initialise microscope object
         self.microscope = None
@@ -73,7 +73,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         ### NAPARI settings and initialisation
 
-        
+    
         viewer.grid.enabled = True
 
 
