@@ -169,8 +169,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             text="If you are happy with the placement of the trench of fiducal, press yes.",
         )
 
-        
-
         if response:
             pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
             lamella = Lamella(
@@ -204,11 +202,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     fiducial_pattern,
                     fiducial_milling,
                 )
-                milling.run_milling(self.microscope) # specify milling current? TODO
+                milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
                 milling.finish_milling(self.microscope)
 
                 lamella.fiducial_milled = True
                 lamella.save()
+
+                # update UI lamella count
                 index = int(self.lamella_number.text())
                 index = index + 1
                 self.lamella_number.setText(str(index)) 
