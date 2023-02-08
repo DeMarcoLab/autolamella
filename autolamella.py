@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import UI
 from fibsem import utils, acquire
 import fibsem.movement as movement
+import fibsem.GIS as gis
 import fibsem.milling as milling
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle, FibsemPatternSettings, FibsemMillingSettings
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
@@ -97,10 +98,22 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.add_lamella_button.clicked.connect(self.add_lamella)
         self.save_path_button.clicked.connect(self.save_filepath)
         self.run_button.clicked.connect(self.run_autolamella)
+        self.platinum.clicked.connect(self.splutter_platinum)
 
 
         # Movement controls setup
   
+    def splutter_platinum(self):
+        
+        protocol = [] # TODO where do we get this from?
+
+        gis.sputter_platinum(
+            microscope = self.microscope,
+            protocol = protocol,
+            whole_grid = False,
+            default_application_file = "autolamella",
+            )
+
     def draw_patterns(self, hfw: float):
         # Initialise the Lamella and Fiducial Settings
         self.patterns_protocol = []
@@ -229,6 +242,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 mill_settings = FibsemMillingSettings(
                     milling_current=protocol["milling_current"]
                 ) 
+
+                # TODO add alignment stuff
 
                 try:
 
