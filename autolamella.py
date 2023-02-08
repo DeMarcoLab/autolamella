@@ -276,6 +276,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         viewer.layers.selection.active = self.eb_layer
         viewer.window.qt_viewer.dockLayerList.hide()
 
+        if self.show_lamella.IsChecked():
+            pass
+
         self.reset_ui_settings()
 
 
