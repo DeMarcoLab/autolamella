@@ -4,10 +4,10 @@ stage_rotation: 230
 stage_tilt: 52
 
 fiducial:
-  length: 10.e-6
-  width: 10.e-6
-  depth: 2.e-6
-  
+  length: 5.e-7
+  width: 10.e-7
+  depth: 100.e-9
+
 lamella:
   protocol_stages:
   - lamella_width: 10.e-6
