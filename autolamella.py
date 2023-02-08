@@ -306,6 +306,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def take_reference_images(self):
         
+        self.image_settings.hfw = self.hfw_box.value()*constants.MICRO_TO_SI
         # take image with both beams
         eb_image, ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
 
@@ -328,13 +329,14 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
         self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
         self.ib_layer.translate=[0.0, self.image_settings.resolution[0]]
-        viewer.layers.selection.active = self.eb_layer
+        
         viewer.window.qt_viewer.dockLayerList.hide()
 
         if self.show_lamella.isChecked():
             _draw_patterns_in_napari(viewer, self.FIB_IB, self.FIB_EB, self.patterns_protocol)
 
-        self.reset_ui_settings()
+        #self.reset_ui_settings()
+        viewer.layers.selection.active = self.eb_layer
 
 
     def reset_ui_settings(self):
