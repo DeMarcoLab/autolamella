@@ -42,6 +42,9 @@ class Lamella:
     lamella_centre: Point
     lamella_area: FibsemRectangle
 
+    def save(self):
+        pass
+
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def __init__(self,*args,obj=None,**kwargs) -> None:
@@ -56,6 +59,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer.start(1000)
         
         self.pattern_settings = []
+        self.save_path = None
 
         # Gamma and Image Settings
 
@@ -90,7 +94,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
-        self.add_lamella.clicked.connect(self.add_lamella)
+        self.add_lamella_button.clicked.connect(self.add_lamella)
         self.save_path_button.clicked.connect(self.save_filepath)
 
 
@@ -151,18 +155,28 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.patterns_protocol.append(stage)
 
     def add_lamella(self):
+
+        if self.save_path is None:
+            response_save = message_box_ui(
+            title="Missing save path",
+            text="Please select a save directory for the lamella data. The current lamella will not be saved",
+            )
+            return
+
         # check to mill fiducial
         response = message_box_ui(
             title="Begin milling fiducial?",
             text="If you are happy with the placement of the trench of fiducal, press yes.",
         )
 
+        
+
         if response:
             pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
             lamella = Lamella(
                 state = self.microscope.get_current_microscope_state(),
                 reference_image = self.FIB_IB, # Should this include patterns?
-                path = self.path, # TODO
+                path = self.save_path, # TODO
                 fiducial_milled = False,
                 fiducial_centre = Point((self.image_settings.resolution[0]/4)*pixelsize, 0),
                 fiducial_area = FibsemRectangle(0,0,0,0), # TODO
@@ -184,7 +198,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     milling_current=protocol["milling_current"]
                 ) 
 
-                milling.setup_milling(self.microscope)
+                milling.setup_milling(self.microscope, mill_settings = fiducial_milling)
                 milling.draw_fiducial(
                     self.microscope, 
                     fiducial_pattern,
@@ -195,6 +209,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
                 lamella.fiducial_milled = True
                 lamella.save()
+                index = int(self.lamella_number.text())
+                index = index + 1
+                self.lamella_number.setText(str(index)) 
 
             except Exception as e:
                 logging.error(f"Unable to draw/mill the fiducial: {e}")
