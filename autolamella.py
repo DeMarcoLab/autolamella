@@ -267,8 +267,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         viewer.layers.clear()
         self.ib_layer = viewer.add_image(self.FIB_IB.data, name="IB Image")
         self.eb_layer = viewer.add_image(self.FIB_EB.data, name="EB Image")
-      
-        viewer.camera.zoom = 0.4
+        viewer.camera.center = [0.0,self.image_settings.resolution[1]/2,self.image_settings.resolution[0]]
+
+        viewer.camera.zoom = 0.35
 
         self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
         self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
