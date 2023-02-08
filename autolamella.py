@@ -71,6 +71,26 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.reset_ui_settings()
             self.update_displays()
 
+        self.draw_patterns(hfw=self.image_settings.hfw)
+
+        ### NAPARI settings and initialisation
+
+    
+        viewer.grid.enabled = False
+
+
+    def setup_connections(self):
+
+        # Buttons setup
+
+        self.ConnectButton.clicked.connect(self.connect_to_microscope)
+        self.DisconnectButton.clicked.connect(self.disconnect_from_microscope)
+        self.RefImage.clicked.connect(self.take_reference_images)
+        self.show_lamella.stateChanged.connect(self.update_displays)
+
+        # Movement controls setup
+  
+    def draw_patterns(self, hfw: float):
         # Initialise the Lamella and Fiducial Settings
         self.patterns_protocol = []
         for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]["protocol_stages"]):
@@ -107,7 +127,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Fiducial
         stage = []
         protocol = self.microscope_settings.protocol["fiducial"]
-        pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
+        pixelsize = hfw / self.image_settings.resolution[0]
         stage.append(FibsemPatternSettings(
             width=protocol["width"],
             height=protocol["length"],
@@ -123,24 +143,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             centre_x= -((self.image_settings.resolution[0]/4) * pixelsize)
         ))
         self.patterns_protocol.append(stage)
-
-        ### NAPARI settings and initialisation
-
-    
-        viewer.grid.enabled = False
-
-
-    def setup_connections(self):
-
-        # Buttons setup
-
-        self.ConnectButton.clicked.connect(self.connect_to_microscope)
-        self.DisconnectButton.clicked.connect(self.disconnect_from_microscope)
-        self.RefImage.clicked.connect(self.take_reference_images)
-        self.show_lamella.stateChanged.connect(self.update_displays)
-
-        # Movement controls setup
-  
    
 ########################### Movement Functionality ##########################################
 
