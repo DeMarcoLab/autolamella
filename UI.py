@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'autolamellaUI.ui'
+# Form implementation generated from reading ui file 'UI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.7
 #
@@ -70,6 +70,21 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.General, "")
         self.AutoLamella = QtWidgets.QWidget()
         self.AutoLamella.setObjectName("AutoLamella")
+        self.gridLayoutWidget = QtWidgets.QWidget(self.AutoLamella)
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(130, 40, 181, 141))
+        self.gridLayoutWidget.setObjectName("gridLayoutWidget")
+        self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
+        self.gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout.setObjectName("gridLayout")
+        self.pushButton = QtWidgets.QPushButton(self.gridLayoutWidget)
+        self.pushButton.setObjectName("pushButton")
+        self.gridLayout.addWidget(self.pushButton, 0, 0, 1, 1)
+        self.pushButton_2 = QtWidgets.QPushButton(self.gridLayoutWidget)
+        self.pushButton_2.setObjectName("pushButton_2")
+        self.gridLayout.addWidget(self.pushButton_2, 1, 0, 1, 1)
+        self.pushButton_3 = QtWidgets.QPushButton(self.gridLayoutWidget)
+        self.pushButton_3.setObjectName("pushButton_3")
+        self.gridLayout.addWidget(self.pushButton_3, 2, 0, 1, 1)
         self.tabWidget.addTab(self.AutoLamella, "")
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.centralwidget)
         self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(0, 470, 441, 271))
@@ -140,7 +155,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuAutoLamella.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -153,6 +168,9 @@ class Ui_MainWindow(object):
         self.label_18.setText(_translate("MainWindow", "microns"))
         self.RefImage.setText(_translate("MainWindow", "Take Images"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.General), _translate("MainWindow", "General"))
+        self.pushButton.setText(_translate("MainWindow", "Add Fiducial"))
+        self.pushButton_2.setText(_translate("MainWindow", "Add Lamella"))
+        self.pushButton_3.setText(_translate("MainWindow", "Run Milling"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.AutoLamella), _translate("MainWindow", "AutoLamella"))
         self.comboBox.setItemText(0, _translate("MainWindow", "Stable Movement"))
         self.comboBox.setItemText(1, _translate("MainWindow", "Eucentric Movement"))

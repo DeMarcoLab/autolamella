@@ -1,10 +1,12 @@
 import sys
 import re
+from pathlib import Path
+from dataclasses import dataclass
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition
 import UI
 from fibsem import utils, acquire
 import fibsem.movement as movement
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, FibsemMillingSettings, FibsemPatternSettings ,Point, FibsemPattern
+from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle
 import fibsem.conversions as conversions
 from enum import Enum
 import os
@@ -27,6 +29,15 @@ class MovementType(Enum):
     EucentricEnabled = 1
     TiltEnabled = 2
 
+@dataclass
+class Lamella:
+    state: MicroscopeState
+    reference_image: FibsemImage
+    path: Path
+    fiducial_centre: Point
+    fiducial_area: FibsemRectangle
+    lamella_centre: Point
+    lamella_area: FibsemRectangle
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
@@ -55,14 +66,16 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings = None
         self.connect_to_microscope()
         
-        self.reset_ui_settings()
+        if self.microscope is not None:
+            self.reset_ui_settings()
+            self.update_displays()
+
 
         ### NAPARI settings and initialisation
 
         
         viewer.grid.enabled = True
 
-        self.update_displays()
 
     def setup_connections(self):
 
@@ -200,11 +213,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def connect_to_microscope(self):
         
         self.PROTOCOL_PATH = os.path.join(os.path.dirname(__file__), "protocol_autolamella.yaml")
-        self.CONFIG_PATH = os.path.join(os.path.dirname(__file__), "system.yaml")
-
 
         try:
-            self.microscope, self.microscope_settings = utils.setup_session(config_path = self.CONFIG_PATH,protocol_path = self.PROTOCOL_PATH)
+            self.microscope, self.microscope_settings = utils.setup_session(protocol_path = self.PROTOCOL_PATH)
+            print(self.microscope_settings.protocol)
             self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
             self.image_settings = self.microscope_settings.image
             self.milling_settings = self.microscope_settings.milling
