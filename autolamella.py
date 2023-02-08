@@ -102,13 +102,14 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             ))
 
             self.patterns_protocol.append(stage)
+
         
 
         
         ### NAPARI settings and initialisation
 
     
-        viewer.grid.enabled = True
+        viewer.grid.enabled = False
 
 
     def setup_connections(self):
@@ -118,6 +119,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.ConnectButton.clicked.connect(self.connect_to_microscope)
         self.DisconnectButton.clicked.connect(self.disconnect_from_microscope)
         self.RefImage.clicked.connect(self.take_reference_images)
+        self.show_lamella.stateChanged.connect(self.update_displays)
 
         # Movement controls setup
   
@@ -299,14 +301,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def update_displays(self):
        
         viewer.layers.clear()
-        self.ib_layer = viewer.add_image(self.FIB_IB.data, name="IB Image")
         self.eb_layer = viewer.add_image(self.FIB_EB.data, name="EB Image")
+        self.ib_layer = viewer.add_image(self.FIB_IB.data, name="IB Image")
         viewer.camera.center = [0.0,self.image_settings.resolution[1]/2,self.image_settings.resolution[0]]
 
         viewer.camera.zoom = 0.35
 
-        self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
         self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
+        self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
+        self.ib_layer.translate=[0.0, self.image_settings.resolution[0]]
         viewer.layers.selection.active = self.eb_layer
         viewer.window.qt_viewer.dockLayerList.hide()
 
