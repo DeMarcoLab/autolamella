@@ -5,7 +5,7 @@ stage_tilt: 52
 
 fiducial:
   length: 5.e-7
-  width: 10.e-7
+  width: 1.e-7
   depth: 100.e-9
 
 lamella:
@@ -20,6 +20,13 @@ lamella:
   - lamella_width: 10.e-6
     lamella_height: 5.e-6
     trench_height: 2.e-6
+    milling_depth: 2.e-6
+    offset: 1.e-6
+    size_ratio: 1.0
+    milling_current: 2.e-9
+  - lamella_width: 10.e-6
+    lamella_height: 5.e-6
+    trench_height: 1.e-6
     milling_depth: 2.e-6
     offset: 0.e-6
     size_ratio: 1.0
