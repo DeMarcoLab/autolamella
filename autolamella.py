@@ -73,9 +73,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         # Initialise the Lamella and Fiducial Settings
         self.patterns_protocol = []
-        for i in len(self.microscope_settings.protocol["lamella"]["protocol_stages"]):
+        for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]["protocol_stages"]):
             stage = []
-            protocol = self.microscope_settings.protocol["lamella"]["protocol_stages"][i]
             lamella_width = protocol["lamella_width"]
             lamella_height = protocol["lamella_height"]
             trench_height = protocol["trench_height"]
@@ -311,7 +310,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         viewer.layers.selection.active = self.eb_layer
         viewer.window.qt_viewer.dockLayerList.hide()
 
-        if self.show_lamella.IsChecked():
+        if self.show_lamella.isChecked():
             _draw_patterns_in_napari(viewer, self.FIB_IB, self.FIB_EB, self.patterns_protocol)
 
         self.reset_ui_settings()
