@@ -148,11 +148,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         ))
         self.patterns_protocol.append(stage)
 
-    def create_experiment(self): # TODO, return Experiment(...)
-        pass
+    def create_experiment(self, path, name):
+        return Experiment(path=path, name=name)
 
-    def load_experiment(self): # TODO, return Experiment(...)
-        pass
+    def load_experiment(self, path): 
+        return Experiment.load(path)
 
     def add_lamella(self):
 
