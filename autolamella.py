@@ -70,8 +70,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         # Buttons setup
 
-        self.ConnectButton.clicked.connect(self.connect_to_microscope)
-        self.DisconnectButton.clicked.connect(self.disconnect_from_microscope)
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
@@ -158,10 +156,19 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             text="Experiment could not be created. Please select a save directory for the experiment data.",
             )
             return
+        if self.exp_name.text() is None: 
+            self.exp_name.setText("Experiment 1")
 
         self.experiment = Experiment(path = self.save_path,  name = self.exp_name.text())
 
     def load_experiment(self): # TODO, return Experiment(...)
+
+        if self.save_path is None:
+            response_save = message_box_ui(
+            title="Missing path",
+            text="Please select a directory to load the data from.",
+            )
+            return
 
         self.experiment = Experiment.load(self.save_path)
         
@@ -464,7 +471,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         folder_path = filedialog.askdirectory()
         self.label_5.setText(folder_path)
         self.save_path = folder_path
-        self.experiment.path = self.save_path
+
+        if self.experiment is not None:
+            self.experiment.path = self.save_path
 
     def reset_ui_settings(self):
 
