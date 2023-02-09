@@ -10,7 +10,7 @@ from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point,
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 import fibsem.conversions as conversions
 from structures import Lamella, LamellaState, AutoLamellaStage, MovementMode, Experiment
-
+from datetime import datetime
 import os
 from copy import deepcopy
 import tkinter
@@ -230,8 +230,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
                 milling.finish_milling(self.microscope)
 
+                lamella.state.end_timestamp = datetime.timestamp(datetime.now())
                 lamella.history.append(lamella.state)
                 lamella.state.stage = AutoLamellaStage.FiducialMilled
+                lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+                
                 self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
 
                 # update UI lamella count
@@ -245,30 +248,41 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             return
     
     def run_autolamella(self):
-        
+        lamella: Lamella
         for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]):
+            stage = i + 2 # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
             for lamella in enumerate(self.experiment.positions):
+                
+                if lamella.state.stage == AutoLamellaStage(stage-1): # Checks to make sure the next stage for the selected Lamella is the current protocol
+                    self.microscope.move_stage_absolute(lamella.state.microscope_state.absolute_position)
+                    logging.info("Moving to lamella position")
+                    mill_settings = FibsemMillingSettings(
+                        milling_current=protocol["milling_current"]
+                    ) 
 
-                self.microscope.move_stage_absolute(lamella.state.stage_position)
-                logging.info("Moving to lamella position")
-                mill_settings = FibsemMillingSettings(
-                    milling_current=protocol["milling_current"]
-                ) 
+                    # TODO add alignment stuff
 
-                # TODO add alignment stuff
+                    try:
 
-                try:
+                        milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
+                        milling.draw_trench(microscope = self.microscope, protocol = protocol, point = lamella.lamella_centre)
+                        milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
+                        milling.finish_milling(self.microscope)
 
-                    milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
-                    milling.draw_trench(microscope = self.microscope, protocol = protocol, point = lamella.lamella_centre)
-                    milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
-                    milling.finish_milling(self.microscope)
+                        self.microscope_settings.image.save_path = lamella.path
+                        self.microscope_settings.image.label = f"ref_mill_stage_{i}"
+                        lamella.reference_image = acquire.new_image(self.microscope, self.microscope_settings.image)
 
-                    self.microscope_settings.image.save_path = lamella.path
-                    self.microscope_settings.image.label = f"ref_mill_stage_{i}"
-                    lamella.reference_image = acquire.new_image(self.microscope, self.microscope_settings.image)
-                except Exception as e:
-                    logging.error(f"Unable to draw/mill the lamella: {e}")
+                        # Update Lamella Stage and Experiment
+                        lamella.state.end_timestamp = datetime.timestamp(datetime.now())
+                        lamella.history.append(lamella.state)
+                        lamella.state.stage = AutoLamellaStage(stage)
+                        lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+
+                        self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
+
+                    except Exception as e:
+                        logging.error(f"Unable to draw/mill the lamella: {e}")
         
    
 ########################### Movement Functionality ##########################################
