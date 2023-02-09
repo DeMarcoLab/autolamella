@@ -1,7 +1,5 @@
 import sys
 import re
-from pathlib import Path
-from dataclasses import dataclass
 import UI
 from fibsem import utils, acquire
 import fibsem.movement as movement
@@ -9,38 +7,16 @@ import fibsem.milling as milling
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle, FibsemPatternSettings, FibsemMillingSettings
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 import fibsem.conversions as conversions
-from enum import Enum
+
 import os
 import tkinter
-from tkinter import filedialog
+from tkinter import filedialogw
 import fibsem.constants as constants
 from qtpy import QtWidgets
 from PyQt5.QtCore import QTimer
 import numpy as np
 import logging
 import napari
-
-class MovementMode(Enum):
-    Stable = 1
-    Eucentric = 2
-    # Needle = 3
-
-class MovementType(Enum):
-    StableEnabled = 0 
-    EucentricEnabled = 1
-    TiltEnabled = 2
-
-
-@dataclass
-class Lamella:
-    state: MicroscopeState
-    reference_image: FibsemImage
-    path: Path
-    fiducial_milled: bool
-    fiducial_centre: Point
-    fiducial_area: FibsemRectangle
-    lamella_centre: Point
-    lamella_area: FibsemRectangle
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
