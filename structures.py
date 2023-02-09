@@ -67,15 +67,14 @@ class Lamella:
 
     def __to_dict__(self):
         return {
-            "state": self.state.__to_dict__(),
-            "reference_image": self.reference_image,
-            "path": self.path,
-            "fiducial_centre": self.fiducial_centre.__to_dict__(),
-            "fiducial_area": self.fiducial_area.__to_dict__(),
-            "lamella_centre": self.lamella_centre.__to_dict__(),
-            "lamella_area": self.lamella_area.__to_dict__(),
-            "lamella_number": self.lamella_number,
-            "history": self.history,
+            "state": self.state.__to_dict__() if self.state is not None else "Not defined",
+            "path": self.path if self.path is not None else "Not defined",
+            "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else "Not defined",
+            "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
+            "lamella_centre": self.lamella_centre.__to_dict__() if self.lamella_centre is not None else "Not defined",
+            "lamella_area": self.lamella_area.__to_dict__() if self.lamella_area is not None else "Not defined",
+            "lamella_number": self.lamella_number if self.lamella_number is not None else "Not defined",
+            "history": self.history if self.history is not None else "Not defined",
         }
 
     @classmethod
@@ -126,6 +125,12 @@ class Experiment:
         with open(os.path.join(self.path, f"{self.name}.yaml"), "w") as f:
             yaml.dump(self.__to_dict__(), f, indent=4)
 
+        for lamella in self.positions:
+            path_image = os.path.join(self.path, str(lamella.lamella_number).rjust(6, '0'), f"empty_ref.tif")
+            os.makedirs(path_image, exist_ok = True) 
+            if lamella.reference_image is not None:
+                lamella.reference_image.save(path_image)
+
     def __repr__(self) -> str:
 
         return f"""Experiment: 
@@ -168,11 +173,12 @@ class Experiment:
         """Load a sample from disk."""
 
         # read and open existing yaml file
-        if os.path.exists(fname):
-            with open(fname, "r") as f:
+        path = Path(fname).with_suffix(".yaml")
+        if os.path.exists(path):
+            with open(path, "r") as f:
                 sample_dict = yaml.safe_load(f)
         else:
-            raise FileNotFoundError(f"No file with name {fname} found.")
+            raise FileNotFoundError(f"No file with name {path} found.")
 
         # create sample
         path = os.path.dirname(sample_dict["path"])

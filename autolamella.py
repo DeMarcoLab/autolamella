@@ -16,6 +16,7 @@ from copy import deepcopy
 import tkinter
 from tkinter import filedialog
 import fibsem.constants as constants
+from tkinter import simpledialog
 from qtpy import QtWidgets
 from PyQt5.QtCore import QTimer
 import numpy as np
@@ -79,6 +80,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.platinum.triggered.connect(self.splutter_platinum)
         self.create_exp.triggered.connect(self.create_experiment)
         self.load_exp.triggered.connect(self.load_experiment)
+        self.save_button.clicked.connect(self.save_lamella)
 
 
         # Movement controls setup
@@ -155,10 +157,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             folder_path = filedialog.askdirectory()
             self.save_path = folder_path
 
-        if self.experiment_name() is None: 
-            self.experiment_name = filedialog.asksaveasfilename()
+        self.experiment_name = simpledialog.askstring("Experiment name", "Please enter experiment name")
 
-        self.experiment = Experiment(path = self.save_path,  name = self.exp_name.text())
+        self.experiment = Experiment(path = self.save_path,  name = self.experiment_name)
 
     def load_experiment(self): 
 
@@ -172,12 +173,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def add_lamella(self):
 
-        index = len(self.experiment.positions) + 1
+        index = len(self.experiment.positions)
         lamella = Lamella(
-            lamella_number=index,
+            lamella_number=index +1,
         )
-
-        self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
+        self.experiment.positions.append(deepcopy(lamella))
+        
 
         self.experiment.save()
 
@@ -206,7 +207,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             if response:
                 pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
                 initial_state = LamellaState(
-                    micrscope_state=self.microscope.get_current_microscope_state(),
+                    microscope_state=self.microscope.get_current_microscope_state(),
                     stage=AutoLamellaStage.Setup
                 )
                 index = self.lamella_index.value()
@@ -253,6 +254,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
                     
                     self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
+
+                    path_image = os.path.join(self.save_path, str(lamella.lamella_number).rjust(6, '0'), f"milled_fiducial") 
+
+                    self.experiment.save(path_image)
 
                    
 
