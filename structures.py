@@ -154,7 +154,6 @@ class Experiment:
                 "lamella.centre": lamella.lamella_centre,
                 "lamella.history": lamella.history,
                 "fiducial.centre": lamella.fiducial_centre,
-                "fiducial.milled": lamella.fiducial_milled,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
             }
 
