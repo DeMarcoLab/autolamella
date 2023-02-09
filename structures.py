@@ -28,15 +28,15 @@ class AutoLamellaStage(Enum):
 
 @dataclass
 class LamellaState:
-    microscope_state: MicroscopeState
-    stage: AutoLamellaStage
+    microscope_state: MicroscopeState = None
+    stage: AutoLamellaStage = None
     start_timestamp: float = datetime.timestamp(datetime.now())
     end_timestamp: float = None
 
     def __to_dict__(self):
         return {
             "microscope_state": self.microscope_state.__to_dict__(),
-            "stage": self.stage,
+            "stage": self.stage.name,
             "start_timestamp": self.start_timestamp,
             "end_timestamp": self.end_timestamp,
         }
@@ -55,39 +55,39 @@ class LamellaState:
 
 @dataclass
 class Lamella:
-    state: LamellaState = None
+    state: LamellaState = LamellaState()
     reference_image: FibsemImage = None
-    path: Path = None
-    fiducial_centre: Point = None
-    fiducial_area: FibsemRectangle = None
-    lamella_centre: Point = None
-    lamella_area: FibsemRectangle = None
+    path: Path = Path()
+    fiducial_centre: Point = Point()
+    fiducial_area: FibsemRectangle = FibsemRectangle()
+    lamella_centre: Point = Point()
+    lamella_area: FibsemRectangle = FibsemRectangle()
     lamella_number: int = None
     history: list[AutoLamellaStage] = None
 
     def __to_dict__(self):
         return {
             "state": self.state.__to_dict__() if self.state is not None else "Not defined",
+            "reference_image": self.reference_image.metadata.image_settings.save_path,
             "path": self.path if self.path is not None else "Not defined",
             "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else "Not defined",
             "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
             "lamella_centre": self.lamella_centre.__to_dict__() if self.lamella_centre is not None else "Not defined",
             "lamella_area": self.lamella_area.__to_dict__() if self.lamella_area is not None else "Not defined",
             "lamella_number": self.lamella_number if self.lamella_number is not None else "Not defined",
-            "history": self.history if self.history is not None else "Not defined",
+            "history": self.history.name if self.history is not None else "Not defined",
         }
 
     @classmethod
     def __from_dict__(cls, data):
         state = LamellaState().__from_dict__(data["state"])
-        reference_image = data["reference_image"]
         fiducial_centre = Point.__from_dict__(data["fiducial_centre"])
         fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
         lamella_centre = Point.__from_dict__(data["lamella_centre"])
         lamella_area = FibsemRectangle.__from_dict__(data["lamella_area"])
         return cls(
             state=state,
-            reference_image=reference_image,
+            reference_image=None, # TODO add reference image
             path=data["path"],
             fiducial_centre=fiducial_centre,
             fiducial_area=fiducial_area,
@@ -123,11 +123,10 @@ class Experiment:
         """Save the sample data to yaml file"""
 
         with open(os.path.join(self.path, f"{self.name}.yaml"), "w") as f:
-            yaml.dump(self.__to_dict__(), f, indent=4)
+            yaml.safe_dump(self.__to_dict__(), f, indent=4)
 
         for lamella in self.positions:
-            path_image = os.path.join(self.path, str(lamella.lamella_number).rjust(6, '0'), f"empty_ref.tif")
-            os.makedirs(path_image, exist_ok = True) 
+            path_image = os.path.join(self.path, str(lamella.lamella_number).rjust(6, '0'), f"empty_ref")
             if lamella.reference_image is not None:
                 lamella.reference_image.save(path_image)
 
@@ -187,7 +186,7 @@ class Experiment:
 
         # load lamella from dict
         for lamella_dict in sample_dict["positions"]:
-            lamella = Lamella.__from_dict__(path=experiment.path, lamella_dict=lamella_dict)
-            experiment.positions[lamella.lamella_number] = lamella
+            lamella = Lamella.__from_dict__(data=lamella_dict)
+            experiment.positions.append(lamella)
 
         return experiment

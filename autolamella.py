@@ -1,28 +1,32 @@
 
-import sys
+import logging
+import os
 import re
-import UI
-from fibsem import utils, acquire
-import fibsem.movement as movement
+import sys
+import tkinter
+from copy import deepcopy
+from datetime import datetime
+from pathlib import Path
+from tkinter import filedialog, simpledialog
+
+import fibsem.constants as constants
+import fibsem.conversions as conversions
 import fibsem.GIS as gis
 import fibsem.milling as milling
-from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle, FibsemPatternSettings, FibsemMillingSettings
-from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
-import fibsem.conversions as conversions
-from structures import Lamella, LamellaState, AutoLamellaStage, MovementMode, Experiment
-from datetime import datetime
-import os
-from copy import deepcopy
-import tkinter
-from tkinter import filedialog
-import fibsem.constants as constants
-from tkinter import simpledialog
-from qtpy import QtWidgets
-from PyQt5.QtCore import QTimer
-import numpy as np
-import logging
-from structures import LamellaState, Lamella, MovementMode, MovementType, AutoLamellaStage, Experiment
+import fibsem.movement as movement
 import napari
+import numpy as np
+from fibsem import acquire, utils
+from fibsem.structures import (BeamType, FibsemImage, FibsemMillingSettings,
+                               FibsemPatternSettings, FibsemRectangle,
+                               FibsemStagePosition, MicroscopeState, Point)
+from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
+from PyQt5.QtCore import QTimer
+from qtpy import QtWidgets
+
+import UI
+from structures import (AutoLamellaStage, Experiment, Lamella, LamellaState,
+                        MovementMode, MovementType)
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
@@ -163,12 +167,19 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def load_experiment(self): 
 
-        if self.save_path is None:
-            tkinter.Tk().withdraw()
-            folder_path = filedialog.askdirectory()
-            self.save_path = folder_path
+        tkinter.Tk().withdraw()
+        file_path = filedialog.askopenfilename()
+        self.experiment = Experiment.load(file_path)
 
-        self.experiment = Experiment.load(self.save_path)
+        folder_path = os.path.dirname(file_path)
+        self.save_path = Path(folder_path)
+
+        # update UI lamella count
+        index = len(self.experiment.positions)
+        
+        self.lamella_count_txt.setText(f"Out of: {index} lamellas") 
+
+        
         
 
     def add_lamella(self):
@@ -176,11 +187,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         index = len(self.experiment.positions)
         lamella = Lamella(
             lamella_number=index +1,
+            reference_image=self.FIB_EB,
         )
         self.experiment.positions.append(deepcopy(lamella))
-        
-
-        self.experiment.save()
 
          # update UI lamella count
         index = len(self.experiment.positions)
@@ -195,7 +204,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             if self.save_path is None:
                 tkinter.Tk().withdraw()
                 folder_path = filedialog.askdirectory()
-                self.label_5.setText(folder_path)
                 self.save_path = folder_path
 
             # check to mill fiducial
@@ -210,20 +218,20 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     microscope_state=self.microscope.get_current_microscope_state(),
                     stage=AutoLamellaStage.Setup
                 )
-                index = self.lamella_index.value()
+                index = self.lamella_index.value() -1
                 lamella = Lamella(
                     state = initial_state,
                     reference_image = self.FIB_IB, # Should this include patterns?
-                    path = self.save_path, 
+                    path = self.experiment.path, 
                     fiducial_centre = Point((self.image_settings.resolution[0]/4)*pixelsize, 0),
                     fiducial_area = FibsemRectangle(0,0,0,0), # TODO
                     lamella_centre = Point(0,0), # Currently always at centre of image
                     lamella_area = FibsemRectangle(0,0,0,0), # TODO 
-                    lamella_number=index,
+                    lamella_number=index +1,
                     history= AutoLamellaStage.Setup
                 )
 
-                self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
+                self.experiment.positions[index] = deepcopy(lamella)
 
                 self.experiment.save()
 
