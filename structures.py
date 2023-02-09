@@ -55,15 +55,15 @@ class LamellaState:
 
 @dataclass
 class Lamella:
-    state: LamellaState
-    reference_image: FibsemImage
-    path: Path
-    fiducial_centre: Point
-    fiducial_area: FibsemRectangle
-    lamella_centre: Point
-    lamella_area: FibsemRectangle
-    lamella_number: int
-    history: list[AutoLamellaStage]
+    state: LamellaState = None
+    reference_image: FibsemImage = None
+    path: Path = None
+    fiducial_centre: Point = None
+    fiducial_area: FibsemRectangle = None
+    lamella_centre: Point = None
+    lamella_area: FibsemRectangle = None
+    lamella_number: int = None
+    history: list[AutoLamellaStage] = None
 
     def __to_dict__(self):
         return {

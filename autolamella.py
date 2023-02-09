@@ -74,11 +74,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
-        self.add_lamella.clicked.connect(self.add_lamella)
+        self.add_button.clicked.connect(self.add_lamella)
         self.run_button.clicked.connect(self.run_autolamella)
-        self.platinum.clicked.connect(self.splutter_platinum)
-        self.create_exp.clicked.connect(self.create_experiment)
-        self.load_exp.clicked.connect(self.load_experiment)
+        self.platinum.triggered.connect(self.splutter_platinum)
+        self.create_exp.triggered.connect(self.create_experiment)
+        self.load_exp.triggered.connect(self.load_experiment)
 
 
         # Movement controls setup
@@ -153,11 +153,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.save_path is None:
             tkinter.Tk().withdraw()
             folder_path = filedialog.askdirectory()
-            self.label_5.setText(folder_path)
             self.save_path = folder_path
 
-        if self.exp_name.text() is None: 
-            self.exp_name.setText("Experiment 1")
+        if self.experiment_name() is None: 
+            self.experiment_name = filedialog.asksaveasfilename()
 
         self.experiment = Experiment(path = self.save_path,  name = self.exp_name.text())
 
@@ -166,7 +165,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.save_path is None:
             tkinter.Tk().withdraw()
             folder_path = filedialog.askdirectory()
-            self.label_5.setText(folder_path)
             self.save_path = folder_path
 
         self.experiment = Experiment.load(self.save_path)
@@ -174,78 +172,95 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def add_lamella(self):
 
-        if self.save_path is None:
-            tkinter.Tk().withdraw()
-            folder_path = filedialog.askdirectory()
-            self.label_5.setText(folder_path)
-            self.save_path = folder_path
-
-        # check to mill fiducial
-        response = message_box_ui(
-            title="Begin milling fiducial?",
-            text="If you are happy with the placement of the trench of fiducal, press yes.",
+        index = len(self.experiment.positions) + 1
+        lamella = Lamella(
+            lamella_number=index,
         )
 
-        if response:
-            pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
-            initial_state = LamellaState(
-                micrscope_state=self.microscope.get_current_microscope_state(),
-                stage=AutoLamellaStage.Setup
+        self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
+
+        self.experiment.save()
+
+         # update UI lamella count
+        index = len(self.experiment.positions)
+        
+        self.lamella_count_txt.setText(f"Out of: {index} lamellas") 
+
+        return
+
+
+    def save_lamella(self):
+
+            if self.save_path is None:
+                tkinter.Tk().withdraw()
+                folder_path = filedialog.askdirectory()
+                self.label_5.setText(folder_path)
+                self.save_path = folder_path
+
+            # check to mill fiducial
+            response = message_box_ui(
+                title="Begin milling fiducial?",
+                text="If you are happy with the placement of the trench of fiducal, press yes.",
             )
-            index = len(self.experiment.positions) + 1
-            lamella = Lamella(
-                state = initial_state,
-                reference_image = self.FIB_IB, # Should this include patterns?
-                path = self.save_path, 
-                fiducial_centre = Point((self.image_settings.resolution[0]/4)*pixelsize, 0),
-                fiducial_area = FibsemRectangle(0,0,0,0), # TODO
-                lamella_centre = Point(0,0), # Currently always at centre of image
-                lamella_area = FibsemRectangle(0,0,0,0), # TODO 
-                lamella_number=index,
-                history= AutoLamellaStage.Setup
-            )
 
-            self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
-
-            self.experiment.save()
-
-            try:
-                protocol = self.microscope_settings.protocol["fiducial"]
-                fiducial_pattern = FibsemPatternSettings(
-                    width=protocol["width"],
-                    height=protocol["length"],
-                    depth=protocol["depth"],
-                    centre_x= -((self.image_settings.resolution[0]/4) * pixelsize) 
+            if response:
+                pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
+                initial_state = LamellaState(
+                    micrscope_state=self.microscope.get_current_microscope_state(),
+                    stage=AutoLamellaStage.Setup
                 )
-                fiducial_milling = FibsemMillingSettings(
-                    milling_current=protocol["milling_current"]
-                ) 
-
-                milling.setup_milling(self.microscope, mill_settings = fiducial_milling)
-                milling.draw_fiducial(
-                    self.microscope, 
-                    fiducial_pattern,
-                    fiducial_milling,
+                index = self.lamella_index.value()
+                lamella = Lamella(
+                    state = initial_state,
+                    reference_image = self.FIB_IB, # Should this include patterns?
+                    path = self.save_path, 
+                    fiducial_centre = Point((self.image_settings.resolution[0]/4)*pixelsize, 0),
+                    fiducial_area = FibsemRectangle(0,0,0,0), # TODO
+                    lamella_centre = Point(0,0), # Currently always at centre of image
+                    lamella_area = FibsemRectangle(0,0,0,0), # TODO 
+                    lamella_number=index,
+                    history= AutoLamellaStage.Setup
                 )
-                milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
-                milling.finish_milling(self.microscope)
 
-                lamella.state.end_timestamp = datetime.timestamp(datetime.now())
-                lamella.history.append(lamella.state)
-                lamella.state.stage = AutoLamellaStage.FiducialMilled
-                lamella.state.start_timestamp = datetime.timestamp(datetime.now())
-                
                 self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
 
-                # update UI lamella count
-                index = int(self.lamella_number.text())
-                index = index + 1
-                self.lamella_number.setText(str(index)) 
+                self.experiment.save()
 
-            except Exception as e:
-                logging.error(f"Unable to draw/mill the fiducial: {e}")
-        else:
-            return
+                try:
+                    protocol = self.microscope_settings.protocol["fiducial"]
+                    fiducial_pattern = FibsemPatternSettings(
+                        width=protocol["width"],
+                        height=protocol["length"],
+                        depth=protocol["depth"],
+                        centre_x= -((self.image_settings.resolution[0]/4) * pixelsize) 
+                    )
+                    fiducial_milling = FibsemMillingSettings(
+                        milling_current=protocol["milling_current"]
+                    ) 
+
+                    milling.setup_milling(self.microscope, mill_settings = fiducial_milling)
+                    milling.draw_fiducial(
+                        self.microscope, 
+                        fiducial_pattern,
+                        fiducial_milling,
+                    )
+                    milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
+                    milling.finish_milling(self.microscope)
+
+                    lamella.state.end_timestamp = datetime.timestamp(datetime.now())
+                    lamella.history.append(lamella.state)
+                    lamella.state.stage = AutoLamellaStage.FiducialMilled
+                    lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+                    
+                    self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
+
+                   
+
+                except Exception as e:
+                    logging.error(f"Unable to draw/mill the fiducial: {e}")
+            else:
+                return
+
     
     def run_autolamella(self):
         lamella: Lamella

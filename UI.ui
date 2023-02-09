@@ -277,7 +277,7 @@
       </widget>
      </item>
      <item row="3" column="0">
-      <widget class="QPushButton" name="add_lamella">
+      <widget class="QPushButton" name="add_button">
        <property name="text">
         <string>Add Lamella</string>
        </property>
