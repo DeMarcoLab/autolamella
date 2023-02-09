@@ -146,16 +146,16 @@ class Experiment:
                 "number": lamella.lamella_number,
                 #"petname": lamella._petname,  # what?
                 "path": lamella.path,
-                "lamella.x": lamella.state.absolute_position.x,
-                "lamella.y": lamella.state.absolute_position.y,
-                "lamella.z": lamella.state.absolute_position.z,
-                "lamella.r": lamella.state.absolute_position.r,
-                "lamella.t": lamella.state.absolute_position.t,
+                "lamella.x": lamella.state.microscope_state.absolute_position.x,
+                "lamella.y": lamella.state.microscope_state.absolute_position.y,
+                "lamella.z": lamella.state.microscope_state.absolute_position.z,
+                "lamella.r": lamella.state.microscope_state.absolute_position.r,
+                "lamella.t": lamella.state.microscope_state.absolute_position.t,
                 "lamella.centre": lamella.lamella_centre,
                 "lamella.history": lamella.history,
                 "fiducial.centre": lamella.fiducial_centre,
                 "fiducial.milled": lamella.fiducial_milled,
-                "last_timestamp": lamella.state.timestamp,
+                "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
             }
 
             lamella_list.append(lamella_dict)
