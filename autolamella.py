@@ -1,3 +1,4 @@
+
 import sys
 import re
 import UI
@@ -11,12 +12,13 @@ import fibsem.conversions as conversions
 
 import os
 import tkinter
-from tkinter import filedialogw
+from tkinter import filedialog
 import fibsem.constants as constants
 from qtpy import QtWidgets
 from PyQt5.QtCore import QTimer
 import numpy as np
 import logging
+from structures import LamellaState, Lamella, MovementMode, MovementType, AutoLamellaStage, Experiment
 import napari
 
 
@@ -220,7 +222,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 try:
 
                     milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
-                    milling.draw_trench(microscope = self.microscope, protocol = protocol, point = Point(0.0,0.0))
+                    milling.draw_trench(microscope = self.microscope, protocol = protocol, point = lamella.lamella_centre)
                     milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
                     milling.finish_milling(self.microscope)
 
