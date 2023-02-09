@@ -74,7 +74,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def setup_connections(self):
 
         # Buttons setup
-
    
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
@@ -95,7 +94,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         position.t = self.microscope_settings.protocol["stage_tilt"]*constants.DEGREES_TO_RADIANS
         position.r = self.microscope_settings.protocol["stage_rotation"]*constants.DEGREES_TO_RADIANS
         self.microscope.move_stage_absolute(position)
-        logging.info("Stage moved to r = 230°, t = 52°")
+        logging.info(f"Stage moved to r = {position.r}°, t = {position.t}°")
 
     def splutter_platinum(self):
         
@@ -223,7 +222,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             # check to mill fiducial
             response = message_box_ui(
                 title="Begin milling fiducial?",
-                text="If you are happy with the placement of the trench of fiducal, press yes.",
+                text="If you are happy with the placement of the trench and fiducial, press yes.",
             )
 
             if response:
@@ -232,17 +231,17 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     microscope_state=self.microscope.get_current_microscope_state(),
                     stage=AutoLamellaStage.Setup
                 )
-                index = self.lamella_index.value() -1
+                index = self.lamella_index.value() - 1
                 lamella = Lamella(
                     state = initial_state,
-                    reference_image = self.FIB_IB, # Should this include patterns?
+                    reference_image = None,
                     path = self.experiment.path, 
                     fiducial_centre = Point((self.image_settings.resolution[0]/4)*pixelsize, 0),
                     fiducial_area = FibsemRectangle(0,0,0,0), # TODO
                     lamella_centre = Point(0,0), # Currently always at centre of image
                     lamella_area = FibsemRectangle(0,0,0,0), # TODO 
-                    lamella_number=index +1,
-                    history= AutoLamellaStage.Setup
+                    lamella_number =index + 1,
+                    history = None
                 )
 
                 self.experiment.positions[index] = deepcopy(lamella)
@@ -294,6 +293,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     
     def run_autolamella(self):
+        # First check that the pre-requisites to begin milling have been met.
+
+
         lamella: Lamella
         for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]):
             stage = i + 2 # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
@@ -307,6 +309,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     ) 
 
                     # TODO add alignment stuff
+                    
+
 
                     try:
 
