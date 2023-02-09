@@ -38,7 +38,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.pattern_settings = []
         self.save_path = None
-        self.experiment = Experiment(self.save_path, name = "test")
+        
 
         self.CLog8.setText("Welcome to OpenFIBSEM AutoLamella! Begin by Connecting to a Microscope")
 
@@ -79,6 +79,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_path_button.clicked.connect(self.save_filepath)
         self.run_button.clicked.connect(self.run_autolamella)
         self.platinum.clicked.connect(self.splutter_platinum)
+        self.create_exp.clicked.connect(self.create_experiment)
+        self.load_exp.clicked.connect(self.load_experiment)
 
 
         # Movement controls setup
@@ -149,10 +151,19 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.patterns_protocol.append(stage)
 
     def create_experiment(self): # TODO, return Experiment(...)
-        pass
+
+        if self.save_path is None:
+            response_save = message_box_ui(
+            title="Missing save path",
+            text="Experiment could not be created. Please select a save directory for the experiment data.",
+            )
+            return
+
+        self.experiment = Experiment(path = self.save_path,  name = self.experiment_name.text())
 
     def load_experiment(self): # TODO, return Experiment(...)
-        pass
+        self.experiment = Experiment.load(self.save_path)
+        
 
     def add_lamella(self):
 
@@ -175,6 +186,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 micrscope_state=self.microscope.get_current_microscope_state(),
                 stage=AutoLamellaStage.Setup
             )
+            index = len(self.experiment.positions) + 1
             lamella = Lamella(
                 state = initial_state,
                 reference_image = self.FIB_IB, # Should this include patterns?
@@ -183,10 +195,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 fiducial_area = FibsemRectangle(0,0,0,0), # TODO
                 lamella_centre = Point(0,0), # Currently always at centre of image
                 lamella_area = FibsemRectangle(0,0,0,0), # TODO 
+                lamella_number=index,
+                history= AutoLamellaStage.Setup
             )
 
-            index = len(self.experiment.positions)
-            self.experiment.positions[index+1] = deepcopy(lamella)
+            self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
 
             self.experiment.save() # TODO
 
