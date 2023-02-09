@@ -203,7 +203,7 @@
     </property>
     <layout class="QGridLayout" name="gridLayout">
      <item row="2" column="0">
-      <widget class="QPushButton" name="pushButton_4">
+      <widget class="QPushButton" name="tilt_button">
        <property name="text">
         <string>Move to Mill Angle</string>
        </property>

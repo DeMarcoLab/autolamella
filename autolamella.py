@@ -85,10 +85,18 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.create_exp.triggered.connect(self.create_experiment)
         self.load_exp.triggered.connect(self.load_experiment)
         self.save_button.clicked.connect(self.save_lamella)
+        self.tilt_button.clicked.connect(self.tilt_stage)
 
 
         # Movement controls setup
   
+    def tilt_stage(self):
+        position = self.microscope.get_stage_position()
+        position.t = self.microscope_settings.protocol["stage_tilt"]*constants.DEGREES_TO_RADIANS
+        position.r = self.microscope_settings.protocol["stage_rotation"]*constants.DEGREES_TO_RADIANS
+        self.microscope.move_stage_absolute(position)
+        logging.info("Stage moved to r = 230°, t = 52°")
+
     def splutter_platinum(self):
         
         protocol = [] # TODO where do we get this from?
@@ -99,6 +107,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             whole_grid = False,
             default_application_file = "autolamella",
             )
+
+        logging.info("Platinum sputtering complete")
 
     def draw_patterns(self, hfw: float):
         # Initialise the Lamella and Fiducial Settings
@@ -165,6 +175,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment = Experiment(path = self.save_path,  name = self.experiment_name)
 
+        logging.info("Experiment created")
+
     def load_experiment(self): 
 
         tkinter.Tk().withdraw()
@@ -179,8 +191,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.lamella_count_txt.setText(f"Out of: {index} lamellas") 
 
-        
-        
+        logging.info("Experiment loaded")
+
 
     def add_lamella(self):
 
@@ -195,6 +207,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         index = len(self.experiment.positions)
         
         self.lamella_count_txt.setText(f"Out of: {index} lamellas") 
+
+        logging.info("Empty lamella added to experiment")
 
         return
 
@@ -235,6 +249,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
                 self.experiment.save()
 
+                logging.info("Lamella parameters saved")
+
                 try:
                     protocol = self.microscope_settings.protocol["fiducial"]
                     fiducial_pattern = FibsemPatternSettings(
@@ -266,6 +282,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     path_image = os.path.join(self.save_path, str(lamella.lamella_number).rjust(6, '0'), f"milled_fiducial") 
 
                     self.experiment.save(path_image)
+
+                    logging.info("Fiducial milled successfully")
 
                    
 
@@ -308,6 +326,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         lamella.state.start_timestamp = datetime.timestamp(datetime.now())
 
                         self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
+
+                        logging.info("Lamella milled successfully")
 
                     except Exception as e:
                         logging.error(f"Unable to draw/mill the lamella: {e}")
@@ -419,21 +439,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
                 self.CLog8.setText(disp_str)
       
-
-    def move_to_milling_angle(self):
-
-        current_position = self.microscope.get_stage_position()
-
-        stage_position = FibsemStagePosition(
-            x=current_position.x,
-            y=current_position.y,
-            z=current_position.z,
-            r=np.deg2rad(self.microscope_settings.protocol["stage_rotation"]),
-            t=np.deg2rad(self.microscope_settings.protocol["stage_tilt"])
-    )
-
-        self.microscope.move_stage_absolute(stage_position)
-        
 
     def connect_to_microscope(self):
         
