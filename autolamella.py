@@ -3,6 +3,7 @@ import re
 import UI
 from fibsem import utils, acquire
 import fibsem.movement as movement
+import fibsem.GIS as gis
 import fibsem.milling as milling
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle, FibsemPatternSettings, FibsemMillingSettings
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
@@ -32,6 +33,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer.start(1000)
         
         self.pattern_settings = []
+        self.save_path = None
 
         # Gamma and Image Settings
 
@@ -66,12 +68,25 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
-        self.add_lamella.clicked.connect(self.add_lamella)
+        self.add_lamella_button.clicked.connect(self.add_lamella)
         self.save_path_button.clicked.connect(self.save_filepath)
+        self.run_button.clicked.connect(self.run_autolamella)
+        self.platinum.clicked.connect(self.splutter_platinum)
 
 
         # Movement controls setup
   
+    def splutter_platinum(self):
+        
+        protocol = [] # TODO where do we get this from?
+
+        gis.sputter_platinum(
+            microscope = self.microscope,
+            protocol = protocol,
+            whole_grid = False,
+            default_application_file = "autolamella",
+            )
+
     def draw_patterns(self, hfw: float):
         # Initialise the Lamella and Fiducial Settings
         self.patterns_protocol = []
@@ -127,6 +142,14 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.patterns_protocol.append(stage)
 
     def add_lamella(self):
+
+        if self.save_path is None:
+            response_save = message_box_ui(
+            title="Missing save path",
+            text="Please select a save directory for the lamella data. The current lamella will not be saved",
+            )
+            return
+
         # check to mill fiducial
         response = message_box_ui(
             title="Begin milling fiducial?",
@@ -138,7 +161,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             lamella = Lamella(
                 state = self.microscope.get_current_microscope_state(),
                 reference_image = self.FIB_IB, # Should this include patterns?
-                path = self.path, # TODO
+                path = self.save_path, # TODO
                 fiducial_milled = False,
                 fiducial_centre = Point((self.image_settings.resolution[0]/4)*pixelsize, 0),
                 fiducial_area = FibsemRectangle(0,0,0,0), # TODO
@@ -160,23 +183,54 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     milling_current=protocol["milling_current"]
                 ) 
 
-                milling.setup_milling(self.microscope)
+                milling.setup_milling(self.microscope, mill_settings = fiducial_milling)
                 milling.draw_fiducial(
                     self.microscope, 
                     fiducial_pattern,
                     fiducial_milling,
                 )
-                milling.run_milling(self.microscope) # specify milling current? TODO
+                milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
                 milling.finish_milling(self.microscope)
 
                 lamella.fiducial_milled = True
                 lamella.save()
 
+                # update UI lamella count
+                index = int(self.lamella_number.text())
+                index = index + 1
+                self.lamella_number.setText(str(index)) 
+
             except Exception as e:
                 logging.error(f"Unable to draw/mill the fiducial: {e}")
         else:
             return
+    
+    def run_autolamella(self):
+        
+        for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]):
+            for lamella in enumerate(self.experiment.positions):
 
+                self.microscope.move_stage_absolute(lamella.state.stage_position)
+                logging.info("Moving to lamella position")
+                mill_settings = FibsemMillingSettings(
+                    milling_current=protocol["milling_current"]
+                ) 
+
+                # TODO add alignment stuff
+
+                try:
+
+                    milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
+                    milling.draw_trench(microscope = self.microscope, protocol = protocol, point = Point(0.0,0.0))
+                    milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
+                    milling.finish_milling(self.microscope)
+
+                    self.microscope_settings.image.save_path = lamella.path
+                    self.microscope_settings.image.label = f"ref_mill_stage_{i}"
+                    lamella.reference_image = acquire.new_image(self.microscope, self.microscope_settings.image)
+                except Exception as e:
+                    logging.error(f"Unable to draw/mill the lamella: {e}")
+        
    
 ########################### Movement Functionality ##########################################
 
