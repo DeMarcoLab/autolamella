@@ -10,7 +10,7 @@ from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point,
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 import fibsem.conversions as conversions
 from structures import Lamella, LamellaState, AutoLamellaStage, MovementMode, Experiment
-
+from datetime import datetime
 import os
 from copy import deepcopy
 import tkinter
@@ -70,6 +70,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         # Buttons setup
 
+   
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
@@ -147,27 +148,26 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         ))
         self.patterns_protocol.append(stage)
 
-    def create_experiment(self): # TODO, return Experiment(...)
+    def create_experiment(self): 
 
         if self.save_path is None:
-            response_save = message_box_ui(
-            title="Missing save path",
-            text="Experiment could not be created. Please select a save directory for the experiment data.",
-            )
-            return
+            tkinter.Tk().withdraw()
+            folder_path = filedialog.askdirectory()
+            self.label_5.setText(folder_path)
+            self.save_path = folder_path
+
         if self.exp_name.text() is None: 
             self.exp_name.setText("Experiment 1")
 
         self.experiment = Experiment(path = self.save_path,  name = self.exp_name.text())
 
-    def load_experiment(self): # TODO, return Experiment(...)
+    def load_experiment(self): 
 
         if self.save_path is None:
-            response_save = message_box_ui(
-            title="Missing path",
-            text="Please select a directory to load the data from.",
-            )
-            return
+            tkinter.Tk().withdraw()
+            folder_path = filedialog.askdirectory()
+            self.label_5.setText(folder_path)
+            self.save_path = folder_path
 
         self.experiment = Experiment.load(self.save_path)
         
@@ -175,11 +175,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def add_lamella(self):
 
         if self.save_path is None:
-            response_save = message_box_ui(
-            title="Missing save path",
-            text="Please select a save directory for the lamella data. The current lamella will not be saved",
-            )
-            return
+            tkinter.Tk().withdraw()
+            folder_path = filedialog.askdirectory()
+            self.label_5.setText(folder_path)
+            self.save_path = folder_path
 
         # check to mill fiducial
         response = message_box_ui(
@@ -208,7 +207,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
 
-            self.experiment.save() # TODO
+            self.experiment.save()
 
             try:
                 protocol = self.microscope_settings.protocol["fiducial"]
@@ -231,8 +230,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
                 milling.finish_milling(self.microscope)
 
+                lamella.state.end_timestamp = datetime.timestamp(datetime.now())
+                lamella.history.append(lamella.state)
                 lamella.state.stage = AutoLamellaStage.FiducialMilled
-                lamella.save()
+                lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+                
+                self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
 
                 # update UI lamella count
                 index = int(self.lamella_number.text())
@@ -245,30 +248,41 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             return
     
     def run_autolamella(self):
-        
+        lamella: Lamella
         for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]):
+            stage = i + 2 # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
             for lamella in enumerate(self.experiment.positions):
+                
+                if lamella.state.stage == AutoLamellaStage(stage-1): # Checks to make sure the next stage for the selected Lamella is the current protocol
+                    self.microscope.move_stage_absolute(lamella.state.microscope_state.absolute_position)
+                    logging.info("Moving to lamella position")
+                    mill_settings = FibsemMillingSettings(
+                        milling_current=protocol["milling_current"]
+                    ) 
 
-                self.microscope.move_stage_absolute(lamella.state.stage_position)
-                logging.info("Moving to lamella position")
-                mill_settings = FibsemMillingSettings(
-                    milling_current=protocol["milling_current"]
-                ) 
+                    # TODO add alignment stuff
 
-                # TODO add alignment stuff
+                    try:
 
-                try:
+                        milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
+                        milling.draw_trench(microscope = self.microscope, protocol = protocol, point = lamella.lamella_centre)
+                        milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
+                        milling.finish_milling(self.microscope)
 
-                    milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
-                    milling.draw_trench(microscope = self.microscope, protocol = protocol, point = lamella.lamella_centre)
-                    milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
-                    milling.finish_milling(self.microscope)
+                        self.microscope_settings.image.save_path = lamella.path
+                        self.microscope_settings.image.label = f"ref_mill_stage_{i}"
+                        lamella.reference_image = acquire.new_image(self.microscope, self.microscope_settings.image)
 
-                    self.microscope_settings.image.save_path = lamella.path
-                    self.microscope_settings.image.label = f"ref_mill_stage_{i}"
-                    lamella.reference_image = acquire.new_image(self.microscope, self.microscope_settings.image)
-                except Exception as e:
-                    logging.error(f"Unable to draw/mill the lamella: {e}")
+                        # Update Lamella Stage and Experiment
+                        lamella.state.end_timestamp = datetime.timestamp(datetime.now())
+                        lamella.history.append(lamella.state)
+                        lamella.state.stage = AutoLamellaStage(stage)
+                        lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+
+                        self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
+
+                    except Exception as e:
+                        logging.error(f"Unable to draw/mill the lamella: {e}")
         
    
 ########################### Movement Functionality ##########################################
