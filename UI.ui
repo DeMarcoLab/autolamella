@@ -188,8 +188,14 @@
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_4">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
          <property name="text">
-          <string>Save path</string>
+          <string>Path to Experiment Data</string>
          </property>
         </widget>
        </item>
@@ -227,16 +233,16 @@
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QPushButton" name="ConnectButton">
+        <widget class="QPushButton" name="create_exp">
          <property name="text">
-          <string>Connect to Microscope</string>
+          <string>Create Experiment</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="DisconnectButton">
+        <widget class="QPushButton" name="load_exp">
          <property name="text">
-          <string>Disconnect from Microscope</string>
+          <string>Load Experiment</string>
          </property>
         </widget>
        </item>
