@@ -159,9 +159,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             return
 
-        self.experiment = Experiment(path = self.save_path,  name = self.experiment_name.text())
+        self.experiment = Experiment(path = self.save_path,  name = self.exp_name.text())
 
     def load_experiment(self): # TODO, return Experiment(...)
+
         self.experiment = Experiment.load(self.save_path)
         
 
