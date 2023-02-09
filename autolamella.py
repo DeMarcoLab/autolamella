@@ -209,7 +209,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
 
-            self.experiment.save() # TODO
+            self.experiment.save()
 
             try:
                 protocol = self.microscope_settings.protocol["fiducial"]
@@ -232,8 +232,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
                 milling.finish_milling(self.microscope)
 
+                lamella.history.append(lamella.state)
                 lamella.state.stage = AutoLamellaStage.FiducialMilled
-                lamella.save()
+                self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
 
                 # update UI lamella count
                 index = int(self.lamella_number.text())
