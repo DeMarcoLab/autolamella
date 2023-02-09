@@ -70,7 +70,6 @@ class Lamella:
             "state": self.state.__to_dict__(),
             "reference_image": self.reference_image,
             "path": self.path,
-            "fiducial_milled": self.fiducial_milled,
             "fiducial_centre": self.fiducial_centre.__to_dict__(),
             "fiducial_area": self.fiducial_area.__to_dict__(),
             "lamella_centre": self.lamella_centre.__to_dict__(),
@@ -91,7 +90,6 @@ class Lamella:
             state=state,
             reference_image=reference_image,
             path=data["path"],
-            fiducial_milled=data["fiducial_milled"],
             fiducial_centre=fiducial_centre,
             fiducial_area=fiducial_area,
             lamella_centre=lamella_centre,
@@ -156,7 +154,6 @@ class Experiment:
                 "lamella.centre": lamella.lamella_centre,
                 "lamella.history": lamella.history,
                 "fiducial.centre": lamella.fiducial_centre,
-                "fiducial.milled": lamella.fiducial_milled,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
             }
 

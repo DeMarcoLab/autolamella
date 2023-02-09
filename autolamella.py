@@ -224,7 +224,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
                 milling.finish_milling(self.microscope)
 
-                lamella.state = AutoLamellaStage.FiducialMilled
+                lamella.state.stage = AutoLamellaStage.FiducialMilled
                 lamella.save()
 
                 # update UI lamella count
