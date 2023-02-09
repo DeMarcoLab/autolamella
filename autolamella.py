@@ -8,10 +8,11 @@ import fibsem.milling as milling
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle, FibsemPatternSettings, FibsemMillingSettings
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 import fibsem.conversions as conversions
+from structures import Lamella, MovementMode
 
 import os
 import tkinter
-from tkinter import filedialogw
+from tkinter import filedialog
 import fibsem.constants as constants
 from qtpy import QtWidgets
 from PyQt5.QtCore import QTimer
