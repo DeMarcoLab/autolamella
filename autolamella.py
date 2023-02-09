@@ -401,11 +401,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope = None
         self.microscope_settings = None
         self.RefImage.setEnabled(False)
-        self.ResetImage.setEnabled(False)
-        self.take_image.setEnabled(False)
-        self.save_button.setEnabled(False)
-        self.move_rel_button.setEnabled(False)
-        self.move_abs_button.setEnabled(False)
         logging.info('Microscope Disconnected')
         self.microscope_status.setText("Microscope Disconnected")
         self.microscope_status.setStyleSheet("background-color: red")
