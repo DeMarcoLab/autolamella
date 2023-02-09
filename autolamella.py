@@ -35,17 +35,16 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.pattern_settings = []
         self.save_path = None
 
-        # Gamma and Image Settings
-
-        self.FIB_IB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
-        self.FIB_EB = FibsemImage(data=np.zeros((1536,1024), dtype=np.uint8))
-
         self.CLog8.setText("Welcome to OpenFIBSEM AutoLamella! Begin by Connecting to a Microscope")
 
         # Initialise microscope object
         self.microscope = None
         self.microscope_settings = None
         self.connect_to_microscope()
+
+        # Gamma and Image Settings
+        self.FIB_IB = FibsemImage(data=np.zeros((self.image_settings.resolution[0], self.image_settings.resolution[1]), dtype=np.uint8))
+        self.FIB_EB = FibsemImage(data=np.zeros((self.image_settings.resolution[0], self.image_settings.resolution[1]), dtype=np.uint8))
         
         if self.microscope is not None:
             self.reset_ui_settings()
