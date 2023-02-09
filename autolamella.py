@@ -148,27 +148,26 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         ))
         self.patterns_protocol.append(stage)
 
-    def create_experiment(self): # TODO, return Experiment(...)
+    def create_experiment(self): 
 
         if self.save_path is None:
-            response_save = message_box_ui(
-            title="Missing save path",
-            text="Experiment could not be created. Please select a save directory for the experiment data.",
-            )
-            return
+            tkinter.Tk().withdraw()
+            folder_path = filedialog.askdirectory()
+            self.label_5.setText(folder_path)
+            self.save_path = folder_path
+
         if self.exp_name.text() is None: 
             self.exp_name.setText("Experiment 1")
 
         self.experiment = Experiment(path = self.save_path,  name = self.exp_name.text())
 
-    def load_experiment(self): # TODO, return Experiment(...)
+    def load_experiment(self): 
 
         if self.save_path is None:
-            response_save = message_box_ui(
-            title="Missing path",
-            text="Please select a directory to load the data from.",
-            )
-            return
+            tkinter.Tk().withdraw()
+            folder_path = filedialog.askdirectory()
+            self.label_5.setText(folder_path)
+            self.save_path = folder_path
 
         self.experiment = Experiment.load(self.save_path)
         
@@ -176,11 +175,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def add_lamella(self):
 
         if self.save_path is None:
-            response_save = message_box_ui(
-            title="Missing save path",
-            text="Please select a save directory for the lamella data. The current lamella will not be saved",
-            )
-            return
+            tkinter.Tk().withdraw()
+            folder_path = filedialog.askdirectory()
+            self.label_5.setText(folder_path)
+            self.save_path = folder_path
 
         # check to mill fiducial
         response = message_box_ui(
