@@ -70,6 +70,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         # Buttons setup
 
+   
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
