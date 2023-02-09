@@ -166,6 +166,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def create_experiment(self): 
 
+        self.timer.stop()
+
         if self.save_path is None:
             tkinter.Tk().withdraw()
             folder_path = filedialog.askdirectory()
@@ -174,22 +176,32 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment_name = simpledialog.askstring("Experiment name", "Please enter experiment name")
 
         self.experiment = Experiment(path = self.save_path,  name = self.experiment_name)
+        self.log_path = Path(os.path.join(folder_path, self.experiment_name, "logfile.log"))
+
+        # self.timer.timeout.connect(self.update_log)
+        self.lines = 0
+        self.timer.start(1000)
 
         logging.info("Experiment created")
 
     def load_experiment(self): 
-
+        
+        self.timer.stop()
         tkinter.Tk().withdraw()
         file_path = filedialog.askopenfilename()
         self.experiment = Experiment.load(file_path)
 
         folder_path = os.path.dirname(file_path)
+        self.log_path = os.path.join(folder_path, "/logfile.log")
         self.save_path = Path(folder_path)
 
         # update UI lamella count
         index = len(self.experiment.positions)
         
         self.lamella_count_txt.setText(f"Out of: {index} lamellas") 
+        
+        self.lines = 0
+        self.timer.start(1000)
 
         logging.info("Experiment loaded")
 
