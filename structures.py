@@ -6,7 +6,7 @@ from enum import Enum
 import yaml
 import os
 import pandas as pd
-import datetime
+from datetime import datetime
 
 
 class MovementMode(Enum):

@@ -1,3 +1,4 @@
+
 import sys
 import re
 import UI
@@ -11,6 +12,7 @@ import fibsem.conversions as conversions
 from structures import Lamella, LamellaState, AutoLamellaStage, MovementMode, Experiment
 
 import os
+from copy import deepcopy
 import tkinter
 from tkinter import filedialog
 import fibsem.constants as constants
@@ -18,6 +20,7 @@ from qtpy import QtWidgets
 from PyQt5.QtCore import QTimer
 import numpy as np
 import logging
+from structures import LamellaState, Lamella, MovementMode, MovementType, AutoLamellaStage, Experiment
 import napari
 
 
@@ -35,6 +38,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.pattern_settings = []
         self.save_path = None
+        self.experiment = Experiment(self.save_path, name = "test")
 
         self.CLog8.setText("Welcome to OpenFIBSEM AutoLamella! Begin by Connecting to a Microscope")
 
@@ -175,14 +179,16 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 state = initial_state,
                 reference_image = self.FIB_IB, # Should this include patterns?
                 path = self.save_path, 
-                fiducial_milled = False,
                 fiducial_centre = Point((self.image_settings.resolution[0]/4)*pixelsize, 0),
                 fiducial_area = FibsemRectangle(0,0,0,0), # TODO
                 lamella_centre = Point(0,0), # Currently always at centre of image
                 lamella_area = FibsemRectangle(0,0,0,0), # TODO 
             )
 
-            lamella.save() # TODO
+            index = len(self.experiment.positions)
+            self.experiment.positions[index+1] = deepcopy(lamella)
+
+            self.experiment.save() # TODO
 
             try:
                 protocol = self.microscope_settings.protocol["fiducial"]
@@ -205,8 +211,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
                 milling.finish_milling(self.microscope)
 
-                lamella.fiducial_milled = True
-                lamella.update()
+                lamella.state = AutoLamellaStage.FiducialMilled
+                lamella.save()
 
                 # update UI lamella count
                 index = int(self.lamella_number.text())
@@ -234,7 +240,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 try:
 
                     milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
-                    milling.draw_trench(microscope = self.microscope, protocol = protocol, point = Point(0.0,0.0))
+                    milling.draw_trench(microscope = self.microscope, protocol = protocol, point = lamella.lamella_centre)
                     milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
                     milling.finish_milling(self.microscope)
 
@@ -449,6 +455,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         folder_path = filedialog.askdirectory()
         self.label_5.setText(folder_path)
         self.save_path = folder_path
+        self.experiment.path = self.save_path
 
     def reset_ui_settings(self):
 
