@@ -8,7 +8,7 @@ import fibsem.milling as milling
 from fibsem.structures import BeamType, FibsemImage, FibsemStagePosition, Point, MicroscopeState, FibsemRectangle, FibsemPatternSettings, FibsemMillingSettings
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 import fibsem.conversions as conversions
-from structures import Lamella, MovementMode
+from structures import Lamella, LamellaState, AutoLamellaStage, MovementMode, Experiment
 
 import os
 import tkinter
@@ -57,6 +57,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     
         viewer.grid.enabled = False
+
+        # Initialise experiment object
+        self.experiment: Experiment = None
 
 
     def setup_connections(self):
@@ -141,6 +144,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         ))
         self.patterns_protocol.append(stage)
 
+    def create_experiment(self): # TODO, return Experiment(...)
+        pass
+
+    def load_experiment(self): # TODO, return Experiment(...)
+        pass
+
     def add_lamella(self):
 
         if self.save_path is None:
@@ -158,10 +167,14 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if response:
             pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
+            initial_state = LamellaState(
+                micrscope_state=self.microscope.get_current_microscope_state(),
+                stage=AutoLamellaStage.Setup
+            )
             lamella = Lamella(
-                state = self.microscope.get_current_microscope_state(),
+                state = initial_state,
                 reference_image = self.FIB_IB, # Should this include patterns?
-                path = self.save_path, # TODO
+                path = self.save_path, 
                 fiducial_milled = False,
                 fiducial_centre = Point((self.image_settings.resolution[0]/4)*pixelsize, 0),
                 fiducial_area = FibsemRectangle(0,0,0,0), # TODO
@@ -193,7 +206,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 milling.finish_milling(self.microscope)
 
                 lamella.fiducial_milled = True
-                lamella.save()
+                lamella.update()
 
                 # update UI lamella count
                 index = int(self.lamella_number.text())

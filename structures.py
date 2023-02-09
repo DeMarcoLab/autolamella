@@ -20,10 +20,11 @@ class MovementType(Enum):
     TiltEnabled = 2
 
 class AutoLamellaStage(Enum):
-    Initialisation = -1
     Setup = 0
-    ...
-    # TODO
+    FiducialMilled = 1
+    RoughtCut = 2
+    RegularCut = 3
+    PolishingCut = 4
 
 @dataclass
 class LamellaState:
@@ -49,13 +50,14 @@ class LamellaState:
             start_timestamp=data["start_timestamp"],
             end_timestamp=data["end_timestamp"]
         )
+    
+
 
 @dataclass
 class Lamella:
     state: LamellaState
     reference_image: FibsemImage
     path: Path
-    fiducial_milled: bool
     fiducial_centre: Point
     fiducial_area: FibsemRectangle
     lamella_centre: Point
