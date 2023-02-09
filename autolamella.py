@@ -12,6 +12,7 @@ import fibsem.conversions as conversions
 from structures import Lamella, MovementMode
 
 import os
+from copy import deepcopy
 import tkinter
 from tkinter import filedialog
 import fibsem.constants as constants
@@ -37,6 +38,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.pattern_settings = []
         self.save_path = None
+        self.experiment = Experiment(self.save_path, name = "test")
 
         self.CLog8.setText("Welcome to OpenFIBSEM AutoLamella! Begin by Connecting to a Microscope")
 
@@ -171,7 +173,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 lamella_area = FibsemRectangle(0,0,0,0), # TODO 
             )
 
-            lamella.save() # TODO
+            index = len(self.experiment.positions)
+            self.experiment.positions[index+1] = deepcopy(lamella)
+
+            self.experiment.save() # TODO
 
             try:
                 protocol = self.microscope_settings.protocol["fiducial"]
@@ -194,8 +199,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
                 milling.finish_milling(self.microscope)
 
-                lamella.fiducial_milled = True
-                lamella.save()
+                self.experiment.positions[index+1].fiducial_milled = True
+                self.experiment.save()
 
                 # update UI lamella count
                 index = int(self.lamella_number.text())
@@ -438,6 +443,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         folder_path = filedialog.askdirectory()
         self.label_5.setText(folder_path)
         self.save_path = folder_path
+        self.experiment.path = self.save_path
 
     def reset_ui_settings(self):
 
