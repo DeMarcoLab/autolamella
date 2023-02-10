@@ -217,6 +217,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="Before adding a lamella please take atleast one image.",
                 buttons=QMessageBox.Ok
             )
+            return
 
         index = len(self.experiment.positions)
         lamella = Lamella(
