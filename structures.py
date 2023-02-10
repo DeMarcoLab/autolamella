@@ -46,7 +46,7 @@ class LamellaState:
         state = MicroscopeState.__from_dict__(data["microscope_state"])
         return cls(
             microscope_state=state,
-            stage=data["stage"],
+            stage=AutoLamellaStage(data["stage"]),
             start_timestamp=data["start_timestamp"],
             end_timestamp=data["end_timestamp"]
         )
@@ -65,10 +65,12 @@ class Lamella:
     history: list[LamellaState] = None
 
     def __to_dict__(self):
+        if self.history is None:
+            self.history = []
         return {
             "state": self.state.__to_dict__() if self.state is not None else "Not defined",
-            "reference_image": self.reference_image.metadata.image_settings.save_path,
-            "path": self.path if self.path is not None else "Not defined",
+            "reference_image": str(os.path.join(self.path, self.reference_image.metadata.image_settings.label)) if self.reference_image is not None else "Not defined",
+            "path": str(self.path) if self.path is not None else "Not defined",
             "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else "Not defined",
             "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
             "lamella_centre": self.lamella_centre.__to_dict__() if self.lamella_centre is not None else "Not defined",
@@ -84,7 +86,7 @@ class Lamella:
         lamella_centre = Point.__from_dict__(data["lamella_centre"])
         return cls(
             state=state,
-            reference_image=None, # TODO add reference image
+            reference_image=FibsemImage.load(data["reference_image"]),
             path=data["path"],
             fiducial_centre=fiducial_centre,
             fiducial_area=fiducial_area,
