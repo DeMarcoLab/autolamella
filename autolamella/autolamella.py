@@ -25,6 +25,8 @@ from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 from PyQt5.QtCore import QTimer
 from qtpy import QtWidgets
 
+import traceback
+
 import UI as UI
 from structures import (AutoLamellaStage, Experiment, Lamella, LamellaState,
                         MovementMode, MovementType)
@@ -255,7 +257,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             if response:
                 pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
-                fiducial_x = (self.image_settings.resolution[0]/4)*pixelsize
+                fiducial_x = float((self.image_settings.resolution[0]/4)*pixelsize)
                 initial_state = LamellaState(
                     microscope_state=self.microscope.get_current_microscope_state(),
                     stage=AutoLamellaStage.Setup
@@ -380,6 +382,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
                         milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
                         milling.draw_trench(microscope = self.microscope, protocol = protocol, point = lamella.lamella_centre)
+
+                        # if stage is AutoLamellaStage.RoughCut:
+                            # milling.draw_stress_relief()
                         milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
                         milling.finish_milling(self.microscope)
 
@@ -400,7 +405,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         logging.info("Lamella milled successfully")
 
                     except Exception as e:
-                        logging.error(f"Unable to draw/mill the lamella: {e}")
+                        logging.error(f"Unable to draw/mill the lamella: {traceback.format_exc()}")
 
     def can_run_milling(self):
         ## First condition
@@ -626,7 +631,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 if __name__ == "__main__":    
 
-    app = QtWidgets.QApplication(sys.argv)
+    # app = QtWidgets.QApplication(sys.argv)
 
 
     viewer = napari.Viewer()
@@ -640,7 +645,7 @@ if __name__ == "__main__":
     widget = viewer.window.add_dock_widget(window)
     widget.setMinimumWidth(500)
 
-    
+    napari.run()    
 
-    sys.exit(app.exec())
+    # sys.exit(app.exec())
  
