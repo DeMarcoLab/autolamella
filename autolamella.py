@@ -210,6 +210,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
     def add_lamella(self):
+        # Check to see if an image has been taken first
+        if self.FIB_EB.metadata == None:
+            _ = message_box_ui(
+                title="No image has been taken.",
+                text="Before adding a lamella please take atleast one image.",
+                buttons=QMessageBox.Ok
+            )
 
         index = len(self.experiment.positions)
         lamella = Lamella(
