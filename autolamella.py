@@ -214,7 +214,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         index = len(self.experiment.positions)
         lamella = Lamella(
             lamella_number=index +1,
-            reference_image=self.FIB_EB,
+            reference_image=self.FIB_IB,
         )
 
         self.experiment.positions.append(deepcopy(lamella))
@@ -253,7 +253,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 index = self.lamella_index.value() - 1
                 lamella = Lamella(
                     state = initial_state,
-                    reference_image = None,
+                    reference_image = self.FIB_IB,
                     path = self.experiment.path, 
                     fiducial_centre = Point(fiducial_x, 0),
                     fiducial_area = FibsemRectangle(
