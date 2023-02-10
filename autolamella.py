@@ -260,10 +260,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     stage=AutoLamellaStage.Setup
                 )
                 fiducial_area = FibsemRectangle(
-                        left=fiducial_x-float(self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45))/2,
-                        top=float(self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45))/2,
-                        width=float(self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45)),
-                        height=float(self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45)))
+                        left=0.25 -float(self.microscope_settings.protocol["fiducial"]["length"]/self.microscope_settings.image.hfw),
+                        top=0.5 - float(self.microscope_settings.protocol["fiducial"]["length"]/self.microscope_settings.image.hfw),
+                        width=float(self.microscope_settings.protocol["fiducial"]["length"]/self.microscope_settings.image.hfw),
+                        height=float(self.microscope_settings.protocol["fiducial"]["length"]/self.microscope_settings.image.hfw)
+                )
 
                 index = self.lamella_index.value() - 1
 
@@ -317,7 +318,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             milling.draw_fiducial(
                 self.microscope, 
                 fiducial_pattern,
-                fiducial_milling,
             )
             milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current)
             milling.finish_milling(self.microscope)
@@ -327,12 +327,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             lamella.state.stage = AutoLamellaStage.FiducialMilled
             lamella.state.start_timestamp = datetime.timestamp(datetime.now())
             self.image_settings.beam_type = BeamType.ION
+            self.image_settings.reduced_area = lamella.fiducial_area
             lamella.reference_image = acquire.new_image(self.microscope, self.image_settings)
+            self.image_settings.reduced_area = None 
 
-            
-            self.experiment.positions[lamella.lamella_number-1] = deepcopy(lamella)
-
-            self.experiment.positions[lamella.lamella_number-1].reference_image.metadata.image_settings.label = "milled_fiducial"
+            lamella.reference_image.metadata.image_settings.label = "milled_fiducial"
 
             # path_image = os.path.join(self.save_path, str(lamella.lamella_number).rjust(6, '0'), f"milled_fiducial") 
 
@@ -355,9 +354,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="The following requirements must be met:\n1. Microscope Connected.\n2. Experiment created.\n3.Atleast 1 Lamella saved.\n4. All fiducials milled.",
                 buttons=QMessageBox.Ok
             )
+            return
 
         lamella: Lamella
-        for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]):
+        for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]["protocol_stages"]):
             stage = i + 2 # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
             for j, lamella in enumerate(self.experiment.positions):
                 
@@ -394,7 +394,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         self.image_settings.beam_type = BeamType.ION
                         lamella.reference_image = acquire.new_image(self.microscope, self.image_settings)
 
-                        self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
+                        self.experiment.save()
 
                         logging.info("Lamella milled successfully")
 
