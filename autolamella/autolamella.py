@@ -25,7 +25,7 @@ from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 from PyQt5.QtCore import QTimer
 from qtpy import QtWidgets
 
-import UI
+import UI as UI
 from structures import (AutoLamellaStage, Experiment, Lamella, LamellaState,
                         MovementMode, MovementType)
 from PyQt5.QtWidgets import QMessageBox
