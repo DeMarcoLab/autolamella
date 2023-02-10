@@ -100,8 +100,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         logging.info(f"Stage moved to r = {position.r}°, t = {position.t}°")
 
     def splutter_platinum(self):
-        
-        protocol = [] # TODO where do we get this from?
+        print("Sputtering Platinum")
+        return
+        protocol = [] #  where do we get this from?
 
         gis.sputter_platinum(
             microscope = self.microscope,
@@ -260,8 +261,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         top=(self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45))/2,
                         width=self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45),
                         height=self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45)),
-                    lamella_centre = Point(0,0), # Currently always at centre of image
-                    lamella_area = FibsemRectangle(0,0,0,0), # TODO 
+                    lamella_centre = Point(0,0), # Currently always at centre of image 
                     lamella_number=index +1,
                     history= []
                 )
@@ -290,7 +290,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         fiducial_pattern,
                         fiducial_milling,
                     )
-                    milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current) # specify milling current? TODO
+                    milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current)
                     milling.finish_milling(self.microscope)
 
                     lamella.state.end_timestamp = datetime.timestamp(datetime.now())
