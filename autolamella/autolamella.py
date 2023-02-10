@@ -326,7 +326,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             milling.finish_milling(self.microscope)
 
             lamella.state.end_timestamp = datetime.timestamp(datetime.now())
-            lamella.history.append(lamella.state)
+            lamella.history.append(deepcopy(lamella.state))
             lamella.state.stage = AutoLamellaStage.FiducialMilled
             lamella.state.start_timestamp = datetime.timestamp(datetime.now())
             self.image_settings.beam_type = BeamType.ION
@@ -394,7 +394,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
                         # Update Lamella Stage and Experiment
                         lamella.state.end_timestamp = datetime.timestamp(datetime.now())
-                        lamella.history.append(lamella.state)
+                        lamella.history.append(deepcopy(lamella.state))
                         lamella.state.stage = AutoLamellaStage(stage)
                         lamella.state.start_timestamp = datetime.timestamp(datetime.now())
                         self.image_settings.beam_type = BeamType.ION
