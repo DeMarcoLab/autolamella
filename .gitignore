@@ -1,3 +1,11 @@
 *logfile.log
 *.pyc
 autolamella.egg-info/*
+
+
+
+.pytest_cache/*
+log/*
+.idea/*
+
+.coverage
