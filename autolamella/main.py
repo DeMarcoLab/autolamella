@@ -53,7 +53,8 @@ def main(settings):
             settings,
             output_dir=settings["save_directory"],
         )
-        microscope.beams.ion_beam.turn_off()
+        if bool(settings['imaging'].get('turn_ion_beam_off_afterwards')) is True:
+            microscope.beams.ion_beam.turn_off()
     else:
         print("Cancelling ion milling.")
     print("Finished!")

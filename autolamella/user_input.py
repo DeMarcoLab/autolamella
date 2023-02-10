@@ -77,6 +77,7 @@ def load_config(yaml_filename):
     with open(yaml_filename, "r") as f:
         settings_dict = yaml.safe_load(f)
     settings_dict = _add_missing_keys(settings_dict)
+    settings_dict = _validate_keys(settings_dict)
     settings_dict = _format_dictionary(settings_dict)
     # settings = Settings(**settings_dict)  # convert to python dataclass
     return settings_dict
@@ -96,7 +97,9 @@ def protocol_stage_settings(settings):
     """
     protocol_stages = []
     for stage_settings in settings["lamella"]["protocol_stages"]:
-        tmp_settings = settings["lamella"].copy()
+        tmp_settings = {}
+        tmp_settings.update(settings['system'].copy())
+        tmp_settings.update(settings["lamella"].copy())
         tmp_settings.update(stage_settings)
         protocol_stages.append(tmp_settings)
     return protocol_stages
@@ -134,7 +137,37 @@ def _add_missing_keys(dictionary):
     dictionary["lamella"]["overtilt_degrees"] = dictionary["lamella"].get(
         "overtilt_degrees", 0
     )
+    dictionary["lamella"]["patterning_shape"] = dictionary["lamella"].get(
+        "patterning_shape", "CleaningCrossSection"
+    )
+    dictionary["lamella"]["patterning_mode"] = dictionary["lamella"].get(
+        "patterning_mode", "Serial"
+    )
     dictionary["demo_mode"] = dictionary.get("demo_mode", False)
+    return dictionary
+
+
+def _validate_keys(dictionary):
+    """Validate config values where only certain values are accepted.
+
+    Parameters
+    ----------
+    dictionary : Dictionary of user input argument settings.
+
+    Returns
+    -------
+    dictionary
+        Python dictionray of user input settings.
+    """
+    pattern_shape = dictionary["lamella"].get("patterning_shape")
+    if pattern_shape not in ["CleaningCrossSection", "Rectangle"]:
+        raise ValueError('Lamella patterning_shape must be either'
+                         ' "CleaningCrossSection" or "Rectangle". '
+                         'Please edit your config file.')
+    pattern_mode = dictionary["lamella"].get("patterning_mode")
+    if pattern_mode not in ["Serial", "Parallel"]:
+        raise ValueError('Lamella pattern_mode must be either "Serial" or "Parallel".'
+                         'Please edit your config file.')
     return dictionary
 
 

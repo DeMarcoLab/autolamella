@@ -115,22 +115,21 @@ def _milling_coords(microscope, stage_settings, my_lamella, pattern):
         if pattern == "upper" \
         else lamella_center_y - center_offset
 
-    if stage_settings["use_cleaning_cross_section"]:
-        milling_roi = microscope.patterning.create_cleaning_cross_section(
-            lamella_center_x,
-            center_y,
-            stage_settings.get(f'lamella_width_{pattern}', stage_settings["lamella_width"]),
-            height,
-            milling_depth,
-        )
+    if stage_settings.get('patterning_shape') == "Rectangle":
+        microscope.patterning.set_default_application_file(stage_settings['application_file_rectangle'])
+    elif stage_settings.get("patterning_shape") == "CleaningCrossSection":
+        microscope.patterning.set_default_application_file(stage_settings['application_file_cleaning_cross_section'])
+        create_pattern_function = microscope.patterning.create_cleaning_cross_section
     else:
-        milling_roi = microscope.patterning.create_rectangle(
-            lamella_center_x,
-            center_y,
-            stage_settings.get(f'lamella_width_{pattern}', stage_settings["lamella_width"]),
-            height,
-            milling_depth,
-        )
+        logging.error('No patterning_shape specified, must be "Rectangle" or "CleaningCrossSection".')
+
+    milling_roi = create_pattern_function(
+        lamella_center_x,
+        center_y,
+        stage_settings["lamella_width"],
+        height,
+        milling_depth,
+    )
     if pattern == "upper":
         milling_roi.scan_direction = "TopToBottom"
     elif pattern == "lower":
@@ -139,8 +138,18 @@ def _milling_coords(microscope, stage_settings, my_lamella, pattern):
 
 
 def _microexpansion_coords(microscope, stage_settings, my_lamella):
-    """Mill microexpansion joints (TODO: add reference)"""
+    """Mill microexpansion joints.
 
+    References
+    ----------
+
+    .. [1] Wolff G, Limpens RWAL, Zheng S, Snijder EJ, Agard DA, Koster AJ,
+       Bárcena M. "Mind the gap: Micro-expansion joints drastically decrease
+       the bending of FIB-milled cryo-lamellae." J Struct Biol.
+       2019 Dec 1;208(3):107389. doi: 10.1016/j.jsb.2019.09.006.
+       Epub 2019 Sep 16. PMID: 31536774.
+       https://doi.org/10.1016/j.jsb.2019.09.006
+    """
     if not ("microexpansion_width" in stage_settings
             and "microexpansion_distance_from_lamella" in stage_settings
             and "microexpansion_percentage_height" in stage_settings):
@@ -164,6 +173,7 @@ def _microexpansion_coords(microscope, stage_settings, my_lamella):
                + stage_settings["microexpansion_distance_from_lamella"]
     milling_rois = []
     for scan_direction, offset_x in (("LeftToRight", -offset_x), ("RightToLeft", offset_x)):
+        microscope.patterning.set_default_application_file(stage_settings['application_file_rectangle'])
         milling_roi = microscope.patterning.create_rectangle(
             lamella_center_x + offset_x,
             lamella_center_y,
@@ -178,9 +188,7 @@ def _microexpansion_coords(microscope, stage_settings, my_lamella):
 
 def setup_milling(microscope, settings, stage_settings, my_lamella):
     """Setup the ion beam system ready for milling."""
-    system_settings = settings["system"]
-    ccs_file = system_settings["application_file_cleaning_cross_section"]
-    microscope = reset_state(microscope, settings, application_file=ccs_file)
+    microscope = reset_state(microscope, settings)
     my_lamella.fibsem_position.restore_state(microscope)
     microscope.beams.ion_beam.beam_current.value = stage_settings["milling_current"]
     return microscope

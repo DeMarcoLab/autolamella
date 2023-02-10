@@ -8,6 +8,7 @@ imaging: # Ion beam imaging parameters
   resolution: '1536x1024' # Must be one of the set resolutions available.
   autocontrast: false # whether to automatically run auto contrast adjustment
   full_field_ib_images: false # Whether to acquire multiple intermediate full field ion beam images (warning: high dose)
+  turn_ion_beam_off_afterwards: false # Whether to turn ion beam off after finishing
 fiducial: # Fiducial marker parameters
   reduced_area_resolution: '3072x2048'
   fiducial_length: 5e-7 # In meters. Fiducial cross stroke length.
@@ -23,8 +24,8 @@ lamella: # Lamella parameters
   total_cut_height: 5e-7 # In meters. Combined milling region above & below.
   milling_depth: 1e-6 # In meters. Default milling depth.
   milling_current: 1e-8 # In Amperes. Default milling current.
-  patterning_mode: 'Serial'
-  use_cleaning_cross_section: True # use a cleaning cross section (true) or rectangle (false) pattern 
+  patterning_shape: 'CleaningCrossSection'  # Options are "CleaningCrossSection" or "Rectangle"
+  patterning_mode: 'Serial'  # Options are "Serial" or "Parallel"
   # Protocol stages are milled in the order they appear here.
   # Stages may override the default parmeters above Eg: current, depth, etc.
   protocol_stages:
