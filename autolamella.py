@@ -20,6 +20,7 @@ from fibsem import acquire, utils
 from fibsem.structures import (BeamType, FibsemImage, FibsemMillingSettings,
                                FibsemPatternSettings, FibsemRectangle,
                                FibsemStagePosition, MicroscopeState, Point)
+from fibsem.alignment import beam_shift_alignment
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 from PyQt5.QtCore import QTimer
 from qtpy import QtWidgets
@@ -27,6 +28,7 @@ from qtpy import QtWidgets
 import UI
 from structures import (AutoLamellaStage, Experiment, Lamella, LamellaState,
                         MovementMode, MovementType)
+from PyQt5.QtWidgets import QMessageBox
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
@@ -239,6 +241,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             if response:
                 pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
+                fiducial_x = (self.image_settings.resolution[0]/4)*pixelsize
                 initial_state = LamellaState(
                     microscope_state=self.microscope.get_current_microscope_state(),
                     stage=AutoLamellaStage.Setup
@@ -248,12 +251,16 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     state = initial_state,
                     reference_image = None,
                     path = self.experiment.path, 
-                    fiducial_centre = Point((self.image_settings.resolution[0]/4)*pixelsize, 0),
-                    fiducial_area = FibsemRectangle(0,0,0,0), # TODO
+                    fiducial_centre = Point(fiducial_x, 0),
+                    fiducial_area = FibsemRectangle(
+                        left=fiducial_x-(self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45))/2,
+                        top=(self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45))/2,
+                        width=self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45),
+                        height=self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45)),
                     lamella_centre = Point(0,0), # Currently always at centre of image
                     lamella_area = FibsemRectangle(0,0,0,0), # TODO 
                     lamella_number =index + 1,
-                    history = None
+                    history = [None]
                 )
 
                 self.experiment.positions[index] = deepcopy(lamella)
@@ -287,6 +294,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     lamella.history.append(lamella.state)
                     lamella.state.stage = AutoLamellaStage.FiducialMilled
                     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+                    self.image_settings.beam_type = BeamType.ION
+                    lamella.reference_image = acquire.new_image(self.microscope, self.image_settings)
+
                     
                     self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
 
@@ -306,7 +316,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     
     def run_autolamella(self):
         # First check that the pre-requisites to begin milling have been met.
-
+        if self.can_run_milling() == False:
+            # check to mill fiducial
+            _ = message_box_ui(
+                title="Milling Requirements have not been met.",
+                text="The following requirements must be met:\n1. Microscope Connected.\n2. Experiment created.\n3.Atleast 1 Lamella saved.\n4. All fiducials milled.",
+                buttons=QMessageBox.Ok
+            )
 
         lamella: Lamella
         for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]):
@@ -320,9 +336,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         milling_current=protocol["milling_current"]
                     ) 
 
-                    # TODO add alignment stuff
-                    
-
+                    # alignment 
+                    beam_shift_alignment(
+                        microscope=self.microscope, 
+                        image_settings=self.image_settings, 
+                        ref_image=lamella.reference_image, 
+                        reduced_area=lamella.fiducial_area)
 
                     try:
 
@@ -340,6 +359,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         lamella.history.append(lamella.state)
                         lamella.state.stage = AutoLamellaStage(stage)
                         lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+                        self.image_settings.beam_type = BeamType.ION
+                        lamella.reference_image = acquire.new_image(self.microscope, self.image_settings)
 
                         self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
 
@@ -347,6 +368,24 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
                     except Exception as e:
                         logging.error(f"Unable to draw/mill the lamella: {e}")
+
+    def can_run_milling(self):
+        ## First condition
+        if self.microscope is None:
+            return False
+        ## Second condition
+        elif self.experiment is None:
+            return False
+        ## Third condition
+        elif len(self.experiment.positions) == 0:
+            return False
+        ## Fourth condition
+        for lamella in self.experiment.positions:
+            if lamella.state.stage.value == 0:
+                return False
+        # All conditions met
+        return True
+
         
    
 ########################### Movement Functionality ##########################################
