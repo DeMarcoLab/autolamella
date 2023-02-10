@@ -86,6 +86,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.load_exp.triggered.connect(self.load_experiment)
         self.save_button.clicked.connect(self.save_lamella)
         self.tilt_button.clicked.connect(self.tilt_stage)
+        self.go_to_lamella.clicked.connect(self.move_to_position)
 
 
         # Movement controls setup
@@ -192,7 +193,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = Experiment.load(file_path)
 
         folder_path = os.path.dirname(file_path)
-        self.log_path = os.path.join(folder_path, "/logfile.log")
+        self.log_path = os.path.join(folder_path, "logfile.log")
         self.save_path = Path(folder_path)
 
         # update UI lamella count
@@ -213,7 +214,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             lamella_number=index +1,
             reference_image=self.FIB_EB,
         )
+
         self.experiment.positions.append(deepcopy(lamella))
+        self.experiment.positions[lamella.lamella_number-1].reference_image.metadata.image_settings.label = "Empty ref"
 
          # update UI lamella count
         index = len(self.experiment.positions)
@@ -254,7 +257,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     lamella_centre = Point(0,0), # Currently always at centre of image
                     lamella_area = FibsemRectangle(0,0,0,0), # TODO 
                     lamella_number=index +1,
-                    history= AutoLamellaStage.Setup
+                    history= []
                 )
 
                 self.experiment.positions[index] = deepcopy(lamella)
@@ -289,11 +292,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     lamella.state.stage = AutoLamellaStage.FiducialMilled
                     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
                     
-                    self.experiment.positions[lamella.lamella_number] = deepcopy(lamella)
+                    self.experiment.positions[lamella.lamella_number-1] = deepcopy(lamella)
 
-                    path_image = os.path.join(self.save_path, str(lamella.lamella_number).rjust(6, '0'), f"milled_fiducial") 
+                    self.experiment.positions[lamella.lamella_number-1].reference_image.metadata.image_settings.label = "milled_fiducial"
 
-                    self.experiment.save(path_image)
+                    # path_image = os.path.join(self.save_path, str(lamella.lamella_number).rjust(6, '0'), f"milled_fiducial") 
+
+                    self.experiment.save()
 
                     logging.info("Fiducial milled successfully")
 
@@ -411,6 +416,16 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
 
         self.take_reference_images()
+
+
+    def move_to_position(self):
+
+        position = self.experiment.positions[self.lamella_index.value()-1].state.microscope_state.absolute_position
+        self.microscope.move_stage_absolute(position)
+        logging.info(f"Moved to lamella position: {position}")
+        self.take_reference_images()
+
+
 
     ################# UI Display helper functions  ###########################################
 
