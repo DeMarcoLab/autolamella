@@ -35,7 +35,7 @@ class LamellaState:
 
     def __to_dict__(self):
         return {
-            "microscope_state": self.microscope_state.__to_dict__(),
+            "microscope_state": self.microscope_state.__to_dict__() if self.microscope_state is not None else "not defined",
             "stage": self.stage.name,
             "start_timestamp": self.start_timestamp,
             "end_timestamp": self.end_timestamp,

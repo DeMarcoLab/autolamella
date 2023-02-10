@@ -217,8 +217,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             reference_image=self.FIB_IB,
         )
 
+        lamella.reference_image.metadata.image_settings.label = "Empty ref"
+
         self.experiment.positions.append(deepcopy(lamella))
-        self.experiment.positions[lamella.lamella_number-1].reference_image.metadata.image_settings.label = "Empty ref"
 
          # update UI lamella count
         index = len(self.experiment.positions)
@@ -259,8 +260,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     fiducial_area = FibsemRectangle(
                         left=fiducial_x-(self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45))/2,
                         top=(self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45))/2,
-                        width=self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45),
-                        height=self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45)),
+                        width=(self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45)),
+                        height=(self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45))),
                     lamella_centre = Point(0,0), # Currently always at centre of image 
                     lamella_number=index +1,
                     history= []
