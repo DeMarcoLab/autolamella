@@ -233,6 +233,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         index = len(self.experiment.positions)
         
         self.lamella_count_txt.setText(f"Out of: {index} lamellas") 
+        self.lamella_index.setMaximum(index)
 
         logging.info("Empty lamella added to experiment")
 
