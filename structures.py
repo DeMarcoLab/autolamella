@@ -63,7 +63,7 @@ class Lamella:
     lamella_centre: Point = Point()
     lamella_area: FibsemRectangle = FibsemRectangle()
     lamella_number: int = None
-    history: list[AutoLamellaStage] = None
+    history: list[LamellaState] = None
 
     def __to_dict__(self):
         return {
@@ -75,7 +75,7 @@ class Lamella:
             "lamella_centre": self.lamella_centre.__to_dict__() if self.lamella_centre is not None else "Not defined",
             "lamella_area": self.lamella_area.__to_dict__() if self.lamella_area is not None else "Not defined",
             "lamella_number": self.lamella_number if self.lamella_number is not None else "Not defined",
-            "history": self.history.name if self.history is not None else "Not defined",
+            "history": [state.__to_dict__() for state in self.history] if self.history is not False else "Not defined",
         }
 
     @classmethod
@@ -126,7 +126,7 @@ class Experiment:
             yaml.safe_dump(self.__to_dict__(), f, indent=4)
 
         for lamella in self.positions:
-            path_image = os.path.join(self.path, str(lamella.lamella_number).rjust(6, '0'), f"empty_ref")
+            path_image = os.path.join(self.path, str(lamella.lamella_number).rjust(6, '0'), lamella.reference_image.metadata.image_settings.label)
             if lamella.reference_image is not None:
                 lamella.reference_image.save(path_image)
 
