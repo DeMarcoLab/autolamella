@@ -61,7 +61,6 @@ class Lamella:
     fiducial_centre: Point = Point()
     fiducial_area: FibsemRectangle = FibsemRectangle()
     lamella_centre: Point = Point()
-    lamella_area: FibsemRectangle = FibsemRectangle()
     lamella_number: int = None
     history: list[LamellaState] = None
 
@@ -73,7 +72,6 @@ class Lamella:
             "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else "Not defined",
             "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
             "lamella_centre": self.lamella_centre.__to_dict__() if self.lamella_centre is not None else "Not defined",
-            "lamella_area": self.lamella_area.__to_dict__() if self.lamella_area is not None else "Not defined",
             "lamella_number": self.lamella_number if self.lamella_number is not None else "Not defined",
             "history": [state.__to_dict__() for state in self.history] if self.history is not False else "Not defined",
         }
@@ -84,7 +82,6 @@ class Lamella:
         fiducial_centre = Point.__from_dict__(data["fiducial_centre"])
         fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
         lamella_centre = Point.__from_dict__(data["lamella_centre"])
-        lamella_area = FibsemRectangle.__from_dict__(data["lamella_area"])
         return cls(
             state=state,
             reference_image=None, # TODO add reference image
@@ -92,7 +89,6 @@ class Lamella:
             fiducial_centre=fiducial_centre,
             fiducial_area=fiducial_area,
             lamella_centre=lamella_centre,
-            lamella_area=lamella_area,
             lamella_number=data["lamella_number"],
             history=data["history"],
         )
