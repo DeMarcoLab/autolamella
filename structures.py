@@ -28,8 +28,8 @@ class AutoLamellaStage(Enum):
 
 @dataclass
 class LamellaState:
-    microscope_state: MicroscopeState = None
-    stage: AutoLamellaStage = None
+    microscope_state: MicroscopeState = MicroscopeState()
+    stage: AutoLamellaStage = AutoLamellaStage.Setup
     start_timestamp: float = datetime.timestamp(datetime.now())
     end_timestamp: float = None
 
