@@ -65,7 +65,10 @@ def milling(
     if pattern == "lower" or pattern == "both":
         _milling_coords(microscope, stage_settings, my_lamella, "lower")
     # Create microexpansion joints (if applicable)
-    _microexpansion_coords(microscope, stage_settings, my_lamella)
+    try:
+        _microexpansion_coords(microscope, stage_settings, my_lamella)
+    except:
+        pass
     if 'patterning_mode' in stage_settings:
         microscope.patterning.mode = stage_settings['patterning_mode']
     if not demo_mode:
