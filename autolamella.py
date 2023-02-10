@@ -251,19 +251,21 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     microscope_state=self.microscope.get_current_microscope_state(),
                     stage=AutoLamellaStage.Setup
                 )
+                fiducial_area = FibsemRectangle(
+                        left=fiducial_x-float(self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45))/2,
+                        top=float(self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45))/2,
+                        width=float(self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45)),
+                        height=float(self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45)))
+
                 index = self.lamella_index.value() - 1
                 lamella = Lamella(
                     state = initial_state,
                     reference_image = self.FIB_IB,
                     path = self.experiment.path, 
                     fiducial_centre = Point(fiducial_x, 0),
-                    fiducial_area = FibsemRectangle(
-                        left=fiducial_x-(self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45))/2,
-                        top=(self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45))/2,
-                        width=(self.microscope_settings.protocol["fiducial"]["length"]*np.cos(45)),
-                        height=(self.microscope_settings.protocol["fiducial"]["length"]*np.sin(45))),
+                    fiducial_area = fiducial_area,
                     lamella_centre = Point(0,0), # Currently always at centre of image 
-                    lamella_number=index +1,
+                    lamella_number= index + 1,
                     history= []
                 )
 
@@ -333,7 +335,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         lamella: Lamella
         for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]):
             stage = i + 2 # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
-            for lamella in enumerate(self.experiment.positions):
+            for j, lamella in enumerate(self.experiment.positions):
                 
                 if lamella.state.stage == AutoLamellaStage(stage-1): # Checks to make sure the next stage for the selected Lamella is the current protocol
                     self.microscope.move_stage_absolute(lamella.state.microscope_state.absolute_position)
