@@ -359,11 +359,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     ) 
 
                     # alignment 
-                    beam_shift_alignment(
-                        microscope=self.microscope, 
-                        image_settings=self.image_settings, 
-                        ref_image=lamella.reference_image, 
-                        reduced_area=lamella.fiducial_area)
+                    for _ in range(self.microscope_settings.protocol["lamella"]["beam_shift_attempts"]):
+                        beam_shift_alignment(
+                            microscope=self.microscope, 
+                            image_settings=self.image_settings, 
+                            ref_image=lamella.reference_image, 
+                            reduced_area=lamella.fiducial_area)
 
                     try:
 
