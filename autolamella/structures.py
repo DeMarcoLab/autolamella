@@ -62,6 +62,7 @@ class Lamella:
     fiducial_area: FibsemRectangle = FibsemRectangle()
     lamella_centre: Point = Point()
     lamella_number: int = 0
+    mill_microexpansion: bool = False
     history: list[LamellaState] = None
 
     def __to_dict__(self):

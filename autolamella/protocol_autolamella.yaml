@@ -32,3 +32,8 @@ lamella:
     offset: 0.e-6
     size_ratio: 1.0
     milling_current: 2.e-9
+
+microexpansion:
+  - width: 3.e-6
+  - height: 8.e-6
+  - distance: 3.e-6 # Does not include Lamella width. So centre of microexpansion is lamella_width/2 + distance.

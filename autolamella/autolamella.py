@@ -278,20 +278,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 self.experiment.positions[index].fiducial_area = fiducial_area
                 self.experiment.positions[index].lamella_centre = Point(0,0)
                 self.experiment.positions[index].lamella_number = index + 1
+                self.experiment.positions[index].mill_microexpansion = self.microexpansionCheckBox.isChecked()
                 self.experiment.positions[index].history = []
-
-                # lamella = Lamella(
-                #     state = initial_state,
-                #     reference_image = self.FIB_IB,
-                #     path = self.experiment.path, 
-                #     fiducial_centre = Point(fiducial_x, 0),
-                #     fiducial_area = fiducial_area,
-                #     lamella_centre = Point(0,0), # Currently always at centre of image 
-                #     lamella_number= index + 1,
-                #     history= []
-                # )
-
-                # self.experiment.positions[index] = deepcopy(lamella)
 
                 self.experiment.save()
 
@@ -299,7 +287,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
                 self.mill_fiducial(self.experiment.positions[index], pixelsize)
 
-                
             else:
                 return
 
@@ -383,8 +370,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
                         milling.draw_trench(microscope = self.microscope, protocol = protocol, point = lamella.lamella_centre)
 
-                        # if stage is AutoLamellaStage.RoughCut:
-                            # milling.draw_stress_relief()
+                        if stage is AutoLamellaStage.RoughCut and lamella.mill_microexpansion:
+                            milling.draw_stress_relief(
+                                microscope=self.microscope,
+                                microexpansion_protocol=self.microscope_settings.protocol["microexpansion"],
+                                lamella_protocol=protocol, 
+                            )
+
                         milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
                         milling.finish_milling(self.microscope)
 
