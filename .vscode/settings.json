@@ -2,5 +2,8 @@
     "python.formatting.provider": "black",
     "python.autoComplete.extraPaths": [
         "C:\\Users\\lnae0002\\Desktop\\DeMarco\\GitHub\\fibsem"
+    ],
+    "python.analysis.extraPaths": [
+        "C:\\Users\\lnae0002\\Desktop\\DeMarco\\GitHub\\fibsem"
     ]
 }

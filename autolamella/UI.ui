@@ -202,41 +202,28 @@
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
+     <item row="4" column="1">
+      <widget class="QCheckBox" name="show_lamella">
+       <property name="text">
+        <string>Show Lamella</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QPushButton" name="add_button">
+       <property name="text">
+        <string>Add Lamella</string>
+       </property>
+      </widget>
+     </item>
      <item row="2" column="0">
-      <widget class="QPushButton" name="pushButton_4">
+      <widget class="QPushButton" name="tilt_button">
        <property name="text">
         <string>Move to Mill Angle</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="2">
-      <widget class="QPushButton" name="save_lamella">
-       <property name="text">
-        <string>Save current lamella</string>
-       </property>
-      </widget>
-     </item>
-     <item row="6" column="1">
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="5" column="1">
-      <widget class="QPushButton" name="go_to_lamella">
-       <property name="text">
-        <string>Go to position</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
+     <item row="5" column="0">
       <widget class="QLabel" name="label_4">
        <property name="font">
         <font>
@@ -249,14 +236,14 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
-      <widget class="QCheckBox" name="show_lamella">
+     <item row="4" column="3">
+      <widget class="QPushButton" name="save_button">
        <property name="text">
-        <string>Show Lamella</string>
+        <string>Save current lamella</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="2">
+     <item row="5" column="3">
       <widget class="QLabel" name="lamella_count_txt">
        <property name="font">
         <font>
@@ -266,20 +253,6 @@
        </property>
        <property name="text">
         <string>Out of: 0 lamellas</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="1">
-      <widget class="QPushButton" name="run_button">
-       <property name="text">
-        <string>Run Milling</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QPushButton" name="add_button">
-       <property name="text">
-        <string>Add Lamella</string>
        </property>
       </widget>
      </item>
@@ -300,8 +273,46 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
-      <widget class="QSpinBox" name="lamella_index"/>
+     <item row="4" column="2">
+      <widget class="QCheckBox" name="microexpansionCheckBox">
+       <property name="text">
+        <string>Mill Microexpansion Joints</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1" colspan="2">
+      <widget class="QSpinBox" name="lamella_index">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1" colspan="2">
+      <widget class="QPushButton" name="go_to_lamella">
+       <property name="text">
+        <string>Go to position</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1" colspan="2">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="8" column="1" colspan="2">
+      <widget class="QPushButton" name="run_button">
+       <property name="text">
+        <string>Run Milling</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </widget>
@@ -312,7 +323,7 @@
      <x>0</x>
      <y>0</y>
      <width>944</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAutoLamella">
