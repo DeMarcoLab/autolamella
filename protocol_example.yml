@@ -9,6 +9,7 @@ imaging: # Ion beam imaging parameters
   autocontrast: false # whether to automatically run auto contrast adjustment
   full_field_ib_images: false # Whether to acquire multiple intermediate full field ion beam images (warning: high dose)
   turn_ion_beam_off_afterwards: false # Whether to turn ion beam off after finishing
+  stage_wait_time: 1.0 # Time in seconds to wait for the stage to settle before re-alignment
 fiducial: # Fiducial marker parameters
   reduced_area_resolution: '3072x2048'
   fiducial_length: 5e-7 # In meters. Fiducial cross stroke length.

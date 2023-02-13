@@ -38,6 +38,10 @@ def milling(
     elif pattern == "lower":
         microscope.specimen.stage.relative_move(StagePosition(t=+tilt_in_radians))
 
+    # wait for the stage to settle
+    wait_time = settings["imaging"].get("stage_wait_time", 0)
+    time.sleep(wait_time)
+
     # Realign three times
     for abc in "abc":
         image_unaligned = grab_images(
