@@ -146,6 +146,32 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 centre_y=centre_upper_y,
             ))
 
+            if i == 0 and self.microexpansionCheckBox.isChecked():
+                microexpansion_protocol = self.microscope_settings.protocol["microexpansion"]
+                width = microexpansion_protocol["width"]
+                height = microexpansion_protocol["height"]
+                depth = protocol["milling_depth"]
+
+                stage.append(FibsemPatternSettings(
+                    width=width,
+                    height=height,
+                    depth=depth,
+                    centre_x=0 - protocol["lamella_width"]/2 - microexpansion_protocol["distance"],
+                    centre_y=0,
+                    cleaning_cross_section=True,
+                    scan_direction="LeftToRight"
+                ))
+
+                stage.append(FibsemPatternSettings(
+                    width=width,
+                    height=height,
+                    depth=depth,
+                    centre_x=0 + protocol["lamella_width"]/2 + microexpansion_protocol["distance"],
+                    centre_y=0,
+                    cleaning_cross_section=True,
+                    scan_direction="RightToLeft"
+                ))
+
             self.patterns_protocol.append(stage)
 
         
