@@ -10,6 +10,7 @@ fiducial:
   milling_current: 3.e-10
 
 lamella:
+  beam_shift_attempts: 3
   protocol_stages:
   - lamella_width: 10.e-6
     lamella_height: 5.e-6
