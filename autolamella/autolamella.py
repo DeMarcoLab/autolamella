@@ -321,8 +321,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     response = message_box_ui(
                     title="Lamella already defined",
                     text="This lamella has already been defined, please move on to next lamella.",
+                    buttons=QMessageBox.Ok
                 )
-                    return
+                    return 
 
                 self.experiment.positions[index].state = initial_state
                 self.experiment.positions[index].reference_image = self.FIB_IB
