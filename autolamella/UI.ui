@@ -29,7 +29,7 @@
       <x>0</x>
       <y>470</y>
       <width>441</width>
-      <height>271</height>
+      <height>477</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -134,7 +134,7 @@
      <rect>
       <x>0</x>
       <y>20</y>
-      <width>471</width>
+      <width>543</width>
       <height>125</height>
      </rect>
     </property>
@@ -197,8 +197,8 @@
      <rect>
       <x>0</x>
       <y>150</y>
-      <width>471</width>
-      <height>231</height>
+      <width>1189</width>
+      <height>308</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
@@ -276,7 +276,7 @@
      <item row="4" column="2">
       <widget class="QCheckBox" name="microexpansionCheckBox">
        <property name="text">
-        <string>Mill Microexpansion Joints</string>
+        <string>Microexpansion Joints</string>
        </property>
       </widget>
      </item>
