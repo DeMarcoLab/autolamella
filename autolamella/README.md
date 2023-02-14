@@ -27,6 +27,7 @@ Install dependencies and package
 $ conda activate fibsem
 $ cd autolamella
 $ pip install -e .
+$ pip install pywin32==228
 
 ```
 
