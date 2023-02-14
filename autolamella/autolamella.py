@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import tkinter
+import traceback
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -16,20 +17,18 @@ import fibsem.milling as milling
 import napari
 import numpy as np
 from fibsem import acquire, utils
+from fibsem.alignment import beam_shift_alignment
 from fibsem.structures import (BeamType, FibsemImage, FibsemMillingSettings,
                                FibsemPatternSettings, FibsemRectangle,
                                FibsemStagePosition, MicroscopeState, Point)
-from fibsem.alignment import beam_shift_alignment
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QMessageBox
 from qtpy import QtWidgets
-
-import traceback
-
-import UI as UI
 from structures import (AutoLamellaStage, Experiment, Lamella, LamellaState,
                         MovementMode, MovementType)
-from PyQt5.QtWidgets import QMessageBox
+
+import UI as UI
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
