@@ -51,3 +51,5 @@ See [Installation Guide](INSTALLATION.md) for full details
 
 ### Getting started 
 
+![UI](ui.png)
+
