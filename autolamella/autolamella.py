@@ -83,6 +83,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.RefImage.clicked.connect(self.take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
+        self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
         self.add_button.clicked.connect(self.add_lamella)
         self.run_button.clicked.connect(self.run_autolamella)
         self.platinum.triggered.connect(self.splutter_platinum)
@@ -174,6 +175,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 ))
 
             self.patterns_protocol.append(stage)
+        
 
         
         # Fiducial
@@ -195,6 +197,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             centre_x= -((self.image_settings.resolution[0]/4) * pixelsize)
         ))
         self.patterns_protocol.append(stage)
+
+        self.update_displays()
 
     def create_experiment(self): 
 
