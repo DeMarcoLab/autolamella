@@ -13,7 +13,6 @@ import fibsem.constants as constants
 import fibsem.conversions as conversions
 import fibsem.GIS as gis
 import fibsem.milling as milling
-import fibsem.movement as movement
 import napari
 import numpy as np
 from fibsem import acquire, utils
