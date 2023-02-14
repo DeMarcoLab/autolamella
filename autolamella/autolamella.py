@@ -47,6 +47,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.pattern_settings = []
         self.save_path = None
+
         
 
         self.CLog8.setText("Welcome to OpenFIBSEM AutoLamella! Begin by Connecting to a Microscope")
@@ -238,6 +239,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
     def add_lamella(self):
+
+        # check experiemnt has been loaded/created 
+        if self.experiment == None:
+            _ = message_box_ui(
+                title="No experiemnt.",
+                text="Before adding a lamella please create or load an experiment.",
+                buttons=QMessageBox.Ok
+            )
+            return
         # Check to see if an image has been taken first
         if self.FIB_EB.metadata == None:
             _ = message_box_ui(
