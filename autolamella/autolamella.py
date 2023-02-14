@@ -236,11 +236,17 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.lamella_count_txt.setText(f"Out of: {index} lamellas") 
         self.lamella_index.setMaximum(index)
+        self.lamella_index.setMinimum(1)
 
         logging.info("Empty lamella added to experiment")
 
         return
 
+    def update_lamella(self, lamella: Lamella, stage: AutoLamellaStage):
+        lamella.state.end_timestamp = datetime.timestamp(datetime.now())
+        lamella.history.append(deepcopy(lamella.state))
+        lamella.state.stage = AutoLamellaStage(stage)
+        lamella.state.start_timestamp = datetime.timestamp(datetime.now())
 
     def save_lamella(self):
 
@@ -256,6 +262,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
 
             if response:
+                
                 pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
                 fiducial_x = float((self.image_settings.resolution[0]/4)*pixelsize)
                 initial_state = LamellaState(
@@ -270,6 +277,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 )
 
                 index = self.lamella_index.value() - 1
+                if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
+                    response = message_box_ui(
+                    title="Lamella already defined",
+                    text="This lamella has already been defined, please move on to next lamella.",
+                )
+                    return
 
                 self.experiment.positions[index].state = initial_state
                 self.experiment.positions[index].reference_image = self.FIB_IB
@@ -312,10 +325,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current)
             milling.finish_milling(self.microscope)
 
-            lamella.state.end_timestamp = datetime.timestamp(datetime.now())
-            lamella.history.append(deepcopy(lamella.state))
-            lamella.state.stage = AutoLamellaStage.FiducialMilled
-            lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+            self.update_lamella(lamella = lamella, stage = AutoLamellaStage.FiducialMilled)
+            
             self.image_settings.beam_type = BeamType.ION
             self.image_settings.reduced_area = lamella.fiducial_area
             lamella.reference_image = acquire.new_image(self.microscope, self.image_settings)
@@ -359,7 +370,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     ) 
 
                     # alignment 
-                    for _ in range(self.microscope_settings.protocol["lamella"]["beam_shift_attempts"]):
+                    for _ in range(int(self.microscope_settings.protocol["lamella"]["beam_shift_attempts"])):
                         beam_shift_alignment(
                             microscope=self.microscope, 
                             image_settings=self.image_settings, 
@@ -371,7 +382,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
                         milling.draw_trench(microscope = self.microscope, protocol = protocol, point = lamella.lamella_centre)
 
-                        if stage is AutoLamellaStage.RoughCut and lamella.mill_microexpansion:
+                        if stage == 2 and lamella.mill_microexpansion: # stage = 2 is RoughCut
                             milling.draw_stress_relief(
                                 microscope=self.microscope,
                                 microexpansion_protocol=self.microscope_settings.protocol["microexpansion"],
@@ -386,10 +397,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         lamella.reference_image = acquire.new_image(self.microscope, self.microscope_settings.image)
 
                         # Update Lamella Stage and Experiment
-                        lamella.state.end_timestamp = datetime.timestamp(datetime.now())
-                        lamella.history.append(deepcopy(lamella.state))
-                        lamella.state.stage = AutoLamellaStage(stage)
-                        lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+                        self.update_lamella(lamella = lamella, stage = stage)
+
                         self.image_settings.beam_type = BeamType.ION
                         lamella.reference_image = acquire.new_image(self.microscope, self.image_settings)
 
@@ -539,9 +548,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def connect_to_microscope(self):
         
         self.PROTOCOL_PATH = os.path.join(os.path.dirname(__file__), "protocol_autolamella.yaml")
+        self.CONFIG_PATH = os.path.join(os.path.dirname(__file__))
 
         try:
-            self.microscope, self.microscope_settings = utils.setup_session(protocol_path = self.PROTOCOL_PATH)
+            self.microscope, self.microscope_settings = utils.setup_session(config_path = self.CONFIG_PATH, protocol_path = self.PROTOCOL_PATH)
             print(self.microscope_settings.protocol)
             self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
             self.image_settings = self.microscope_settings.image
