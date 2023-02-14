@@ -28,7 +28,7 @@ from qtpy import QtWidgets
 from structures import (AutoLamellaStage, Experiment, Lamella, LamellaState,
                         MovementMode, MovementType)
 
-import UI as UI
+from ui import UI as UI
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
