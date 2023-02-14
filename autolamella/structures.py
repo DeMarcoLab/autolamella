@@ -52,7 +52,6 @@ class LamellaState:
         )
     
 
-
 @dataclass
 class Lamella:
     state: LamellaState = LamellaState()

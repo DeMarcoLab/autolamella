@@ -1,1 +1,9 @@
 site_name: AutoLamella
+theme:
+  name: material
+nav:
+  - index.md
+  - INSTALLATION.md
+  - functions.md
+plugins:
+  - mkdocstrings
