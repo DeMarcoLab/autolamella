@@ -65,7 +65,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.reset_ui_settings()
             self.update_displays()
 
-        self.draw_patterns(hfw=self.image_settings.hfw)
+        self.draw_patterns()
 
         ### NAPARI settings and initialisation
 
@@ -117,8 +117,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         logging.info("Platinum sputtering complete")
 
-    def draw_patterns(self, hfw: float):
+    def draw_patterns(self):
         # Initialise the Lamella and Fiducial Settings
+        hfw=self.image_settings.hfw
         self.patterns_protocol = []
         for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]["protocol_stages"]):
             stage = []
@@ -550,7 +551,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def hfw_box_change(self):
         ### field width in microns in UI!!!!!!!!
         self.image_settings.hfw = self.hfw_box.value() * constants.MICRO_TO_SI
-        self.draw_patterns(hfw=self.image_settings.hfw)
+        self.draw_patterns()
            
 
     ##################################################################
