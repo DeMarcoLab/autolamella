@@ -15,7 +15,6 @@ $ conda activate fibsem
 $ pip install -e .
 
 ```
-
 ### Install autolamella package
 Clone this repository: 
 
