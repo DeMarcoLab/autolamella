@@ -700,21 +700,8 @@ def splutter_platinum():
 
 if __name__ == "__main__":    
 
-    # app = QtWidgets.QApplication(sys.argv)
-
-
-    viewer = napari.Viewer()
-
-
-    
-
+    viewer = napari.Viewer()  
     window = MainWindow()
-   
-    # window.show()
     widget = viewer.window.add_dock_widget(window)
     widget.setMinimumWidth(350)
-
     napari.run()    
-
-    # sys.exit(app.exec())
- 
