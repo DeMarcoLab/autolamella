@@ -220,6 +220,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lines = 0
         self.timer.start(1000)
 
+        self.lamella_index.setMaximum(index)
+        self.lamella_index.setMinimum(1)
+
         logging.info("Experiment loaded")
 
 
@@ -316,6 +319,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             for i in reversed(range(lin_len - self.lines)):
                 line_display = lines[-1-i]
                 if re.search("napari.loader — DEBUG", line_display):
+                    self.lines = lin_len
+                    continue
+                if re.search("AUTO_GAMMA", line_display):
                     self.lines = lin_len
                     continue
                 line_divided = line_display.split(",")
@@ -582,7 +588,7 @@ def mill_fiducial(lamella: Lamella, pixelsize: float):
 
 def run_autolamella():
     # First check that the pre-requisites to begin milling have been met.
-    if window.can_run_milling() == False:
+    if can_run_milling() == False:
         # check to mill fiducial
         _ = message_box_ui(
             title="Milling Requirements have not been met.",
