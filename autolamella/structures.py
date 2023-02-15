@@ -92,7 +92,7 @@ class Lamella:
             fiducial_area=fiducial_area,
             lamella_centre=lamella_centre,
             lamella_number=data["lamella_number"],
-            history=data["history"],
+            history=[LamellaState().__from_dict__(state) for state in data["history"]],
         )
 
 class Experiment: 
