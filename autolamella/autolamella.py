@@ -78,42 +78,22 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         # Buttons setup
    
-        self.RefImage.clicked.connect(self.take_reference_images)
+        self.RefImage.clicked.connect(take_reference_images)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
-        self.add_button.clicked.connect(self.add_lamella)
-        self.run_button.clicked.connect(self.run_autolamella)
-        self.platinum.triggered.connect(self.splutter_platinum)
+        self.add_button.clicked.connect(add_lamella)
+        self.run_button.clicked.connect(run_autolamella)
+        self.platinum.triggered.connect(splutter_platinum)
         self.create_exp.triggered.connect(self.create_experiment)
         self.load_exp.triggered.connect(self.load_experiment)
-        self.save_button.clicked.connect(self.save_lamella)
-        self.tilt_button.clicked.connect(self.tilt_stage)
-        self.go_to_lamella.clicked.connect(self.move_to_position)
+        self.save_button.clicked.connect(save_lamella)
+        self.tilt_button.clicked.connect(tilt_stage)
+        self.go_to_lamella.clicked.connect(move_to_position)
 
 
         # Movement controls setup
   
-    def tilt_stage(self):
-        position = self.microscope.get_stage_position()
-        position.t = self.microscope_settings.protocol["stage_tilt"]*constants.DEGREES_TO_RADIANS
-        position.r = self.microscope_settings.protocol["stage_rotation"]*constants.DEGREES_TO_RADIANS
-        self.microscope.move_stage_absolute(position)
-        logging.info(f"Stage moved to r = {position.r}°, t = {position.t}°")
-
-    def splutter_platinum(self):
-        print("Sputtering Platinum")
-        return
-        protocol = [] #  where do we get this from?
-
-        gis.sputter_platinum(
-            microscope = self.microscope,
-            protocol = protocol,
-            whole_grid = False,
-            default_application_file = "autolamella",
-            )
-
-        logging.info("Platinum sputtering complete")
 
     def draw_patterns(self):
         # Initialise the Lamella and Fiducial Settings
@@ -225,6 +205,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         tkinter.Tk().withdraw()
         file_path = filedialog.askopenfilename()
         self.experiment = Experiment.load(file_path)
+        #self.experiment.positions[i].reference_image.metadata.image_settings.reduced_area
 
         folder_path = os.path.dirname(file_path)
         self.log_path = os.path.join(folder_path, "logfile.log")
@@ -241,231 +222,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         logging.info("Experiment loaded")
 
 
-    def add_lamella(self):
-
-        # check experiemnt has been loaded/created 
-        if self.experiment == None:
-            _ = message_box_ui(
-                title="No experiemnt.",
-                text="Before adding a lamella please create or load an experiment.",
-                buttons=QMessageBox.Ok
-            )
-            return
-        # Check to see if an image has been taken first
-        if self.FIB_EB.metadata == None:
-            _ = message_box_ui(
-                title="No image has been taken.",
-                text="Before adding a lamella please take atleast one image.",
-                buttons=QMessageBox.Ok
-            )
-            return
-
-        index = len(self.experiment.positions)
-        lamella = Lamella(
-            lamella_number=index +1,
-            reference_image=self.FIB_IB,
-        )
-
-        lamella.reference_image.metadata.image_settings.label = "Empty ref"
-
-        self.experiment.positions.append(deepcopy(lamella))
-
-         # update UI lamella count
-        index = len(self.experiment.positions)
-        
-        self.lamella_count_txt.setText(f"Out of: {index} lamellas") 
-        self.lamella_index.setMaximum(index)
-        self.lamella_index.setMinimum(1)
-
-        logging.info("Empty lamella added to experiment")
-
-        return
-
-    def update_lamella(self, lamella: Lamella, stage: AutoLamellaStage):
-        lamella.state.end_timestamp = datetime.timestamp(datetime.now())
-        lamella.history.append(deepcopy(lamella.state))
-        lamella.state.stage = AutoLamellaStage(stage)
-        lamella.state.start_timestamp = datetime.timestamp(datetime.now())
-
-    def save_lamella(self):
-
-            if self.save_path is None:
-                tkinter.Tk().withdraw()
-                folder_path = filedialog.askdirectory()
-                self.save_path = folder_path
-
-            # check to mill fiducial
-            response = message_box_ui(
-                title="Begin milling fiducial?",
-                text="If you are happy with the placement of the trench and fiducial, press yes.",
-            )
-
-            if response:
-                
-                pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
-                fiducial_x = float((self.image_settings.resolution[0]/4)*pixelsize)
-                initial_state = LamellaState(
-                    microscope_state=self.microscope.get_current_microscope_state(),
-                    stage=AutoLamellaStage.Setup
-                )
-                fiducial_area = FibsemRectangle(
-                        left=0.25 -float(self.microscope_settings.protocol["fiducial"]["length"]/self.microscope_settings.image.hfw),
-                        top=0.5 - float(self.microscope_settings.protocol["fiducial"]["length"]/self.microscope_settings.image.hfw),
-                        width=float(self.microscope_settings.protocol["fiducial"]["length"]/self.microscope_settings.image.hfw),
-                        height=float(self.microscope_settings.protocol["fiducial"]["length"]/self.microscope_settings.image.hfw)
-                )
-
-                index = self.lamella_index.value() - 1
-                if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
-                    response = message_box_ui(
-                    title="Lamella already defined",
-                    text="This lamella has already been defined, please move on to next lamella.",
-                    buttons=QMessageBox.Ok
-                )
-                    return 
-
-                self.experiment.positions[index].state = initial_state
-                self.experiment.positions[index].reference_image = self.FIB_IB
-                self.experiment.positions[index].path = self.experiment.path
-                self.experiment.positions[index].fiducial_centre = Point(fiducial_x, 0)
-                self.experiment.positions[index].fiducial_area = fiducial_area
-                self.experiment.positions[index].lamella_centre = Point(0,0)
-                self.experiment.positions[index].lamella_number = index + 1
-                self.experiment.positions[index].mill_microexpansion = self.microexpansionCheckBox.isChecked()
-                self.experiment.positions[index].history = []
-
-                self.experiment.save()
-
-                logging.info("Lamella parameters saved")
-
-                self.mill_fiducial(self.experiment.positions[index], pixelsize)
-
-            else:
-                return
-
-    def mill_fiducial(self, lamella: Lamella, pixelsize: float):
-
-        try:
-            protocol = self.microscope_settings.protocol["fiducial"]
-            fiducial_pattern = FibsemPatternSettings(
-                width=protocol["width"],
-                height=protocol["length"],
-                depth=protocol["depth"],
-                centre_x= -((self.image_settings.resolution[0]/4) * pixelsize) 
-            )
-            fiducial_milling = FibsemMillingSettings(
-                milling_current=protocol["milling_current"]
-            ) 
-
-            milling.setup_milling(self.microscope, mill_settings = fiducial_milling)
-            milling.draw_fiducial(
-                self.microscope, 
-                fiducial_pattern,
-            )
-            milling.run_milling(self.microscope, milling_current = fiducial_milling.milling_current)
-            milling.finish_milling(self.microscope)
-
-            self.update_lamella(lamella = lamella, stage = AutoLamellaStage.FiducialMilled)
-            
-            self.image_settings.beam_type = BeamType.ION
-            self.image_settings.reduced_area = lamella.fiducial_area
-            lamella.reference_image = acquire.new_image(self.microscope, self.image_settings)
-            self.image_settings.reduced_area = None 
-
-            lamella.reference_image.metadata.image_settings.label = "milled_fiducial"
-
-            # path_image = os.path.join(self.save_path, str(lamella.lamella_number).rjust(6, '0'), f"milled_fiducial") 
-
-            self.experiment.save()
-
-            logging.info("Fiducial milled successfully")
-
-            
-
-        except Exception as e:
-            logging.error(f"Unable to draw/mill the fiducial: {e}")
-
-
-    def run_autolamella(self):
-        # First check that the pre-requisites to begin milling have been met.
-        if self.can_run_milling() == False:
-            # check to mill fiducial
-            _ = message_box_ui(
-                title="Milling Requirements have not been met.",
-                text="The following requirements must be met:\n1. Microscope Connected.\n2. Experiment created.\n3.Atleast 1 Lamella saved.\n4. All fiducials milled.",
-                buttons=QMessageBox.Ok
-            )
-            return
-
-        lamella: Lamella
-        for i, protocol in enumerate(self.microscope_settings.protocol["lamella"]["protocol_stages"]):
-            stage = i + 2 # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
-            for j, lamella in enumerate(self.experiment.positions):
-                
-                if lamella.state.stage == AutoLamellaStage(stage-1): # Checks to make sure the next stage for the selected Lamella is the current protocol
-                    self.microscope.move_stage_absolute(lamella.state.microscope_state.absolute_position)
-                    logging.info("Moving to lamella position")
-                    mill_settings = FibsemMillingSettings(
-                        milling_current=protocol["milling_current"]
-                    ) 
-
-                    # alignment 
-                    for _ in range(int(self.microscope_settings.protocol["lamella"]["beam_shift_attempts"])):
-                        beam_shift_alignment(
-                            microscope=self.microscope, 
-                            image_settings=self.image_settings, 
-                            ref_image=lamella.reference_image, 
-                            reduced_area=lamella.fiducial_area)
-
-                    try:
-
-                        milling.setup_milling(self.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = self.image_settings.hfw, mill_settings = mill_settings)
-                        milling.draw_trench(microscope = self.microscope, protocol = protocol, point = lamella.lamella_centre)
-
-                        if stage == 2 and lamella.mill_microexpansion: # stage = 2 is RoughCut
-                            milling.draw_stress_relief(
-                                microscope=self.microscope,
-                                microexpansion_protocol=self.microscope_settings.protocol["microexpansion"],
-                                lamella_protocol=protocol, 
-                            )
-
-                        milling.run_milling(self.microscope, milling_current = protocol["milling_current"])
-                        milling.finish_milling(self.microscope)
-
-                        self.microscope_settings.image.save_path = lamella.path
-                        self.microscope_settings.image.label = f"ref_mill_stage_{i}"
-                        lamella.reference_image = acquire.new_image(self.microscope, self.microscope_settings.image)
-
-                        # Update Lamella Stage and Experiment
-                        self.update_lamella(lamella = lamella, stage = stage)
-
-                        self.image_settings.beam_type = BeamType.ION
-                        lamella.reference_image = acquire.new_image(self.microscope, self.image_settings)
-
-                        self.experiment.save()
-
-                        logging.info("Lamella milled successfully")
-
-                    except Exception as e:
-                        logging.error(f"Unable to draw/mill the lamella: {traceback.format_exc()}")
-
-    def can_run_milling(self):
-        ## First condition
-        if self.microscope is None:
-            return False
-        ## Second condition
-        elif self.experiment is None:
-            return False
-        ## Third condition
-        elif len(self.experiment.positions) == 0:
-            return False
-        ## Fourth condition
-        for lamella in self.experiment.positions:
-            if lamella.state.stage.value == 0:
-                return False
-        # All conditions met
-        return True
-
+   
         
    
 ########################### Movement Functionality ##########################################
@@ -533,15 +290,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 beam_type=beam_type,
             )
 
-        self.take_reference_images()
-
-
-    def move_to_position(self):
-
-        position = self.experiment.positions[self.lamella_index.value()-1].state.microscope_state.absolute_position
-        self.microscope.move_stage_absolute(position)
-        logging.info(f"Moved to lamella position: {position}")
-        self.take_reference_images()
+        take_reference_images()
 
 
 
@@ -621,19 +370,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 ###################################### Imaging ##########################################
 
-    def take_reference_images(self):
-        
-        self.image_settings.hfw = self.hfw_box.value()*constants.MICRO_TO_SI
-        # take image with both beams
-        eb_image, ib_image = acquire.take_reference_images(self.microscope, self.image_settings)
-
-        self.FIB_IB = ib_image
-        self.FIB_EB = eb_image
-
-        logging.info("Reference Images Taken")
-        
-        self.update_displays()
-
     def update_displays(self):
        
         viewer.layers.clear()
@@ -670,7 +406,274 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def reset_ui_settings(self):
 
         self.hfw_box.setValue(int(self.image_settings.hfw*constants.SI_TO_MICRO))
+        
+########################## End of Main Window Class ########################################
 
+def tilt_stage():
+        position = window.microscope.get_stage_position()
+        position.t = window.microscope_settings.protocol["stage_tilt"]*constants.DEGREES_TO_RADIANS
+        position.r = window.microscope_settings.protocol["stage_rotation"]*constants.DEGREES_TO_RADIANS
+        window.microscope.move_stage_absolute(position)
+        logging.info(f"Stage moved to r = {position.r}°, t = {position.t}°")
+
+
+def take_reference_images():
+    
+    # take image with both beams
+    eb_image, ib_image = acquire.take_reference_images(window.microscope, window.image_settings)
+
+    window.FIB_IB = ib_image
+    window.FIB_EB = eb_image
+
+    logging.info("Reference Images Taken")
+    
+    window.update_displays()
+
+def move_to_position():
+
+    position = window.experiment.positions[window.lamella_index.value()-1].state.microscope_state.absolute_position
+    window.microscope.move_stage_absolute(position)
+    logging.info(f"Moved to lamella position: {position}")
+    take_reference_images()
+
+def add_lamella():
+
+    # check experiemnt has been loaded/created 
+    if window.experiment == None:
+        _ = message_box_ui(
+            title="No experiemnt.",
+            text="Before adding a lamella please create or load an experiment.",
+            buttons=QMessageBox.Ok
+        )
+        return
+    # Check to see if an image has been taken first
+    if window.FIB_EB.metadata == None:
+        _ = message_box_ui(
+            title="No image has been taken.",
+            text="Before adding a lamella please take atleast one image.",
+            buttons=QMessageBox.Ok
+        )
+        return
+
+    index = len(window.experiment.positions)
+    lamella = Lamella(
+        lamella_number=index +1,
+        reference_image=window.FIB_IB,
+    )
+
+    lamella.reference_image.metadata.image_settings.label = "Empty ref"
+
+    window.experiment.positions.append(deepcopy(lamella))
+
+        # update UI lamella count
+    index = len(window.experiment.positions)
+    
+    window.lamella_count_txt.setText(f"Out of: {index} lamellas") 
+    window.lamella_index.setMaximum(index)
+    window.lamella_index.setMinimum(1)
+
+    logging.info("Empty lamella added to experiment")
+
+    return
+
+def update_lamella(lamella: Lamella, stage: AutoLamellaStage):
+    lamella.state.end_timestamp = datetime.timestamp(datetime.now())
+    lamella.history.append(deepcopy(lamella.state))
+    lamella.state.stage = AutoLamellaStage(stage)
+    lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+
+def save_lamella():
+
+        if window.save_path is None:
+            tkinter.Tk().withdraw()
+            folder_path = filedialog.askdirectory()
+            window.save_path = folder_path
+
+        # check to mill fiducial
+        response = message_box_ui(
+            title="Begin milling fiducial?",
+            text="If you are happy with the placement of the trench and fiducial, press yes.",
+        )
+
+        if response:
+            
+            pixelsize = window.image_settings.hfw / window.image_settings.resolution[0]
+            fiducial_x = float((window.image_settings.resolution[0]/4)*pixelsize)
+            initial_state = LamellaState(
+                microscope_state=window.microscope.get_current_microscope_state(),
+                stage=AutoLamellaStage.Setup
+            )
+            fiducial_area = FibsemRectangle(
+                    left=0.25 -float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw),
+                    top=0.5 - float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw),
+                    width=float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw),
+                    height=float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw)
+            )
+
+            index = window.lamella_index.value() - 1
+            if window.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
+                response = message_box_ui(
+                title="Lamella already defined",
+                text="This lamella has already been defined, please move on to next lamella.",
+                buttons=QMessageBox.Ok
+            )
+                return 
+
+            window.experiment.positions[index].state = initial_state
+            window.experiment.positions[index].reference_image = window.FIB_IB
+            window.experiment.positions[index].path = window.experiment.path
+            window.experiment.positions[index].fiducial_centre = Point(fiducial_x, 0)
+            window.experiment.positions[index].fiducial_area = fiducial_area
+            window.experiment.positions[index].lamella_centre = Point(0,0)
+            window.experiment.positions[index].lamella_number = index + 1
+            window.experiment.positions[index].mill_microexpansion = window.microexpansionCheckBox.isChecked()
+            window.experiment.positions[index].history = []
+
+            window.experiment.save()
+
+            logging.info("Lamella parameters saved")
+
+            mill_fiducial(window.experiment.positions[index], pixelsize)
+
+        else:
+            return
+
+def mill_fiducial(lamella: Lamella, pixelsize: float):
+
+    try:
+        protocol = window.microscope_settings.protocol["fiducial"]
+        fiducial_pattern = FibsemPatternSettings(
+            width=protocol["width"],
+            height=protocol["length"],
+            depth=protocol["depth"],
+            centre_x= -((window.image_settings.resolution[0]/4) * pixelsize) 
+        )
+        fiducial_milling = FibsemMillingSettings(
+            milling_current=protocol["milling_current"]
+        ) 
+
+        milling.setup_milling(window.microscope, mill_settings = fiducial_milling)
+        milling.draw_fiducial(
+            window.microscope, 
+            fiducial_pattern,
+        )
+        milling.run_milling(window.microscope, milling_current = fiducial_milling.milling_current)
+        milling.finish_milling(window.microscope)
+
+        update_lamella(lamella = lamella, stage = AutoLamellaStage.FiducialMilled)
+        
+        window.image_settings.beam_type = BeamType.ION
+        window.image_settings.reduced_area = lamella.fiducial_area
+        lamella.reference_image = acquire.new_image(window.microscope, window.image_settings)
+        window.image_settings.reduced_area = None 
+
+        lamella.reference_image.metadata.image_settings.label = "milled_fiducial"
+
+        # path_image = os.path.join(self.save_path, str(lamella.lamella_number).rjust(6, '0'), f"milled_fiducial") 
+
+        window.experiment.save()
+
+        logging.info("Fiducial milled successfully")
+
+        
+
+    except Exception as e:
+        logging.error(f"Unable to draw/mill the fiducial: {e}")
+
+
+def run_autolamella():
+    # First check that the pre-requisites to begin milling have been met.
+    if window.can_run_milling() == False:
+        # check to mill fiducial
+        _ = message_box_ui(
+            title="Milling Requirements have not been met.",
+            text="The following requirements must be met:\n1. Microscope Connected.\n2. Experiment created.\n3.Atleast 1 Lamella saved.\n4. All fiducials milled.",
+            buttons=QMessageBox.Ok
+        )
+        return
+
+    lamella: Lamella
+    for i, protocol in enumerate(window.microscope_settings.protocol["lamella"]["protocol_stages"]):
+        stage = i + 2 # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
+        for j, lamella in enumerate(window.experiment.positions):
+            
+            if lamella.state.stage == AutoLamellaStage(stage-1): # Checks to make sure the next stage for the selected Lamella is the current protocol
+                window.microscope.move_stage_absolute(lamella.state.microscope_state.absolute_position)
+                logging.info("Moving to lamella position")
+                mill_settings = FibsemMillingSettings(
+                    milling_current=protocol["milling_current"]
+                ) 
+
+                # alignment 
+                for _ in range(int(window.microscope_settings.protocol["lamella"]["beam_shift_attempts"])):
+                    beam_shift_alignment(
+                        microscope=window.microscope, 
+                        image_settings=window.image_settings, 
+                        ref_image=lamella.reference_image, 
+                        reduced_area=lamella.fiducial_area)
+
+                try:
+
+                    milling.setup_milling(window.microscope, application_file = "autolamella", patterning_mode = "Serial", hfw = window.image_settings.hfw, mill_settings = mill_settings)
+                    milling.draw_trench(microscope = window.microscope, protocol = protocol, point = lamella.lamella_centre)
+
+                    if stage == 2 and lamella.mill_microexpansion: # stage = 2 is RoughCut
+                        milling.draw_stress_relief(
+                            microscope=window.microscope,
+                            microexpansion_protocol=window.microscope_settings.protocol["microexpansion"],
+                            lamella_protocol=protocol, 
+                        )
+
+                    milling.run_milling(window.microscope, milling_current = protocol["milling_current"])
+                    milling.finish_milling(window.microscope)
+
+                    window.microscope_settings.image.save_path = lamella.path
+                    window.microscope_settings.image.label = f"ref_mill_stage_{i}"
+                    lamella.reference_image = acquire.new_image(window.microscope, window.microscope_settings.image)
+
+                    # Update Lamella Stage and Experiment
+                    update_lamella(lamella = lamella, stage = stage)
+
+                    window.image_settings.beam_type = BeamType.ION
+                    lamella.reference_image = acquire.new_image(window.microscope, window.image_settings)
+
+                    window.experiment.save()
+
+                    logging.info("Lamella milled successfully")
+
+                except Exception as e:
+                    logging.error(f"Unable to draw/mill the lamella: {traceback.format_exc()}")
+
+def can_run_milling():
+    ## First condition
+    if window.microscope is None:
+        return False
+    ## Second condition
+    elif window.experiment is None:
+        return False
+    ## Third condition
+    elif len(window.experiment.positions) == 0:
+        return False
+    ## Fourth condition
+    for lamella in window.experiment.positions:
+        if lamella.state.stage.value == 0:
+            return False
+    # All conditions met
+    return True
+
+def splutter_platinum():
+    print("Sputtering Platinum")
+    return
+    protocol = [] #  where do we get this from?
+
+    gis.sputter_platinum(
+        microscope = window.microscope,
+        protocol = protocol,
+        whole_grid = False,
+        default_application_file = "autolamella",
+        )
+
+    logging.info("Platinum sputtering complete")
 
 if __name__ == "__main__":    
 
