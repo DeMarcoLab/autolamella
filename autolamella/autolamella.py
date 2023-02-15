@@ -20,7 +20,8 @@ from fibsem import acquire, utils
 from fibsem.alignment import beam_shift_alignment
 from fibsem.structures import (BeamType, FibsemImage, FibsemMillingSettings,
                                FibsemPatternSettings, FibsemRectangle,
-                               FibsemStagePosition, MicroscopeState, Point)
+                               FibsemMicroscope, MicroscopeSettings, Point,
+                               ImageSettings)
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMessageBox
@@ -79,7 +80,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         # Buttons setup
    
-        self.RefImage.clicked.connect(take_reference_images)
+        self.RefImage.clicked.connect(self.take_ref_images_ui)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
@@ -89,8 +90,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.create_exp.triggered.connect(self.create_experiment)
         self.load_exp.triggered.connect(self.load_experiment)
         self.save_button.clicked.connect(save_lamella)
-        self.tilt_button.clicked.connect(tilt_stage)
-        self.go_to_lamella.clicked.connect(move_to_position)
+        self.tilt_button.clicked.connect(self.tilt_stage_ui)
+        self.go_to_lamella.clicked.connect(self.move_to_position_ui)
 
 
         # Movement controls setup
@@ -411,56 +412,77 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def reset_ui_settings(self):
 
         self.hfw_box.setValue(int(self.image_settings.hfw*constants.SI_TO_MICRO))
+    
+    def tilt_stage_ui(self):
+        tilt_stage(self.microscope, self.microscope_settings)
+        
+    def take_ref_images_ui(self):
+        eb_image, ib_image = take_reference_images(self.microscope, self.image_settings)
+        self.FIB_IB = ib_image
+        self.FIB_EB = eb_image
+        self.update_displays()
+
+    def move_to_position_ui(self):
+        move_to_position(self.microscope, self.experiment)
+        self.take_ref_images_ui()
+
+    def add_lamella_ui(self):
+        # check experiemnt has been loaded/created 
+        if self.experiment == None:
+            _ = message_box_ui(
+                title="No experiemnt.",
+                text="Before adding a lamella please create or load an experiment.",
+                buttons=QMessageBox.Ok
+            )
+            return
+        # Check to see if an image has been taken first
+        if self.FIB_EB.metadata == None:
+            _ = message_box_ui(
+                title="No image has been taken.",
+                text="Before adding a lamella please take atleast one image.",
+                buttons=QMessageBox.Ok
+            )
+            return
+        add_lamella(self)
+
+        index = len(window.experiment.positions)
+        
+    
+        window.lamella_count_txt.setText(f"Out of: {index} lamellas") 
+        window.lamella_index.setMaximum(index)
+        window.lamella_index.setMinimum(1)
         
 ########################## End of Main Window Class ########################################
 
-def tilt_stage():
-        position = window.microscope.get_stage_position()
-        position.t = window.microscope_settings.protocol["stage_tilt"]*constants.DEGREES_TO_RADIANS
-        position.r = window.microscope_settings.protocol["stage_rotation"]*constants.DEGREES_TO_RADIANS
-        window.microscope.move_stage_absolute(position)
+def tilt_stage(microscope: FibsemMicroscope, settings: MicroscopeSettings):
+        position = microscope.get_stage_position()
+        position.t = settings.protocol["stage_tilt"]*constants.DEGREES_TO_RADIANS
+        position.r = settings.protocol["stage_rotation"]*constants.DEGREES_TO_RADIANS
+        microscope.move_stage_absolute(position)
         logging.info(f"Stage moved to r = {position.r}°, t = {position.t}°")
 
 
-def take_reference_images():
+def take_reference_images(microscope: FibsemMicroscope, image_settings: ImageSettings):
     
     # take image with both beams
-    eb_image, ib_image = acquire.take_reference_images(window.microscope, window.image_settings)
-
-    window.FIB_IB = ib_image
-    window.FIB_EB = eb_image
+    eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
 
     logging.info("Reference Images Taken")
+
+    return eb_image, ib_image
     
-    window.update_displays()
+    
 
-def move_to_position():
+def move_to_position(microscope: FibsemMicroscope, experiment: Experiment):
 
-    position = window.experiment.positions[window.lamella_index.value()-1].state.microscope_state.absolute_position
-    window.microscope.move_stage_absolute(position)
+    position = experiment.positions[window.lamella_index.value()-1].state.microscope_state.absolute_position
+    microscope.move_stage_absolute(position)
     logging.info(f"Moved to lamella position: {position}")
-    take_reference_images()
 
-def add_lamella():
 
-    # check experiemnt has been loaded/created 
-    if window.experiment == None:
-        _ = message_box_ui(
-            title="No experiemnt.",
-            text="Before adding a lamella please create or load an experiment.",
-            buttons=QMessageBox.Ok
-        )
-        return
-    # Check to see if an image has been taken first
-    if window.FIB_EB.metadata == None:
-        _ = message_box_ui(
-            title="No image has been taken.",
-            text="Before adding a lamella please take atleast one image.",
-            buttons=QMessageBox.Ok
-        )
-        return
+def add_lamella(experiment: Experiment):
 
-    index = len(window.experiment.positions)
+    index = len(experiment.positions)
     lamella = Lamella(
         lamella_number=index +1,
         reference_image=window.FIB_IB,
@@ -468,14 +490,10 @@ def add_lamella():
 
     lamella.reference_image.metadata.image_settings.label = "Empty ref"
 
-    window.experiment.positions.append(deepcopy(lamella))
+    experiment.positions.append(deepcopy(lamella))
 
         # update UI lamella count
-    index = len(window.experiment.positions)
-    
-    window.lamella_count_txt.setText(f"Out of: {index} lamellas") 
-    window.lamella_index.setMaximum(index)
-    window.lamella_index.setMinimum(1)
+
 
     logging.info("Empty lamella added to experiment")
 
@@ -509,10 +527,10 @@ def save_lamella():
                 stage=AutoLamellaStage.Setup
             )
             fiducial_area = FibsemRectangle(
-                    left=0.25 -float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw),
-                    top=0.5 - float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw),
-                    width=float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw),
-                    height=float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw)
+                    left=0.25 -1.5*float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw),
+                    top=0.5 - 1.5*float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw),
+                    width=1.5*float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw),
+                    height=1.5*float(window.microscope_settings.protocol["fiducial"]["length"]/window.image_settings.hfw)
             )
 
             index = window.lamella_index.value() - 1
