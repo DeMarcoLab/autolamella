@@ -48,7 +48,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         
 
-        self.CLog8.setText("Welcome to OpenFIBSEM AutoLamella! Begin by Connecting to a Microscope")
+        self.log_txt.setPlainText("Welcome to OpenFIBSEM AutoLamella! Begin by Connecting to a Microscope. \n")
+        
 
         # Initialise microscope object
         self.microscope = None
@@ -322,16 +323,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 message = line_divided[1].split("—")
                 disp_str = f"{time} | {message[-1]}"
 
-                self.lines = lin_len
-                self.CLog.setText(self.CLog2.text())
-                self.CLog2.setText(self.CLog3.text())
-                self.CLog3.setText(self.CLog4.text())
-                self.CLog4.setText(self.CLog5.text())
-                self.CLog5.setText(self.CLog6.text())
-                self.CLog6.setText(self.CLog7.text())
-                self.CLog7.setText(self.CLog8.text())
+                disp_paragraph = self.log_txt.toPlainText() + disp_str + "\n"
 
-                self.CLog8.setText(disp_str)
+                self.lines = lin_len
+                self.log_txt.setPlainText(disp_paragraph)
+                
       
 
     def connect_to_microscope(self):
@@ -341,13 +337,16 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         try:
             self.microscope, self.microscope_settings = utils.setup_session(config_path = self.CONFIG_PATH, protocol_path = self.PROTOCOL_PATH)
-            print(self.microscope_settings.protocol)
             self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
             self.image_settings = self.microscope_settings.image
             self.milling_settings = self.microscope_settings.milling
             logging.info("Microscope Connected")
             self.RefImage.setEnabled(True)
             self.microscope_status.setText("Microscope Connected")
+            tilt = self.microscope_settings.protocol["stage_tilt"]
+            rotation = self.microscope_settings.protocol["stage_rotation"]
+            string = f"Tilt: {tilt}° | Rotation: {rotation}°"
+            self.mill_position_txt.setText(string)
             self.microscope_status.setStyleSheet("background-color: green")
 
         except:
@@ -689,7 +688,7 @@ if __name__ == "__main__":
    
     # window.show()
     widget = viewer.window.add_dock_widget(window)
-    widget.setMinimumWidth(500)
+    widget.setMinimumWidth(350)
 
     napari.run()    
 
