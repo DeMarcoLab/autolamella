@@ -431,7 +431,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.image_settings.resolution[0],
         ]
 
-        viewer.camera.zoom = 0.35
+        viewer.camera.zoom = 0.5
 
         self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
         self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
@@ -947,5 +947,5 @@ if __name__ == "__main__":
     viewer = napari.Viewer()
     window = MainWindow()
     widget = viewer.window.add_dock_widget(window)
-    widget.setMinimumWidth(350)
+    widget.setMinimumWidth(400)
     napari.run()

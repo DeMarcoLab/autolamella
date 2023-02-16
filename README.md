@@ -51,5 +51,5 @@ See [Installation Guide](INSTALLATION.md) for full details
 
 ### Getting started 
 
-![UI](autolamella/docs/img/ui.png)
+![UI](docs/img/ui.png)
 
