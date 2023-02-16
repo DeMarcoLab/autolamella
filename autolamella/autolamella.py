@@ -235,8 +235,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
    
-        
-   
 ########################### Movement Functionality ##########################################
 
     def get_data_from_coord(self, coords: tuple) -> tuple:
@@ -502,7 +500,20 @@ def add_lamella(experiment: Experiment):
     experiment.positions.append(deepcopy(lamella))
 
         # update UI lamella count
+    index = len(window.experiment.positions)
 
+    lamella_ready = 0
+
+    for lam in window.experiment.positions:
+
+        if lam.state.stage == AutoLamellaStage.FiducialMilled:
+
+            lamella_ready += 1
+            
+    
+    window.lamella_count_txt.setText(f"Out of: {index} lamellas, lamellas ready: {lamella_ready}") 
+    window.lamella_index.setMaximum(index)
+    window.lamella_index.setMinimum(1)
 
     logging.info("Empty lamella added to experiment")
 
