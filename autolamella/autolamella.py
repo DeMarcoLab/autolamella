@@ -87,10 +87,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.platinum.triggered.connect(splutter_platinum)
         self.create_exp.triggered.connect(self.create_experiment)
         self.load_exp.triggered.connect(self.load_experiment)
+        self.action_load_protocol.triggered.connect(self.load_protocol)
         self.save_button.clicked.connect(save_lamella)
         self.tilt_button.clicked.connect(tilt_stage)
         self.go_to_lamella.clicked.connect(move_to_position)
-
 
         # Movement controls setup
   
@@ -185,11 +185,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if self.save_path is None:
             tkinter.Tk().withdraw()
-            folder_path = filedialog.askdirectory()
+            folder_path = filedialog.askdirectory(title="Select experiment directory")
             self.save_path = folder_path
 
         self.experiment_name = simpledialog.askstring("Experiment name", "Please enter experiment name")
 
+        tkinter.Tk().withdraw()
+        protocol_path = filedialog.askopenfilename(title="Select a protocol file", defaultextension=".yml")
+        self.microscope_settings.protocol = utils.load_protocol(protocol_path=protocol_path)
+    
         self.experiment = Experiment(path = self.save_path,  name = self.experiment_name)
         self.log_path = os.path.join(folder_path, self.experiment_name, "logfile.log")
 
@@ -203,13 +207,16 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.timer.stop()
         tkinter.Tk().withdraw()
-        file_path = filedialog.askopenfilename()
+        file_path = filedialog.askopenfilename(title="Select experiment directory")
         self.experiment = Experiment.load(file_path)
-        #self.experiment.positions[i].reference_image.metadata.image_settings.reduced_area
 
         folder_path = os.path.dirname(file_path)
         self.log_path = os.path.join(folder_path, "logfile.log")
         self.save_path = folder_path
+
+        tkinter.Tk().withdraw()
+        protocol_path = filedialog.askopenfilename(title="Select a protocol file", defaultextension=".yml")
+        self.microscope_settings.protocol = utils.load_protocol(protocol_path=protocol_path)
 
         # update UI lamella count
         index = len(self.experiment.positions)
@@ -332,15 +339,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 self.CLog7.setText(self.CLog8.text())
 
                 self.CLog8.setText(disp_str)
-      
-
+    
     def connect_to_microscope(self):
-        
-        self.PROTOCOL_PATH = os.path.join(os.path.dirname(__file__), "protocol_autolamella.yaml")
         self.CONFIG_PATH = os.path.join(os.path.dirname(__file__))
 
         try:
-            self.microscope, self.microscope_settings = utils.setup_session(config_path = self.CONFIG_PATH, protocol_path = self.PROTOCOL_PATH)
+            self.microscope, self.microscope_settings = utils.setup_session(config_path = self.CONFIG_PATH)
             print(self.microscope_settings.protocol)
             self.log_path = os.path.join(self.microscope_settings.image.save_path,"logfile.log")
             self.image_settings = self.microscope_settings.image
@@ -366,6 +370,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         logging.info('Microscope Disconnected')
         self.microscope_status.setText("Microscope Disconnected")
         self.microscope_status.setStyleSheet("background-color: red")
+
+    def load_protocol(self):
+        protocol_path = filedialog.askdirectory()
+        self.microscope_settings.protocol = utils.load_protocol(protocol_path=protocol_path)
 
 
 ###################################### Imaging ##########################################
