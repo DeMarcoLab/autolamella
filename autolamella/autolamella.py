@@ -379,6 +379,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def load_protocol(self):
         protocol_path = filedialog.askdirectory()
         self.microscope_settings.protocol = utils.load_protocol(protocol_path=protocol_path)
+        self.protocol_txt.setText(self.microscope_settings.protocol["name"])
 
 
 ###################################### Imaging ##########################################
