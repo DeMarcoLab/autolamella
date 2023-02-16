@@ -50,7 +50,11 @@ See [Installation Guide](INSTALLATION.md) for full details
 
 
 ### Getting started 
-
+To run autolamella:
+```bash
+$ conda activate autolamella
+$ autolamella
+```
 ![UI](docs/img/ui.png)
 
 
