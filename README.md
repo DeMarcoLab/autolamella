@@ -50,6 +50,24 @@ See [Installation Guide](INSTALLATION.md) for full details
 
 
 ### Getting started 
-
+To run autolamella:
+```bash
+$ conda activate autolamella
+$ autolamella
+```
 ![UI](docs/img/ui.png)
+
+
+
+## Citation
+If you find this useful, please cite our work.
+
+Genevieve Buckley, Gediminas Gervinskas, Cyntia Taveneau, Hariprasad Venugopal, James C. Whisstock, Alex de Marco,
+**Automated cryo-lamella preparation for high-throughput in-situ structural biology**,
+*Journal of Structural Biology*,
+Volume 210, Issue 2,
+2020
+https://doi.org/10.1016/j.jsb.2020.107488.
+
+See [CITATION](CITATION.md) for more details.
 

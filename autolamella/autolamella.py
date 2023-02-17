@@ -103,7 +103,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
         self.add_button.clicked.connect(self.add_lamella_ui)
         self.run_button.clicked.connect(self.run_autolamella_ui)
-        self.platinum.triggered.connect(splutter_platinum)
+        self.platinum.triggered.connect(self.splutter_platinum)
         self.create_exp.triggered.connect(self.create_experiment)
         self.load_exp.triggered.connect(self.load_experiment)
         self.action_load_protocol.triggered.connect(self.load_protocol)
@@ -586,6 +586,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             microscope_settings=self.microscope_settings,
             image_settings=self.image_settings,
         )
+
+    def splutter_platinum(self):
+        _ = message_box_ui(
+                title="Not implemented"
+                text="This feature has not been implemented yet.",
+                buttons=QMessageBox.Ok,
+            )
 
 
 ########################## End of Main Window Class ########################################
