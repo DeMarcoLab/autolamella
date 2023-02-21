@@ -114,6 +114,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Movement controls setup
 
     def draw_patterns(self):
+        if self.microscope_settings.protocol is None:
+            logging.info("No protocol loaded")
+            return
         # Initialise the Lamella and Fiducial Settings
         hfw = self.image_settings.hfw
         self.patterns_protocol = []
@@ -221,16 +224,25 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.save_path is None:
             tkinter.Tk().withdraw()
             folder_path = filedialog.askdirectory(title="Select experiment directory")
-            self.save_path = folder_path
+            self.save_path = folder_path if folder_path != "" else None
 
-        self.experiment_name = simpledialog.askstring(
+            if folder_path == '':
+                logging.info("No path selected, experiment not created")
+                return
+
+        name = simpledialog.askstring(
             "Experiment name", "Please enter experiment name"
         )
 
+        if name is None:
+            logging.info("No name entered, experiment not created")
+            return
+        
+        self.experiment_name = name
         self.load_protocol()
 
         self.experiment = Experiment(path=self.save_path, name=self.experiment_name)
-        self.log_path = os.path.join(folder_path, self.experiment_name, "logfile.log")
+        self.log_path = os.path.join(self.save_path, self.experiment_name, "logfile.log")
 
         # self.timer.timeout.connect(self.update_log)
         self.lines = 0
@@ -242,7 +254,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer.stop()
         tkinter.Tk().withdraw()
         file_path = filedialog.askopenfilename(title="Select experiment directory")
-        self.experiment = Experiment.load(file_path)
+        self.experiment = Experiment.load(file_path) if file_path != '' else self.experiment
+
+        if file_path == '':
+            return
 
         folder_path = os.path.dirname(file_path)
         self.log_path = os.path.join(folder_path, "logfile.log")
@@ -250,18 +265,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.load_protocol()
 
-        # update UI lamella count
-        index = len(window.experiment.positions)
         lamella_ready = 0
-
-        for lam in window.experiment.positions:
+        for lam in self.experiment.positions:
             if lam.state.stage == AutoLamellaStage.FiducialMilled:
                 lamella_ready += 1
 
         self.lamella_count_txt.setText(
-            f"Out of: {index} lamellas, lamellas ready: {lamella_ready}"
+            f"Out of: {len(self.experiment.positions)} lamellas, lamellas ready: {lamella_ready}"
         )
-        self.lamella_index.setMaximum(index)
+        self.lamella_index.setMaximum(len(self.experiment.positions))
         self.lamella_index.setMinimum(1)
 
         self.lines = 0
@@ -411,13 +423,19 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         protocol_path = filedialog.askopenfilename(title="Select protocol file")
         self.microscope_settings.protocol = utils.load_protocol(
             protocol_path=protocol_path
-        )
+        ) if protocol_path != '' else self.microscope_settings.protocol
+
+        if protocol_path == '':
+            return
+        
         self.protocol_txt.setText(self.microscope_settings.protocol["name"])
         self.draw_patterns()
         tilt = self.microscope_settings.protocol["stage_tilt"]
         rotation = self.microscope_settings.protocol["stage_rotation"]
         string = f"Tilt: {tilt}° | Rotation: {rotation}°"
         self.mill_position_txt.setText(string)
+
+        logging.info("Protocol loaded")
 
     ###################################### Imaging ##########################################
 
@@ -441,6 +459,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         viewer.window.qt_viewer.dockLayerControls.hide()
 
         if self.show_lamella.isChecked():
+            if self.microscope_settings.protocol is None:
+                logging.info("No protocol loaded")
+                return
             _draw_patterns_in_napari(
                 viewer, self.FIB_IB, self.FIB_EB, self.patterns_protocol
             )
@@ -463,6 +484,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.hfw_box.setValue(int(self.image_settings.hfw * constants.SI_TO_MICRO))
 
     def tilt_stage_ui(self):
+        if self.microscope_settings.protocol is None:
+            _ = message_box_ui(
+                title="No protocol.",
+                text="Before milling please load a protocol.",
+                buttons=QMessageBox.Ok,
+            )
+            return
         tilt_stage(self.microscope, self.microscope_settings)
 
     def take_ref_images_ui(self):
@@ -472,7 +500,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.update_displays()
 
     def move_to_position_ui(self):
-        move_to_position(self.microscope, self.experiment)
+        move_to_position(self.microscope, self.experiment, self.lamella_index.value())
         self.take_ref_images_ui()
 
     def add_lamella_ui(self):
@@ -495,20 +523,25 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment = add_lamella(experiment=self.experiment, ref_image=self.FIB_IB)
 
-        index = len(window.experiment.positions)
         lamella_ready = 0
-
-        for lam in window.experiment.positions:
+        for lam in self.experiment.positions:
             if lam.state.stage == AutoLamellaStage.FiducialMilled:
                 lamella_ready += 1
 
         self.lamella_count_txt.setText(
-            f"Out of: {index} lamellas, lamellas ready: {lamella_ready}"
+            f"Out of: {len(self.experiment.positions)} lamellas, lamellas ready: {lamella_ready}"
         )
-        self.lamella_index.setMaximum(index)
+        self.lamella_index.setMaximum(len(self.experiment.positions))
         self.lamella_index.setMinimum(1)
 
     def save_lamella_ui(self):
+        if self.microscope_settings.protocol is None:
+            _ = message_box_ui(
+                title="No protocol.",
+                text="Before saving a lamella please load a protocol.",
+                buttons=QMessageBox.Ok,
+            )
+            return
         if self.save_path is None:
             tkinter.Tk().withdraw()
             folder_path = filedialog.askdirectory()
@@ -553,6 +586,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             self.experiment.save()
 
+            lamella_ready = 0
+            for lam in self.experiment.positions:
+                if lam.state.stage == AutoLamellaStage.FiducialMilled:
+                    lamella_ready += 1
+            
+            self.lamella_count_txt.setText(
+                f"Out of: {len(self.experiment.positions)} lamellas, lamellas ready: {lamella_ready}"
+            )
+
     def can_run_milling(self):
         ## First condition
         if self.microscope is None:
@@ -589,7 +631,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def splutter_platinum(self):
         _ = message_box_ui(
-                title="Not implemented"
+                title="Not implemented",
                 text="This feature has not been implemented yet.",
                 buttons=QMessageBox.Ok,
             )
@@ -636,7 +678,7 @@ def take_reference_images(microscope: FibsemMicroscope, image_settings: ImageSet
     return eb_image, ib_image
 
 
-def move_to_position(microscope: FibsemMicroscope, experiment: Experiment):
+def move_to_position(microscope: FibsemMicroscope, experiment: Experiment, index: int):
     """
     Move a FibsemMicroscope to a specified lamella position.
 
@@ -648,7 +690,7 @@ def move_to_position(microscope: FibsemMicroscope, experiment: Experiment):
         None
     """
     position = experiment.positions[
-        window.lamella_index.value() - 1
+        index - 1
     ].state.microscope_state.absolute_position
     microscope.move_stage_absolute(position)
     logging.info(f"Moved to lamella position: {position}")
@@ -678,6 +720,8 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
     experiment.positions.append(deepcopy(lamella))
 
     logging.info("Empty lamella added to experiment")
+
+    return experiment
 
 
 def update_lamella(lamella: Lamella, stage: AutoLamellaStage):
@@ -853,12 +897,10 @@ def run_autolamella(
     for i, protocol in enumerate(
         microscope_settings.protocol["lamella"]["protocol_stages"]
     ):
-        stage = (
-            i + 2
-        )  # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
+        curr_stage = (i + 2)  # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
         for j, lamella in enumerate(experiment.positions):
             if lamella.state.stage == AutoLamellaStage(
-                stage - 1
+                curr_stage - 1
             ):  # Checks to make sure the next stage for the selected Lamella is the current protocol
                 microscope.move_stage_absolute(
                     lamella.state.microscope_state.absolute_position
@@ -894,7 +936,7 @@ def run_autolamella(
                     )
 
                     if (
-                        stage == 2 and lamella.mill_microexpansion
+                        curr_stage == 2 and lamella.mill_microexpansion
                     ):  # stage = 2 is RoughCut
                         milling.draw_stress_relief(
                             microscope=microscope,
@@ -916,7 +958,7 @@ def run_autolamella(
                     )
 
                     # Update Lamella Stage and Experiment
-                    lamella = update_lamella(lamella=lamella, stage=stage)
+                    lamella = update_lamella(lamella=lamella, stage=curr_stage)
 
                     image_settings.beam_type = BeamType.ION
                     lamella.reference_image = acquire.new_image(
@@ -924,24 +966,29 @@ def run_autolamella(
                     )
 
                     experiment.save()
-
-                    logging.info("Lamella milled successfully")
-
-                    return experiment
+                    if curr_stage == 2:
+                        l_stage = "Rough Cut"
+                    elif curr_stage == 3:
+                        l_stage = "Regular Cut"
+                    elif curr_stage == 4:
+                        l_stage = "Polishing Cut"
+                    logging.info(f"Lamella {j+1}, stage: '{l_stage}' milled successfully.")
 
                 except Exception as e:
                     logging.error(
                         f"Unable to draw/mill the lamella: {traceback.format_exc()}"
                     )
+    logging.info("All Lamella milled successfully.")
+    return experiment
 
 
-def splutter_platinum():
+def splutter_platinum(microscope: FibsemMicroscope):
     print("Sputtering Platinum")
     return
     protocol = []  #  where do we get this from?
 
     gis.sputter_platinum(
-        microscope=window.microscope,
+        microscope=microscope,
         protocol=protocol,
         whole_grid=False,
         default_application_file="autolamella",
