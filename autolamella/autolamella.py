@@ -42,6 +42,7 @@ from structures import (
 )
 
 from ui import UI as UI
+from napari.utils.notifications import show_info, show_warning, show_error
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
@@ -221,14 +222,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def create_experiment(self):
         self.timer.stop()
 
-        if self.save_path is None:
-            tkinter.Tk().withdraw()
-            folder_path = filedialog.askdirectory(title="Select experiment directory")
-            self.save_path = folder_path if folder_path != "" else None
+        tkinter.Tk().withdraw()
+        folder_path = filedialog.askdirectory(title="Select experiment directory")
+        self.save_path = folder_path if folder_path != "" else None
 
-            if folder_path == '':
-                logging.info("No path selected, experiment not created")
-                return
+        if folder_path == '':
+            logging.info("No path selected, experiment not created")
+            return
 
         name = simpledialog.askstring(
             "Experiment name", "Please enter experiment name"
@@ -316,7 +316,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         coords, beam_type, image = self.get_data_from_coord(coords)
 
         if beam_type is None:
-            napari.utils.notifications.show_info(
+            show_warning(
                 f"Clicked outside image dimensions. Please click inside the image to move."
             )
             return
@@ -370,15 +370,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.lines != lin_len:
             for i in reversed(range(lin_len - self.lines)):
                 line_display = lines[-1 - i]
-                if re.search("napari.loader — DEBUG", line_display):
+                if re.search("DEBUG", line_display):
                     self.lines = lin_len
                     continue
-                if re.search("AUTO_GAMMA", line_display):
+                if re.search("vispy", line_display):
                     self.lines = lin_len
                     continue
                 line_divided = line_display.split(",")
                 time = line_divided[0]
-                message = line_divided[1].split("—")
+                message = line_display.split("—")
                 disp_str = f"{time} | {message[-1]}"
 
                 disp_paragraph = self.log_txt.toPlainText() + disp_str + "\n"
@@ -494,6 +494,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         tilt_stage(self.microscope, self.microscope_settings)
 
     def take_ref_images_ui(self):
+        show_info(f"Taking reference images...")
         eb_image, ib_image = take_reference_images(self.microscope, self.image_settings)
         self.FIB_IB = ib_image
         self.FIB_EB = eb_image
@@ -622,6 +623,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
             return
+        show_info(f"Running AutoLamella...")
         self.experiment = run_autolamella(
             microscope=self.microscope,
             experiment=self.experiment,
