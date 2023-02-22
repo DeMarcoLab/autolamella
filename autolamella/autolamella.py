@@ -657,7 +657,7 @@ def tilt_stage(microscope: FibsemMicroscope, settings: MicroscopeSettings):
     position.t = settings.protocol["stage_tilt"] * constants.DEGREES_TO_RADIANS
     position.r = settings.protocol["stage_rotation"] * constants.DEGREES_TO_RADIANS
     microscope.move_stage_absolute(position)
-    logging.info(f"Stage moved to r = {position.r}°, t = {position.t}°")
+    logging.info(f"Stage moved to r = {position.r * constants.RADIANS_TO_DEGREES}°, t = {position.t * constants.RADIANS_TO_DEGREES}°")
 
 
 def take_reference_images(microscope: FibsemMicroscope, image_settings: ImageSettings):
