@@ -4,6 +4,7 @@ theme:
 nav:
   - index.md
   - INSTALLATION.md
-  - functions.md
+  - walkthrough.md
+  - protocol.md
 plugins:
   - mkdocstrings
