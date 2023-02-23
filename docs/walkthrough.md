@@ -27,7 +27,17 @@ Once images have been taken, you can optionally tick the 'Show Lamella' and 'Mic
 
 An empty lamella can be created by pressing the 'Add Lamella' button in the UI. Nothing happens after pressing this button besides telling AutoLamella how many lamellae you are working with. A lamella (and fidicual) is not properly created until you click the 'Save Lamella' button, upon which a fiducial will be milled for said lamella. You can either sequentially 'Add Lamella' and 'Save Lamella' as needed, or if you are aware of how many lamellae you are planning to mill for a particular experiment, you can add X number of lamellae all at once, and save them later. You can select which lamella you would like to save with the 'Current Lamella' bar.
 
-You can move the microscope stage by either double clicking on somewhere on one of the images to move there, or move the microscope through your microscope's API. Once you are happy with the placement of a 
+You can move the microscope stage by either double clicking on somewhere on one of the images to move there, or move the microscope through your microscope's API. Once you are happy with the placement of a lamella, click 'Save Lamella'. This will begin the milling process of a fiducial a fixed distance to the left of the lamella, and save the lamella's position for later. Once you have saved the desired number of lamellae and milled a fiducial for each, the AutoLamella process can begin.
+
+## Step 4: Run AutoLamella
+Click the 'Run AutoLamella' button to begin the process. The program will check behind the scenes that you have met the prerequisites before beginning. If you do not meet these prerequisites a pop-up message will let you know. These prerequisites are:
+
+    1. A microscope is connected.
+    2. An experiment has been loaded/created.
+    3. Atleast one lamella has been added.
+    4. Each lamella has atleast milled a fiducial.
+
+If these prerequisites are met the process will begin. The milling order is by protocol stage. So the program will loop through each lamella milling just the first stage, then second, then third, etc. After each lamella has had a stage milled, the Experiment is saved and that lamella's history is logged. This means that if the process stops during running the Experiment can be loaded again and will begin where it left off.
 
 
 
