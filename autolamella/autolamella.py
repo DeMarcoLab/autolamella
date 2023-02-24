@@ -180,14 +180,14 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 width = microexpansion_protocol["width"]
                 height = microexpansion_protocol["height"]
                 depth = protocol["milling_depth"]
-
+                lamella_width = protocol["lamella_width"]
                 stage.append(
                     FibsemPatternSettings(
                         width=width,
                         height=height,
                         depth=depth,
                         centre_x=0
-                        - protocol["lamella_width"] / 2
+                        - lamella_width / 2
                         - microexpansion_protocol["distance"],
                         centre_y=0,
                         cleaning_cross_section=True,
@@ -201,7 +201,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         height=height,
                         depth=depth,
                         centre_x=0
-                        + protocol["lamella_width"] / 2
+                        + lamella_width / 2
                         + microexpansion_protocol["distance"],
                         centre_y=0,
                         cleaning_cross_section=True,
@@ -513,6 +513,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"] = float(self.offset.displayText())
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"] = float(self.current_lamella.displayText())
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"] = float(self.size_ratio.displayText())
+        self.draw_patterns()
+        logging.info("Protocol changed")
    
     def save_protocol(self):
         tkinter.Tk().withdraw()
@@ -520,6 +522,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         with open(os.path.join(protocol_path), "w") as f:
             yaml.safe_dump(self.microscope_settings.protocol, f, indent=4)
+
+        logging.info("Protocol saved to file")
 
     ###################################### Imaging ##########################################
 
