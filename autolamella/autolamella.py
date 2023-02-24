@@ -115,22 +115,25 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.clicked.connect(self.move_to_position_ui)
 
         # Protocol setup
-        self.stage_rotation.textEdited.connect(self.change_protocol)
-        self.stage_tilt.textEdited.connect(self.change_protocol)
-        self.beamshift_attempts.textEdited.connect(self.change_protocol)
-        self.fiducial_length.textEdited.connect(self.change_protocol)
-        self.width_fiducial.textEdited.connect(self.change_protocol)
-        self.depth_fiducial.textEdited.connect(self.change_protocol)
-        self.current_fiducial.textEdited.connect(self.change_protocol)
+        self.stage_rotation.editingFinished.connect(self.change_protocol)
+        self.stage_tilt.editingFinished.connect(self.change_protocol)
+        self.beamshift_attempts.editingFinished.connect(self.change_protocol)
+        self.fiducial_length.editingFinished.connect(self.change_protocol)
+        self.width_fiducial.editingFinished.connect(self.change_protocol)
+        self.depth_fiducial.editingFinished.connect(self.change_protocol)
+        self.current_fiducial.editingFinished.connect(self.change_protocol)
         self.stage_lamella.currentTextChanged.connect(self.select_stage)
-        self.lamella_width.textEdited.connect(self.change_protocol)
-        self.lamella_height.textEdited.connect(self.change_protocol)
-        self.trench_height.textEdited.connect(self.change_protocol)
-        self.depth_trench.textEdited.connect(self.change_protocol)
-        self.offset.textEdited.connect(self.change_protocol)
-        self.current_lamella.textEdited.connect(self.change_protocol)
-        self.size_ratio.textEdited.connect(self.change_protocol)
+        self.lamella_width.editingFinished.connect(self.change_protocol)
+        self.lamella_height.editingFinished.connect(self.change_protocol)
+        self.trench_height.editingFinished.connect(self.change_protocol)
+        self.depth_trench.editingFinished.connect(self.change_protocol)
+        self.offset.editingFinished.connect(self.change_protocol)
+        self.current_lamella.editingFinished.connect(self.change_protocol)
+        self.size_ratio.editingFinished.connect(self.change_protocol)
         self.export_protocol.clicked.connect(self.save_protocol)
+        self.micro_exp_distance.editingFinished.connect(self.change_protocol)
+        self.micro_exp_height.editingFinished.connect(self.change_protocol)
+        self.micro_exp_width.editingFinished.connect(self.change_protocol)
 
     def draw_patterns(self):
         if self.microscope_settings.protocol is None:
@@ -472,6 +475,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.offset.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["offset"]))
         self.current_lamella.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["milling_current"]))
         self.size_ratio.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["size_ratio"]))
+        self.micro_exp_width.setText(str(self.microscope_settings.protocol["microexpansion"]["width"]))
+        self.micro_exp_height.setText(str(self.microscope_settings.protocol["microexpansion"]["height"]))
+        self.micro_exp_distance.setText(str(self.microscope_settings.protocol["microexpansion"]["distance"]))
    
         logging.info("Protocol loaded")
 
@@ -506,15 +512,17 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             index = 1
         elif self.stage_lamella.currentText() == "3. Polishing Cut":
             index = 2
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["width"] = float(self.lamella_width.displayText())
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["depth"] = float(self.lamella_height.displayText())
+        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["lamella_width"] = float(self.lamella_width.displayText())
+        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["lamella_height"] = float(self.lamella_height.displayText())
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"] = float(self.trench_height.displayText())
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"] = float(self.depth_trench.displayText())
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"] = float(self.offset.displayText())
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"] = float(self.current_lamella.displayText())
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"] = float(self.size_ratio.displayText())
+        self.microscope_settings.protocol["microexpansion"]["width"] = float(self.micro_exp_width.displayText())
+        self.microscope_settings.protocol["microexpansion"]["height"] = float(self.micro_exp_height.displayText())
+        self.microscope_settings.protocol["microexpansion"]["distance"] = float(self.micro_exp_distance.displayText())
         self.draw_patterns()
-        logging.info("Protocol changed")
    
     def save_protocol(self):
         tkinter.Tk().withdraw()

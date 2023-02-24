@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1172</width>
-    <height>850</height>
+    <width>1221</width>
+    <height>948</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,9 +27,9 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>480</y>
+      <y>630</y>
       <width>441</width>
-      <height>341</height>
+      <height>281</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -58,7 +58,7 @@
       <x>0</x>
       <y>0</y>
       <width>441</width>
-      <height>481</height>
+      <height>621</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -354,7 +354,7 @@
         <x>0</x>
         <y>2</y>
         <width>421</width>
-        <height>453</height>
+        <height>591</height>
        </rect>
       </property>
       <layout class="QFormLayout" name="formLayout">
@@ -550,10 +550,53 @@
          </item>
         </widget>
        </item>
-       <item row="17" column="1">
+       <item row="18" column="0">
+        <widget class="QLabel" name="widthLabel_3">
+         <property name="text">
+          <string>Width</string>
+         </property>
+        </widget>
+       </item>
+       <item row="18" column="1">
+        <widget class="QLineEdit" name="micro_exp_width"/>
+       </item>
+       <item row="19" column="0">
+        <widget class="QLabel" name="heightLabel_2">
+         <property name="text">
+          <string>Height</string>
+         </property>
+        </widget>
+       </item>
+       <item row="19" column="1">
+        <widget class="QLineEdit" name="micro_exp_height"/>
+       </item>
+       <item row="20" column="0">
+        <widget class="QLabel" name="distanceLabel">
+         <property name="text">
+          <string>Distance</string>
+         </property>
+        </widget>
+       </item>
+       <item row="20" column="1">
+        <widget class="QLineEdit" name="micro_exp_distance"/>
+       </item>
+       <item row="21" column="1">
         <widget class="QPushButton" name="export_protocol">
          <property name="text">
           <string>Save protocol to file</string>
+         </property>
+        </widget>
+       </item>
+       <item row="17" column="0" colspan="2">
+        <widget class="QLabel" name="label_10">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Microexpansion Joints Parameters</string>
          </property>
         </widget>
        </item>
@@ -567,7 +610,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1172</width>
+     <width>1221</width>
      <height>21</height>
     </rect>
    </property>
