@@ -58,6 +58,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer.timeout.connect(self.update_log)
         self.timer.start(1000)
 
+        viewer.window.qt_viewer.dockLayerList.hide()
+        viewer.window.qt_viewer.dockLayerControls.hide()
+
         self.pattern_settings = []
         self.save_path = None
 
@@ -551,8 +554,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
         self.ib_layer.translate = [0.0, self.image_settings.resolution[0]]
 
-        viewer.window.qt_viewer.dockLayerList.hide()
-        viewer.window.qt_viewer.dockLayerControls.hide()
+
 
         if self.show_lamella.isChecked():
             if self.microscope_settings.protocol is None:
@@ -882,11 +884,11 @@ def save_lamella(
         * float(
             microscope_settings.protocol["fiducial"]["length"] / image_settings.hfw
         ),
-        width=1.5
+        width=2.0
         * float(
             microscope_settings.protocol["fiducial"]["length"] / image_settings.hfw
         ),
-        height=1.5
+        height=3.0
         * float(
             microscope_settings.protocol["fiducial"]["length"] / image_settings.hfw
         ),
