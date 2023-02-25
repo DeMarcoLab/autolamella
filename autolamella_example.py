@@ -72,7 +72,7 @@ def main():
         return
 
     # setup milling
-    milling.setup_milling(microscope, settings.system.application_file)
+    milling.setup_milling(microscope, "autolamella")
 
     # mill (fiducial, trench, thin, polish)
     for stage_no, milling_dict in enumerate(settings.protocol["lamella"]["protocol_stages"], 1):

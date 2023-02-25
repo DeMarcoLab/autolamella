@@ -43,7 +43,7 @@ from structures import (
 )
 
 from ui import UI as UI
-from napari.utils.notifications import show_info, show_warning, show_error
+from napari.utils.notifications import show_info
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
@@ -341,7 +341,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         coords, beam_type, image = self.get_data_from_coord(coords)
 
         if beam_type is None:
-            show_warning(
+            show_info(
                 f"Clicked outside image dimensions. Please click inside the image to move."
             )
             return
