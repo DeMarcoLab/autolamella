@@ -105,26 +105,19 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Buttons setup
 
         self.RefImage.clicked.connect(self.take_ref_images_ui)
-        self.RefImage.setStyleSheet("background-color: darkGreen")
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
         self.add_button.clicked.connect(self.add_lamella_ui)
-        self.add_button.setStyleSheet("background-color: darkGreen")
         self.run_button.clicked.connect(self.run_autolamella_ui)
-        self.run_button.setStyleSheet("background-color: darkGreen")
         self.platinum.triggered.connect(self.splutter_platinum)
         self.create_exp.triggered.connect(self.create_experiment)
         self.load_exp.triggered.connect(self.load_experiment)
         self.action_load_protocol.triggered.connect(self.load_protocol)
         self.save_button.clicked.connect(self.save_lamella_ui)
-        self.save_button.setStyleSheet("background-color: darkGreen")
         self.tilt_button.clicked.connect(self.tilt_stage_ui)
-        self.tilt_button.setStyleSheet("background-color: darkGreen")
         self.go_to_lamella.clicked.connect(self.move_to_position_ui)
-        self.go_to_lamella.setStyleSheet("background-color: darkGreen")
         self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
-        self.remill_fiducial.setStyleSheet("background-color: darkGreen")
 
         # Protocol setup
         self.stage_rotation.editingFinished.connect(self.change_protocol)
@@ -143,7 +136,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.current_lamella.editingFinished.connect(self.change_protocol)
         self.size_ratio.editingFinished.connect(self.change_protocol)
         self.export_protocol.clicked.connect(self.save_protocol)
-        self.export_protocol.setStyleSheet("background-color: darkGreen")
         self.micro_exp_distance.editingFinished.connect(self.change_protocol)
         self.micro_exp_height.editingFinished.connect(self.change_protocol)
         self.micro_exp_width.editingFinished.connect(self.change_protocol)
@@ -634,7 +626,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             self.add_button.setEnabled(True)
             self.add_button.setText("Add Lamella")
-            self.add_button.setStyleSheet("background-color: darkGreen")
+            self.add_button.setStyleSheet("background-color: gray")
             return
         # Check to see if an image has been taken first
         if self.FIB_EB.metadata == None:
@@ -645,7 +637,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             self.add_button.setEnabled(True)
             self.add_button.setText("Add Lamella")
-            self.add_button.setStyleSheet("background-color: darkGreen")
+            self.add_button.setStyleSheet("background-color: gray")
             return
 
         self.experiment = add_lamella(experiment=self.experiment, ref_image=self.FIB_IB)
@@ -662,7 +654,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_index.setMinimum(1)
         self.add_button.setEnabled(True)
         self.add_button.setText("Add Lamella")
-        self.add_button.setStyleSheet("background-color: darkGreen")
+        self.add_button.setStyleSheet("background-color: gray")
 
     def save_lamella_ui(self):
         self.save_button.setEnabled(False)
@@ -703,7 +695,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.mill_fiducial_ui(index)
         self.save_button.setEnabled(True)
         self.save_button.setText("Save current lamella")
-        self.save_button.setStyleSheet("background-color: darkGreen")
+        self.save_button.setStyleSheet("background-color: gray")
 
     def mill_fiducial_ui(self, index):
         
@@ -752,7 +744,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.mill_fiducial_ui(index=index)
         self.remill_fiducial.setEnabled(True)
         self.remill_fiducial.setText("Remill fiducial")
-        self.remill_fiducial.setStyleSheet("background-color: darkGreen")    
+        self.remill_fiducial.setStyleSheet("background-color: gray")    
 
     def can_run_milling(self):
         ## First condition
@@ -790,7 +782,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             self.run_button.setEnabled(True)
             self.run_button.setText("Run Autolamella")
-            self.run_button.setStyleSheet("background-color: darkGreen")
+            self.run_button.setStyleSheet("background-color: gray")
             return
         show_info(f"Running AutoLamella...")
         self.image_settings.reduced_area = None
@@ -802,7 +794,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
         self.run_button.setEnabled(True)
         self.run_button.setText("Run Autolamella")
-        self.run_button.setStyleSheet("background-color: darkGreen")
+        self.run_button.setStyleSheet("background-color: gray")
 
     def splutter_platinum(self):
         _ = message_box_ui(
@@ -890,7 +882,7 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
         reference_image=ref_image,
     )
 
-    lamella.reference_image.metadata.image_settings.label = "Empty ref"
+    lamella.reference_image.metadata.image_settings.label = "Empty_ref"
 
     experiment.positions.append(deepcopy(lamella))
 
