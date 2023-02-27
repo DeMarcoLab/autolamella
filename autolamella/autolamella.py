@@ -137,6 +137,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_distance.editingFinished.connect(self.change_protocol)
         self.micro_exp_height.editingFinished.connect(self.change_protocol)
         self.micro_exp_width.editingFinished.connect(self.change_protocol)
+        self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
 
     def draw_patterns(self):
         if self.microscope_settings.protocol is None:
@@ -388,6 +389,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     ##################################################################
 
     def update_log(self):
+
         with open(self.log_path, "r") as f:
             lines = f.read().splitlines()
             lin_len = len(lines)
@@ -463,24 +465,24 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.protocol_loaded = True
 
         ## Loading protocol tab 
-        self.stage_rotation.setText(str(self.microscope_settings.protocol["stage_rotation"]))
-        self.stage_tilt.setText(str(self.microscope_settings.protocol["stage_tilt"]))
-        self.beamshift_attempts.setText(str(self.microscope_settings.protocol["lamella"]["beam_shift_attempts"]))
-        self.fiducial_length.setText(str(self.microscope_settings.protocol["fiducial"]["length"]))
-        self.width_fiducial.setText(str(self.microscope_settings.protocol["fiducial"]["width"]))
-        self.depth_fiducial.setText(str(self.microscope_settings.protocol["fiducial"]["depth"]))
-        self.current_fiducial.setText(str(self.microscope_settings.protocol["fiducial"]["milling_current"]))
+        self.stage_rotation.setValue((self.microscope_settings.protocol["stage_rotation"]))
+        self.stage_tilt.setValue((self.microscope_settings.protocol["stage_tilt"]))
+        self.beamshift_attempts.setValue((self.microscope_settings.protocol["lamella"]["beam_shift_attempts"]))
+        self.fiducial_length.setValue((self.microscope_settings.protocol["fiducial"]["length"]*constants.SI_TO_MICRO))
+        self.width_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["width"]*constants.SI_TO_MICRO))
+        self.depth_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["depth"]*constants.SI_TO_MICRO))
+        self.current_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["milling_current"]*constants.SI_TO_NANO))
         self.stage_lamella.setCurrentText("1. Rough Cut")
-        self.lamella_width.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["lamella_width"]))
-        self.lamella_height.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["lamella_height"]))
-        self.trench_height.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["trench_height"]))
-        self.depth_trench.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["milling_depth"]))
-        self.offset.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["offset"]))
-        self.current_lamella.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["milling_current"]))
-        self.size_ratio.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["size_ratio"]))
-        self.micro_exp_width.setText(str(self.microscope_settings.protocol["microexpansion"]["width"]))
-        self.micro_exp_height.setText(str(self.microscope_settings.protocol["microexpansion"]["height"]))
-        self.micro_exp_distance.setText(str(self.microscope_settings.protocol["microexpansion"]["distance"]))
+        self.lamella_width.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["lamella_width"]*constants.SI_TO_MICRO))
+        self.lamella_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["lamella_height"]*constants.SI_TO_MICRO))
+        self.trench_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["trench_height"]*constants.SI_TO_MICRO))
+        self.depth_trench.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["milling_depth"]*constants.SI_TO_MICRO))
+        self.offset.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["offset"]*constants.SI_TO_MICRO))
+        self.current_lamella.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["milling_current"]*constants.SI_TO_NANO))
+        self.size_ratio.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["size_ratio"]))
+        self.micro_exp_width.setValue((self.microscope_settings.protocol["microexpansion"]["width"]*constants.SI_TO_MICRO))
+        self.micro_exp_height.setValue((self.microscope_settings.protocol["microexpansion"]["height"]*constants.SI_TO_MICRO))
+        self.micro_exp_distance.setValue((self.microscope_settings.protocol["microexpansion"]["distance"]*constants.SI_TO_MICRO))
    
         logging.info("Protocol loaded")
 
@@ -492,22 +494,27 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             index = 1
         elif self.stage_lamella.currentText() == "3. Polishing Cut":
             index = 2
-        self.lamella_width.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["lamella_width"]))
-        self.lamella_height.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["lamella_height"]))
-        self.trench_height.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"]))
-        self.depth_trench.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"]))
-        self.offset.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"]))
-        self.current_lamella.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"]))
-        self.size_ratio.setText(str(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"]))
+        self.lamella_width.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["lamella_width"]*constants.SI_TO_MICRO))
+        self.lamella_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["lamella_height"]*constants.SI_TO_MICRO))
+        self.trench_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"]*constants.SI_TO_MICRO))
+        self.depth_trench.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"]*constants.SI_TO_MICRO))
+        self.offset.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"]*constants.SI_TO_MICRO))
+        self.current_lamella.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"]*constants.SI_TO_NANO))
+        self.size_ratio.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"]))
 
     def change_protocol(self):
-        self.microscope_settings.protocol["stage_rotation"] = float(self.stage_rotation.displayText())
-        self.microscope_settings.protocol["stage_tilt"] = float(self.stage_tilt.displayText())
-        self.microscope_settings.protocol["lamella"]["beam_shift_attempts"] = float(self.beamshift_attempts.displayText())
-        self.microscope_settings.protocol["fiducial"]["length"] = float(self.fiducial_length.displayText())
-        self.microscope_settings.protocol["fiducial"]["width"] = float(self.width_fiducial.displayText())
-        self.microscope_settings.protocol["fiducial"]["depth"] = float(self.depth_fiducial.displayText())
-        self.microscope_settings.protocol["fiducial"]["milling_current"] = float(self.current_fiducial.displayText())
+        self.microscope_settings.protocol["stage_rotation"] = float(self.stage_rotation.value())
+        self.microscope_settings.protocol["stage_tilt"] = float(self.stage_tilt.value())
+        self.microscope_settings.protocol["lamella"]["beam_shift_attempts"] = float(self.beamshift_attempts.value())
+        self.microscope_settings.protocol["fiducial"]["length"] = float(self.fiducial_length.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["fiducial"]["width"] = float(self.width_fiducial.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["fiducial"]["depth"] = float(self.depth_fiducial.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["fiducial"]["milling_current"] = float(self.current_fiducial.value()*constants.NANO_TO_SI)
+        i = 0
+        while i < 3:
+            self.microscope_settings.protocol["lamella"]["protocol_stages"][i]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
+            self.microscope_settings.protocol["lamella"]["protocol_stages"][i]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
+            i = i+1 
         index = 0
         if self.stage_lamella.currentText() == "1. Rough Cut":
             index = 0
@@ -515,16 +522,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             index = 1
         elif self.stage_lamella.currentText() == "3. Polishing Cut":
             index = 2
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["lamella_width"] = float(self.lamella_width.displayText())
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["lamella_height"] = float(self.lamella_height.displayText())
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"] = float(self.trench_height.displayText())
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"] = float(self.depth_trench.displayText())
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"] = float(self.offset.displayText())
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"] = float(self.current_lamella.displayText())
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"] = float(self.size_ratio.displayText())
-        self.microscope_settings.protocol["microexpansion"]["width"] = float(self.micro_exp_width.displayText())
-        self.microscope_settings.protocol["microexpansion"]["height"] = float(self.micro_exp_height.displayText())
-        self.microscope_settings.protocol["microexpansion"]["distance"] = float(self.micro_exp_distance.displayText())
+        
+        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"] = float(self.trench_height.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"] = float(self.depth_trench.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"] = float(self.offset.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"] = float(self.current_lamella.value()*constants.NANO_TO_SI)
+        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"] = float(self.size_ratio.value())
+        self.microscope_settings.protocol["microexpansion"]["width"] = float(self.micro_exp_width.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["microexpansion"]["height"] = float(self.micro_exp_height.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["microexpansion"]["distance"] = float(self.micro_exp_distance.value()*constants.MICRO_TO_SI)
         self.draw_patterns()
    
     def save_protocol(self):
@@ -665,7 +671,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
 
         if response:
-            self.experiment, pixel_size = save_lamella(
+            self.mill_fiducial_ui(index)
+
+    def mill_fiducial_ui(self, index):
+
+        self.experiment, pixel_size = save_lamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 image_settings=self.image_settings,
@@ -675,7 +685,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 microexpansion=self.microexpansionCheckBox.isChecked(),
             )
 
-            self.experiment.positions[index] = mill_fiducial(
+        self.experiment.positions[index] = mill_fiducial(
                 microscope=self.microscope,
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_settings,
@@ -683,16 +693,29 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 pixelsize=pixel_size,
             )
 
-            self.experiment.save()
+        self.experiment.save()
 
-            lamella_ready = 0
-            for lam in self.experiment.positions:
-                if lam.state.stage == AutoLamellaStage.FiducialMilled:
-                    lamella_ready += 1
+        lamella_ready = 0
+        for lam in self.experiment.positions:
+            if lam.state.stage == AutoLamellaStage.FiducialMilled:
+                lamella_ready += 1
+        
+        self.lamella_count_txt.setText(
+            f"Out of: {len(self.experiment.positions)} lamellas, lamellas ready: {lamella_ready}"
+        )
+
+    def remill_fiducial_ui(self):
+        response = message_box_ui(
+            title="Redo Fiducial?",
+            text="If you want to remill this fiducial, press yes.",
+        )
+        
+        if response:
+            index = self.lamella_index.value() - 1
+            self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
+            self.move_to_position_ui()
+            self.mill_fiducial(index=index)
             
-            self.lamella_count_txt.setText(
-                f"Out of: {len(self.experiment.positions)} lamellas, lamellas ready: {lamella_ready}"
-            )
 
     def can_run_milling(self):
         ## First condition
@@ -722,6 +745,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             return
         show_info(f"Running AutoLamella...")
+        self.image_settings.reduced_area = None
         self.experiment = run_autolamella(
             microscope=self.microscope,
             experiment=self.experiment,
@@ -1053,17 +1077,17 @@ def run_autolamella(
 
                     image_settings.save_path = lamella.path
                     image_settings.label = f"ref_mill_stage_{i}"
-                    lamella.reference_image = acquire.new_image(
-                        microscope, image_settings
-                    )
+                    image_settings.reduced_area = None
 
                     # Update Lamella Stage and Experiment
                     lamella = update_lamella(lamella=lamella, stage=curr_stage)
 
                     image_settings.beam_type = BeamType.ION
-                    lamella.reference_image = acquire.new_image(
+                    reference_image = acquire.new_image(
                         microscope, image_settings
                     )
+                    path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
+                    reference_image.save(path_image)
 
                     experiment.save()
                     if curr_stage == 2:
