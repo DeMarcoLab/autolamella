@@ -8,6 +8,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, simpledialog
+from time import sleep
 
 import fibsem.constants as constants
 import fibsem.conversions as conversions
@@ -104,18 +105,26 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Buttons setup
 
         self.RefImage.clicked.connect(self.take_ref_images_ui)
+        self.RefImage.setStyleSheet("background-color: darkGreen")
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
         self.add_button.clicked.connect(self.add_lamella_ui)
+        self.add_button.setStyleSheet("background-color: darkGreen")
         self.run_button.clicked.connect(self.run_autolamella_ui)
+        self.run_button.setStyleSheet("background-color: darkGreen")
         self.platinum.triggered.connect(self.splutter_platinum)
         self.create_exp.triggered.connect(self.create_experiment)
         self.load_exp.triggered.connect(self.load_experiment)
         self.action_load_protocol.triggered.connect(self.load_protocol)
         self.save_button.clicked.connect(self.save_lamella_ui)
+        self.save_button.setStyleSheet("background-color: darkGreen")
         self.tilt_button.clicked.connect(self.tilt_stage_ui)
+        self.tilt_button.setStyleSheet("background-color: darkGreen")
         self.go_to_lamella.clicked.connect(self.move_to_position_ui)
+        self.go_to_lamella.setStyleSheet("background-color: darkGreen")
+        self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
+        self.remill_fiducial.setStyleSheet("background-color: darkGreen")
 
         # Protocol setup
         self.stage_rotation.editingFinished.connect(self.change_protocol)
@@ -134,10 +143,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.current_lamella.editingFinished.connect(self.change_protocol)
         self.size_ratio.editingFinished.connect(self.change_protocol)
         self.export_protocol.clicked.connect(self.save_protocol)
+        self.export_protocol.setStyleSheet("background-color: darkGreen")
         self.micro_exp_distance.editingFinished.connect(self.change_protocol)
         self.micro_exp_height.editingFinished.connect(self.change_protocol)
         self.micro_exp_width.editingFinished.connect(self.change_protocol)
-        self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
 
     def draw_patterns(self):
         if self.microscope_settings.protocol is None:
@@ -588,6 +597,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.hfw_box.setValue(int(self.image_settings.hfw * constants.SI_TO_MICRO))
 
     def tilt_stage_ui(self):
+
         if self.microscope_settings.protocol is None:
             _ = message_box_ui(
                 title="No protocol.",
@@ -597,6 +607,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             return
         tilt_stage(self.microscope, self.microscope_settings)
 
+
+
     def take_ref_images_ui(self):
         show_info(f"Taking reference images...")
         eb_image, ib_image = take_reference_images(self.microscope, self.image_settings)
@@ -604,18 +616,25 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.FIB_EB = eb_image
         self.update_displays()
 
+
     def move_to_position_ui(self):
         move_to_position(self.microscope, self.experiment, self.lamella_index.value())
         self.take_ref_images_ui()
 
     def add_lamella_ui(self):
         # check experiemnt has been loaded/created
+        self.add_button.setEnabled(False)
+        self.add_button.setText("Running...")
+        self.add_button.setStyleSheet("background-color: orange")
         if self.experiment == None:
             _ = message_box_ui(
                 title="No experiemnt.",
                 text="Before adding a lamella please create or load an experiment.",
                 buttons=QMessageBox.Ok,
             )
+            self.add_button.setEnabled(True)
+            self.add_button.setText("Add Lamella")
+            self.add_button.setStyleSheet("background-color: darkGreen")
             return
         # Check to see if an image has been taken first
         if self.FIB_EB.metadata == None:
@@ -624,6 +643,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="Before adding a lamella please take atleast one image.",
                 buttons=QMessageBox.Ok,
             )
+            self.add_button.setEnabled(True)
+            self.add_button.setText("Add Lamella")
+            self.add_button.setStyleSheet("background-color: darkGreen")
             return
 
         self.experiment = add_lamella(experiment=self.experiment, ref_image=self.FIB_IB)
@@ -638,8 +660,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
         self.lamella_index.setMaximum(len(self.experiment.positions))
         self.lamella_index.setMinimum(1)
+        self.add_button.setEnabled(True)
+        self.add_button.setText("Add Lamella")
+        self.add_button.setStyleSheet("background-color: darkGreen")
 
     def save_lamella_ui(self):
+        self.save_button.setEnabled(False)
+        self.save_button.setText("Running...")
+        self.save_button.setStyleSheet("background-color: orange")
+        sleep(0.5)
         if self.microscope_settings.protocol is None:
             _ = message_box_ui(
                 title="No protocol.",
@@ -672,9 +701,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if response:
             self.mill_fiducial_ui(index)
+        self.save_button.setEnabled(True)
+        self.save_button.setText("Save current lamella")
+        self.save_button.setStyleSheet("background-color: darkGreen")
 
     def mill_fiducial_ui(self, index):
-
+        
         self.experiment, pixel_size = save_lamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
@@ -705,6 +737,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
 
     def remill_fiducial_ui(self):
+        self.remill_fiducial.setEnabled(False)
+        self.remill_fiducial.setText("Running...")
+        self.remill_fiducial.setStyleSheet("background-color: orange")
         response = message_box_ui(
             title="Redo Fiducial?",
             text="If you want to remill this fiducial, press yes.",
@@ -714,8 +749,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             index = self.lamella_index.value() - 1
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
             self.move_to_position_ui()
-            self.mill_fiducial(index=index)
-            
+            self.mill_fiducial_ui(index=index)
+        self.remill_fiducial.setEnabled(True)
+        self.remill_fiducial.setText("Remill fiducial")
+        self.remill_fiducial.setStyleSheet("background-color: darkGreen")    
 
     def can_run_milling(self):
         ## First condition
@@ -735,6 +772,14 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         return True
 
     def run_autolamella_ui(self):
+        self.run_button.setEnabled(False)
+        self.run_button.setText("Running...")
+        self.run_button.setStyleSheet("background-color: orange")
+        _ = message_box_ui(
+                title="Run full autolamella?.",
+                text="If you click yes, all lamellas will be milled automatically.",
+                buttons=QMessageBox.Ok,
+            )
         # First check that the pre-requisites to begin milling have been met.
         if self.can_run_milling() == False:
             # check to mill fiducial
@@ -743,6 +788,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="The following requirements must be met:\n1. Microscope Connected.\n2. Experiment created.\n3.Atleast 1 Lamella saved.\n4. All fiducials milled.",
                 buttons=QMessageBox.Ok,
             )
+            self.run_button.setEnabled(True)
+            self.run_button.setText("Run Autolamella")
+            self.run_button.setStyleSheet("background-color: darkGreen")
             return
         show_info(f"Running AutoLamella...")
         self.image_settings.reduced_area = None
@@ -752,6 +800,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             microscope_settings=self.microscope_settings,
             image_settings=self.image_settings,
         )
+        self.run_button.setEnabled(True)
+        self.run_button.setText("Run Autolamella")
+        self.run_button.setStyleSheet("background-color: darkGreen")
 
     def splutter_platinum(self):
         _ = message_box_ui(
