@@ -100,10 +100,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise experiment object
         self.experiment: Experiment = None
         self.protocol_loaded = False
+        pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
+        self.fiducial_position_napari = Point(-((self.image_settings.resolution[0] / 3) * pixelsize), 0.0)
+        self.fiducial_position_microscope = Point(float((self.image_settings.resolution[0] / 4) * pixelsize), 0.0)
 
     def setup_connections(self):
+        
         # Buttons setup
-
         self.RefImage.clicked.connect(self.take_ref_images_ui)
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.hfw_box.valueChanged.connect(self.hfw_box_change)
@@ -118,6 +121,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.tilt_button.clicked.connect(self.tilt_stage_ui)
         self.go_to_lamella.clicked.connect(self.move_to_position_ui)
         self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
+        self.move_fiducial_button.clicked.connect(self.move_fiducial)
 
         # Protocol setup
         self.stage_rotation.editingFinished.connect(self.change_protocol)
@@ -153,34 +157,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
             protocol["lamella_height"] = self.microscope_settings.protocol["lamella"]["lamella_height"]
             stage = []
-            lamella_width = protocol["lamella_width"]
-            lamella_height = protocol["lamella_height"]
-            trench_height = protocol["trench_height"]
-            upper_trench_height = trench_height / max(protocol["size_ratio"], 1.0)
-            offset = protocol["offset"]
-            milling_depth = protocol["milling_depth"]
-
-            centre_upper_y = 0 + (lamella_height / 2 + upper_trench_height / 2 + offset)
-            centre_lower_y = 0 - (lamella_height / 2 + trench_height / 2 + offset)
+            centre_lamella = Point(0.0,0.0)
+            lower_pattern_settings, upper_pattern_settings = milling.extract_trench_parameters(protocol, centre_lamella)
 
             stage.append(
-                FibsemPatternSettings(
-                    width=lamella_width,
-                    height=trench_height,
-                    depth=milling_depth,
-                    centre_x=0,
-                    centre_y=centre_lower_y,
-                )
+                lower_pattern_settings
             )
 
             stage.append(
-                FibsemPatternSettings(
-                    width=lamella_width,
-                    height=upper_trench_height,
-                    depth=milling_depth,
-                    centre_x=0,
-                    centre_y=centre_upper_y,
-                )
+                upper_pattern_settings
             )
 
             if i == 0 and self.microexpansionCheckBox.isChecked():
@@ -225,13 +210,17 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         stage = []
         protocol = self.microscope_settings.protocol["fiducial"]
         pixelsize = hfw / self.image_settings.resolution[0]
+
+        centre_fiducial = self.fiducial_position_napari
+
         stage.append(
             FibsemPatternSettings(
                 width=protocol["width"],
                 height=protocol["length"],
                 depth=protocol["depth"],
                 rotation=np.deg2rad(45),
-                centre_x=-((self.image_settings.resolution[0] / 3) * pixelsize),
+                centre_x=centre_fiducial.x,
+                centre_y=centre_fiducial.y,
             )
         )
         stage.append(
@@ -240,7 +229,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 height=protocol["length"],
                 depth=protocol["depth"],
                 rotation=np.deg2rad(135),
-                centre_x=-((self.image_settings.resolution[0] / 3) * pixelsize),
+                centre_x=centre_fiducial.x,
+                centre_y=centre_fiducial.y,
             )
         )
         self.patterns_protocol.append(stage)
@@ -571,6 +561,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         # self.reset_ui_settings()
         viewer.layers.selection.active = self.eb_layer
+        viewer.window.qt_viewer.view.camera.interactive = False
 
     def save_filepath(self):
         """Opens file explorer to choose location to save image files"""
@@ -640,6 +631,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment = add_lamella(experiment=self.experiment, ref_image=self.FIB_IB)
 
+        self.experiment.positions[-1].lamella_centre = Point(0.0,0.0)
+        self.experiment.positions[-1].fiducial_centre = self.fiducial_position_microscope
+        
         lamella_ready = 0
         for lam in self.experiment.positions:
             if lam.state.stage == AutoLamellaStage.FiducialMilled:
@@ -658,7 +652,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setEnabled(False)
         self.save_button.setText("Running...")
         self.save_button.setStyleSheet("color: orange")
-        sleep(0.5)
+
         if self.microscope_settings.protocol is None:
             _ = message_box_ui(
                 title="No protocol.",
@@ -690,14 +684,42 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
 
         if response:
+            self.experiment.positions[index].fiducial_centre = self.fiducial_position_microscope
             self.mill_fiducial_ui(index)
         self.save_button.setEnabled(True)
         self.save_button.setText("Save current lamella")
         self.save_button.setStyleSheet("color: white")
 
+    def _get_centre_coordinates(self, layer, event):
+        coords = self.ib_layer.world_to_data(event.position)
+        pixel_size = self.image_settings.hfw/self.image_settings.resolution[0]
+
+        #### Thermo has origin top left, tescan is top right 
+        if self.microscope_settings.system.manufacturer == "Thermo":
+            self.fiducial_position_microscope = Point(float(coords[1] * pixel_size), float(coords[0] * pixel_size))
+        elif self.microscope_settings.system.manufacturer == "Tescan":
+            self.fiducial_position_microscope = Point(float((coords[1] - self.image_settings.resolution[0]/2) * pixel_size), float((coords[0]-self.image_settings.resolution[1]/2) * pixel_size))
+  
+        self.fiducial_position_napari = Point(float(coords[1] - self.image_settings.resolution[0]/2)* pixel_size, -float(coords[0] - self.image_settings.resolution[1]/2) * pixel_size)
+        viewer.layers.selection.active = self.eb_layer
+        self.draw_patterns()
+        logging.info("Moved fiducial")
+        
+        return 
+    
+    def move_fiducial(self):
+
+        viewer.layers.selection.active = self.ib_layer
+        self.ib_layer.mouse_drag_callbacks.append(self._get_centre_coordinates)
+        _ = message_box_ui(
+            title="Place fiducial.",
+            text="Please click once where you want the fiducial to be.",
+            buttons=QMessageBox.Ok,
+        )
+
     def mill_fiducial_ui(self, index):
         
-        self.experiment, pixel_size = save_lamella(
+        self.experiment = save_lamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 image_settings=self.image_settings,
@@ -707,12 +729,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 microexpansion=self.microexpansionCheckBox.isChecked(),
             )
 
+
         self.experiment.positions[index] = mill_fiducial(
                 microscope=self.microscope,
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_settings,
                 lamella=self.experiment.positions[index],
-                pixelsize=pixel_size,
             )
 
         self.experiment.save()
@@ -932,8 +954,7 @@ def save_lamella(
     Returns:
         Experiment, float: Updated experiment and the pixelsize.
     """
-    pixelsize = image_settings.hfw / image_settings.resolution[0]
-    fiducial_x = float((image_settings.resolution[0] / 4) * pixelsize)
+    
     initial_state = LamellaState(
         microscope_state=microscope.get_current_microscope_state(),
         stage=AutoLamellaStage.Setup,
@@ -962,9 +983,7 @@ def save_lamella(
     experiment.positions[index].state = initial_state
     experiment.positions[index].reference_image = ref_image
     experiment.positions[index].path = experiment.path
-    experiment.positions[index].fiducial_centre = Point(fiducial_x, 0)
     experiment.positions[index].fiducial_area = fiducial_area
-    experiment.positions[index].lamella_centre = Point(0, 0)
     experiment.positions[index].lamella_number = index + 1
     experiment.positions[index].mill_microexpansion = microexpansion
     experiment.positions[index].history = []
@@ -973,7 +992,7 @@ def save_lamella(
 
     logging.info("Lamella parameters saved")
 
-    return experiment, pixelsize
+    return experiment
 
 
 def mill_fiducial(
@@ -981,7 +1000,6 @@ def mill_fiducial(
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
     lamella: Lamella,
-    pixelsize: float,
 ):
     """
     Mill a fiducial
@@ -1007,7 +1025,8 @@ def mill_fiducial(
             width=protocol["width"],
             height=protocol["length"],
             depth=protocol["depth"],
-            centre_x=-((image_settings.resolution[0] / 6) * pixelsize),
+            centre_x=lamella.fiducial_centre.x,
+            centre_y=lamella.fiducial_centre.y,
         )
         fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"]
