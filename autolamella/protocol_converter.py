@@ -19,6 +19,8 @@ def protocol_converter(old_protocol_path: str, new_protocol_path: str):
         },
         'lamella': {
             'beam_shift_attempts': 3,
+            'lamella_width': float(old_protocol["lamella"]["lamella_width"]),
+            'lamella_height': float(old_protocol["lamella"]["lamella_height"]),
             'protocol_stages': [],
         }
     }
@@ -54,8 +56,6 @@ def protocol_converter(old_protocol_path: str, new_protocol_path: str):
         offset = float(float(old_protocol["lamella"]["total_cut_height"]) * float(old_stage["percentage_from_lamella_surface"]))
         new_protocol["lamella"]["protocol_stages"].append(
             {
-                'lamella_width': float(old_protocol["lamella"]["lamella_width"]),
-                'lamella_height': float(old_protocol["lamella"]["lamella_height"]),
                 'trench_height': trench_height,
                 'milling_depth': float(old_stage["milling_depth"]),
                 'offset': offset,

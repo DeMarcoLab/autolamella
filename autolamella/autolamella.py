@@ -150,6 +150,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         for i, protocol in enumerate(
             self.microscope_settings.protocol["lamella"]["protocol_stages"]
         ):
+            protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
+            protocol["lamella_height"] = self.microscope_settings.protocol["lamella"]["lamella_height"]
             stage = []
             lamella_width = protocol["lamella_width"]
             lamella_height = protocol["lamella_height"]
@@ -271,7 +273,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = Experiment(path=self.save_path, name=self.experiment_name)
         self.log_path = os.path.join(self.save_path, self.experiment_name, "logfile.log")
 
-        # self.timer.timeout.connect(self.update_log)
         self.lines = 0
         self.timer.start(1000)
 
@@ -432,7 +433,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.microscope_status.setStyleSheet("background-color: green")
 
         except:
-            # logging.('Unable to connect to microscope')
             self.microscope_status.setText("Microscope Disconnected")
             self.microscope_status.setStyleSheet("background-color: red")
             self.RefImage.setEnabled(False)
@@ -474,8 +474,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.depth_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["depth"]*constants.SI_TO_MICRO))
         self.current_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["milling_current"]*constants.SI_TO_NANO))
         self.stage_lamella.setCurrentText("1. Rough Cut")
-        self.lamella_width.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["lamella_width"]*constants.SI_TO_MICRO))
-        self.lamella_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["lamella_height"]*constants.SI_TO_MICRO))
+        self.lamella_width.setValue((self.microscope_settings.protocol["lamella"]["lamella_width"]*constants.SI_TO_MICRO))
+        self.lamella_height.setValue((self.microscope_settings.protocol["lamella"]["lamella_height"]*constants.SI_TO_MICRO))
         self.trench_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["trench_height"]*constants.SI_TO_MICRO))
         self.depth_trench.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["milling_depth"]*constants.SI_TO_MICRO))
         self.offset.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["offset"]*constants.SI_TO_MICRO))
@@ -495,8 +495,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             index = 1
         elif self.stage_lamella.currentText() == "3. Polishing Cut":
             index = 2
-        self.lamella_width.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["lamella_width"]*constants.SI_TO_MICRO))
-        self.lamella_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["lamella_height"]*constants.SI_TO_MICRO))
+        self.lamella_width.setValue((self.microscope_settings.protocol["lamella"]["lamella_width"]*constants.SI_TO_MICRO))
+        self.lamella_height.setValue((self.microscope_settings.protocol["lamella"]["lamella_height"]*constants.SI_TO_MICRO))
         self.trench_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"]*constants.SI_TO_MICRO))
         self.depth_trench.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"]*constants.SI_TO_MICRO))
         self.offset.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"]*constants.SI_TO_MICRO))
@@ -511,11 +511,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["fiducial"]["width"] = float(self.width_fiducial.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["depth"] = float(self.depth_fiducial.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["milling_current"] = float(self.current_fiducial.value()*constants.NANO_TO_SI)
-        i = 0
-        while i < 3:
-            self.microscope_settings.protocol["lamella"]["protocol_stages"][i]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
-            self.microscope_settings.protocol["lamella"]["protocol_stages"][i]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
-            i = i+1 
+
+        self.microscope_settings.protocol["lamella"]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["lamella"]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
         index = 0
         if self.stage_lamella.currentText() == "1. Rough Cut":
             index = 0
@@ -617,7 +615,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # check experiemnt has been loaded/created
         self.add_button.setEnabled(False)
         self.add_button.setText("Running...")
-        self.add_button.setStyleSheet("background-color: orange")
+        self.add_button.setStyleSheet("color: orange")
         if self.experiment == None:
             _ = message_box_ui(
                 title="No experiemnt.",
@@ -626,7 +624,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             self.add_button.setEnabled(True)
             self.add_button.setText("Add Lamella")
-            self.add_button.setStyleSheet("background-color: gray")
+            self.add_button.setStyleSheet("color: white")
             return
         # Check to see if an image has been taken first
         if self.FIB_EB.metadata == None:
@@ -637,7 +635,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             self.add_button.setEnabled(True)
             self.add_button.setText("Add Lamella")
-            self.add_button.setStyleSheet("background-color: gray")
+            self.add_button.setStyleSheet("color: white")
             return
 
         self.experiment = add_lamella(experiment=self.experiment, ref_image=self.FIB_IB)
@@ -654,12 +652,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_index.setMinimum(1)
         self.add_button.setEnabled(True)
         self.add_button.setText("Add Lamella")
-        self.add_button.setStyleSheet("background-color: gray")
+        self.add_button.setStyleSheet("color: white")
 
     def save_lamella_ui(self):
         self.save_button.setEnabled(False)
         self.save_button.setText("Running...")
-        self.save_button.setStyleSheet("background-color: orange")
+        self.save_button.setStyleSheet("color: orange")
         sleep(0.5)
         if self.microscope_settings.protocol is None:
             _ = message_box_ui(
@@ -695,7 +693,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.mill_fiducial_ui(index)
         self.save_button.setEnabled(True)
         self.save_button.setText("Save current lamella")
-        self.save_button.setStyleSheet("background-color: gray")
+        self.save_button.setStyleSheet("color: white")
 
     def mill_fiducial_ui(self, index):
         
@@ -731,7 +729,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def remill_fiducial_ui(self):
         self.remill_fiducial.setEnabled(False)
         self.remill_fiducial.setText("Running...")
-        self.remill_fiducial.setStyleSheet("background-color: orange")
+        self.remill_fiducial.setStyleSheet("color: orange")
         response = message_box_ui(
             title="Redo Fiducial?",
             text="If you want to remill this fiducial, press yes.",
@@ -744,7 +742,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.mill_fiducial_ui(index=index)
         self.remill_fiducial.setEnabled(True)
         self.remill_fiducial.setText("Remill fiducial")
-        self.remill_fiducial.setStyleSheet("background-color: gray")    
+        self.remill_fiducial.setStyleSheet("color: white")    
 
     def can_run_milling(self):
         ## First condition
@@ -766,7 +764,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def run_autolamella_ui(self):
         self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
-        self.run_button.setStyleSheet("background-color: orange")
+        self.run_button.setStyleSheet("color: orange")
         _ = message_box_ui(
                 title="Run full autolamella?.",
                 text="If you click yes, all lamellas will be milled automatically.",
@@ -782,7 +780,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             self.run_button.setEnabled(True)
             self.run_button.setText("Run Autolamella")
-            self.run_button.setStyleSheet("background-color: gray")
+            self.run_button.setStyleSheet("color: white")
             return
         show_info(f"Running AutoLamella...")
         self.image_settings.reduced_area = None
@@ -794,7 +792,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
         self.run_button.setEnabled(True)
         self.run_button.setText("Run Autolamella")
-        self.run_button.setStyleSheet("background-color: gray")
+        self.run_button.setStyleSheet("color: white")
 
     def splutter_platinum(self):
         _ = message_box_ui(
@@ -1009,7 +1007,7 @@ def mill_fiducial(
             width=protocol["width"],
             height=protocol["length"],
             depth=protocol["depth"],
-            centre_x=-((image_settings.resolution[0] / 3) * pixelsize),
+            centre_x=-((image_settings.resolution[0] / 6) * pixelsize),
         )
         fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"]
@@ -1064,6 +1062,8 @@ def run_autolamella(
     for i, protocol in enumerate(
         microscope_settings.protocol["lamella"]["protocol_stages"]
     ):
+        protocol["lamella_height"] = microscope_settings.protocol["lamella"]["lamella_height"]
+        protocol["lamella_width"] = microscope_settings.protocol["lamella"]["lamella_width"]
         curr_stage = (i + 2)  # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
         for j, lamella in enumerate(experiment.positions):
             if lamella.state.stage == AutoLamellaStage(
@@ -1089,11 +1089,10 @@ def run_autolamella(
                     )
 
                 try:
+                    mill_settings.hfw = image_settings.hfw
                     milling.setup_milling(
                         microscope,
-                        application_file="autolamella",
                         patterning_mode="Serial",
-                        hfw=image_settings.hfw,
                         mill_settings=mill_settings,
                     )
                     milling.draw_trench(
@@ -1158,7 +1157,7 @@ def splutter_platinum(microscope: FibsemMicroscope):
         microscope=microscope,
         protocol=protocol,
         whole_grid=False,
-        default_application_file="autolamella",
+        default_application_file="Si",
     )
 
     logging.info("Platinum sputtering complete")
