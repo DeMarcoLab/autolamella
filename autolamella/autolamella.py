@@ -694,7 +694,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         coords = self.ib_layer.world_to_data(event.position)
         pixel_size = self.image_settings.hfw/self.image_settings.resolution[0]
 
-        #### Thermo has origin top left, tescan is top right 
+        #### Thermo has origin top left, tescan is in the middle 
         if self.microscope_settings.system.manufacturer == "Thermo":
             self.fiducial_position_microscope = Point(float(coords[1] * pixel_size), float(coords[0] * pixel_size))
         elif self.microscope_settings.system.manufacturer == "Tescan":
