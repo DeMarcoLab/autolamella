@@ -12,7 +12,7 @@ from time import sleep
 
 import fibsem.constants as constants
 import fibsem.conversions as conversions
-import fibsem.GIS as gis
+import fibsem.gis as gis
 import fibsem.milling as milling
 import napari
 import numpy as np
@@ -42,6 +42,7 @@ from structures import (
     MovementMode,
     MovementType,
 )
+import config as cfg
 
 from ui import UI as UI
 from napari.utils.notifications import show_info
@@ -243,7 +244,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer.stop()
 
         tkinter.Tk().withdraw()
-        folder_path = filedialog.askdirectory(title="Select experiment directory")
+        folder_path = filedialog.askdirectory(initialdir = cfg.LOG_PATH, title="Select experiment directory")
         self.save_path = folder_path if folder_path != "" else None
 
         if folder_path == '':
@@ -440,7 +441,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def load_protocol(self):
         tkinter.Tk().withdraw()
-        protocol_path = filedialog.askopenfilename(title="Select protocol file")
+        protocol_path = filedialog.askopenfilename(initialdir = cfg.BASE_PATH, title="Select protocol file")
         self.microscope_settings.protocol = utils.load_protocol(
             protocol_path=protocol_path
         ) if protocol_path != '' else self.microscope_settings.protocol
@@ -563,7 +564,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         # self.reset_ui_settings()
         viewer.layers.selection.active = self.eb_layer
-        viewer.window.qt_viewer.view.camera.interactive = False
+        # viewer.window.qt_viewer.view.camera.interactive = False
 
     def save_filepath(self):
         """Opens file explorer to choose location to save image files"""
