@@ -772,8 +772,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 image_settings=self.image_settings,
                 lamella=self.experiment.positions[index],
             )
-
-        self.experiment.save()
+        if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
+            self.experiment.save()
 
         lamella_ready = 0
         for lam in self.experiment.positions:
