@@ -103,7 +103,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.protocol_loaded = False
         pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
         self.fiducial_position_napari = Point(-((self.image_settings.resolution[0] / 3) * pixelsize), 0.0)
-        self.fiducial_position_microscope = Point(float((self.image_settings.resolution[0] / 4) * pixelsize), 0.0)
+        point = Point(float((-self.image_settings.resolution[0] / 4)), 0.0)
+        self.fiducial_position_microscope = conversions.convert_point_from_pixel_to_metres(point, pixelsize)
         self.lamella_position_napari = Point(0.0, 0.0)
         self.lamella_position_microscope = Point(0.0, 0.0)
 
@@ -707,7 +708,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         #### Thermo has origin top left, tescan is in the middle 
         if self.microscope_settings.system.manufacturer == "Thermo":
-            self.lamella_position_microscope = Point(float(coords[1] * pixel_size), float(coords[0] * pixel_size))
+            # self.lamella_position_microscope = Point(float(coords[1] * pixel_size), float(coords[0] * pixel_size))
+            self.lamella_position_microscope = conversions.image_to_microscope_image_coordinates(coord=Point(coords[1], coords[0]), image=self.FIB_IB.data, pixelsize=pixel_size)
         elif self.microscope_settings.system.manufacturer == "Tescan":
             self.lamella_position_microscope = Point(float((coords[1] - self.image_settings.resolution[0]/2) * pixel_size), float((coords[0]-self.image_settings.resolution[1]/2) * pixel_size))
   
@@ -724,7 +726,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         #### Thermo has origin top left, tescan is in the middle 
         if self.microscope_settings.system.manufacturer == "Thermo":
-            self.fiducial_position_microscope = Point(float(coords[1] * pixel_size), float(coords[0] * pixel_size))
+            # self.fiducial_position_microscope = Point(float(coords[1] * pixel_size), float(coords[0] * pixel_size))
+            self.fiducial_position_microscope = conversions.image_to_microscope_image_coordinates(coord=Point(coords[1], coords[0]), image=self.FIB_IB.data, pixelsize=pixel_size)
         elif self.microscope_settings.system.manufacturer == "Tescan":
             self.fiducial_position_microscope = Point(float((coords[1] - self.image_settings.resolution[0]/2) * pixel_size), float((coords[0]-self.image_settings.resolution[1]/2) * pixel_size))
   
@@ -995,27 +998,13 @@ def save_lamella(
         microscope_state=microscope.get_current_microscope_state(),
         stage=AutoLamellaStage.Setup,
     )
-    fiducial_area = FibsemRectangle(
-        left=abs(experiment.positions[index].fiducial_centre.x/image_settings.hfw)
-        - 1.5
-        * float(
-            microscope_settings.protocol["fiducial"]["length"] / image_settings.hfw
-        ),
-        top=abs(experiment.positions[index].fiducial_centre.x/(ref_image.metadata.pixel_size.x*ref_image.metadata.image_settings.resolution[1]))
-        - 1.5
-        * float(
-            microscope_settings.protocol["fiducial"]["length"] / image_settings.hfw
-        ),
-        width=2.0
-        * float(
-            microscope_settings.protocol["fiducial"]["length"] / image_settings.hfw
-        ),
-        height=3.0
-        * float(
-            microscope_settings.protocol["fiducial"]["length"] / image_settings.hfw
-        ),
-    )
 
+    pixelsize = ref_image.metadata.pixel_size.x
+    fiducial_centre = experiment.positions[index].fiducial_centre
+    fiducial_length = microscope_settings.protocol["fiducial"]["length"]
+
+    fiducial_area = calculate_fiducial_area(microscope_settings, fiducial_centre, fiducial_length, pixelsize)
+ 
     experiment.positions[index].state = initial_state
     experiment.positions[index].reference_image = ref_image
     experiment.positions[index].path = experiment.path
@@ -1029,6 +1018,40 @@ def save_lamella(
     logging.info("Lamella parameters saved")
 
     return experiment
+
+
+
+def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsize):
+
+
+    fiducial_centre = fiducial_centre
+    fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(fiducial_centre, pixelsize)
+
+
+    rcx = fiducial_centre_px.x  / settings.image.resolution[0] + 0.5
+    rcy = fiducial_centre_px.y / settings.image.resolution[1] + 0.5
+
+    fiducial_length_px = conversions.convert_metres_to_pixels(fiducial_length, pixelsize) * 1.5
+
+    h_offset = fiducial_length_px / settings.image.resolution[0] / 2
+    v_offset = fiducial_length_px / settings.image.resolution[1] / 2
+
+    left = rcx - h_offset 
+    top = rcy - v_offset
+    width = 2 * h_offset
+    height = 2 * v_offset
+
+
+    print("RESOLUTION: ", settings.image.resolution)
+    print("CENTRE:", fiducial_centre, fiducial_centre_px)
+    print("LENGTH:" , fiducial_length, fiducial_length_px)
+
+    print(f"LEFT:  {left:.2f} TOP: {top:.2f}")
+    print(f"WIDTH: {width:.2f} HEIGHT: {height:.2f}")
+
+    fiducial_area = FibsemRectangle(left, top, width, height)
+
+    return fiducial_area
 
 
 def mill_fiducial(
@@ -1129,6 +1152,8 @@ def run_autolamella(
                 )
                 logging.info("Moving to lamella position")
                 mill_settings = FibsemMillingSettings(
+                    patterning_mode="Serial",
+                    application_file="autolamella",
                     milling_current=protocol["milling_current"]
                 )
 
@@ -1147,7 +1172,6 @@ def run_autolamella(
                     mill_settings.hfw = image_settings.hfw
                     milling.setup_milling(
                         microscope,
-                        patterning_mode="Serial",
                         mill_settings=mill_settings,
                     )
                     milling.draw_trench(
