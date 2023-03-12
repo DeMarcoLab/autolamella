@@ -49,10 +49,11 @@ from napari.utils.notifications import show_info
 
 
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
-    def __init__(self, *args, obj=None, **kwargs) -> None:
+    def __init__(self, viewer, *args, obj=None, **kwargs) -> None:
         super(MainWindow, self).__init__(*args, **kwargs)
+        self.viewer = viewer
         self.setupUi(self)
-
+        
         # setting up ui
         self.setup_connections()
         self.lines = 0
@@ -60,8 +61,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer.timeout.connect(self.update_log)
         self.timer.start(1000)
 
-        viewer.window.qt_viewer.dockLayerList.hide()
-        viewer.window.qt_viewer.dockLayerControls.hide()
+        self.viewer.window.qt_viewer.dockLayerList.hide()
+        self.viewer.window.qt_viewer.dockLayerControls.hide()
 
         self.pattern_settings = []
         self.save_path = None
@@ -93,10 +94,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.microscope_settings.protocol = None
             self.reset_ui_settings()
             self.update_displays()
+            direction_list = self.microscope.get_scan_directions()
+            for i in range(len(direction_list)-1):
+                self.scanDirectionComboBox.addItem(direction_list[i-1])
 
         ### NAPARI settings and initialisation
 
-        viewer.grid.enabled = False
+        self.viewer.grid.enabled = False
 
         # Initialise experiment object
         self.experiment: Experiment = None
@@ -148,6 +152,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_distance.editingFinished.connect(self.change_protocol)
         self.micro_exp_height.editingFinished.connect(self.change_protocol)
         self.micro_exp_width.editingFinished.connect(self.change_protocol)
+        
 
     def draw_patterns(self):
         if self.microscope_settings.protocol is None:
@@ -164,7 +169,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             stage = []
             
             lower_pattern_settings, upper_pattern_settings = milling.extract_trench_parameters(protocol, self.lamella_position_napari)
-
+            lower_pattern_settings.scan_direction = self.scanDirectionComboBox.currentText()
+            upper_pattern_settings.scan_direction = self.scanDirectionComboBox.currentText()
             stage.append(
                 lower_pattern_settings
             )
@@ -191,7 +197,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         - microexpansion_protocol["distance"],
                         centre_y=self.lamella_position_napari.y,
                         cleaning_cross_section=True,
-                        scan_direction="LeftToRight",
+                        scan_direction=self.scanDirectionComboBox.currentText(),
                     )
                 )
 
@@ -205,7 +211,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         + microexpansion_protocol["distance"],
                         centre_y=self.lamella_position_napari.y,
                         cleaning_cross_section=True,
-                        scan_direction="RightToLeft",
+                        scan_direction=self.scanDirectionComboBox.currentText(),
                     )
                 )
 
@@ -225,6 +231,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 rotation=np.deg2rad(45),
                 centre_x=centre_fiducial.x,
                 centre_y=centre_fiducial.y,
+                scan_direction = self.scanDirectionComboBox.currentText(),
             )
         )
         stage.append(
@@ -235,6 +242,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 rotation=np.deg2rad(135),
                 centre_x=centre_fiducial.x,
                 centre_y=centre_fiducial.y,
+                scan_direction = self.scanDirectionComboBox.currentText(),
             )
         )
         self.patterns_protocol.append(stage)
@@ -538,16 +546,16 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     ###################################### Imaging ##########################################
 
     def update_displays(self):
-        viewer.layers.clear()
-        self.eb_layer = viewer.add_image(self.FIB_EB.data, name="EB Image")
-        self.ib_layer = viewer.add_image(self.FIB_IB.data, name="IB Image")
-        viewer.camera.center = [
+        self.viewer.layers.clear()
+        self.eb_layer =  self.viewer.add_image(self.FIB_EB.data, name="EB Image")
+        self.ib_layer =  self.viewer.add_image(self.FIB_IB.data, name="IB Image")
+        self.viewer.camera.center = [
             0.0,
             self.image_settings.resolution[1] / 2,
             self.image_settings.resolution[0],
         ]
 
-        viewer.camera.zoom = 0.5
+        self.viewer.camera.zoom = 0.5
 
         self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
         self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
@@ -560,11 +568,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 logging.info("No protocol loaded")
                 return
             _draw_patterns_in_napari(
-                viewer, self.FIB_IB, self.FIB_EB, self.patterns_protocol
+                 self.viewer, self.FIB_IB, self.FIB_EB, self.patterns_protocol
             )
 
         # self.reset_ui_settings()
-        viewer.layers.selection.active = self.eb_layer
+        self.viewer.layers.selection.active = self.eb_layer
         # viewer.window.qt_viewer.view.camera.interactive = False
 
     def save_filepath(self):
@@ -714,7 +722,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.lamella_position_microscope = Point(float((coords[1] - self.image_settings.resolution[0]/2) * pixel_size), float((coords[0]-self.image_settings.resolution[1]/2) * pixel_size))
   
         self.lamella_position_napari = Point(float(coords[1] - self.image_settings.resolution[0]/2)* pixel_size, -float(coords[0] - self.image_settings.resolution[1]/2) * pixel_size)
-        viewer.layers.selection.active = self.eb_layer
+        self.viewer.layers.selection.active = self.eb_layer
+        self.viewer.window.qt_viewer.view.camera.interactive = False
         self.draw_patterns()
         logging.info("Moved lamella")
         
@@ -732,13 +741,14 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.fiducial_position_microscope = Point(float((coords[1] - self.image_settings.resolution[0]/2) * pixel_size), float((coords[0]-self.image_settings.resolution[1]/2) * pixel_size))
   
         self.fiducial_position_napari = Point(float(coords[1] - self.image_settings.resolution[0]/2)* pixel_size, -float(coords[0] - self.image_settings.resolution[1]/2) * pixel_size)
-        viewer.layers.selection.active = self.eb_layer
+        self.viewer.layers.selection.active = self.eb_layer
+        self.viewer.window.qt_viewer.view.camera.interactive = False
         self.draw_patterns()
         logging.info("Moved fiducial")
     
     def move_fiducial(self):
 
-        viewer.layers.selection.active = self.ib_layer
+        self.viewer.layers.selection.active = self.ib_layer
         self.ib_layer.mouse_drag_callbacks.append(self._clickback_fiducial)
         _ = message_box_ui(
             title="Place fiducial.",
@@ -748,7 +758,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def move_lamella(self):
 
-            viewer.layers.selection.active = self.ib_layer
+            self.viewer.layers.selection.active = self.ib_layer
             self.ib_layer.mouse_drag_callbacks.append(self._clickback_lamella)
             _ = message_box_ui(
                 title="Place lamella.",
@@ -1243,8 +1253,8 @@ def splutter_platinum(microscope: FibsemMicroscope):
 
 
 if __name__ == "__main__":
-    viewer = napari.Viewer()
-    window = MainWindow()
-    widget = viewer.window.add_dock_widget(window)
+    
+    window = MainWindow(viewer=napari.Viewer())
+    widget = window.viewer.window.add_dock_widget(window)
     widget.setMinimumWidth(400)
     napari.run()
