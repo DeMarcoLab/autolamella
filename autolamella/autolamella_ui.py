@@ -784,6 +784,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_settings,
                 lamella=self.experiment.positions[index],
+                scan_direction= self.scanDirectionComboBox.currentText(),
             )
         if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
             self.experiment.save()
@@ -860,6 +861,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             experiment=self.experiment,
             microscope_settings=self.microscope_settings,
             image_settings=self.image_settings,
+            scan_direction_lamella=self.scanDirectionComboBox.currentText(),
         )
         self.run_button.setEnabled(True)
         self.run_button.setText("Run Autolamella")
@@ -1069,6 +1071,7 @@ def mill_fiducial(
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
     lamella: Lamella,
+    scan_direction: str,
 ):
     """
     Mill a fiducial
@@ -1096,6 +1099,7 @@ def mill_fiducial(
             depth=protocol["depth"],
             centre_x=lamella.fiducial_centre.x,
             centre_y=lamella.fiducial_centre.y,
+            scan_direction = scan_direction,
         )
         fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"]
@@ -1133,6 +1137,8 @@ def run_autolamella(
     experiment: Experiment,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
+    scan_direction_lamella: str,
+    scan_direction_stress_relief: list[str] = None,
 ):
     """
     Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
@@ -1188,6 +1194,7 @@ def run_autolamella(
                         microscope=microscope,
                         protocol=protocol,
                         point=lamella.lamella_centre,
+                        scan_direction = scan_direction_lamella,
                     )
 
                     if (
@@ -1199,6 +1206,7 @@ def run_autolamella(
                                 "microexpansion"
                             ],
                             lamella_protocol=protocol,
+                            scan_direction = scan_direction_stress_relief,
                         )
 
                     milling.run_milling(
