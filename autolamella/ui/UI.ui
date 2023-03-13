@@ -416,6 +416,9 @@
        </item>
        <item row="0" column="1">
         <widget class="QDoubleSpinBox" name="stage_rotation">
+         <property name="minimum">
+          <double>-10000.000000000000000</double>
+         </property>
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
@@ -430,6 +433,9 @@
        </item>
        <item row="1" column="1">
         <widget class="QDoubleSpinBox" name="stage_tilt">
+         <property name="minimum">
+          <double>-1000.000000000000000</double>
+         </property>
          <property name="maximum">
           <double>10000.000000000000000</double>
          </property>
