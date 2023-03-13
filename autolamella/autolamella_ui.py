@@ -1201,7 +1201,7 @@ def run_autolamella(
                         microscope=microscope,
                         protocol=protocol,
                         point=lamella.lamella_centre,
-                        scan_direction = scan_direction_lamella,
+                        #scan_direction = scan_direction_lamella,
                     )
 
                     if (
@@ -1213,7 +1213,7 @@ def run_autolamella(
                                 "microexpansion"
                             ],
                             lamella_protocol=protocol,
-                            scan_direction = scan_direction_stress_relief,
+                            #scan_direction = scan_direction_stress_relief,
                         )
 
                     milling.run_milling(
