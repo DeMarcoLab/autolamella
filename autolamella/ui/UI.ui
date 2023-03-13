@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>920</width>
-    <height>945</height>
+    <height>989</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,9 +27,9 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>630</y>
+      <y>640</y>
       <width>441</width>
-      <height>281</height>
+      <height>291</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -58,7 +58,7 @@
       <x>0</x>
       <y>0</y>
       <width>441</width>
-      <height>621</height>
+      <height>641</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -403,7 +403,7 @@
         <x>0</x>
         <y>2</y>
         <width>421</width>
-        <height>613</height>
+        <height>591</height>
        </rect>
       </property>
       <layout class="QFormLayout" name="formLayout">
