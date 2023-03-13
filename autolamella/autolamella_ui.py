@@ -1267,9 +1267,12 @@ def splutter_platinum(microscope: FibsemMicroscope):
     logging.info("Platinum sputtering complete")
 
 
-if __name__ == "__main__":
+def main():
     
     window = MainWindow(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window)
     widget.setMinimumWidth(400)
     napari.run()
+
+if __name__ == "__main__":
+    main()
