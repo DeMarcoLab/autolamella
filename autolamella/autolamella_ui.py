@@ -556,8 +556,22 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.image_settings.resolution[1] / 2,
             self.image_settings.resolution[0],
         ]
-
-        self.viewer.camera.zoom = 0.5
+        points = np.array([[-20, 200], [-20, self.image_settings.resolution[0] + 150]])
+        string = ["ELECTRON BEAM", "ION BEAM"]
+        text = {
+            "string": string,
+            "color": "white"
+        }
+        self.viewer.add_points(
+            points,
+            text=text,
+            size=20,
+            edge_width=7,
+            edge_width_is_relative=False,
+            edge_color='transparent',
+            face_color='transparent',
+        )   
+        self.viewer.camera.zoom = 0.45
 
         self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
         self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
