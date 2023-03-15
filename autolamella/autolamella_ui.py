@@ -95,7 +95,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.microscope is not None:
             self.microscope_settings.protocol = None
             self.reset_ui_settings()
-            self.update_displays()
+            
             direction_list = self.microscope.get_scan_directions()
             for i in range(len(direction_list)-1):
                 self.scanDirectionComboBox.addItem(direction_list[i-1])
@@ -117,6 +117,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.gridlayout_imaging.addWidget(self.image_widget,0,0)
             self.gridlayout_movement.addWidget(self.movement_widget,0,0)
 
+
+
+            
         ### NAPARI settings and initialisation
 
         self.viewer.grid.enabled = False
@@ -129,12 +132,14 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_position = None
         self.moving_fiducial = False
 
+        self.update_displays()
+
     def setup_connections(self):
         
         # Buttons setup
-        self.RefImage.clicked.connect(self.take_ref_images_ui)
+        # self.RefImage.clicked.connect(self.take_ref_images_ui)
         self.show_lamella.stateChanged.connect(self.update_displays)
-        self.hfw_box.valueChanged.connect(self.hfw_box_change)
+        # self.hfw_box.valueChanged.connect(self.hfw_box_change)
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
         self.add_button.clicked.connect(self.add_lamella_ui)
         self.run_button.clicked.connect(self.run_autolamella_ui)
@@ -143,7 +148,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.load_exp.triggered.connect(self.load_experiment)
         self.action_load_protocol.triggered.connect(self.load_protocol)
         self.save_button.clicked.connect(self.save_lamella_ui)
-        self.tilt_button.clicked.connect(self.tilt_stage_ui)
+        # self.tilt_button.clicked.connect(self.tilt_stage_ui)
         self.go_to_lamella.clicked.connect(self.move_to_position_ui)
         self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
         self.move_fiducial_button.clicked.connect(self.move_fiducial)
@@ -457,20 +462,20 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.image_settings = self.microscope_settings.image
             self.milling_settings = self.microscope_settings.milling
             logging.info("Microscope Connected")
-            self.RefImage.setEnabled(True)
+            # self.RefImage.setEnabled(True)
             self.microscope_status.setText("Microscope Connected")
             self.microscope_status.setStyleSheet("background-color: green")
 
         except:
             self.microscope_status.setText("Microscope Disconnected")
             self.microscope_status.setStyleSheet("background-color: red")
-            self.RefImage.setEnabled(False)
+            # self.RefImage.setEnabled(False)
 
     def disconnect_from_microscope(self):
         self.microscope.disconnect()
         self.microscope = None
         self.microscope_settings = None
-        self.RefImage.setEnabled(False)
+        # self.RefImage.setEnabled(False)
         logging.info("Microscope Disconnected")
         self.microscope_status.setText("Microscope Disconnected")
         self.microscope_status.setStyleSheet("background-color: red")
@@ -490,7 +495,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         tilt = self.microscope_settings.protocol["stage_tilt"]
         rotation = self.microscope_settings.protocol["stage_rotation"]
         string = f"Tilt: {tilt}° | Rotation: {rotation}°"
-        self.mill_position_txt.setText(string)
+        # self.mill_position_txt.setText(string)
 
         self.protocol_loaded = True
 
@@ -567,34 +572,36 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     ###################################### Imaging ##########################################
 
     def update_displays(self):
-        self.viewer.layers.clear()
-        self.eb_layer =  self.viewer.add_image(self.FIB_EB.data, name="EB Image")
-        self.ib_layer =  self.viewer.add_image(self.FIB_IB.data, name="IB Image")
-        self.viewer.camera.center = [
-            0.0,
-            self.image_settings.resolution[1] / 2,
-            self.image_settings.resolution[0],
-        ]
-        points = np.array([[-20, 200], [-20, self.image_settings.resolution[0] + 150]])
-        string = ["ELECTRON BEAM", "ION BEAM"]
-        text = {
-            "string": string,
-            "color": "white"
-        }
-        self.viewer.add_points(
-            points,
-            text=text,
-            size=20,
-            edge_width=7,
-            edge_width_is_relative=False,
-            edge_color='transparent',
-            face_color='transparent',
-        )   
-        self.viewer.camera.zoom = 0.45
+        # # self.viewer.layers.clear()
+        # # self.eb_layer =  self.viewer.add_image(self.FIB_EB.data, name="EB Image")
+        # # self.ib_layer =  self.viewer.add_image(self.FIB_IB.data, name="IB Image")
 
-        self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
-        self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
-        self.ib_layer.translate = [0.0, self.image_settings.resolution[0]]
+        
+        # self.viewer.camera.center = [
+        #     0.0,
+        #     self.image_settings.resolution[1] / 2,
+        #     self.image_settings.resolution[0],
+        # ]
+        # points = np.array([[-20, 200], [-20, self.image_settings.resolution[0] + 150]])
+        # string = ["ELECTRON BEAM", "ION BEAM"]
+        # text = {
+        #     "string": string,
+        #     "color": "white"
+        # }
+        # self.viewer.add_points(
+        #     points,
+        #     text=text,
+        #     size=20,
+        #     edge_width=7,
+        #     edge_width_is_relative=False,
+        #     edge_color='transparent',
+        #     face_color='transparent',
+        # )   
+        # self.viewer.camera.zoom = 0.45
+
+        # self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
+        # self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
+        # self.ib_layer.translate = [0.0, self.image_settings.resolution[0]]
 
 
 
@@ -603,11 +610,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 logging.info("No protocol loaded")
                 return
             _draw_patterns_in_napari(
-                 self.viewer, self.FIB_IB, self.FIB_EB, self.patterns_protocol
+                 self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, self.patterns_protocol
             )
-
+        self.viewer.layers.selection.active = self.image_widget.eb_layer
         # self.reset_ui_settings()
-        self.viewer.layers.selection.active = self.eb_layer
+        # self.viewer.layers.selection.active = self.eb_layer
         # viewer.window.qt_viewer.view.camera.interactive = False
 
     def save_filepath(self):
@@ -622,7 +629,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.path = self.save_path
 
     def reset_ui_settings(self):
-        self.hfw_box.setValue(int(self.image_settings.hfw * constants.SI_TO_MICRO))
+        # self.hfw_box.setValue(int(self.image_settings.hfw * constants.SI_TO_MICRO))
+        pass
 
     def tilt_stage_ui(self):
 
@@ -764,39 +772,42 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setStyleSheet("color: white")
 
     def _clickback(self, layer, event):
-        coords = self.ib_layer.world_to_data(event.position)
+        if event.button == 2 :
+            coords = self.image_widget.ib_layer.world_to_data(event.position)
 
-        if self.moving_fiducial:
-            self.fiducial_position = Point(coords[1], coords[0])
-            self.moving_fiducial = False
-            logging.info("Moved fiducial")
-        else: 
-            self.lamella_position = Point(coords[1], coords[0])
-            logging.info("Moved lamella")
-        self.viewer.layers.selection.active = self.eb_layer
-        self.viewer.window.qt_viewer.view.camera.interactive = False
-        self.draw_patterns()
-        
+            
+
+            if self.moving_fiducial:
+                self.fiducial_position = Point(coords[1], coords[0])
+                self.moving_fiducial = False
+                logging.info("Moved fiducial")
+            else: 
+                self.lamella_position = Point(coords[1], coords[0])
+                logging.info("Moved lamella")
+            self.viewer.layers.selection.active = self.image_widget.eb_layer
+            self.viewer.window.qt_viewer.view.camera.interactive = False
+            self.draw_patterns()
+            
         return 
     
     def move_fiducial(self):
         
         self.moving_fiducial = True
-        self.viewer.layers.selection.active = self.ib_layer
-        self.ib_layer.mouse_drag_callbacks.append(self._clickback)
+        self.viewer.layers.selection.active = self.image_widget.ib_layer
+        self.image_widget.ib_layer.mouse_drag_callbacks.append(self._clickback)
         _ = message_box_ui(
             title="Place fiducial.",
-            text="Please click once where you want the fiducial to be.",
+            text="Please right click once where you want the fiducial to be.",
             buttons=QMessageBox.Ok,
         )
 
     def move_lamella(self):
 
-            self.viewer.layers.selection.active = self.ib_layer
-            self.ib_layer.mouse_drag_callbacks.append(self._clickback)
+            self.viewer.layers.selection.active = self.image_widget.ib_layer
+            self.image_widget.ib_layer.mouse_drag_callbacks.append(self._clickback)
             _ = message_box_ui(
                 title="Place lamella.",
-                text="Please click once where you want the lamella centre to be.",
+                text="Please right click once where you want the lamella centre to be.",
                 buttons=QMessageBox.Ok,
             )
 
