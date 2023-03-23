@@ -79,18 +79,18 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.connect_to_microscope()
 
         # Gamma and Image Settings
-        self.FIB_IB = FibsemImage(
-            data=np.zeros(
-                (self.image_settings.resolution[0], self.image_settings.resolution[1]),
-                dtype=np.uint8,
-            )
-        )
-        self.FIB_EB = FibsemImage(
-            data=np.zeros(
-                (self.image_settings.resolution[0], self.image_settings.resolution[1]),
-                dtype=np.uint8,
-            )
-        )
+        # self.FIB_IB = FibsemImage(
+        #     data=np.zeros(
+        #         (self.image_settings.resolution[0], self.image_settings.resolution[1]),
+        #         dtype=np.uint8,
+        #     )
+        # )
+        # self.FIB_EB = FibsemImage(
+        #     data=np.zeros(
+        #         (self.image_settings.resolution[0], self.image_settings.resolution[1]),
+        #         dtype=np.uint8,
+        #     )
+        # )
 
         if self.microscope is not None:
             self.microscope_settings.protocol = None
@@ -149,7 +149,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.action_load_protocol.triggered.connect(self.load_protocol)
         self.save_button.clicked.connect(self.save_lamella_ui)
         # self.tilt_button.clicked.connect(self.tilt_stage_ui)
-        self.go_to_lamella.clicked.connect(self.move_to_position_ui)
+        # self.go_to_lamella.clicked.connect(self.move_to_position_ui)
         self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
         self.move_fiducial_button.clicked.connect(self.move_fiducial)
         self.move_lamella_button.clicked.connect(self.move_lamella)
@@ -345,74 +345,74 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     ########################### Movement Functionality ##########################################
 
-    def get_data_from_coord(self, coords: tuple) -> tuple:
-        # check inside image dimensions, (y, x)
-        eb_shape = self.FIB_EB.data.shape[0], self.FIB_EB.data.shape[1]
-        ib_shape = self.FIB_IB.data.shape[0], self.FIB_IB.data.shape[1] * 2
+    # def get_data_from_coord(self, coords: tuple) -> tuple:
+    #     # check inside image dimensions, (y, x)
+    #     eb_shape = self.FIB_EB.data.shape[0], self.FIB_EB.data.shape[1]
+    #     ib_shape = self.FIB_IB.data.shape[0], self.FIB_IB.data.shape[1] * 2
 
-        if (coords[0] > 0 and coords[0] < eb_shape[0]) and (
-            coords[1] > 0 and coords[1] < eb_shape[1]
-        ):
-            image = self.FIB_EB
-            beam_type = BeamType.ELECTRON
-            print("electron")
+    #     if (coords[0] > 0 and coords[0] < eb_shape[0]) and (
+    #         coords[1] > 0 and coords[1] < eb_shape[1]
+    #     ):
+    #         image = self.FIB_EB
+    #         beam_type = BeamType.ELECTRON
+    #         print("electron")
 
-        elif (coords[0] > 0 and coords[0] < ib_shape[0]) and (
-            coords[1] > eb_shape[0] and coords[1] < ib_shape[1]
-        ):
-            image = self.FIB_IB
-            coords = (coords[0], coords[1] - ib_shape[1] // 2)
-            beam_type = BeamType.ION
-            print("ion")
-        else:
-            beam_type, image = None, None
+    #     elif (coords[0] > 0 and coords[0] < ib_shape[0]) and (
+    #         coords[1] > eb_shape[0] and coords[1] < ib_shape[1]
+    #     ):
+    #         image = self.FIB_IB
+    #         coords = (coords[0], coords[1] - ib_shape[1] // 2)
+    #         beam_type = BeamType.ION
+    #         print("ion")
+    #     else:
+    #         beam_type, image = None, None
 
-        return coords, beam_type, image
+    #     return coords, beam_type, image
 
-    def _double_click(self, layer, event):
-        # get coords
-        coords = layer.world_to_data(event.position)
+    # def _double_click(self, layer, event):
+    #     # get coords
+    #     coords = layer.world_to_data(event.position)
 
-        # TODO: dimensions are mixed which makes this confusing to interpret... resolve
+    #     # TODO: dimensions are mixed which makes this confusing to interpret... resolve
 
-        coords, beam_type, image = self.get_data_from_coord(coords)
+    #     coords, beam_type, image = self.get_data_from_coord(coords)
 
-        if beam_type is None:
-            show_info(
-                f"Clicked outside image dimensions. Please click inside the image to move."
-            )
-            return
+    #     if beam_type is None:
+    #         show_info(
+    #             f"Clicked outside image dimensions. Please click inside the image to move."
+    #         )
+    #         return
 
-        point = conversions.image_to_microscope_image_coordinates(
-            Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x
-        )
+    #     point = conversions.image_to_microscope_image_coordinates(
+    #         Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x
+    #     )
 
-        # move
-        if self.comboBox.currentText() == "Stable Movement":
-            self.movement_mode = MovementMode["Stable"]
-        elif self.comboBox.currentText() == "Eucentric Movement":
-            self.movement_mode = MovementMode["Eucentric"]
+    #     # move
+    #     if self.comboBox.currentText() == "Stable Movement":
+    #         self.movement_mode = MovementMode["Stable"]
+    #     elif self.comboBox.currentText() == "Eucentric Movement":
+    #         self.movement_mode = MovementMode["Eucentric"]
 
-        logging.debug(
-            f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}"
-        )
+    #     logging.debug(
+    #         f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}"
+    #     )
 
-        # eucentric is only supported for ION beam
-        if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
-            self.microscope.eucentric_move(
-                settings=self.microscope_settings, dy=-point.y
-            )
+    #     # eucentric is only supported for ION beam
+    #     if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
+    #         self.microscope.eucentric_move(
+    #             settings=self.microscope_settings, dy=-point.y
+    #         )
 
-        else:
-            # corrected stage movement
-            self.microscope.stable_move(
-                settings=self.microscope_settings,
-                dx=point.x,
-                dy=point.y,
-                beam_type=beam_type,
-            )
+    #     else:
+    #         # corrected stage movement
+    #         self.microscope.stable_move(
+    #             settings=self.microscope_settings,
+    #             dx=point.x,
+    #             dy=point.y,
+    #             beam_type=beam_type,
+    #         )
 
-        self.take_ref_images_ui()
+    #     self.take_ref_images_ui()
 
     ################# UI Display helper functions  ###########################################
 
@@ -425,29 +425,31 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     ##################################################################
 
     def update_log(self):
+        try:
+            with open(self.log_path, "r") as f:
+                lines = f.read().splitlines()
+                lin_len = len(lines)
 
-        with open(self.log_path, "r") as f:
-            lines = f.read().splitlines()
-            lin_len = len(lines)
+            if self.lines != lin_len:
+                for i in reversed(range(lin_len - self.lines)):
+                    line_display = lines[-1 - i]
+                    if re.search("DEBUG", line_display):
+                        self.lines = lin_len
+                        continue
+                    if re.search("vispy", line_display):
+                        self.lines = lin_len
+                        continue
+                    line_divided = line_display.split(",")
+                    time = line_divided[0]
+                    message = line_display.split("—")
+                    disp_str = f"{time} | {message[-1]}"
 
-        if self.lines != lin_len:
-            for i in reversed(range(lin_len - self.lines)):
-                line_display = lines[-1 - i]
-                if re.search("DEBUG", line_display):
+                    disp_paragraph = self.log_txt.toPlainText() + disp_str + "\n"
+
                     self.lines = lin_len
-                    continue
-                if re.search("vispy", line_display):
-                    self.lines = lin_len
-                    continue
-                line_divided = line_display.split(",")
-                time = line_divided[0]
-                message = line_display.split("—")
-                disp_str = f"{time} | {message[-1]}"
-
-                disp_paragraph = self.log_txt.toPlainText() + disp_str + "\n"
-
-                self.lines = lin_len
-                self.log_txt.setPlainText(disp_paragraph)
+                    self.log_txt.setPlainText(disp_paragraph)
+        except:
+            pass
 
     def connect_to_microscope(self):
         self.CONFIG_PATH = os.path.join(os.path.dirname(__file__))
@@ -645,17 +647,17 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
 
-    def take_ref_images_ui(self):
-        show_info(f"Taking reference images...")
-        eb_image, ib_image = take_reference_images(self.microscope, self.image_settings)
-        self.FIB_IB = ib_image
-        self.FIB_EB = eb_image
-        self.update_displays()
+    # def take_ref_images_ui(self):
+    #     show_info(f"Taking reference images...")
+    #     eb_image, ib_image = take_reference_images(self.microscope, self.image_settings)
+    #     self.FIB_IB = ib_image
+    #     self.FIB_EB = eb_image
+    #     self.update_displays()
 
 
-    def move_to_position_ui(self):
-        move_to_position(self.microscope, self.experiment, self.lamella_index.value())
-        self.take_ref_images_ui()
+    # def move_to_position_ui(self):
+    #     move_to_position(self.microscope, self.experiment, self.lamella_index.value())
+    #     self.take_ref_images_ui()
 
     def add_lamella_ui(self):
         # check experiemnt has been loaded/created
@@ -673,7 +675,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.add_button.setStyleSheet("color: white")
             return
         # Check to see if an image has been taken first
-        if self.FIB_EB.metadata == None:
+        if self.image_widget.eb_image.metadata == None:
             _ = message_box_ui(
                 title="No image has been taken.",
                 text="Before adding a lamella please take atleast one image.",
@@ -684,17 +686,17 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.add_button.setStyleSheet("color: white")
             return
 
-        self.experiment = add_lamella(experiment=self.experiment, ref_image=self.FIB_IB)
+        self.experiment = add_lamella(experiment=self.experiment, ref_image=self.image_widget.ib_image)
 
         pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
         if self.lamella_position is None:
             lamella_position = Point(0.0,0.0)
         else:
-            lamella_position = conversions.image_to_microscope_image_coordinates(coord=self.lamella_position, image=self.FIB_IB.data, pixelsize=pixelsize)
+            lamella_position = conversions.image_to_microscope_image_coordinates(coord=self.lamella_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
         if self.fiducial_position is None:
             fiducial_position = Point(-((self.image_settings.resolution[0] / 3) * pixelsize), 0.0)
         else:
-            fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.FIB_IB.data, pixelsize=pixelsize)
+            fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
         self.experiment.positions[-1].lamella_centre = lamella_position
         self.experiment.positions[-1].fiducial_centre = fiducial_position
 
@@ -759,11 +761,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             if self.lamella_position is None:
                 lamella_position = Point(0.0,0.0)
             else:
-                lamella_position = conversions.image_to_microscope_image_coordinates(coord=self.lamella_position, image=self.FIB_IB.data, pixelsize=pixelsize)
+                lamella_position = conversions.image_to_microscope_image_coordinates(coord=self.lamella_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
             if self.fiducial_position is None:
                 fiducial_position = Point(-((self.image_settings.resolution[0] / 3) * pixelsize), 0.0)
             else:
-                fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.FIB_IB.data, pixelsize=pixelsize)
+                fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
             self.mill_fiducial_ui(index)
@@ -818,10 +820,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = save_lamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
-                image_settings=self.image_settings,
                 microscope_settings=self.microscope_settings,
                 index=index,
-                ref_image=self.FIB_IB,
+                ref_image=deepcopy(self.image_widget.ib_image),
                 microexpansion=self.microexpansionCheckBox.isChecked(),
             )
 
@@ -1031,7 +1032,6 @@ def update_lamella(lamella: Lamella, stage: AutoLamellaStage):
 def save_lamella(
     microscope: FibsemMicroscope,
     experiment: Experiment,
-    image_settings: ImageSettings,
     microscope_settings: MicroscopeSettings,
     index: int,
     ref_image: FibsemImage,
