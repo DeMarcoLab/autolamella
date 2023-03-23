@@ -9,8 +9,6 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, simpledialog
 from time import sleep
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
-from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 
 import fibsem.constants as constants
 import fibsem.conversions as conversions
@@ -99,23 +97,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             direction_list = self.microscope.get_scan_directions()
             for i in range(len(direction_list)-1):
                 self.scanDirectionComboBox.addItem(direction_list[i-1])
-
-
-
-            self.image_widget = FibsemImageSettingsWidget(
-                microscope=self.microscope,
-                image_settings=self.microscope_settings.image,
-                viewer=self.viewer,
-            )
-            self.movement_widget = FibsemMovementWidget(
-                microscope=self.microscope,
-                settings=self.microscope_settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
-
-            self.gridlayout_imaging.addWidget(self.image_widget,0,0)
-            self.gridlayout_movement.addWidget(self.movement_widget,0,0)
 
         ### NAPARI settings and initialisation
 
@@ -1298,7 +1279,7 @@ def main():
     
     window = MainWindow(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window)
-    widget.setMinimumWidth(450)
+    widget.setMinimumWidth(400)
     napari.run()
 
 if __name__ == "__main__":
