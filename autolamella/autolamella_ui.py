@@ -780,9 +780,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             if self.moving_fiducial:
                 self.fiducial_position = Point(coords[1], coords[0])
                 self.moving_fiducial = False
+                self.image_widget.ib_layer.mouse_drag_callbacks.remove(self._clickback)
                 logging.info("Moved fiducial")
             else: 
                 self.lamella_position = Point(coords[1], coords[0])
+                self.image_widget.ib_layer.mouse_drag_callbacks.remove(self._clickback)
                 logging.info("Moved lamella")
             self.viewer.layers.selection.active = self.image_widget.eb_layer
             self.viewer.window.qt_viewer.view.camera.interactive = False
@@ -802,7 +804,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
 
     def move_lamella(self):
-
+            self.moving_fiducial = False
             self.viewer.layers.selection.active = self.image_widget.ib_layer
             self.image_widget.ib_layer.mouse_drag_callbacks.append(self._clickback)
             _ = message_box_ui(
