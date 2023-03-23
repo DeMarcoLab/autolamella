@@ -820,7 +820,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = save_lamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
-                image_settings=self.image_settings,
                 microscope_settings=self.microscope_settings,
                 index=index,
                 ref_image=deepcopy(self.image_widget.ib_image),
@@ -1033,7 +1032,6 @@ def update_lamella(lamella: Lamella, stage: AutoLamellaStage):
 def save_lamella(
     microscope: FibsemMicroscope,
     experiment: Experiment,
-    image_settings: ImageSettings,
     microscope_settings: MicroscopeSettings,
     index: int,
     ref_image: FibsemImage,
