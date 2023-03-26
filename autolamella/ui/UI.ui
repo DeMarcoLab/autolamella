@@ -62,7 +62,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -722,38 +722,6 @@
         <widget class="QComboBox" name="scanDirectionComboBox"/>
        </item>
       </layout>
-     </widget>
-    </widget>
-    <widget class="QWidget" name="tab_imaging">
-     <attribute name="title">
-      <string>Imaging</string>
-     </attribute>
-     <widget class="QWidget" name="gridLayoutWidget_3">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>401</width>
-        <height>371</height>
-       </rect>
-      </property>
-      <layout class="QGridLayout" name="gridlayout_imaging"/>
-     </widget>
-    </widget>
-    <widget class="QWidget" name="tab_movement">
-     <attribute name="title">
-      <string>Movement</string>
-     </attribute>
-     <widget class="QWidget" name="gridLayoutWidget_4">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>401</width>
-        <height>481</height>
-       </rect>
-      </property>
-      <layout class="QGridLayout" name="gridlayout_movement"/>
      </widget>
     </widget>
    </widget>
