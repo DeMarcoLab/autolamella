@@ -58,10 +58,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         # setting up ui
         self.setup_connections()
-        self.lines = 0
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_log)
-        self.timer.start(1000)
+        
 
         self.viewer.window.qt_viewer.dockLayerList.hide()
         self.viewer.window.qt_viewer.dockLayerControls.hide()
@@ -77,6 +74,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope = None
         self.microscope_settings = None
         self.connect_to_microscope()
+
+        self.lines = 0
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_log)
+        self.timer.start(1000)
 
         # Gamma and Image Settings
         self.FIB_IB = FibsemImage(
