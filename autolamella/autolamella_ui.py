@@ -59,9 +59,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # setting up ui
         self.setup_connections()
         self.lines = 0
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_log)
-        self.timer.start(1000)
 
         self.viewer.window.qt_viewer.dockLayerList.hide()
         self.viewer.window.qt_viewer.dockLayerControls.hide()
@@ -77,20 +74,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope = None
         self.microscope_settings = None
         self.connect_to_microscope()
-
-        # Gamma and Image Settings
-        # self.FIB_IB = FibsemImage(
-        #     data=np.zeros(
-        #         (self.image_settings.resolution[0], self.image_settings.resolution[1]),
-        #         dtype=np.uint8,
-        #     )
-        # )
-        # self.FIB_EB = FibsemImage(
-        #     data=np.zeros(
-        #         (self.image_settings.resolution[0], self.image_settings.resolution[1]),
-        #         dtype=np.uint8,
-        #     )
-        # )
 
         if self.microscope is not None:
             self.microscope_settings.protocol = None
@@ -113,7 +96,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 viewer=self.viewer,
                 image_widget=self.image_widget,
             )
-
+            
             self.gridlayout_imaging.addWidget(self.image_widget,0,0)
             self.gridlayout_movement.addWidget(self.movement_widget,0,0)
 
@@ -131,6 +114,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.fiducial_position = None
         self.lamella_position = None
         self.moving_fiducial = False
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_log)
+        self.timer.start(1000)
 
         self.update_displays()
 
@@ -343,77 +330,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         logging.info("Experiment loaded")
 
-    ########################### Movement Functionality ##########################################
-
-    # def get_data_from_coord(self, coords: tuple) -> tuple:
-    #     # check inside image dimensions, (y, x)
-    #     eb_shape = self.FIB_EB.data.shape[0], self.FIB_EB.data.shape[1]
-    #     ib_shape = self.FIB_IB.data.shape[0], self.FIB_IB.data.shape[1] * 2
-
-    #     if (coords[0] > 0 and coords[0] < eb_shape[0]) and (
-    #         coords[1] > 0 and coords[1] < eb_shape[1]
-    #     ):
-    #         image = self.FIB_EB
-    #         beam_type = BeamType.ELECTRON
-    #         print("electron")
-
-    #     elif (coords[0] > 0 and coords[0] < ib_shape[0]) and (
-    #         coords[1] > eb_shape[0] and coords[1] < ib_shape[1]
-    #     ):
-    #         image = self.FIB_IB
-    #         coords = (coords[0], coords[1] - ib_shape[1] // 2)
-    #         beam_type = BeamType.ION
-    #         print("ion")
-    #     else:
-    #         beam_type, image = None, None
-
-    #     return coords, beam_type, image
-
-    # def _double_click(self, layer, event):
-    #     # get coords
-    #     coords = layer.world_to_data(event.position)
-
-    #     # TODO: dimensions are mixed which makes this confusing to interpret... resolve
-
-    #     coords, beam_type, image = self.get_data_from_coord(coords)
-
-    #     if beam_type is None:
-    #         show_info(
-    #             f"Clicked outside image dimensions. Please click inside the image to move."
-    #         )
-    #         return
-
-    #     point = conversions.image_to_microscope_image_coordinates(
-    #         Point(x=coords[1], y=coords[0]), image.data, image.metadata.pixel_size.x
-    #     )
-
-    #     # move
-    #     if self.comboBox.currentText() == "Stable Movement":
-    #         self.movement_mode = MovementMode["Stable"]
-    #     elif self.comboBox.currentText() == "Eucentric Movement":
-    #         self.movement_mode = MovementMode["Eucentric"]
-
-    #     logging.debug(
-    #         f"Movement: {self.movement_mode.name} | COORD {coords} | SHIFT {point.x:.2e}, {point.y:.2e} | {beam_type}"
-    #     )
-
-    #     # eucentric is only supported for ION beam
-    #     if beam_type is BeamType.ION and self.movement_mode is MovementMode.Eucentric:
-    #         self.microscope.eucentric_move(
-    #             settings=self.microscope_settings, dy=-point.y
-    #         )
-
-    #     else:
-    #         # corrected stage movement
-    #         self.microscope.stable_move(
-    #             settings=self.microscope_settings,
-    #             dx=point.x,
-    #             dy=point.y,
-    #             beam_type=beam_type,
-    #         )
-
-    #     self.take_ref_images_ui()
-
+   
     ################# UI Display helper functions  ###########################################
 
     def hfw_box_change(self):
@@ -437,6 +354,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         self.lines = lin_len
                         continue
                     if re.search("vispy", line_display):
+                        self.lines = lin_len
+                        continue
+                    if re.search("Unknown key", line_display):
                         self.lines = lin_len
                         continue
                     line_divided = line_display.split(",")
@@ -574,39 +494,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     ###################################### Imaging ##########################################
 
     def update_displays(self):
-        # # self.viewer.layers.clear()
-        # # self.eb_layer =  self.viewer.add_image(self.FIB_EB.data, name="EB Image")
-        # # self.ib_layer =  self.viewer.add_image(self.FIB_IB.data, name="IB Image")
-
         
-        # self.viewer.camera.center = [
-        #     0.0,
-        #     self.image_settings.resolution[1] / 2,
-        #     self.image_settings.resolution[0],
-        # ]
-        # points = np.array([[-20, 200], [-20, self.image_settings.resolution[0] + 150]])
-        # string = ["ELECTRON BEAM", "ION BEAM"]
-        # text = {
-        #     "string": string,
-        #     "color": "white"
-        # }
-        # self.viewer.add_points(
-        #     points,
-        #     text=text,
-        #     size=20,
-        #     edge_width=7,
-        #     edge_width_is_relative=False,
-        #     edge_color='transparent',
-        #     face_color='transparent',
-        # )   
-        # self.viewer.camera.zoom = 0.45
-
-        # self.eb_layer.mouse_double_click_callbacks.append(self._double_click)
-        # self.ib_layer.mouse_double_click_callbacks.append(self._double_click)
-        # self.ib_layer.translate = [0.0, self.image_settings.resolution[0]]
-
-
-
         if self.show_lamella.isChecked():
             if self.microscope_settings.protocol is None:
                 logging.info("No protocol loaded")
@@ -615,9 +503,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                  self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, self.patterns_protocol
             )
         self.viewer.layers.selection.active = self.image_widget.eb_layer
-        # self.reset_ui_settings()
-        # self.viewer.layers.selection.active = self.eb_layer
-        # viewer.window.qt_viewer.view.camera.interactive = False
+
 
     def save_filepath(self):
         """Opens file explorer to choose location to save image files"""
@@ -645,20 +531,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             return
         tilt_stage(self.microscope, self.microscope_settings)
 
-
-
-    # def take_ref_images_ui(self):
-    #     show_info(f"Taking reference images...")
-    #     eb_image, ib_image = take_reference_images(self.microscope, self.image_settings)
-    #     self.FIB_IB = ib_image
-    #     self.FIB_EB = eb_image
-    #     self.update_displays()
-
-
-    # def move_to_position_ui(self):
-    #     move_to_position(self.microscope, self.experiment, self.lamella_index.value())
-    #     self.take_ref_images_ui()
-
     def add_lamella_ui(self):
         # check experiemnt has been loaded/created
         self.add_button.setEnabled(False)
@@ -675,10 +547,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.add_button.setStyleSheet("color: white")
             return
         # Check to see if an image has been taken first
-        if self.image_widget.eb_image.metadata == None:
+        if self.image_widget.eb_image == None or self.image_widget.ib_image == None:
             _ = message_box_ui(
                 title="No image has been taken.",
-                text="Before adding a lamella please take atleast one image.",
+                text="Before adding a lamella please take atleast one image for each beam.",
                 buttons=QMessageBox.Ok,
             )
             self.add_button.setEnabled(True)
@@ -1312,6 +1184,7 @@ def main():
     window = MainWindow(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window)
     widget.setMinimumWidth(450)
+    widget.setMinimumHeight(800)
     napari.run()
 
 if __name__ == "__main__":
