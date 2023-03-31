@@ -77,7 +77,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if self.microscope is not None:
             self.microscope_settings.protocol = None
-            self.reset_ui_settings()
             
             direction_list = self.microscope.get_scan_directions()
             for i in range(len(direction_list)-1):
@@ -135,11 +134,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.load_exp.triggered.connect(self.load_experiment)
         self.action_load_protocol.triggered.connect(self.load_protocol)
         self.save_button.clicked.connect(self.save_lamella_ui)
-        # self.tilt_button.clicked.connect(self.tilt_stage_ui)
-        # self.go_to_lamella.clicked.connect(self.move_to_position_ui)
         self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
         self.move_fiducial_button.clicked.connect(self.move_fiducial)
         self.move_lamella_button.clicked.connect(self.move_lamella)
+        self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
 
         # Protocol setup
         self.stage_rotation.editingFinished.connect(self.change_protocol)
@@ -516,20 +514,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.experiment is not None:
             self.experiment.path = self.save_path
 
-    def reset_ui_settings(self):
-        # self.hfw_box.setValue(int(self.image_settings.hfw * constants.SI_TO_MICRO))
-        pass
-
-    def tilt_stage_ui(self):
-
-        if self.microscope_settings.protocol is None:
-            _ = message_box_ui(
-                title="No protocol.",
-                text="Before milling please load a protocol.",
-                buttons=QMessageBox.Ok,
-            )
-            return
-        tilt_stage(self.microscope, self.microscope_settings)
+    def go_to_lamella_ui(self):
+        index = self.lamella_index.value()
+        move_to_position(self.microscope, self.experiment, index)
+        self.movement_widget.update_ui()
 
     def add_lamella_ui(self):
         # check experiemnt has been loaded/created
@@ -597,6 +585,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="Before saving a lamella please load a protocol.",
                 buttons=QMessageBox.Ok,
             )
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
             return
         if len(self.experiment.positions) == 0:
             _ = message_box_ui(
@@ -604,6 +595,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="Before saving a lamella please add one to the experiment.",
                 buttons=QMessageBox.Ok,
             )
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
             return
         if self.save_path is None:
             tkinter.Tk().withdraw()
@@ -621,6 +615,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="This lamella has already been defined, please move on to next lamella.",
                 buttons=QMessageBox.Ok,
             )
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
             return
         # check to mill fiducial
         response = message_box_ui(
@@ -730,7 +727,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if response:
             index = self.lamella_index.value() - 1
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
-            self.move_to_position_ui()
+            self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
             self.mill_fiducial_ui(index=index)
         self.remill_fiducial.setEnabled(True)
         self.remill_fiducial.setText("Remill fiducial")
@@ -785,7 +782,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
         self.run_button.setEnabled(True)
         self.run_button.setText("Run Autolamella")
-        self.run_button.setStyleSheet("color: white")
+        self.run_button.setStyleSheet("background-color: green")
 
     def splutter_platinum(self):
         _ = message_box_ui(
@@ -796,25 +793,6 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
 ########################## End of Main Window Class ########################################
-
-
-def tilt_stage(microscope: FibsemMicroscope, settings: MicroscopeSettings):
-    """
-    Tilt the stage of a FibsemMicroscope to a specified angle and rotation using the provided settings.
-
-    Args:
-        microscope (FibsemMicroscope): An instance of the FibsemMicroscope class.
-        settings (MicroscopeSettings): An instance of the MicroscopeSettings class containing the protocol for the stage tilt and rotation.
-
-    Returns:
-        None
-    """
-    position = microscope.get_stage_position()
-    position.t = settings.protocol["stage_tilt"] * constants.DEGREES_TO_RADIANS
-    position.r = settings.protocol["stage_rotation"] * constants.DEGREES_TO_RADIANS
-    microscope.move_stage_absolute(position)
-    logging.info(f"Stage moved to r = {position.r * constants.RADIANS_TO_DEGREES}°, t = {position.t * constants.RADIANS_TO_DEGREES}°")
-
 
 def take_reference_images(microscope: FibsemMicroscope, image_settings: ImageSettings):
     """
@@ -851,7 +829,7 @@ def move_to_position(microscope: FibsemMicroscope, experiment: Experiment, index
         index - 1
     ].state.microscope_state.absolute_position
     microscope.move_stage_absolute(position)
-    logging.info(f"Moved to lamella position: {position}")
+    logging.info(f"Moved to position of lamella {index}.")
 
 
 def add_lamella(experiment: Experiment, ref_image: FibsemImage):
@@ -1085,7 +1063,7 @@ def run_autolamella(
                 microscope.move_stage_absolute(
                     lamella.state.microscope_state.absolute_position
                 )
-                logging.info("Moving to lamella position")
+                logging.info(f"Moved to lamella position {j}")
                 mill_settings = FibsemMillingSettings(
                     patterning_mode="Serial",
                     application_file="autolamella",
