@@ -557,8 +557,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             fiducial_position = Point(-((self.image_settings.resolution[0] / 3) * pixelsize), 0.0)
         else:
             fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
+        
+        lamella_position.x = float(lamella_position.x)
+        lamella_position.y = float(lamella_position.y)
+        fiducial_position.x = float(fiducial_position.x)
+        fiducial_position.y = float(fiducial_position.y)
+
         self.experiment.positions[-1].lamella_centre = lamella_position
         self.experiment.positions[-1].fiducial_centre = fiducial_position
+
 
         lamella_ready = 0
         for lam in self.experiment.positions:
@@ -635,8 +642,15 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 fiducial_position = Point(-((self.image_settings.resolution[0] / 3) * pixelsize), 0.0)
             else:
                 fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
+            
+            lamella_position.x = float(lamella_position.x)
+            lamella_position.y = float(lamella_position.y)
+            fiducial_position.x = float(fiducial_position.x)
+            fiducial_position.y = float(fiducial_position.y)
+            
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
+
             self.mill_fiducial_ui(index)
         self.save_button.setEnabled(True)
         self.save_button.setText("Save current lamella")
@@ -852,10 +866,6 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
     )
 
     lamella.reference_image.metadata.image_settings.label = "Empty_ref"
-    lamella.lamella_centre.x = round(lamella.lamella_centre.x, 4)
-    lamella.lamella_centre.y = round(lamella.lamella_centre.y, 4)
-    lamella.fiducial_centre.x = round(lamella.fiducial_centre.x,4)
-    lamella.fiducial_centre.y = round(lamella.fiducial_centre.y,4)
 
     experiment.positions.append(deepcopy(lamella))
 
@@ -1067,7 +1077,7 @@ def run_autolamella(
                 microscope.move_stage_absolute(
                     lamella.state.microscope_state.absolute_position
                 )
-                logging.info(f"Moved to lamella position {j}")
+                #logging.info(f"Moved to lamella position {j}")
                 mill_settings = FibsemMillingSettings(
                     patterning_mode="Serial",
                     application_file="autolamella",
