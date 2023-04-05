@@ -10,3 +10,7 @@ log/*
 
 .coverage
 .vscode/autolamella.code-workspace
+autolamella/log/*
+autolamella/_version.py
+
+*.yml
