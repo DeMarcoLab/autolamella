@@ -852,6 +852,10 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
     )
 
     lamella.reference_image.metadata.image_settings.label = "Empty_ref"
+    lamella.lamella_centre.x = round(lamella.lamella_centre.x, 4)
+    lamella.lamella_centre.y = round(lamella.lamella_centre.y, 4)
+    lamella.fiducial_centre.x = round(lamella.fiducial_centre.x,4)
+    lamella.fiducial_centre.y = round(lamella.fiducial_centre.y,4)
 
     experiment.positions.append(deepcopy(lamella))
 
