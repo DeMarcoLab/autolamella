@@ -32,7 +32,7 @@ from fibsem.structures import (
     Point,
     ImageSettings,
 )
-from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui
+from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui, convert_point_to_napari
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMessageBox
 from qtpy import QtWidgets
@@ -138,6 +138,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.move_fiducial_button.clicked.connect(self.move_fiducial)
         self.move_lamella_button.clicked.connect(self.move_lamella)
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
+        self.lamella_index.valueChanged.connect(self.draw_patterns)
 
         # Protocol setup
         self.stage_rotation.editingFinished.connect(self.change_protocol)
@@ -166,9 +167,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             logging.info("No protocol loaded")
             return
         # Initialise the Lamella and Fiducial Settings
-        hfw = self.image_settings.hfw
+        hfw = self.image_widget.image_settings.hfw
         self.patterns_protocol = []
-        pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
+        pixelsize = self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]
 
         for i, protocol in enumerate(
             self.microscope_settings.protocol["lamella"]["protocol_stages"]
@@ -177,10 +178,19 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             protocol["lamella_height"] = self.microscope_settings.protocol["lamella"]["lamella_height"]
             stage = []
 
+            index = self.lamella_index.value() - 1
+            if self.experiment is not None and len(self.experiment.positions) > 0:
+                if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
+                    lamella_position = convert_point_to_napari(self.image_widget.image_settings.resolution, pixelsize, self.experiment.positions[index].lamella_centre)
+                else:
+                    lamella_position = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0)
+            else:
+                lamella_position = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0)
+
             if self.lamella_position is None:
                 lamella_position_napari = Point(0.0, 0.0)
             else:
-                lamella_position_napari =  Point(float(self.lamella_position.x - self.image_settings.resolution[0]/2)* pixelsize, -float(self.lamella_position.y - self.image_settings.resolution[1]/2) * pixelsize)
+                lamella_position_napari =  Point(float(lamella_position.x - self.image_widget.image_settings.resolution[0]/2)* pixelsize, -float(lamella_position.y - self.image_widget.image_settings.resolution[1]/2) * pixelsize)
             
             lower_pattern_settings, upper_pattern_settings = milling.extract_trench_parameters(protocol, lamella_position_napari)
 
@@ -233,11 +243,19 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Fiducial
         stage = []
         protocol = self.microscope_settings.protocol["fiducial"]
+        
+        if self.experiment is not None and len(self.experiment.positions) > 0:
+                if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
+                    fiducial_position = convert_point_to_napari(self.image_widget.image_settings.resolution, pixelsize, self.experiment.positions[index].fiducial_centre)
+                else:
+                    fiducial_position = self.fiducial_position if self.fiducial_position is not None else Point(0.0, 0.0)
+        else:
+            fiducial_position = self.fiducial_position if self.fiducial_position is not None else Point(0.0, 0.0)
 
         if self.fiducial_position is None:
-            centre_fiducial = Point(-((self.image_settings.resolution[0] / 3) * pixelsize), 0.0)
+            centre_fiducial = Point(-((self.image_widget.image_settings.resolution[0] / 3) * pixelsize), 0.0)
         else:
-            centre_fiducial =  Point(float(self.fiducial_position.x - self.image_settings.resolution[0]/2)* pixelsize, -float(self.fiducial_position.y - self.image_settings.resolution[1]/2) * pixelsize)
+            centre_fiducial =  Point(float(fiducial_position.x - self.image_widget.image_settings.resolution[0]/2)* pixelsize, -float(fiducial_position.y - self.image_widget.image_settings.resolution[1]/2) * pixelsize)
 
 
         stage.append(
@@ -333,7 +351,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def hfw_box_change(self):
         ### field width in microns in UI!!!!!!!!
-        self.image_settings.hfw = self.hfw_box.value() * constants.MICRO_TO_SI
+        self.image_widget.image_settings.hfw = self.hfw_box.value() * constants.MICRO_TO_SI
         if self.microscope_settings.protocol is not None:
             self.draw_patterns()
 
@@ -548,13 +566,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment = add_lamella(experiment=self.experiment, ref_image=self.image_widget.ib_image)
 
-        pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
+        pixelsize = self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]
         if self.lamella_position is None:
             lamella_position = Point(0.0,0.0)
         else:
             lamella_position = conversions.image_to_microscope_image_coordinates(coord=self.lamella_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
         if self.fiducial_position is None:
-            fiducial_position = Point(-((self.image_settings.resolution[0] / 3) * pixelsize), 0.0)
+            fiducial_position = Point(-((self.image_widget.image_settings.resolution[0] / 3) * pixelsize), 0.0)
         else:
             fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
         
@@ -633,13 +651,13 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
 
         if response:
-            pixelsize = self.image_settings.hfw / self.image_settings.resolution[0]
+            pixelsize = self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]
             if self.lamella_position is None:
                 lamella_position = Point(0.0,0.0)
             else:
                 lamella_position = conversions.image_to_microscope_image_coordinates(coord=self.lamella_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
             if self.fiducial_position is None:
-                fiducial_position = Point(-((self.image_settings.resolution[0] / 3) * pixelsize), 0.0)
+                fiducial_position = Point(-((self.image_widget.image_settings.resolution[0] / 3) * pixelsize), 0.0)
             else:
                 fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
             
@@ -713,7 +731,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment.positions[index] = mill_fiducial(
                 microscope=self.microscope,
                 microscope_settings=self.microscope_settings,
-                image_settings=self.image_settings,
+                image_settings=self.image_widget.image_settings,
                 lamella=self.experiment.positions[index],
                 scan_direction= self.scanDirectionComboBox.currentText(),
             )
@@ -786,12 +804,12 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.run_button.setStyleSheet("color: white")
             return
         show_info(f"Running AutoLamella...")
-        self.image_settings.reduced_area = None
+        self.image_widget.image_settings.reduced_area = None
         self.experiment = run_autolamella(
             microscope=self.microscope,
             experiment=self.experiment,
             microscope_settings=self.microscope_settings,
-            image_settings=self.image_settings,
+            image_settings=self.image_widget.image_settings,
             scan_direction_lamella=self.scanDirectionComboBox.currentText(),
         )
         self.run_button.setEnabled(True)
