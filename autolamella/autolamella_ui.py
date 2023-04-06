@@ -518,6 +518,16 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             _draw_patterns_in_napari(
                  self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, self.patterns_protocol
             )
+        else:
+            if "Stage 1" in self.viewer.layers:
+                self.viewer.layers["Stage 1"].visible = False
+            if "Stage 2" in self.viewer.layers:
+                self.viewer.layers["Stage 2"].visible = False 
+            if "Stage 3" in self.viewer.layers:
+                self.viewer.layers["Stage 3"].visible = False
+            if "Stage 4" in self.viewer.layers:
+                self.viewer.layers["Stage 4"].visible = False
+
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
 
