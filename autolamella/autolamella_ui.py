@@ -1116,6 +1116,7 @@ def run_autolamella(
                 for _ in range(
                     int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
                 ):
+                    image_settings.beam_type = BeamType.ION
                     beam_shift_alignment(
                         microscope=microscope,
                         image_settings=image_settings,
