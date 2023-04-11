@@ -8,12 +8,13 @@ import os
 import pandas as pd
 from datetime import datetime
 
-
+# PPP: remove this
 class MovementMode(Enum):
     Stable = 1
     Eucentric = 2
     # Needle = 3
 
+# PPP: remove this
 class MovementType(Enum):
     StableEnabled = 0 
     EucentricEnabled = 1
