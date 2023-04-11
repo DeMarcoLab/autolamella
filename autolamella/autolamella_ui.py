@@ -49,7 +49,7 @@ import config as cfg
 from ui import UI as UI
 from napari.utils.notifications import show_info
 
-
+# PPP: rename the class to something more descriptive
 class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def __init__(self, viewer, *args, obj=None, **kwargs) -> None:
         super(MainWindow, self).__init__(*args, **kwargs)
@@ -100,7 +100,8 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.gridlayout_movement.addWidget(self.movement_widget,0,0)
 
 
-
+        # PPP: it is very easy to break the ui. 
+        # we need to make sure that the ui is always in a valid state, by disabling what the user can do until we are ready for it.
             
         ### NAPARI settings and initialisation
 
@@ -123,7 +124,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def setup_connections(self):
         
         # Buttons setup
-        # self.RefImage.clicked.connect(self.take_ref_images_ui)
+        # self.RefImage.clicked.connect(self.take_ref_images_ui)            # PPP: remove unused
         self.show_lamella.stateChanged.connect(self.update_displays)
         # self.hfw_box.valueChanged.connect(self.hfw_box_change)
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
@@ -178,6 +179,9 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             protocol["lamella_height"] = self.microscope_settings.protocol["lamella"]["lamella_height"]
             stage = []
 
+            # PPP: this logic results in the same positions for multiple paths, needs to be better consolidated
+            # e.g. self.experiment is not None and len(self.experiment.positions) > 0: can be moved outside the loop?
+            # PPP: add some comment explaining the conditions / stages
             index = self.lamella_index.value() - 1
             if self.experiment is not None and len(self.experiment.positions) > 0:
                 if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
@@ -244,6 +248,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         stage = []
         protocol = self.microscope_settings.protocol["fiducial"]
         
+        # PPP: same comment as above
         if self.experiment is not None and len(self.experiment.positions) > 0:
                 if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
                     fiducial_position = convert_point_to_napari(self.image_widget.image_settings.resolution, pixelsize, self.experiment.positions[index].fiducial_centre)
@@ -348,7 +353,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
    
     ################# UI Display helper functions  ###########################################
-
+    # PPP: unused
     def hfw_box_change(self):
         ### field width in microns in UI!!!!!!!!
         self.image_widget.image_settings.hfw = self.hfw_box.value() * constants.MICRO_TO_SI
@@ -387,6 +392,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         except:
             pass
 
+    # PPP: should we make this into a button / widget like fibsem-ui
     def connect_to_microscope(self):
         self.CONFIG_PATH = os.path.join(os.path.dirname(__file__))
 
@@ -423,16 +429,16 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         protocol_path = filedialog.askopenfilename(initialdir = cfg.BASE_PATH, title="Select protocol file")
         self.microscope_settings.protocol = utils.load_protocol(
             protocol_path=protocol_path
-        ) if protocol_path != '' else self.microscope_settings.protocol
+        ) if protocol_path != '' else self.microscope_settings.protocol # PPP: confusing logic
 
         if protocol_path == '':
             return
         
         self.protocol_txt.setText(self.microscope_settings.protocol["name"])
         self.draw_patterns()
-        tilt = self.microscope_settings.protocol["stage_tilt"]
-        rotation = self.microscope_settings.protocol["stage_rotation"]
-        string = f"Tilt: {tilt}° | Rotation: {rotation}°"
+        tilt = self.microscope_settings.protocol["stage_tilt"]          # PPP: unused
+        rotation = self.microscope_settings.protocol["stage_rotation"]  # PPP: unused
+        string = f"Tilt: {tilt}° | Rotation: {rotation}°"               # PPP: unused
         # self.mill_position_txt.setText(string)
 
         self.protocol_loaded = True
@@ -453,6 +459,10 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
    
         logging.info("Protocol loaded")
 
+    # PPP: repeated code,
+    # PPP: use currentIndex instead
+    # PPP: get_protocol_from_ui
+    # PPP: set_ui_from_protocol
     def select_stage(self):
         index = 0 
         if self.stage_lamella.currentText() == "1. Rough Cut":
@@ -469,6 +479,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.current_lamella.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"]*constants.SI_TO_NANO))
         self.size_ratio.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"]))
 
+    # PPP: repeated code
     def change_protocol(self):
         self.microscope_settings.protocol["stage_rotation"] = float(self.stage_rotation.value())
         self.microscope_settings.protocol["stage_tilt"] = float(self.stage_tilt.value())
@@ -600,6 +611,11 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             if lam.state.stage == AutoLamellaStage.FiducialMilled:
                 lamella_ready += 1
 
+        # PPP: i would change this to list the state of each lamella
+        # e.g.
+        # Lamella 01: MilledFiducial
+        # Lamella 02: Setup
+        # ...
         self.lamella_count_txt.setText(
             f"Out of: {len(self.experiment.positions)} lamellas, lamellas ready: {lamella_ready}"
         )
@@ -836,6 +852,7 @@ class MainWindow(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 ########################## End of Main Window Class ########################################
 
+#PPP: unused
 def take_reference_images(microscope: FibsemMicroscope, image_settings: ImageSettings):
     """
     Acquire reference images using both the electron and ion beams of a FibsemMicroscope, based on the provided ImageSettings.
@@ -855,7 +872,7 @@ def take_reference_images(microscope: FibsemMicroscope, image_settings: ImageSet
 
     return eb_image, ib_image
 
-
+# PPP: this is over abstracted
 def move_to_position(microscope: FibsemMicroscope, experiment: Experiment, index: int):
     """
     Move a FibsemMicroscope to a specified lamella position.
@@ -901,7 +918,7 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
 
     return experiment
 
-
+# PPP: make this a method of the lamella class, e.g. lamella.update(stage)
 def update_lamella(lamella: Lamella, stage: AutoLamellaStage):
     """
     Update the state of a Lamella with a new AutoLamellaStage and add the previous state to the Lamella's history.
@@ -992,7 +1009,7 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
     width = 2 * h_offset
     height = 2 * v_offset
 
-
+    # PPP: remove print statements
     print("RESOLUTION: ", settings.image.resolution)
     print("CENTRE:", fiducial_centre, fiducial_centre_px)
     print("LENGTH:" , fiducial_length, fiducial_length_px)
@@ -1004,7 +1021,7 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
 
     return fiducial_area
 
-
+# PPP: is the scan direction required
 def mill_fiducial(
     microscope: FibsemMicroscope,
     microscope_settings: MicroscopeSettings,
@@ -1076,8 +1093,8 @@ def run_autolamella(
     experiment: Experiment,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
-    scan_direction_lamella: str,
-    scan_direction_stress_relief: list[str] = None,
+    scan_direction_lamella: str,                        # PPP: unused
+    scan_direction_stress_relief: list[str] = None,     # PPP: unused
 ):
     """
     Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
@@ -1097,7 +1114,7 @@ def run_autolamella(
     ):
         protocol["lamella_height"] = microscope_settings.protocol["lamella"]["lamella_height"]
         protocol["lamella_width"] = microscope_settings.protocol["lamella"]["lamella_width"]
-        curr_stage = (i + 2)  # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc.
+        curr_stage = (i + 2)  # Lamella cuts start at 2 in AutoLamellaStage. Setup=0, FiducialMilled=1, RoughtCut=2,...,etc. # PPP: we should use the enums if we have them
         for j, lamella in enumerate(experiment.positions):
             if lamella.state.stage == AutoLamellaStage(
                 curr_stage - 1
@@ -1169,6 +1186,7 @@ def run_autolamella(
                     reference_image.save(path_image)
 
                     experiment.save()
+                    # PPP: just use the enum name
                     if curr_stage == 2:
                         l_stage = "Rough Cut"
                     elif curr_stage == 3:
@@ -1187,7 +1205,7 @@ def run_autolamella(
 
 def splutter_platinum(microscope: FibsemMicroscope):
     print("Sputtering Platinum")
-    return
+    return # PPP: implement for whole_grid, increasing movement + return movement
     protocol = []  #  where do we get this from?
 
     gis.sputter_platinum(
@@ -1204,7 +1222,7 @@ def main():
     
     window = MainWindow(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window)
-    widget.setMinimumWidth(450)
+    widget.setMinimumWidth(450)     # PPP: why are we directly setting the size of the widget?
     widget.setMinimumHeight(800)
     napari.run()
 
