@@ -1,12 +1,14 @@
 from dataclasses import dataclass, asdict
 from fibsem.structures import MicroscopeState, FibsemImage, Point, FibsemRectangle
 import fibsem.utils as utils
+from copy import deepcopy
 from pathlib import Path
 from enum import Enum
 import yaml
 import os
 import pandas as pd
 from datetime import datetime
+import petname
 
 # PPP: remove this
 class MovementMode(Enum):
@@ -26,6 +28,7 @@ class AutoLamellaStage(Enum):
     RoughtCut = 2
     RegularCut = 3
     PolishingCut = 4
+    Finished = 5
 
 @dataclass
 class LamellaState:
@@ -64,6 +67,11 @@ class Lamella:
     lamella_number: int = 0
     mill_microexpansion: bool = False
     history: list[LamellaState] = None
+    _petname: str = None
+    
+    def __post_init__(self):
+        if self._petname is None:
+            self._petname = f"{petname.generate(2)}"
 
     def __to_dict__(self):
         if self.history is None:
@@ -95,6 +103,21 @@ class Lamella:
             lamella_number=data["lamella_number"],
             history=[LamellaState().__from_dict__(state) for state in data["history"]],
         )
+    
+    def update(self, stage: AutoLamellaStage):
+        """_summary_
+
+        Args:
+            stage (AutoLamellaStage): current stage of the lamella
+
+        Returns:
+            lamella: lamella with udpated stage and history
+        """
+        self.state.end_timestamp = datetime.timestamp(datetime.now())
+        self.history.append(deepcopy(self.state))
+        self.state.stage = AutoLamellaStage(stage)
+        self.state.start_timestamp = datetime.timestamp(datetime.now())
+        return self
 
 class Experiment: 
     def __init__(self, path: Path = None, name: str = "default") -> None:

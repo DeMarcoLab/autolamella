@@ -28,6 +28,7 @@ $ conda activate fibsem
 $ cd autolamella
 $ pip install -e .
 $ pip install pywin32==228
+$ conda install -c conda-forge petname
 
 ```
 
