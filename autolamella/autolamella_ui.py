@@ -126,18 +126,25 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         # Buttons setup
         self.show_lamella.stateChanged.connect(self.update_displays)
+        self.show_lamella.setEnabled(False)
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
         self.add_button.clicked.connect(self.add_lamella_ui)
+        self.add_button.setEnabled(False)
         self.run_button.clicked.connect(self.run_autolamella_ui)
         self.platinum.triggered.connect(self.splutter_platinum)
         self.create_exp.triggered.connect(self.create_experiment)
         self.load_exp.triggered.connect(self.load_experiment)
         self.action_load_protocol.triggered.connect(self.load_protocol)
         self.save_button.clicked.connect(self.save_lamella_ui)
+        self.save_button.setEnabled(False)
         self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
+        self.remill_fiducial.setEnabled(False)
         self.move_fiducial_button.clicked.connect(self.move_fiducial)
+        self.move_fiducial_button.setEnabled(False)
         self.move_lamella_button.clicked.connect(self.move_lamella)
+        self.move_lamella_button.setEnabled(False)
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
+        self.go_to_lamella.setEnabled(False)
         self.lamella_index.valueChanged.connect(self.draw_patterns)
         self.microscope_button.clicked.connect(self.connect_to_microscope)
 
@@ -297,6 +304,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lines = 0
         self.timer.start(1000)
 
+        self.add_button.setEnabled(True)
+
         logging.info("Experiment created")
 
     def load_experiment(self):
@@ -316,6 +325,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.load_protocol()
         string_lamella = ""
         for lam in self.experiment.positions:
+            self.save_button.setEnabled(True)
+            self.go_to_lamella.setEnabled(True)
+            if lam.state.stage == AutoLamellaStage.FiducialMilled:
+                self.remill_fiducial.setEnabled(True)
             string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
         self.lamella_count_txt.setText(
             string_lamella
@@ -325,6 +338,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.lines = 0
         self.timer.start(1000)
+
+        self.add_button.setEnabled(True)
+        
+        _ = message_box_ui(
+                title="Please take images.",
+                text="Please take images with both beams before proceeding further.",
+                buttons=QMessageBox.Ok,
+            )
 
         logging.info("Experiment loaded")
 
@@ -410,6 +431,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             protocol_path=protocol_path
         ) 
         self.set_ui_from_protocol() 
+        self.show_lamella.setEnabled(True)
 
     def set_ui_from_protocol(self):
 
@@ -502,6 +524,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
+        if self.image_widget.ib_image is not None:
+            self.move_lamella_button.setEnabled(True)
+            self.move_fiducial_button.setEnabled(True)
+
 
     def save_filepath(self):
         """Opens file explorer to choose location to save image files"""
@@ -580,6 +606,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.add_button.setEnabled(True)
         self.add_button.setText("Add Lamella")
         self.add_button.setStyleSheet("color: white")
+        self.save_button.setEnabled(True)
 
     def save_lamella_ui(self):
         self.save_button.setEnabled(False)
@@ -615,7 +642,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if (
             self.experiment.positions[index].state.stage
-            == AutoLamellaStage.FiducialMilled
+            in [AutoLamellaStage.FiducialMilled, AutoLamellaStage.RoughCut, AutoLamellaStage.RegularCut, AutoLamellaStage.PolishingCut]
         ):
             response = message_box_ui(
                 title="Lamella already defined",
@@ -649,6 +676,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setEnabled(True)
         self.save_button.setText("Save current lamella")
         self.save_button.setStyleSheet("color: white")
+        self.go_to_lamella.setEnabled(True)
+        self.remill_fiducial.setEnabled(True)
 
     def _clickback(self, layer, event):
         if event.button == 2 :
@@ -730,8 +759,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             text="If you want to remill this fiducial, press yes.",
         )
         
+        index = self.lamella_index.value() - 1
+        if self.experiment.positions[index].state.stage == AutoLamellaStage.Setup:
+            _ = message_box_ui(
+                title="Fiducial not milled",
+                text="You haven't saved this lamella yet, cannot remill fiducial.",
+            )
         if response:
-            index = self.lamella_index.value() - 1
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
             self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
             self.mill_fiducial_ui(index=index)
@@ -760,10 +794,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.run_button.setEnabled(False)
         self.run_button.setText("Running...")
         self.run_button.setStyleSheet("color: orange")
-        _ = message_box_ui(
+        response = message_box_ui(
                 title="Run full autolamella?.",
                 text="If you click yes, all lamellas will be milled automatically.",
-                buttons=QMessageBox.Ok,
             )
         # First check that the pre-requisites to begin milling have been met.
         if self.can_run_milling() == False:
@@ -777,14 +810,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.run_button.setText("Run Autolamella")
             self.run_button.setStyleSheet("color: white")
             return
-        show_info(f"Running AutoLamella...")
-        self.image_widget.image_settings.reduced_area = None
-        self.experiment = run_autolamella(
-            microscope=self.microscope,
-            experiment=self.experiment,
-            microscope_settings=self.microscope_settings,
-            image_settings=self.image_widget.image_settings,
-        )
+        if response:
+            show_info(f"Running AutoLamella...")
+            self.image_widget.image_settings.reduced_area = None
+            self.experiment = run_autolamella(
+                microscope=self.microscope,
+                experiment=self.experiment,
+                microscope_settings=self.microscope_settings,
+                image_settings=self.image_widget.image_settings,
+            )
+        
         self.run_button.setEnabled(True)
         self.run_button.setText("Run Autolamella")
         self.run_button.setStyleSheet("background-color: green")
@@ -794,7 +829,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setText(
             string_lamella
         )
-
+        
     def splutter_platinum(self):
         _ = message_box_ui(
                 title="Not implemented",
