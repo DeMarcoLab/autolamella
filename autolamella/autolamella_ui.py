@@ -84,20 +84,20 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
 
-            self.image_widget = FibsemImageSettingsWidget(
-                microscope=self.microscope,
-                image_settings=self.microscope_settings.image,
-                viewer=self.viewer,
-            )
-            self.movement_widget = FibsemMovementWidget(
-                microscope=self.microscope,
-                settings=self.microscope_settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
-            
-            self.gridlayout_imaging.addWidget(self.image_widget,0,0)
-            self.gridlayout_movement.addWidget(self.movement_widget,0,0)
+        self.image_widget = FibsemImageSettingsWidget(
+            microscope=self.microscope,
+            image_settings=self.microscope_settings.image,
+            viewer=self.viewer,
+        )
+        self.movement_widget = FibsemMovementWidget(
+            microscope=self.microscope,
+            settings=self.microscope_settings,
+            viewer=self.viewer,
+            image_widget=self.image_widget,
+        )
+        
+        self.gridlayout_imaging.addWidget(self.image_widget,0,0)
+        self.gridlayout_movement.addWidget(self.movement_widget,0,0)
 
 
         # PPP: it is very easy to break the ui. 
@@ -542,6 +542,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def go_to_lamella_ui(self):
         index = self.lamella_index.value() -1 
+        if self.experiment.positions[index].state.stage == AutoLamellaStage.Setup:
+            _ = message_box_ui(
+                title="Lamella not saved.",
+                text="Please save the lamella before moving to it.",
+                buttons=QMessageBox.Ok,
+            )
+            return
         position = self.experiment.positions[index].state.microscope_state.absolute_position
         self.microscope.move_stage_absolute(position)
         logging.info(f"Moved to position of lamella {index}.")

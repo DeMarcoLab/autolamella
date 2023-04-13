@@ -121,7 +121,7 @@
        <item row="1" column="1" colspan="2">
         <widget class="QLabel" name="protocol_txt">
          <property name="text">
-          <string/>
+          <string>PLEASE CREATE OR LOAD AN EXPERIMENT</string>
          </property>
         </widget>
        </item>
@@ -192,6 +192,12 @@
         <widget class="QCheckBox" name="show_lamella">
          <property name="text">
           <string>Show Lamella Pattern</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <property name="tristate">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
