@@ -234,7 +234,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Fiducial
         stage = []
         protocol = self.microscope_settings.protocol["fiducial"]
-        
+
+        # self.fiducial_position = Point(-self.image_widget.image_settings.resolution[0]/3 * pixelsize, 0.0)
         default_position_fiducial = self.fiducial_position if self.fiducial_position is not None else Point(0.0, 0.0) # has the user defined a fiducial position?
         if self.experiment is not None and len(self.experiment.positions) > 0:
                 if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled: # if the current lamella has been saved, display relevant pattern 
@@ -1132,6 +1133,8 @@ def run_autolamella(
                     logging.error(
                         f"Unable to draw/mill the lamella: {traceback.format_exc()}"
                     )
+                # finally:
+                #     milling.finish_milling(microscope)
 
             
     logging.info("All Lamella milled successfully.")
