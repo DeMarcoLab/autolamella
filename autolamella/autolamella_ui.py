@@ -75,13 +75,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings = None
         self.connect_to_microscope()
 
-            
-
-
-        # PPP: it is very easy to break the ui. 
-        # we need to make sure that the ui is always in a valid state, by disabling what the user can do until we are ready for it.
-            
-        ### NAPARI settings and initialisation
 
         self.viewer.grid.enabled = False
 
@@ -89,14 +82,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment: Experiment = None
         self.protocol_loaded = False
         
-        pixelsize = self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]
-        self.fiducial_position = Point(-self.image_widget.image_settings.resolution[0]/3 * pixelsize, 0.0)
-        self.lamella_position = Point(0.0,0.0)
+        self.fiducial_position = None
+        self.lamella_position = None
         self.moving_fiducial = False
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_log)
         self.timer.start(1000)
+        
 
         self.update_displays()
 
@@ -235,8 +228,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         stage = []
         protocol = self.microscope_settings.protocol["fiducial"]
 
-        # self.fiducial_position = Point(-self.image_widget.image_settings.resolution[0]/3 * pixelsize, 0.0)
-        default_position_fiducial = self.fiducial_position if self.fiducial_position is not None else Point(0.0, 0.0) # has the user defined a fiducial position?
+    
+        default_position_fiducial = self.fiducial_position if self.fiducial_position is not None else Point(-self.image_widget.image_settings.resolution[0]/3 * pixelsize, 0.0) # has the user defined a fiducial position?
         if self.experiment is not None and len(self.experiment.positions) > 0:
                 if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled: # if the current lamella has been saved, display relevant pattern 
                     fiducial_position = self.experiment.positions[index].fiducial_centre
@@ -300,7 +293,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer.start(1000)
 
         self.add_button.setEnabled(True)
-
+        
         logging.info("Experiment created")
 
     def load_experiment(self):
@@ -415,11 +408,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 viewer=self.viewer,
                 image_widget=self.image_widget,
             )
-            
+            self.image_widget.picture_signal.connect(self.draw_patterns)
             self.gridlayout_imaging.addWidget(self.image_widget,0,0)
             self.gridlayout_movement.addWidget(self.movement_widget,0,0)
 
-        except:
+        except Exception as e:
+            logging.error(f"Unable to connect to the microscope: {traceback.format_exc()}")
             self.microscope_status.setText("Microscope Disconnected")
             self.microscope_status.setStyleSheet("background-color: red")
 
@@ -695,7 +689,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].fiducial_centre = fiducial_position
 
             self.mill_fiducial_ui(index)
-        self.save_button.setEnabled(True)
+        self.save_button.setEnabled(False)
         self.save_button.setText("Save current lamella")
         self.save_button.setStyleSheet("color: white")
         self.go_to_lamella.setEnabled(True)
@@ -960,7 +954,7 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
     v_offset = fiducial_length_px / settings.image.resolution[1] / 2
 
     left = rcx - h_offset 
-    top = rcy - v_offset
+    top = rcy #- v_offset
     width = 2 * h_offset
     height = 2 * v_offset
 
