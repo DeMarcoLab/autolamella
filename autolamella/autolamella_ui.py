@@ -75,29 +75,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings = None
         self.connect_to_microscope()
 
-        if self.microscope is not None:
-            self.microscope_settings.protocol = None
             
-            direction_list = self.microscope.get_scan_directions()
-            for i in range(len(direction_list)-1):
-                self.scanDirectionComboBox.addItem(direction_list[i-1])
-
-
-
-        self.image_widget = FibsemImageSettingsWidget(
-            microscope=self.microscope,
-            image_settings=self.microscope_settings.image,
-            viewer=self.viewer,
-        )
-        self.movement_widget = FibsemMovementWidget(
-            microscope=self.microscope,
-            settings=self.microscope_settings,
-            viewer=self.viewer,
-            image_widget=self.image_widget,
-        )
-        
-        self.gridlayout_imaging.addWidget(self.image_widget,0,0)
-        self.gridlayout_movement.addWidget(self.movement_widget,0,0)
 
 
         # PPP: it is very easy to break the ui. 
@@ -420,6 +398,25 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.microscope_button.clicked.connect(self.disconnect_from_microscope)
             self.microscope_button.setText("Disconnect")
             self.lines = 0
+            
+            direction_list = self.microscope.get_scan_directions()
+            for i in range(len(direction_list)-1):
+                self.scanDirectionComboBox.addItem(direction_list[i-1])
+
+            self.image_widget = FibsemImageSettingsWidget(
+                microscope=self.microscope,
+                image_settings=self.microscope_settings.image,
+                viewer=self.viewer,
+            )
+            self.movement_widget = FibsemMovementWidget(
+                microscope=self.microscope,
+                settings=self.microscope_settings,
+                viewer=self.viewer,
+                image_widget=self.image_widget,
+            )
+            
+            self.gridlayout_imaging.addWidget(self.image_widget,0,0)
+            self.gridlayout_movement.addWidget(self.movement_widget,0,0)
 
         except:
             self.microscope_status.setText("Microscope Disconnected")
@@ -436,6 +433,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_button.clicked.disconnect()
         self.microscope_button.clicked.connect(self.connect_to_microscope)
         self.microscope_button.setText("Connect")
+        self.gridlayout_imaging.removeWidget(self.image_widget)
+        self.gridlayout_movement.removeWidget(self.movement_widget)
+        self.image_widget.deleteLater()
+        self.movement_widget.deleteLater()
 
     def load_protocol(self): 
         tkinter.Tk().withdraw()
