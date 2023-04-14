@@ -145,7 +145,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.move_lamella_button.setEnabled(False)
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
-        self.lamella_index.valueChanged.connect(self.draw_patterns)
+        self.lamella_index.valueChanged.connect(self.lamella_index_changed)
         self.microscope_button.clicked.connect(self.connect_to_microscope)
 
         # Protocol setup
@@ -169,6 +169,22 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_height.editingFinished.connect(self.get_protocol_from_ui)
         self.micro_exp_width.editingFinished.connect(self.get_protocol_from_ui)
         
+    def lamella_index_changed(self):
+        self.draw_patterns()
+
+        if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.Setup:
+            self.go_to_lamella.setEnabled(False)
+            self.move_fiducial_button.setEnabled(True)
+            self.move_lamella_button.setEnabled(True)
+            self.remill_fiducial.setEnabled(False)
+            self.save_button.setEnabled(True)
+        else:
+            self.go_to_lamella.setEnabled(True)
+            self.move_fiducial_button.setEnabled(False)
+            self.move_lamella_button.setEnabled(False)
+            self.remill_fiducial.setEnabled(True)
+            self.save_button.setEnabled(False)
+
 
     def draw_patterns(self):
         if self.microscope_settings.protocol is None:
@@ -189,7 +205,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             default_position_lamella = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0) # has the user defined a position manually? If not use 0,0
             index = self.lamella_index.value() - 1
             if self.experiment is not None and len(self.experiment.positions) > 0: # do we have an experiment with at least one lamella
-                if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled: # has the lamella been saved 
+                if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup: # has the lamella been saved 
                     lamella_position = self.experiment.positions[index].lamella_centre
                 else:
                     lamella_position = default_position_lamella
@@ -647,10 +663,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         index = self.lamella_index.value() - 1
 
-        if (
-            self.experiment.positions[index].state.stage
-            in [AutoLamellaStage.FiducialMilled, AutoLamellaStage.RoughCut, AutoLamellaStage.RegularCut, AutoLamellaStage.PolishingCut]
-        ):
+        if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup:
             response = message_box_ui(
                 title="Lamella already defined",
                 text="This lamella has already been defined, please move on to next lamella.",
@@ -685,6 +698,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setStyleSheet("color: white")
         self.go_to_lamella.setEnabled(True)
         self.remill_fiducial.setEnabled(True)
+        self.move_fiducial_button.setEnabled(False)
+        self.move_lamella_button.setEnabled(False)
 
     def _clickback(self, layer, event):
         if event.button == 2 :
@@ -836,6 +851,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setText(
             string_lamella
         )
+        self.lamella_index_changed()
         
     def splutter_platinum(self):
         _ = message_box_ui(
