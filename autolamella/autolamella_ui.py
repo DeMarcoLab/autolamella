@@ -680,8 +680,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             lamella_position = Point()
             fiducial_position = Point()
 
-            lamella_position.x = float(self.lamella_position.x) 
-            lamella_position.y = float(self.lamella_position.y) 
+            lamella_position.x = float(self.lamella_position.x) if self.lamella_position is not None else 0.0
+            lamella_position.y = float(self.lamella_position.y)    if self.lamella_position is not None else 0.0
             fiducial_position.x = float(self.fiducial_position.x)
             fiducial_position.y = float(self.fiducial_position.y)
             
@@ -941,8 +941,9 @@ def save_lamella(
 def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsize):
 
 
-    fiducial_centre = fiducial_centre
-    fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(fiducial_centre, pixelsize)
+    fiducial_centre_area = deepcopy(fiducial_centre)
+    fiducial_centre_area.y = fiducial_centre_area.y * -1
+    fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(fiducial_centre_area, pixelsize)
 
 
     rcx = fiducial_centre_px.x  / settings.image.resolution[0] + 0.5
@@ -954,7 +955,7 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
     v_offset = fiducial_length_px / settings.image.resolution[1] / 2
 
     left = rcx - h_offset 
-    top = rcy #- v_offset
+    top =  rcy - v_offset
     width = 2 * h_offset
     height = 2 * v_offset
 
