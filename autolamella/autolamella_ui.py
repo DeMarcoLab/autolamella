@@ -174,6 +174,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
             default_position_lamella = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0) # has the user defined a position manually? If not use 0,0
+            self.lamella_position = default_position_lamella
             index = self.lamella_index.value() - 1
             if self.experiment is not None and len(self.experiment.positions) > 0: # do we have an experiment with at least one lamella
                 if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup: # has the lamella been saved 
@@ -230,6 +231,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     
         default_position_fiducial = self.fiducial_position if self.fiducial_position is not None else Point(-self.image_widget.image_settings.resolution[0]/3 * pixelsize, 0.0) # has the user defined a fiducial position?
+        self.fiducial_position = default_position_fiducial
         if self.experiment is not None and len(self.experiment.positions) > 0:
                 if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled: # if the current lamella has been saved, display relevant pattern 
                     fiducial_position = self.experiment.positions[index].fiducial_centre
