@@ -1131,10 +1131,10 @@ def run_autolamella(
                     logging.error(
                         f"Unable to draw/mill the lamella: {traceback.format_exc()}"
                     )
-                # finally:
-                #     milling.finish_milling(microscope)
+                finally:
+                    milling.finish_milling(microscope)
+                    experiment.save()
 
-            
     logging.info("All Lamella milled successfully.")
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaStage.PolishingCut:
