@@ -999,7 +999,8 @@ def mill_fiducial(
             centre_y=lamella.fiducial_centre.y,
         )
         fiducial_milling = FibsemMillingSettings(
-            milling_current=protocol["milling_current"]
+            milling_current=protocol["milling_current"],
+            hfw = image_settings.hfw,
         )
 
         milling.setup_milling(microscope, mill_settings=fiducial_milling)
