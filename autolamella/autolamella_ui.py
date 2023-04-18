@@ -31,6 +31,8 @@ from fibsem.structures import (
     ImageSettings,
 )
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui, convert_point_to_napari
+from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
+from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QTextCursor
