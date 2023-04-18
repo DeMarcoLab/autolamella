@@ -411,6 +411,7 @@ class Ui_MainWindow(object):
         self.gridlayout_movement.setContentsMargins(0, 0, 0, 0)
         self.gridlayout_movement.setObjectName("gridlayout_movement")
         self.tabWidget.addTab(self.tab_movement, "")
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 920, 21))
@@ -502,8 +503,6 @@ class Ui_MainWindow(object):
         self.distanceLabel.setText(_translate("MainWindow", "Distance (µm)"))
         self.export_protocol.setText(_translate("MainWindow", "Save protocol to file"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Protocol"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_imaging), _translate("MainWindow", "Imaging"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_movement), _translate("MainWindow", "Movement"))
         self.menuAutoLamella.setTitle(_translate("MainWindow", "File"))
         self.menuTools.setTitle(_translate("MainWindow", "Tools"))
         self.create_exp.setText(_translate("MainWindow", "Create Experiment"))

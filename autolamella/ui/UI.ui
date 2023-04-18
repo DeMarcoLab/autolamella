@@ -823,6 +823,7 @@
       <layout class="QGridLayout" name="gridlayout_movement"/>
      </widget>
     </widget>
+
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

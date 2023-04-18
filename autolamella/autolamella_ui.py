@@ -9,8 +9,6 @@ from datetime import datetime
 from pathlib import Path
 from tkinter import filedialog, simpledialog
 from time import sleep
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
-from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 
 import fibsem.constants as constants
 import fibsem.conversions as conversions
@@ -60,6 +58,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.setup_connections()
         self.lines = 0
 
+
         self.viewer.window.qt_viewer.dockLayerList.hide()
         self.viewer.window.qt_viewer.dockLayerControls.hide()
 
@@ -74,7 +73,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope = None
         self.microscope_settings = None
         self.connect_to_microscope()
-
 
         self.viewer.grid.enabled = False
 
@@ -1162,6 +1160,7 @@ def main():
     
     window = UiInterface(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window, area = 'right', add_vertical_stretch=True, name='Autolamella')
+
 
     napari.run()
 
