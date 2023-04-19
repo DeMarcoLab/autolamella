@@ -466,6 +466,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.width_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["width"]*constants.SI_TO_MICRO))
         self.depth_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["depth"]*constants.SI_TO_MICRO))
         self.current_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["milling_current"]*constants.SI_TO_NANO))
+        self.presetComboBox_fiducial.setCurrentText(self.microscope_settings.protocol["fiducial"]["preset"])
         self.stage_lamella.setCurrentText("1. Rough Cut")
         self.select_stage()
         self.micro_exp_width.setValue((self.microscope_settings.protocol["microexpansion"]["width"]*constants.SI_TO_MICRO))
@@ -486,6 +487,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.offset.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"]*constants.SI_TO_MICRO))
         self.current_lamella.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"]*constants.SI_TO_NANO))
         self.size_ratio.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"]))
+        self.presetComboBox.setCurrentText(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["preset"])
 
     def get_protocol_from_ui(self):
         self.microscope_settings.protocol["lamella"]["beam_shift_attempts"] = float(self.beamshift_attempts.value())
@@ -493,6 +495,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["fiducial"]["width"] = float(self.width_fiducial.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["depth"] = float(self.depth_fiducial.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["milling_current"] = float(self.current_fiducial.value()*constants.NANO_TO_SI)
+        self.microscope_settings.protocol["fiducial"]["preset"] = self.presetComboBox_fiducial.currentText()
 
         self.microscope_settings.protocol["lamella"]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
@@ -504,6 +507,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"] = float(self.offset.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"] = float(self.current_lamella.value()*constants.NANO_TO_SI)
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"] = float(self.size_ratio.value())
+        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["preset"] = self.presetComboBox.currentText()
         self.microscope_settings.protocol["microexpansion"]["width"] = float(self.micro_exp_width.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["microexpansion"]["height"] = float(self.micro_exp_height.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["microexpansion"]["distance"] = float(self.micro_exp_distance.value()*constants.MICRO_TO_SI)
@@ -694,12 +698,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
 
-            if isinstance(self.microscope, TescanMicroscope):
-                preset = self.presetComboBox_fiducial.currentText()
-            else:
-                preset = None
-
-            self.mill_fiducial_ui(index, preset)
+            self.mill_fiducial_ui(index)
         self.save_button.setEnabled(False)
         self.save_button.setText("Save current lamella")
         self.save_button.setStyleSheet("color: white")
@@ -750,7 +749,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
 
-    def mill_fiducial_ui(self, index, preset):
+    def mill_fiducial_ui(self, index):
         
         self.experiment = save_lamella(
                 microscope=self.microscope,
@@ -767,7 +766,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_widget.image_settings,
                 lamella=self.experiment.positions[index],
-                preset=preset,
             )
         if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
             self.experiment.save()
@@ -798,11 +796,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if response:
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
             self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
-            if isinstance(self.microscope, TescanMicroscope):
-                preset = self.presetComboBox_fiducial.currentText()
-            else:
-                preset = None
-            self.mill_fiducial_ui(index=index, preset=preset)
+            self.mill_fiducial_ui(index=index)
         self.remill_fiducial.setEnabled(True)
         self.remill_fiducial.setText("Remill fiducial")
         self.remill_fiducial.setStyleSheet("color: white")    
@@ -847,16 +841,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if response:
             show_info(f"Running AutoLamella...")
             self.image_widget.image_settings.reduced_area = None
-            if isinstance(self.microscope, TescanMicroscope):
-                preset = self.presetComboBox.currentText()
-            else:
-                preset = None
             self.experiment = run_autolamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_widget.image_settings,
-                preset = preset,
             )
         
         self.run_button.setEnabled(True)
@@ -989,7 +978,6 @@ def mill_fiducial(
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
     lamella: Lamella,
-    preset: str,
 ):
     """
     Mill a fiducial
@@ -1023,7 +1011,7 @@ def mill_fiducial(
             hfw = image_settings.hfw,
         )
 
-        milling.setup_milling(microscope, mill_settings=fiducial_milling)
+        milling.setup_milling(microscope, mill_settings=fiducial_milling, preset = protocol["preset"])
         milling.draw_fiducial(
             microscope,
             fiducial_pattern,
@@ -1055,7 +1043,6 @@ def run_autolamella(
     experiment: Experiment,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
-    preset: str = None,
 ):
     """
     Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
@@ -1106,7 +1093,7 @@ def run_autolamella(
                     milling.setup_milling(
                         microscope,
                         mill_settings=mill_settings,
-                        preset = preset,
+                        preset = protocol["preset"],
                     )
                     milling.draw_trench(
                         microscope=microscope,
