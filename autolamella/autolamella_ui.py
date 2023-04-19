@@ -695,7 +695,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].fiducial_centre = fiducial_position
 
             if isinstance(self.microscope, TescanMicroscope):
-                preset = self.presetComboBox.currentText()
+                preset = self.presetComboBox_fiducial.currentText()
             else:
                 preset = None
 
@@ -798,7 +798,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if response:
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
             self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
-            self.mill_fiducial_ui(index=index)
+            if isinstance(self.microscope, TescanMicroscope):
+                preset = self.presetComboBox_fiducial.currentText()
+            else:
+                preset = None
+            self.mill_fiducial_ui(index=index, preset=preset)
         self.remill_fiducial.setEnabled(True)
         self.remill_fiducial.setText("Remill fiducial")
         self.remill_fiducial.setStyleSheet("color: white")    
@@ -843,11 +847,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if response:
             show_info(f"Running AutoLamella...")
             self.image_widget.image_settings.reduced_area = None
+            if isinstance(self.microscope, TescanMicroscope):
+                preset = self.presetComboBox.currentText()
+            else:
+                preset = None
             self.experiment = run_autolamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_widget.image_settings,
+                preset = preset,
             )
         
         self.run_button.setEnabled(True)
@@ -1046,6 +1055,7 @@ def run_autolamella(
     experiment: Experiment,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
+    preset: str = None,
 ):
     """
     Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
@@ -1092,9 +1102,11 @@ def run_autolamella(
 
                 try:
                     mill_settings.hfw = image_settings.hfw
+
                     milling.setup_milling(
                         microscope,
                         mill_settings=mill_settings,
+                        preset = preset,
                     )
                     milling.draw_trench(
                         microscope=microscope,
