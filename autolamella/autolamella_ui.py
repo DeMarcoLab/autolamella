@@ -19,7 +19,7 @@ import numpy as np
 import yaml
 from fibsem import acquire, utils
 from fibsem.alignment import beam_shift_alignment
-from fibsem.microscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemImage,
@@ -89,6 +89,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_log)
         self.timer.start(1000)
+
+        if isinstance(self.microscope, TescanMicroscope):
+            presets = self.microscope.get('presets')
+            self.presetComboBox.addItems(presets)
+            self.presetComboBox_fiducial.addItems(presets)
+        else:
+            self.presetComboBox.setEnabled(False)
+            self.presetComboBox.hide()
+            self.presetComboBox_fiducial.setEnabled(False)
+            self.presetComboBox_fiducial.hide()
         
 
         self.update_displays()
@@ -120,8 +130,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_button.clicked.connect(self.connect_to_microscope)
 
         # Protocol setup
-        self.stage_rotation.editingFinished.connect(self.get_protocol_from_ui)
-        self.stage_tilt.editingFinished.connect(self.get_protocol_from_ui)
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
         self.fiducial_length.editingFinished.connect(self.get_protocol_from_ui)
         self.width_fiducial.editingFinished.connect(self.get_protocol_from_ui)
@@ -453,8 +461,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.protocol_loaded = True
 
         ## Loading protocol tab 
-        self.stage_rotation.setValue((self.microscope_settings.protocol["stage_rotation"]))
-        self.stage_tilt.setValue((self.microscope_settings.protocol["stage_tilt"]))
         self.beamshift_attempts.setValue((self.microscope_settings.protocol["lamella"]["beam_shift_attempts"]))
         self.fiducial_length.setValue((self.microscope_settings.protocol["fiducial"]["length"]*constants.SI_TO_MICRO))
         self.width_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["width"]*constants.SI_TO_MICRO))
@@ -482,8 +488,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.size_ratio.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"]))
 
     def get_protocol_from_ui(self):
-        self.microscope_settings.protocol["stage_rotation"] = float(self.stage_rotation.value())
-        self.microscope_settings.protocol["stage_tilt"] = float(self.stage_tilt.value())
         self.microscope_settings.protocol["lamella"]["beam_shift_attempts"] = float(self.beamshift_attempts.value())
         self.microscope_settings.protocol["fiducial"]["length"] = float(self.fiducial_length.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["width"] = float(self.width_fiducial.value()*constants.MICRO_TO_SI)
@@ -508,7 +512,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
    
     def save_protocol(self):
         tkinter.Tk().withdraw()
-        protocol_path = filedialog.askopenfilename(title="Select protocol file")
+        protocol_path = filedialog.asksaveasfilename(title="Select protocol file")
 
         with open(os.path.join(protocol_path), "w") as f:
             yaml.safe_dump(self.microscope_settings.protocol, f, indent=4)
@@ -690,7 +694,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
 
-            self.mill_fiducial_ui(index)
+            if isinstance(self.microscope, TescanMicroscope):
+                preset = self.presetComboBox.currentText()
+            else:
+                preset = None
+
+            self.mill_fiducial_ui(index, preset)
         self.save_button.setEnabled(False)
         self.save_button.setText("Save current lamella")
         self.save_button.setStyleSheet("color: white")
@@ -741,7 +750,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
 
-    def mill_fiducial_ui(self, index):
+    def mill_fiducial_ui(self, index, preset):
         
         self.experiment = save_lamella(
                 microscope=self.microscope,
@@ -758,6 +767,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_widget.image_settings,
                 lamella=self.experiment.positions[index],
+                preset=preset,
             )
         if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
             self.experiment.save()
@@ -970,6 +980,7 @@ def mill_fiducial(
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
     lamella: Lamella,
+    preset: str,
 ):
     """
     Mill a fiducial
