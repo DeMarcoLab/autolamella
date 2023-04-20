@@ -82,7 +82,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise experiment object
         self.experiment: Experiment = None
         self.protocol_loaded = False
-        
+        self.tabWidget.setTabVisible(3, False)
+        self.tabWidget.setTabVisible(4, False)
+        self.tabWidget_2.setTabVisible(0, False)
+        self.remove_button.setStyleSheet("background-color: transparent")
         self.fiducial_position = None
         self.lamella_position = None
         self.moving_fiducial = False   
@@ -415,6 +418,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.presetComboBox_fiducial.addItems(presets)
             self.application_file_label.hide()
             self.comboBoxapplication_file.hide()
+            self.presetComboBox.setEnabled(True)
+            self.presetComboBox.show()
+            self.presetComboBox_fiducial.setEnabled(True)
+            self.presetComboBox_fiducial.show()
+            self.presetLabel.show()
+            self.presetLabel_2.show()
         elif isinstance(self.microscope, ThermoMicroscope):
             self.presetComboBox.setEnabled(False)
             self.presetComboBox.hide()
@@ -443,9 +452,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.gridlayout_imaging.addWidget(self.image_widget,0,0)
         self.gridlayout_movement.addWidget(self.movement_widget,0,0)
+        self.tabWidget.setTabVisible(3, True)
+        self.tabWidget.setTabVisible(4, True)
+        self.tabWidget_2.setTabVisible(0, True)
         self.system_widget.set_stage_parameters()
         if self.protocol_loaded is False:
             self.load_protocol()
+        self.draw_patterns()
         self.update_displays()
 
 
@@ -454,6 +467,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.gridlayout_movement.removeWidget(self.movement_widget)
         self.image_widget.deleteLater()
         self.movement_widget.deleteLater()
+        self.microscope = None
+        self.microscope_settings = None
+        self.protocol_loaded = False
+        self.tabWidget.setTabVisible(3, False)
+        self.tabWidget.setTabVisible(4, False)
+        self.tabWidget_2.setTabVisible(0, False)
 
     def set_stage_parameters(self):
         self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
@@ -506,7 +525,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.presetComboBox.setCurrentText(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["preset"])
 
     def get_protocol_from_ui(self):
-        self.microscope_settings.protocol["application"] = self.comboBoxapplication_file.currentText()
+        self.microscope_settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
         self.microscope_settings.protocol["lamella"]["beam_shift_attempts"] = float(self.beamshift_attempts.value())
         self.microscope_settings.protocol["fiducial"]["length"] = float(self.fiducial_length.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["width"] = float(self.width_fiducial.value()*constants.MICRO_TO_SI)
@@ -1254,8 +1273,7 @@ def main():
     
     window = UiInterface(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window, area = 'right', add_vertical_stretch=True, name='Autolamella')
-
-
+    widget.setMinimumWidth(350)
     napari.run()
 
 if __name__ == "__main__":

@@ -128,9 +128,9 @@
        </rect>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
-      <widget class="QWidget" name="tab_3">
+      <widget class="QWidget" name="tab_experiment">
        <attribute name="title">
         <string>Experiment</string>
        </attribute>
