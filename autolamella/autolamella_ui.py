@@ -425,6 +425,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.presetLabel.show()
             self.presetLabel_2.show()
         elif isinstance(self.microscope, ThermoMicroscope):
+            self.application_file_label.show()
+            self.comboBoxapplication_file.show()
             self.presetComboBox.setEnabled(False)
             self.presetComboBox.hide()
             self.presetComboBox_fiducial.setEnabled(False)
