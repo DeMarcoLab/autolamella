@@ -287,6 +287,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.timer.stop()
 
         self.experiment = None
+        self.lamella_count_txt.setText("")
+        self.lamella_index.setValue(0)
+        self.lamella_index.setMaximum(0)
 
         tkinter.Tk().withdraw()
         folder_path = filedialog.askdirectory(initialdir = cfg.LOG_PATH, title="Select experiment directory")
@@ -318,11 +321,18 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         logging.info("Experiment created")
 
+
+
     def load_experiment(self):
         if self.microscope is not None:
             self.timer.stop()
 
         self.experiment = None
+        self.lamella_count_txt.setText("")
+        self.lamella_index.setValue(0)
+        self.lamella_index.setMaximum(0)
+
+
         tkinter.Tk().withdraw()
         file_path = filedialog.askopenfilename(title="Select experiment directory")
         self.experiment = Experiment.load(file_path) if file_path != '' else self.experiment
