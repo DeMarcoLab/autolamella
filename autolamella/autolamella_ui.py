@@ -342,18 +342,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.microscope is not None:
             self.timer.start(1000)
             self.experiment_created_and_microscope_connected()
-            string_lamella = ""
-            for lam in self.experiment.positions:
-                self.save_button.setEnabled(True)
-                self.go_to_lamella.setEnabled(True)
-                if lam.state.stage == AutoLamellaStage.FiducialMilled:
-                    self.remill_fiducial.setEnabled(True)
-                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
-            self.lamella_count_txt.setText(
-                string_lamella
-            )
-            self.lamella_index.setMaximum(len(self.experiment.positions))
-            self.lamella_index.setMinimum(1)
+            
         logging.info("Experiment loaded")
 
     ##################################################################
@@ -463,6 +452,20 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.system_widget.set_stage_parameters()
         if self.protocol_loaded is False:
             self.load_protocol()
+
+        if len(self.experiment.positions) > 0:
+            string_lamella = ""
+            for lam in self.experiment.positions:
+                self.save_button.setEnabled(True)
+                self.go_to_lamella.setEnabled(True)
+                if lam.state.stage == AutoLamellaStage.FiducialMilled:
+                    self.remill_fiducial.setEnabled(True)
+                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            self.lamella_count_txt.setText(
+                string_lamella
+            )
+            self.lamella_index.setMaximum(len(self.experiment.positions))
+            self.lamella_index.setMinimum(1)
         self.draw_patterns()
         self.update_displays()
 
@@ -1109,7 +1112,7 @@ def mill_fiducial(
         fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"],
             hfw = image_settings.hfw,
-            application_file=microscope_settings.protocol.get("application_file", None),
+            application_file=microscope_settings.protocol.get("application_file", "N/A"),
         )
        
         milling.setup_milling(microscope, mill_settings=fiducial_milling, preset = protocol.get("preset", None))
@@ -1174,7 +1177,7 @@ def run_autolamella(
                 )
                 mill_settings = FibsemMillingSettings(
                     patterning_mode="Serial",
-                    application_file=microscope_settings.protocol.get("application_file", None),
+                    application_file=microscope_settings.protocol.get("application_file", "N/A"),
                     milling_current=protocol["milling_current"]
                 )
 
@@ -1252,6 +1255,8 @@ def run_autolamella(
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaStage.PolishingCut:
             lamella = lamella.update(stage=AutoLamellaStage.Finished)
+
+    experiment.save()
     
     return experiment
 
