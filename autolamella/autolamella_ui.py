@@ -146,20 +146,27 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_width.editingFinished.connect(self.get_protocol_from_ui)
         
     def lamella_index_changed(self):
-        self.draw_patterns()
 
-        if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.Setup:
-            self.go_to_lamella.setEnabled(False)
-            self.move_fiducial_button.setEnabled(True)
-            self.move_lamella_button.setEnabled(True)
-            self.remill_fiducial.setEnabled(False)
-            self.save_button.setEnabled(True)
+        if self.lamella_index.value() > 0:
+
+            self.draw_patterns()
+
+            if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.Setup:
+                self.go_to_lamella.setEnabled(False)
+                self.move_fiducial_button.setEnabled(True)
+                self.move_lamella_button.setEnabled(True)
+                self.remill_fiducial.setEnabled(False)
+                self.save_button.setEnabled(True)
+            else:
+                self.go_to_lamella.setEnabled(True)
+                self.move_fiducial_button.setEnabled(False)
+                self.move_lamella_button.setEnabled(False)
+                self.remill_fiducial.setEnabled(True)
+                self.save_button.setEnabled(False)
+        
         else:
-            self.go_to_lamella.setEnabled(True)
-            self.move_fiducial_button.setEnabled(False)
-            self.move_lamella_button.setEnabled(False)
-            self.remill_fiducial.setEnabled(True)
-            self.save_button.setEnabled(False)
+
+            return
 
 
     def draw_patterns(self):
@@ -723,16 +730,17 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.lamella_count_txt.setText(new_text)
 
-        if len(self.experiment.positions) > 0:
-            self.remove_button.setEnabled(True)
-            self.remove_button.setText("Remove Lamella")
-            self.remove_button.setStyleSheet("color: white")
-        else:
-            self.remove_button.setEnabled(False)
-
         self.experiment = remove_lamella(self.experiment, self.lamella_index.value()-1)
         self.lamella_index.setMaximum(len(self.experiment.positions))
-        # self.lamella_index.setMinimum(1)
+
+        self.remove_button.setText("Remove Lamella")
+        self.remove_button.setStyleSheet("color: white")
+
+        self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
+
+            
+  
+
 
 
         
@@ -1004,7 +1012,7 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
 def remove_lamella(experiment: Experiment, index: int):
     experiment.positions.pop(index)
     return experiment
-    pass
+
 
 def save_lamella(
     microscope: FibsemMicroscope,
@@ -1281,6 +1289,7 @@ def main():
     
     window = UiInterface(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window, area = 'right', add_vertical_stretch=True, name='Autolamella')
+    widget.setMinimumWidth(400)
 
 
     napari.run()
