@@ -19,7 +19,7 @@ import numpy as np
 import yaml
 from fibsem import acquire, utils
 from fibsem.alignment import beam_shift_alignment
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemImage,
@@ -415,7 +415,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.presetComboBox_fiducial.addItems(presets)
             self.application_file_label.hide()
             self.comboBoxapplication_file.hide()
-        else:
+        elif isinstance(self.microscope, ThermoMicroscope):
             self.presetComboBox.setEnabled(False)
             self.presetComboBox.hide()
             self.presetComboBox_fiducial.setEnabled(False)
