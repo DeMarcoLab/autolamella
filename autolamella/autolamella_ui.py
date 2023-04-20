@@ -271,7 +271,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.update_displays()
 
     def create_experiment(self):
-        self.timer.stop()
+        if self.experiment is not None:
+            self.timer.stop()
 
         tkinter.Tk().withdraw()
         folder_path = filedialog.askdirectory(initialdir = cfg.LOG_PATH, title="Select experiment directory")
@@ -294,11 +295,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.log_path = os.path.join(self.save_path, self.experiment_name, "logfile.log")
 
         self.lines = 0
-        self.timer.start(1000)
+    
+        self.protocol_txt.setText("Experiment created")
 
         self.add_button.setEnabled(True)
 
         if self.microscope is not None:
+            self.timer.start(1000)
             self.image_widget = FibsemImageSettingsWidget(
                 microscope=self.microscope,
                 image_settings=self.microscope_settings.image,
@@ -323,7 +326,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         logging.info("Experiment created")
 
     def load_experiment(self):
-        self.timer.stop()
+        if self.microscope is not None:
+            self.timer.stop()
         tkinter.Tk().withdraw()
         file_path = filedialog.askopenfilename(title="Select experiment directory")
         self.experiment = Experiment.load(file_path) if file_path != '' else self.experiment
@@ -335,10 +339,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.log_path = os.path.join(folder_path, "logfile.log")
         self.save_path = folder_path
 
-        
+        self.protocol_txt.setText("Experiment loaded")
 
         self.lines = 0
-        self.timer.start(1000)
+        
 
         self.add_button.setEnabled(True)
         
@@ -348,6 +352,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
         if self.microscope is not None:
+            self.timer.start(1000)
             self.image_widget = FibsemImageSettingsWidget(
                 microscope=self.microscope,
                 image_settings=self.microscope_settings.image,
@@ -453,18 +458,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.system_widget.set_stage_parameters()
             if self.protocol_loaded is False:
                 self.load_protocol()
-            string_lamella = ""
-            for lam in self.experiment.positions:
-                self.save_button.setEnabled(True)
-                self.go_to_lamella.setEnabled(True)
-                if lam.state.stage == AutoLamellaStage.FiducialMilled:
-                    self.remill_fiducial.setEnabled(True)
-                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
-            self.lamella_count_txt.setText(
-                string_lamella
-            )
-            self.lamella_index.setMaximum(len(self.experiment.positions))
-            self.lamella_index.setMinimum(1)
             self.update_displays()
 
         self.timer = QTimer()
