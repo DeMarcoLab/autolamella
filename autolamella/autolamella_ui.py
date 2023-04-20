@@ -497,6 +497,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def set_ui_from_protocol(self):
 
+        self.protocol_txt.setText(self.microscope_settings.protocol["name"])
         self.protocol_loaded = True
 
         ## Loading protocol tab 
@@ -991,7 +992,6 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
 
 def remove_lamella(experiment: Experiment, index: int):
     experiment.positions.pop(index)
-    experiment.save()
     return experiment
 
 
