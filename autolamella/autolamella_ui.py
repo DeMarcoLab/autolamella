@@ -478,6 +478,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.tabWidget.setTabVisible(4, False)
         self.tabWidget.setTabVisible(5, False)
         self.tabWidget.setTabVisible(0, False)
+        self.show_lamella.setEnabled(False)
+        self.show_lamella.setChecked(False)
 
     def set_stage_parameters(self):
         self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
@@ -721,7 +723,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setText(
             string_lamella
         )
-
+        self.experiment.save()
         self.remove_button.setText("Remove Lamella")
         self.remove_button.setStyleSheet("color: white")
 
@@ -1107,10 +1109,10 @@ def mill_fiducial(
         fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"],
             hfw = image_settings.hfw,
-            application_file=microscope_settings.protocol["application_file"],
+            application_file=microscope_settings.protocol.get("application_file", None),
         )
-
-        milling.setup_milling(microscope, mill_settings=fiducial_milling, preset = protocol["preset"])
+       
+        milling.setup_milling(microscope, mill_settings=fiducial_milling, preset = protocol.get("preset", None))
         milling.draw_fiducial(
             microscope,
             fiducial_pattern,
@@ -1131,10 +1133,12 @@ def mill_fiducial(
 
         logging.info("Fiducial milled successfully")
 
-        return lamella
-
     except Exception as e:
         logging.error(f"Unable to draw/mill the fiducial: {traceback.format_exc()}")
+
+    finally:
+        return lamella
+
 
 
 def run_autolamella(
@@ -1170,7 +1174,7 @@ def run_autolamella(
                 )
                 mill_settings = FibsemMillingSettings(
                     patterning_mode="Serial",
-                    application_file=microscope_settings.protocol["application_file"],
+                    application_file=microscope_settings.protocol.get("application_file", None),
                     milling_current=protocol["milling_current"]
                 )
 
@@ -1192,7 +1196,7 @@ def run_autolamella(
                     milling.setup_milling(
                         microscope,
                         mill_settings=mill_settings,
-                        preset = protocol["preset"],
+                        preset = protocol.get("preset", None),
                     )
                     milling.draw_trench(
                         microscope=microscope,
