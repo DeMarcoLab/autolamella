@@ -33,6 +33,7 @@ from fibsem.structures import (
 from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui, convert_point_to_napari
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
+from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QTextCursor
@@ -74,7 +75,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise microscope object
         self.microscope = None
         self.microscope_settings = None
-        self.connect_to_microscope()
+        #self.connect_to_microscope()
 
         self.viewer.grid.enabled = False
 
@@ -84,24 +85,19 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.fiducial_position = None
         self.lamella_position = None
-        self.moving_fiducial = False
-
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_log)
-        self.timer.start(1000)
-
-        if isinstance(self.microscope, TescanMicroscope):
-            presets = self.microscope.get('presets')
-            self.presetComboBox.addItems(presets)
-            self.presetComboBox_fiducial.addItems(presets)
-        else:
-            self.presetComboBox.setEnabled(False)
-            self.presetComboBox.hide()
-            self.presetComboBox_fiducial.setEnabled(False)
-            self.presetComboBox_fiducial.hide()
+        self.moving_fiducial = False   
+        CONFIG_PATH = os.path.join(os.path.dirname(__file__))
+        self.system_widget = FibsemSystemSetupWidget(
+                microscope=self.microscope,
+                settings=self.microscope_settings,
+                viewer=self.viewer,
+                config_path = CONFIG_PATH,
+            )
         
-
-        self.update_displays()
+        self.gridLayout_system.addWidget(self.system_widget)
+        self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
+        self.system_widget.connected_signal.connect(self.connect_to_microscope)
+        self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
 
     def setup_connections(self):
         
@@ -127,7 +123,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.valueChanged.connect(self.lamella_index_changed)
-        self.microscope_button.clicked.connect(self.connect_to_microscope)
 
         # Protocol setup
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
@@ -293,9 +288,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             return
         
         self.experiment_name = name
-        if self.protocol_loaded is False:
-            self.load_protocol()
-
         self.experiment = Experiment(path=self.save_path, name=self.experiment_name)
         self.log_path = os.path.join(self.save_path, self.experiment_name, "logfile.log")
 
@@ -303,6 +295,28 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer.start(1000)
 
         self.add_button.setEnabled(True)
+
+        if self.microscope is not None:
+            self.image_widget = FibsemImageSettingsWidget(
+                microscope=self.microscope,
+                image_settings=self.microscope_settings.image,
+                viewer=self.viewer,
+            )
+            self.movement_widget = FibsemMovementWidget(
+                microscope=self.microscope,
+                settings=self.microscope_settings,
+                viewer=self.viewer,
+                image_widget=self.image_widget,
+            )
+            
+            self.image_widget.picture_signal.connect(self.draw_patterns)
+            
+            self.gridlayout_imaging.addWidget(self.image_widget,0,0)
+            self.gridlayout_movement.addWidget(self.movement_widget,0,0)
+            self.system_widget.set_stage_parameters()
+            if self.protocol_loaded is False:
+                self.load_protocol()
+            self.update_displays()
         
         logging.info("Experiment created")
 
@@ -319,20 +333,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.log_path = os.path.join(folder_path, "logfile.log")
         self.save_path = folder_path
 
-        if self.protocol_loaded is False:
-            self.load_protocol()
-        string_lamella = ""
-        for lam in self.experiment.positions:
-            self.save_button.setEnabled(True)
-            self.go_to_lamella.setEnabled(True)
-            if lam.state.stage == AutoLamellaStage.FiducialMilled:
-                self.remill_fiducial.setEnabled(True)
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
-        self.lamella_count_txt.setText(
-            string_lamella
-        )
-        self.lamella_index.setMaximum(len(self.experiment.positions))
-        self.lamella_index.setMinimum(1)
+        
 
         self.lines = 0
         self.timer.start(1000)
@@ -344,7 +345,39 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="Please take images with both beams before proceeding further.",
                 buttons=QMessageBox.Ok,
             )
-
+        if self.microscope is not None:
+            self.image_widget = FibsemImageSettingsWidget(
+                microscope=self.microscope,
+                image_settings=self.microscope_settings.image,
+                viewer=self.viewer,
+            )
+            self.movement_widget = FibsemMovementWidget(
+                microscope=self.microscope,
+                settings=self.microscope_settings,
+                viewer=self.viewer,
+                image_widget=self.image_widget,
+            )
+            
+            self.image_widget.picture_signal.connect(self.draw_patterns)
+            
+            self.gridlayout_imaging.addWidget(self.image_widget,0,0)
+            self.gridlayout_movement.addWidget(self.movement_widget,0,0)
+            self.system_widget.set_stage_parameters()
+            self.update_displays()
+            if self.protocol_loaded is False:
+                self.load_protocol()
+            string_lamella = ""
+            for lam in self.experiment.positions:
+                self.save_button.setEnabled(True)
+                self.go_to_lamella.setEnabled(True)
+                if lam.state.stage == AutoLamellaStage.FiducialMilled:
+                    self.remill_fiducial.setEnabled(True)
+                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            self.lamella_count_txt.setText(
+                string_lamella
+            )
+            self.lamella_index.setMaximum(len(self.experiment.positions))
+            self.lamella_index.setMinimum(1)
         logging.info("Experiment loaded")
 
     ##################################################################
@@ -384,29 +417,21 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             pass
 
     def connect_to_microscope(self):
-        self.CONFIG_PATH = os.path.join(os.path.dirname(__file__))
 
-        try:
-            self.microscope, self.microscope_settings = utils.setup_session(
-                config_path=self.CONFIG_PATH
-            )
-            self.log_path = os.path.join(
-                self.microscope_settings.image.save_path, "logfile.log"
-            )
-            self.image_settings = self.microscope_settings.image
-            self.milling_settings = self.microscope_settings.milling
-            logging.info("Microscope Connected")
-            self.microscope_status.setText("Microscope Connected")
-            self.microscope_status.setStyleSheet("background-color: green")
-            self.microscope_button.clicked.disconnect()
-            self.microscope_button.clicked.connect(self.disconnect_from_microscope)
-            self.microscope_button.setText("Disconnect")
-            self.lines = 0
-            
-            direction_list = self.microscope.get_scan_directions()
-            for i in range(len(direction_list)-1):
-                self.scanDirectionComboBox.addItem(direction_list[i-1])
+        self.microscope = self.system_widget.microscope
+        self.microscope_settings = self.system_widget.settings
+        self.log_path = os.path.join(
+            self.microscope_settings.image.save_path, "logfile.log"
+        )
+        self.image_settings = self.microscope_settings.image
+        self.milling_settings = self.microscope_settings.milling
+        self.lines = 0
+        
+        direction_list = self.microscope.get_scan_directions()
+        for i in range(len(direction_list)-1):
+            self.scanDirectionComboBox.addItem(direction_list[i-1])
 
+        if self.experiment is not None:
             self.image_widget = FibsemImageSettingsWidget(
                 microscope=self.microscope,
                 image_settings=self.microscope_settings.image,
@@ -418,30 +443,55 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 viewer=self.viewer,
                 image_widget=self.image_widget,
             )
+            
             self.image_widget.picture_signal.connect(self.draw_patterns)
+            
             self.gridlayout_imaging.addWidget(self.image_widget,0,0)
             self.gridlayout_movement.addWidget(self.movement_widget,0,0)
+            self.system_widget.set_stage_parameters()
+            if self.protocol_loaded is False:
+                self.load_protocol()
+            string_lamella = ""
+            for lam in self.experiment.positions:
+                self.save_button.setEnabled(True)
+                self.go_to_lamella.setEnabled(True)
+                if lam.state.stage == AutoLamellaStage.FiducialMilled:
+                    self.remill_fiducial.setEnabled(True)
+                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            self.lamella_count_txt.setText(
+                string_lamella
+            )
+            self.lamella_index.setMaximum(len(self.experiment.positions))
+            self.lamella_index.setMinimum(1)
+            self.update_displays()
 
-        except Exception as e:
-            logging.error(f"Unable to connect to the microscope: {traceback.format_exc()}")
-            self.microscope_status.setText("Microscope Disconnected")
-            self.microscope_status.setStyleSheet("background-color: red")
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_log)
+        self.timer.start(1000)
+   
+
+        if isinstance(self.microscope, TescanMicroscope):
+            presets = self.microscope.get('presets')
+            self.presetComboBox.addItems(presets)
+            self.presetComboBox_fiducial.addItems(presets)
+        else:
+            self.presetComboBox.setEnabled(False)
+            self.presetComboBox.hide()
+            self.presetComboBox_fiducial.setEnabled(False)
+            self.presetComboBox_fiducial.hide()
+
+
+
 
     def disconnect_from_microscope(self):
-        self.microscope.disconnect()
-        self.microscope = None
-        self.microscope_settings = None
-        # self.RefImage.setEnabled(False)
-        logging.info("Microscope Disconnected")
-        self.microscope_status.setText("Microscope Disconnected")
-        self.microscope_status.setStyleSheet("background-color: red")
-        self.microscope_button.clicked.disconnect()
-        self.microscope_button.clicked.connect(self.connect_to_microscope)
-        self.microscope_button.setText("Connect")
         self.gridlayout_imaging.removeWidget(self.image_widget)
         self.gridlayout_movement.removeWidget(self.movement_widget)
         self.image_widget.deleteLater()
         self.movement_widget.deleteLater()
+
+    def set_stage_parameters(self):
+        self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
+        logging.info("Stage parameters set")  
 
     def load_protocol(self): 
         tkinter.Tk().withdraw()
