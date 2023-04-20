@@ -107,6 +107,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
         self.add_button.clicked.connect(self.add_lamella_ui)
         self.add_button.setEnabled(False)
+        self.remove_button.clicked.connect(self.remove_lamella_ui)
+        self.remove_button.setEnabled(False)
         self.run_button.clicked.connect(self.run_autolamella_ui)
         self.platinum.triggered.connect(self.splutter_platinum)
         self.create_exp.triggered.connect(self.create_experiment)
@@ -638,7 +640,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.image_widget.eb_image == None or self.image_widget.ib_image == None:
             _ = message_box_ui(
                 title="No image has been taken.",
-                text="Before adding a lamella please take atleast one image for each beam.",
+                text="Before adding a lamella please take at least one image for each beam.",
                 buttons=QMessageBox.Ok,
             )
             self.add_button.setEnabled(True)
@@ -679,6 +681,65 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.add_button.setText("Add Lamella")
         self.add_button.setStyleSheet("color: white")
         self.save_button.setEnabled(True)
+        self.remove_button.setEnabled(True)
+        self.remove_button.setStyleSheet("color: white")
+
+    def remove_lamella_ui(self):
+        
+        # check experiemnt has been loaded/created
+        self.remove_button.setEnabled(False)
+        self.remove_button.setText("Running...")
+        self.remove_button.setStyleSheet("color: orange")
+        if self.experiment == None:
+            _ = message_box_ui(
+                title="No experiemnt.",
+                text="Before adding/removing a lamella please create or load an experiment.",
+                buttons=QMessageBox.Ok,
+            )
+            self.remove_button.setEnabled(True)
+            self.remove_button.setText("Remove Lamella")
+            self.remove_button.setStyleSheet("color: white")
+            return
+        # Check to see if an image has been taken first
+        if self.image_widget.eb_image == None or self.image_widget.ib_image == None:
+            _ = message_box_ui(
+                title="No image has been taken.",
+                text="Before adding/removing a lamella please take at least one image for each beam.",
+                buttons=QMessageBox.Ok,
+            )
+            self.remove_button.setEnabled(True)
+            self.remove_button.setText("Remove Lamella")
+            self.remove_button.setStyleSheet("color: white")
+            return
+
+        lamella_list = self.lamella_count_txt.text().split("\n")
+
+        lamella_list.pop(self.lamella_index.value()-1)
+        new_text = ""
+
+        for lam_name in lamella_list:
+
+            new_text += lam_name + '\n'
+
+        self.lamella_count_txt.setText(new_text)
+
+        if len(self.experiment.positions) > 0:
+            self.remove_button.setEnabled(True)
+            self.remove_button.setText("Remove Lamella")
+            self.remove_button.setStyleSheet("color: white")
+        else:
+            self.remove_button.setEnabled(False)
+
+        self.experiment = remove_lamella(self.experiment, self.lamella_index.value()-1)
+        self.lamella_index.setMaximum(len(self.experiment.positions))
+        # self.lamella_index.setMinimum(1)
+
+
+        
+
+        # self.save_button.setEnabled(True)
+
+        
 
     def save_lamella_ui(self):
         self.save_button.setEnabled(False)
@@ -939,6 +1000,11 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
 
     return experiment
 
+
+def remove_lamella(experiment: Experiment, index: int):
+    experiment.positions.pop(index)
+    return experiment
+    pass
 
 def save_lamella(
     microscope: FibsemMicroscope,
