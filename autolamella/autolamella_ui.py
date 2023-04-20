@@ -19,7 +19,7 @@ import numpy as np
 import yaml
 from fibsem import acquire, utils
 from fibsem.alignment import beam_shift_alignment
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemImage,
@@ -82,7 +82,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise experiment object
         self.experiment: Experiment = None
         self.protocol_loaded = False
-        
+        self.tabWidget.setTabVisible(3, False)
+        self.tabWidget.setTabVisible(4, False)
+        self.tabWidget_2.setTabVisible(0, False)
+        self.remove_button.setStyleSheet("background-color: transparent")
         self.fiducial_position = None
         self.lamella_position = None
         self.moving_fiducial = False   
@@ -144,6 +147,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_distance.editingFinished.connect(self.get_protocol_from_ui)
         self.micro_exp_height.editingFinished.connect(self.get_protocol_from_ui)
         self.micro_exp_width.editingFinished.connect(self.get_protocol_from_ui)
+        self.comboBoxapplication_file.currentTextChanged.connect(self.get_protocol_from_ui)
         
     def lamella_index_changed(self):
 
@@ -309,26 +313,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if self.microscope is not None:
             self.timer.start(1000)
-            self.image_widget = FibsemImageSettingsWidget(
-                microscope=self.microscope,
-                image_settings=self.microscope_settings.image,
-                viewer=self.viewer,
-            )
-            self.movement_widget = FibsemMovementWidget(
-                microscope=self.microscope,
-                settings=self.microscope_settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
-            
-            self.image_widget.picture_signal.connect(self.draw_patterns)
-            
-            self.gridlayout_imaging.addWidget(self.image_widget,0,0)
-            self.gridlayout_movement.addWidget(self.movement_widget,0,0)
-            self.system_widget.set_stage_parameters()
-            if self.protocol_loaded is False:
-                self.load_protocol()
-            self.update_displays()
+            self.experiment_created_and_microscope_connected()
         
         logging.info("Experiment created")
 
@@ -360,26 +345,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
         if self.microscope is not None:
             self.timer.start(1000)
-            self.image_widget = FibsemImageSettingsWidget(
-                microscope=self.microscope,
-                image_settings=self.microscope_settings.image,
-                viewer=self.viewer,
-            )
-            self.movement_widget = FibsemMovementWidget(
-                microscope=self.microscope,
-                settings=self.microscope_settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
-            
-            self.image_widget.picture_signal.connect(self.draw_patterns)
-            
-            self.gridlayout_imaging.addWidget(self.image_widget,0,0)
-            self.gridlayout_movement.addWidget(self.movement_widget,0,0)
-            self.system_widget.set_stage_parameters()
-            self.update_displays()
-            if self.protocol_loaded is False:
-                self.load_protocol()
+            self.experiment_created_and_microscope_connected()
             string_lamella = ""
             for lam in self.experiment.positions:
                 self.save_button.setEnabled(True)
@@ -446,26 +412,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.scanDirectionComboBox.addItem(direction_list[i-1])
 
         if self.experiment is not None:
-            self.image_widget = FibsemImageSettingsWidget(
-                microscope=self.microscope,
-                image_settings=self.microscope_settings.image,
-                viewer=self.viewer,
-            )
-            self.movement_widget = FibsemMovementWidget(
-                microscope=self.microscope,
-                settings=self.microscope_settings,
-                viewer=self.viewer,
-                image_widget=self.image_widget,
-            )
-            
-            self.image_widget.picture_signal.connect(self.draw_patterns)
-            
-            self.gridlayout_imaging.addWidget(self.image_widget,0,0)
-            self.gridlayout_movement.addWidget(self.movement_widget,0,0)
-            self.system_widget.set_stage_parameters()
-            if self.protocol_loaded is False:
-                self.load_protocol()
-            self.update_displays()
+            self.experiment_created_and_microscope_connected()
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_log)
@@ -476,13 +423,50 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             presets = self.microscope.get('presets')
             self.presetComboBox.addItems(presets)
             self.presetComboBox_fiducial.addItems(presets)
-        else:
+            self.application_file_label.hide()
+            self.comboBoxapplication_file.hide()
+            self.presetComboBox.setEnabled(True)
+            self.presetComboBox.show()
+            self.presetComboBox_fiducial.setEnabled(True)
+            self.presetComboBox_fiducial.show()
+            self.presetLabel.show()
+            self.presetLabel_2.show()
+        elif isinstance(self.microscope, ThermoMicroscope):
             self.presetComboBox.setEnabled(False)
             self.presetComboBox.hide()
             self.presetComboBox_fiducial.setEnabled(False)
             self.presetComboBox_fiducial.hide()
+            self.presetLabel.hide()
+            self.presetLabel_2.hide()
+            application_files = self.microscope.get_available_values('application_files')
+            self.comboBoxapplication_file.addItems(application_files)
 
 
+    def experiment_created_and_microscope_connected(self):
+        self.image_widget = FibsemImageSettingsWidget(
+                microscope=self.microscope,
+                image_settings=self.microscope_settings.image,
+                viewer=self.viewer,
+            )
+        self.movement_widget = FibsemMovementWidget(
+            microscope=self.microscope,
+            settings=self.microscope_settings,
+            viewer=self.viewer,
+            image_widget=self.image_widget,
+        )
+        
+        self.image_widget.picture_signal.connect(self.draw_patterns)
+        
+        self.gridlayout_imaging.addWidget(self.image_widget,0,0)
+        self.gridlayout_movement.addWidget(self.movement_widget,0,0)
+        self.tabWidget.setTabVisible(3, True)
+        self.tabWidget.setTabVisible(4, True)
+        self.tabWidget_2.setTabVisible(0, True)
+        self.system_widget.set_stage_parameters()
+        if self.protocol_loaded is False:
+            self.load_protocol()
+        self.draw_patterns()
+        self.update_displays()
 
 
     def disconnect_from_microscope(self):
@@ -490,6 +474,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.gridlayout_movement.removeWidget(self.movement_widget)
         self.image_widget.deleteLater()
         self.movement_widget.deleteLater()
+        self.microscope = None
+        self.microscope_settings = None
+        self.protocol_loaded = False
+        self.tabWidget.setTabVisible(3, False)
+        self.tabWidget.setTabVisible(4, False)
+        self.tabWidget_2.setTabVisible(0, False)
 
     def set_stage_parameters(self):
         self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
@@ -542,6 +532,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.presetComboBox.setCurrentText(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["preset"])
 
     def get_protocol_from_ui(self):
+        self.microscope_settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
         self.microscope_settings.protocol["lamella"]["beam_shift_attempts"] = float(self.beamshift_attempts.value())
         self.microscope_settings.protocol["fiducial"]["length"] = float(self.fiducial_length.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["width"] = float(self.width_fiducial.value()*constants.MICRO_TO_SI)
@@ -1126,6 +1117,7 @@ def mill_fiducial(
         fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"],
             hfw = image_settings.hfw,
+            application_file=microscope_settings.protocol["application_file"],
         )
 
         milling.setup_milling(microscope, mill_settings=fiducial_milling, preset = protocol["preset"])
@@ -1188,7 +1180,7 @@ def run_autolamella(
                 )
                 mill_settings = FibsemMillingSettings(
                     patterning_mode="Serial",
-                    application_file="autolamella",
+                    application_file=microscope_settings.protocol["application_file"],
                     milling_current=protocol["milling_current"]
                 )
 
@@ -1290,7 +1282,6 @@ def main():
     window = UiInterface(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window, area = 'right', add_vertical_stretch=True, name='Autolamella')
     widget.setMinimumWidth(400)
-
 
     napari.run()
 
