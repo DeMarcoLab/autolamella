@@ -481,7 +481,7 @@
         <x>0</x>
         <y>-10</y>
         <width>431</width>
-        <height>611</height>
+        <height>621</height>
        </rect>
       </property>
       <layout class="QFormLayout" name="formLayout">
@@ -492,27 +492,27 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="beamShiftAttemptsLabel">
          <property name="text">
           <string>Beam shift attempts</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="2" column="1">
         <widget class="QDoubleSpinBox" name="beamshift_attempts"/>
        </item>
-       <item row="2" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="scanDirectionLabel">
          <property name="text">
           <string>Scan Direction</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="3" column="1">
         <widget class="QComboBox" name="scanDirectionComboBox"/>
        </item>
-       <item row="3" column="0" colspan="2">
+       <item row="4" column="0" colspan="2">
         <widget class="QLabel" name="label_5">
          <property name="font">
           <font>
@@ -525,73 +525,73 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="lengthLabel">
          <property name="text">
           <string>Length (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="5" column="1">
         <widget class="QDoubleSpinBox" name="fiducial_length">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="widthLabel">
          <property name="text">
           <string>Width (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="6" column="1">
         <widget class="QDoubleSpinBox" name="width_fiducial">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="depthLabel">
          <property name="text">
           <string>Depth (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="7" column="1">
         <widget class="QDoubleSpinBox" name="depth_fiducial">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="8" column="0">
         <widget class="QLabel" name="millingCurrentLabel">
          <property name="text">
           <string>Milling current (nA)</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="8" column="1">
         <widget class="QDoubleSpinBox" name="current_fiducial">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="8" column="0">
+       <item row="9" column="0">
         <widget class="QLabel" name="presetLabel_2">
          <property name="text">
           <string>Preset</string>
          </property>
         </widget>
        </item>
-       <item row="8" column="1">
+       <item row="9" column="1">
         <widget class="QComboBox" name="presetComboBox_fiducial"/>
        </item>
-       <item row="9" column="0" colspan="2">
+       <item row="10" column="0" colspan="2">
         <widget class="QLabel" name="label_9">
          <property name="font">
           <font>
@@ -604,14 +604,14 @@
          </property>
         </widget>
        </item>
-       <item row="10" column="0">
+       <item row="11" column="0">
         <widget class="QLabel" name="stageLabel">
          <property name="text">
           <string>Stage</string>
          </property>
         </widget>
        </item>
-       <item row="10" column="1">
+       <item row="11" column="1">
         <widget class="QComboBox" name="stage_lamella">
          <item>
           <property name="text">
@@ -630,107 +630,107 @@
          </item>
         </widget>
        </item>
-       <item row="11" column="0">
+       <item row="12" column="0">
         <widget class="QLabel" name="widthLabel_2">
          <property name="text">
           <string>Lamella width (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="11" column="1">
+       <item row="12" column="1">
         <widget class="QDoubleSpinBox" name="lamella_width">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="12" column="0">
+       <item row="13" column="0">
         <widget class="QLabel" name="heightLabel">
          <property name="text">
           <string>Lamella height (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="12" column="1">
+       <item row="13" column="1">
         <widget class="QDoubleSpinBox" name="lamella_height">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="13" column="0">
+       <item row="14" column="0">
         <widget class="QLabel" name="trenchHeightLabel">
          <property name="text">
           <string>Trench height (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="13" column="1">
+       <item row="14" column="1">
         <widget class="QDoubleSpinBox" name="trench_height">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="14" column="0">
+       <item row="15" column="0">
         <widget class="QLabel" name="millingDepthLabel">
          <property name="text">
           <string>Milling depth (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="14" column="1">
+       <item row="15" column="1">
         <widget class="QDoubleSpinBox" name="depth_trench">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="15" column="0">
+       <item row="16" column="0">
         <widget class="QLabel" name="offsetLabel">
          <property name="text">
           <string>Offset (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="15" column="1">
+       <item row="16" column="1">
         <widget class="QDoubleSpinBox" name="offset"/>
        </item>
-       <item row="16" column="0">
+       <item row="17" column="0">
         <widget class="QLabel" name="sizeRatioLabel">
          <property name="text">
           <string>Size ratio</string>
          </property>
         </widget>
        </item>
-       <item row="16" column="1">
+       <item row="17" column="1">
         <widget class="QDoubleSpinBox" name="size_ratio"/>
        </item>
-       <item row="17" column="0">
+       <item row="18" column="0">
         <widget class="QLabel" name="millingCurrentLabel_2">
          <property name="text">
           <string>Milling current (nA)</string>
          </property>
         </widget>
        </item>
-       <item row="17" column="1">
+       <item row="18" column="1">
         <widget class="QDoubleSpinBox" name="current_lamella">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="18" column="0">
+       <item row="19" column="0">
         <widget class="QLabel" name="presetLabel">
          <property name="text">
           <string>Preset</string>
          </property>
         </widget>
        </item>
-       <item row="18" column="1">
+       <item row="19" column="1">
         <widget class="QComboBox" name="presetComboBox"/>
        </item>
-       <item row="19" column="0" colspan="2">
+       <item row="20" column="0" colspan="2">
         <widget class="QLabel" name="label_10">
          <property name="font">
           <font>
@@ -743,54 +743,64 @@
          </property>
         </widget>
        </item>
-       <item row="20" column="0">
+       <item row="21" column="0">
         <widget class="QLabel" name="widthLabel_3">
          <property name="text">
           <string>Width (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="20" column="1">
+       <item row="21" column="1">
         <widget class="QDoubleSpinBox" name="micro_exp_width">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="21" column="0">
+       <item row="22" column="0">
         <widget class="QLabel" name="heightLabel_2">
          <property name="text">
           <string>Height (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="21" column="1">
+       <item row="22" column="1">
         <widget class="QDoubleSpinBox" name="micro_exp_height">
          <property name="maximum">
           <double>1000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="22" column="0">
+       <item row="23" column="0">
         <widget class="QLabel" name="distanceLabel">
          <property name="text">
           <string>Distance (µm)</string>
          </property>
         </widget>
        </item>
-       <item row="22" column="1">
+       <item row="23" column="1">
         <widget class="QDoubleSpinBox" name="micro_exp_distance">
          <property name="maximum">
           <double>10000.000000000000000</double>
          </property>
         </widget>
        </item>
-       <item row="23" column="1">
+       <item row="24" column="1">
         <widget class="QPushButton" name="export_protocol">
          <property name="text">
           <string>Save protocol to file</string>
          </property>
         </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="application_file_label">
+         <property name="text">
+          <string>Application file</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="comboBoxapplication_file"/>
        </item>
       </layout>
      </widget>
