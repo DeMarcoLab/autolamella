@@ -991,6 +991,7 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
 
 def remove_lamella(experiment: Experiment, index: int):
     experiment.positions.pop(index)
+    experiment.save()
     return experiment
 
 
