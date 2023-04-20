@@ -82,9 +82,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise experiment object
         self.experiment: Experiment = None
         self.protocol_loaded = False
-        self.tabWidget.setTabVisible(3, False)
         self.tabWidget.setTabVisible(4, False)
-        self.tabWidget_2.setTabVisible(0, False)
+        self.tabWidget.setTabVisible(5, False)
+        self.tabWidget.setTabVisible(0, False)
         self.remove_button.setStyleSheet("background-color: transparent")
         self.fiducial_position = None
         self.lamella_position = None
@@ -307,8 +307,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.lines = 0
     
-        self.protocol_txt.setText("Experiment created")
-
         self.add_button.setEnabled(True)
 
         if self.microscope is not None:
@@ -330,8 +328,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         folder_path = os.path.dirname(file_path)
         self.log_path = os.path.join(folder_path, "logfile.log")
         self.save_path = folder_path
-
-        self.protocol_txt.setText("Experiment loaded")
 
         self.lines = 0
         
@@ -461,9 +457,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.gridlayout_imaging.addWidget(self.image_widget,0,0)
         self.gridlayout_movement.addWidget(self.movement_widget,0,0)
-        self.tabWidget.setTabVisible(3, True)
         self.tabWidget.setTabVisible(4, True)
-        self.tabWidget_2.setTabVisible(0, True)
+        self.tabWidget.setTabVisible(5, True)
+        self.tabWidget.setTabVisible(0, True)
         self.system_widget.set_stage_parameters()
         if self.protocol_loaded is False:
             self.load_protocol()
@@ -479,9 +475,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope = None
         self.microscope_settings = None
         self.protocol_loaded = False
-        self.tabWidget.setTabVisible(3, False)
         self.tabWidget.setTabVisible(4, False)
-        self.tabWidget_2.setTabVisible(0, False)
+        self.tabWidget.setTabVisible(5, False)
+        self.tabWidget.setTabVisible(0, False)
 
     def set_stage_parameters(self):
         self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
@@ -501,7 +497,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def set_ui_from_protocol(self):
 
-        self.protocol_txt.setText(self.microscope_settings.protocol["name"])
         self.protocol_loaded = True
 
         ## Loading protocol tab 
@@ -712,32 +707,24 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.remove_button.setStyleSheet("color: white")
             return
 
-        lamella_list = self.lamella_count_txt.text().split("\n")
-
-        lamella_list.pop(self.lamella_index.value()-1)
-        new_text = ""
-
-        for lam_name in lamella_list:
-
-            new_text += lam_name + '\n'
-
-        self.lamella_count_txt.setText(new_text)
+        
 
         self.experiment = remove_lamella(self.experiment, self.lamella_index.value()-1)
         self.lamella_index.setMaximum(len(self.experiment.positions))
+
+        string_lamella = ""
+        for i, lam in enumerate(self.experiment.positions):
+            lam.lamella_number = i + 1
+            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+
+        self.lamella_count_txt.setText(
+            string_lamella
+        )
 
         self.remove_button.setText("Remove Lamella")
         self.remove_button.setStyleSheet("color: white")
 
         self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
-
-            
-  
-
-
-
-        
-
         # self.save_button.setEnabled(True)
 
         

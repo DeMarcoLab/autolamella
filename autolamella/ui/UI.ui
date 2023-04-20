@@ -64,34 +64,27 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>441</width>
+      <width>471</width>
       <height>641</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
-      <string>General</string>
+      <string>Experiment</string>
      </attribute>
      <widget class="QWidget" name="gridLayoutWidget_2">
       <property name="geometry">
        <rect>
         <x>0</x>
         <y>10</y>
-        <width>391</width>
+        <width>421</width>
         <height>69</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_8">
-         <property name="text">
-          <string>Protocol Name</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="label_11">
          <property name="font">
@@ -109,225 +102,206 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QLabel" name="protocol_txt">
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_8">
          <property name="text">
-          <string>PLEASE CREATE OR LOAD AN EXPERIMENT      
-  AND CONNECT TO MICROSCOPE</string>
+          <string>Protocol Name</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="gridLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>80</y>
+        <width>417</width>
+        <height>451</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="12" column="0" colspan="2">
+        <widget class="QPushButton" name="go_to_lamella">
+         <property name="text">
+          <string>Go to position</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Current Lamella</string>
+         </property>
+        </widget>
+       </item>
+       <item row="17" column="0">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="4" column="0">
+        <widget class="QCheckBox" name="show_lamella">
+         <property name="text">
+          <string>Show Lamella Pattern</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <property name="tristate">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="15" column="0" colspan="2">
+        <widget class="QLabel" name="lamella_count_txt">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Out of: 0 lamellas</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
+       <item row="16" column="0" colspan="2">
+        <widget class="QPushButton" name="remill_fiducial">
+         <property name="text">
+          <string>Remill fiducial</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QCheckBox" name="microexpansionCheckBox">
+         <property name="text">
+          <string>Microexpansion Joints</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="1">
+        <widget class="QPushButton" name="move_fiducial_button">
+         <property name="text">
+          <string>Move fiducial</string>
+         </property>
+        </widget>
+       </item>
+       <item row="19" column="0" colspan="2">
+        <widget class="QPushButton" name="run_button">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: darkGreen</string>
+         </property>
+         <property name="text">
+          <string>Run Autolamella</string>
+         </property>
+        </widget>
+       </item>
+       <item row="13" column="0">
+        <widget class="QPushButton" name="move_lamella_button">
+         <property name="text">
+          <string>Move lamella</string>
+         </property>
+        </widget>
+       </item>
+       <item row="14" column="0" colspan="2">
+        <widget class="QPushButton" name="save_button">
+         <property name="text">
+          <string>Save current lamella</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0" colspan="2">
+        <widget class="QLabel" name="label_7">
+         <property name="font">
+          <font>
+           <pointsize>12</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Setup</string>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="1">
+        <widget class="QSpinBox" name="lamella_index">
+         <property name="minimum">
+          <number>0</number>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="2">
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="6" column="0">
+        <widget class="QPushButton" name="add_button">
+         <property name="text">
+          <string>Add Lamella</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QPushButton" name="remove_button">
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <property name="text">
+          <string>Remove Lamella</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
-     <widget class="QTabWidget" name="tabWidget_2">
+    </widget>
+    <widget class="QWidget" name="tab_4">
+     <attribute name="title">
+      <string>Microscope Setup</string>
+     </attribute>
+     <widget class="QWidget" name="gridLayoutWidget_5">
       <property name="geometry">
        <rect>
         <x>0</x>
-        <y>80</y>
-        <width>431</width>
-        <height>511</height>
+        <y>10</y>
+        <width>461</width>
+        <height>471</height>
        </rect>
       </property>
-      <property name="currentIndex">
-       <number>0</number>
-      </property>
-      <widget class="QWidget" name="tab_experiment">
-       <attribute name="title">
-        <string>Experiment</string>
-       </attribute>
-       <widget class="QWidget" name="gridLayoutWidget">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>417</width>
-          <height>344</height>
-         </rect>
-        </property>
-        <layout class="QGridLayout" name="gridLayout">
-         <item row="12" column="1">
-          <widget class="QPushButton" name="move_fiducial_button">
-           <property name="text">
-            <string>Move fiducial</string>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="0" colspan="2">
-          <widget class="QPushButton" name="add_button">
-           <property name="text">
-            <string>Add Lamella</string>
-           </property>
-          </widget>
-         </item>
-         <item row="15" column="0" colspan="2">
-          <widget class="QPushButton" name="remill_fiducial">
-           <property name="text">
-            <string>Remill fiducial</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QCheckBox" name="show_lamella">
-           <property name="text">
-            <string>Show Lamella Pattern</string>
-           </property>
-           <property name="checked">
-            <bool>false</bool>
-           </property>
-           <property name="tristate">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="16" column="0">
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="11" column="0" colspan="2">
-          <widget class="QPushButton" name="go_to_lamella">
-           <property name="text">
-            <string>Go to position</string>
-           </property>
-          </widget>
-         </item>
-         <item row="18" column="0" colspan="2">
-          <widget class="QPushButton" name="run_button">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="styleSheet">
-            <string notr="true">background-color: darkGreen</string>
-           </property>
-           <property name="text">
-            <string>Run Autolamella</string>
-           </property>
-          </widget>
-         </item>
-         <item row="10" column="0">
-          <widget class="QLabel" name="label_4">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Current Lamella</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <widget class="QCheckBox" name="microexpansionCheckBox">
-           <property name="text">
-            <string>Microexpansion Joints</string>
-           </property>
-          </widget>
-         </item>
-         <item row="13" column="0" colspan="2">
-          <widget class="QPushButton" name="save_button">
-           <property name="text">
-            <string>Save current lamella</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0" colspan="2">
-          <widget class="QLabel" name="label_7">
-           <property name="font">
-            <font>
-             <pointsize>12</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Setup</string>
-           </property>
-          </widget>
-         </item>
-         <item row="10" column="1">
-          <widget class="QSpinBox" name="lamella_index">
-           <property name="minimum">
-            <number>0</number>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0" colspan="2">
-          <spacer name="horizontalSpacer_2">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="14" column="0" colspan="2">
-          <widget class="QLabel" name="lamella_count_txt">
-           <property name="font">
-            <font>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
-           <property name="text">
-            <string>Out of: 0 lamellas</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="12" column="0">
-          <widget class="QPushButton" name="move_lamella_button">
-           <property name="text">
-            <string>Move lamella</string>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="0" colspan="2">
-          <widget class="QPushButton" name="remove_button">
-           <property name="text">
-            <string>Remove Lamella</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </widget>
-      <widget class="QWidget" name="tab_4">
-       <attribute name="title">
-        <string>Microscope Setup</string>
-       </attribute>
-       <widget class="QWidget" name="gridLayoutWidget_5">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>421</width>
-          <height>471</height>
-         </rect>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_system"/>
-       </widget>
-      </widget>
+      <layout class="QGridLayout" name="gridLayout_system"/>
      </widget>
     </widget>
     <widget class="QWidget" name="instructions_tab">
