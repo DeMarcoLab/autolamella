@@ -1128,9 +1128,10 @@ def mill_fiducial(
             milling_current=protocol["milling_current"],
             hfw = image_settings.hfw,
             application_file=microscope_settings.protocol.get("application_file", "N/A"),
+            preset = protocol.get("preset", None),
         )
        
-        milling.setup_milling(microscope, mill_settings=fiducial_milling, preset = protocol.get("preset", None))
+        milling.setup_milling(microscope, mill_settings=fiducial_milling)
         milling.draw_fiducial(
             microscope,
             fiducial_pattern,
@@ -1193,7 +1194,8 @@ def run_autolamella(
                 mill_settings = FibsemMillingSettings(
                     patterning_mode="Serial",
                     application_file=microscope_settings.protocol.get("application_file", "N/A"),
-                    milling_current=protocol["milling_current"]
+                    milling_current=protocol["milling_current"],
+                    preset = protocol.get("preset", None),
                 )
 
                 # alignment
@@ -1214,7 +1216,6 @@ def run_autolamella(
                     milling.setup_milling(
                         microscope,
                         mill_settings=mill_settings,
-                        preset = protocol.get("preset", None),
                     )
                     milling.draw_trench(
                         microscope=microscope,
