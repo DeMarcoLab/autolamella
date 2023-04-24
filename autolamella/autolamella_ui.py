@@ -1122,7 +1122,7 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
     width = 2 * h_offset
     height = 2 * v_offset
 
-    if left < 0  or (left + width)> 1:
+    if left < 0  or (left + width)> 1 or top < 0 or (top + height) > 1:
         flag = True
     else:
         flag = False
