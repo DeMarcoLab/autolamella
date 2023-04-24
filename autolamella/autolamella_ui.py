@@ -464,7 +464,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.tabWidget.setTabVisible(4, True)
         self.tabWidget.setTabVisible(5, True)
         self.tabWidget.setTabVisible(0, True)
-        self.system_widget.set_stage_parameters()
+        self.system_widget.get_stage_settings_from_ui()
         if self.protocol_loaded is False:
             self.load_protocol()
 
