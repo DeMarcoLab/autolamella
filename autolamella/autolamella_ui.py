@@ -82,8 +82,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise experiment object
         self.experiment: Experiment = None
         self.protocol_loaded = False
+        self.tabWidget.setTabVisible(3, False)
         self.tabWidget.setTabVisible(4, False)
-        self.tabWidget.setTabVisible(5, False)
         self.tabWidget.setTabVisible(0, False)
         self.remove_button.setStyleSheet("background-color: transparent")
         self.fiducial_position = None
@@ -480,8 +480,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.gridlayout_imaging.addWidget(self.image_widget,0,0)
         self.gridlayout_movement.addWidget(self.movement_widget,0,0)
+        self.tabWidget.setTabVisible(3, True)
         self.tabWidget.setTabVisible(4, True)
-        self.tabWidget.setTabVisible(5, True)
         self.tabWidget.setTabVisible(0, True)
         self.system_widget.get_stage_settings_from_ui()
         if self.protocol_loaded is False:
@@ -513,7 +513,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings = None
         self.protocol_loaded = False
         self.tabWidget.setTabVisible(4, False)
-        self.tabWidget.setTabVisible(5, False)
+        self.tabWidget.setTabVisible(3, False)
         self.tabWidget.setTabVisible(0, False)
         self.show_lamella.setEnabled(False)
         self.show_lamella.setChecked(False)
@@ -840,10 +840,25 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             lamella_position.y = float(self.lamella_position.y)    if self.lamella_position is not None else 0.0
             fiducial_position.x = float(self.fiducial_position.x)
             fiducial_position.y = float(self.fiducial_position.y)
+
+            pixelsize = hfw/self.image_widget.image_settings.resolution[0]
+            if validate_lamella_placement(self.image_widget.image_settings.resolution, self.microscope_settings.protocol, pixelsize, lamella_position):
+                _ = message_box_ui(
+                    title="Lamella placement invalid",
+                    text="The lamella placement is invalid, please move the lamella so it is fully in the image.",
+                    buttons=QMessageBox.Ok,
+                )
+                self.save_button.setEnabled(True)
+                self.save_button.setText("Save current lamella")
+                self.save_button.setStyleSheet("color: white")
+                self.go_to_lamella.setEnabled(False)
+                self.remill_fiducial.setEnabled(False)
+                self.move_fiducial_button.setEnabled(True)
+                self.move_lamella_button.setEnabled(True)
+                return
             
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
-
             self.mill_fiducial_ui(index)
         
 
@@ -1144,6 +1159,37 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
     fiducial_area = FibsemRectangle(left, top, width, height)
 
     return fiducial_area, flag 
+
+def validate_lamella_placement(resolution, protocol, pixelsize, lamella_centre):
+
+    lamella_centre_area = deepcopy(lamella_centre)
+    lamella_centre_area.y = lamella_centre_area.y * -1
+    lamella_centre_px = conversions.convert_point_from_metres_to_pixel(lamella_centre_area, pixelsize)
+
+
+    rcx = lamella_centre_px.x  / resolution[0] + 0.5
+    rcy = lamella_centre_px.y / resolution[1] + 0.5
+
+    half_lamella_height = protocol["lamella"]["protocol_stages"][0]["trench_height"] + protocol["lamella"]["protocol_stages"][0]["offset"] + protocol["lamella"]["lamella_height"]/2
+    half_lamella_width = protocol["lamella"]["lamella_width"] / 2
+
+    lamella_length_px = conversions.convert_metres_to_pixels(half_lamella_height, pixelsize)
+    lamella_width_px = conversions.convert_metres_to_pixels(half_lamella_width, pixelsize)
+
+    h_offset = lamella_width_px / resolution[0] 
+    v_offset = lamella_length_px / resolution[1]
+
+    left = rcx - h_offset 
+    top =  rcy - v_offset
+    width = 2 * h_offset
+    height = 2 * v_offset
+
+    if left < 0  or (left + width)> 1 or top < 0 or (top + height) > 1:
+        flag = True
+    else:
+        flag = False
+
+    return flag 
 
 def mill_fiducial(
     microscope: FibsemMicroscope,
