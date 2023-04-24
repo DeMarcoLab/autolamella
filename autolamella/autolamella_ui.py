@@ -811,6 +811,20 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.save_button.setText("Save current lamella")
             self.save_button.setStyleSheet("color: white")
             return
+        
+        hfw = self.image_widget.image_settings.hfw
+        trench_height = self.microscope_settings.protocol["lamella"]["protocol_stages"][2]["trench_height"]
+        if trench_height/hfw < 0.005:
+            response = message_box_ui(
+                title="Field width too hight",
+                text="The field width is too high for this pattern, please save lamella with lower hfw (take new Ion beam image).",
+                buttons=QMessageBox.Ok,
+            )
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
+            return
+
         # check to mill fiducial
         response = message_box_ui(
             title="Begin milling fiducial?",
@@ -1251,7 +1265,7 @@ def run_autolamella(
                     )
 
                 try:
-                    mill_settings.hfw = image_settings.hfw
+                    mill_settings.hfw = lamella.state.microscope_state.ib_settings.hfw
 
                     milling.setup_milling(
                         microscope,
