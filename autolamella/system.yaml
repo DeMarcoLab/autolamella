@@ -38,7 +38,7 @@ user:
     resolution: [1536, 1024]
     hfw: 150.e-6  
     beam_type: "Electron"
-    autocontrast: True
+    autocontrast: False
     dwell_time: 1.e-6
     save: False
     gamma_enabled: False
