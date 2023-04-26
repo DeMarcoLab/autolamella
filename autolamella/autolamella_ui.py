@@ -49,7 +49,7 @@ from structures import (
 import config as cfg
 
 from ui import UI as UI
-from napari.utils.notifications import show_info
+from napari.utils.notifications import show_info, show_error
 
 class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def __init__(self, viewer, *args, obj=None, **kwargs) -> None:
@@ -82,8 +82,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise experiment object
         self.experiment: Experiment = None
         self.protocol_loaded = False
+        self.tabWidget.setTabVisible(3, False)
         self.tabWidget.setTabVisible(4, False)
-        self.tabWidget.setTabVisible(5, False)
         self.tabWidget.setTabVisible(0, False)
         self.remove_button.setStyleSheet("background-color: transparent")
         self.fiducial_position = None
@@ -310,6 +310,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.microscope is not None:
             self.timer.start(1000)
             self.experiment_created_and_microscope_connected()
+        else:
+            _ = message_box_ui(
+                title="Next step:",
+                text="Please connect to a microscope.",
+                buttons=QMessageBox.Ok,
+            )
+            
         
         logging.info("Experiment created")
 
@@ -349,6 +356,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.microscope is not None:
             self.timer.start(1000)
             self.experiment_created_and_microscope_connected()
+        else:
+            _ = message_box_ui(
+                title="Next step:",
+                text="Please connect to a microscope.",
+                buttons=QMessageBox.Ok,
+            )
             
         logging.info("Experiment loaded")
 
@@ -405,6 +418,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if self.experiment is not None:
             self.experiment_created_and_microscope_connected()
+        else:
+            _ = message_box_ui(
+                title="Next step:",
+                text="Please create an experiment (file menu).",
+                buttons=QMessageBox.Ok,
+            )
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_log)
@@ -453,8 +472,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.gridlayout_imaging.addWidget(self.image_widget,0,0)
         self.gridlayout_movement.addWidget(self.movement_widget,0,0)
+        self.tabWidget.setTabVisible(3, True)
         self.tabWidget.setTabVisible(4, True)
-        self.tabWidget.setTabVisible(5, True)
         self.tabWidget.setTabVisible(0, True)
         self.system_widget.get_stage_settings_from_ui()
         if self.protocol_loaded is False:
@@ -487,7 +506,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings = None
         self.protocol_loaded = False
         self.tabWidget.setTabVisible(4, False)
-        self.tabWidget.setTabVisible(5, False)
+        self.tabWidget.setTabVisible(3, False)
         self.tabWidget.setTabVisible(0, False)
         self.show_lamella.setEnabled(False)
         self.show_lamella.setChecked(False)
@@ -783,6 +802,20 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.save_button.setText("Save current lamella")
             self.save_button.setStyleSheet("color: white")
             return
+        
+        hfw = self.image_widget.image_settings.hfw
+        trench_height = self.microscope_settings.protocol["lamella"]["protocol_stages"][2]["trench_height"]
+        if trench_height/hfw < 0.005:
+            response = message_box_ui(
+                title="Field width too hight",
+                text="The field width is too high for this pattern, please save lamella with lower hfw (take new Ion beam image).",
+                buttons=QMessageBox.Ok,
+            )
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
+            return
+
         # check to mill fiducial
         response = message_box_ui(
             title="Begin milling fiducial?",
@@ -798,39 +831,61 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             lamella_position.y = float(self.lamella_position.y)    if self.lamella_position is not None else 0.0
             fiducial_position.x = float(self.fiducial_position.x)
             fiducial_position.y = float(self.fiducial_position.y)
-            
+
+            pixelsize = hfw/self.image_widget.image_settings.resolution[0]
+            if validate_lamella_placement(self.image_widget.image_settings.resolution, self.microscope_settings.protocol, pixelsize, lamella_position):
+                _ = message_box_ui(
+                    title="Lamella placement invalid",
+                    text="The lamella placement is invalid, please move the lamella so it is fully in the image.",
+                    buttons=QMessageBox.Ok,
+                )
+                self.save_button.setEnabled(True)
+                self.save_button.setText("Save current lamella")
+                self.save_button.setStyleSheet("color: white")
+                self.go_to_lamella.setEnabled(False)
+                self.remill_fiducial.setEnabled(False)
+                self.move_fiducial_button.setEnabled(True)
+                self.move_lamella_button.setEnabled(True)
+                return
+
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
-
             self.mill_fiducial_ui(index)
-        self.save_button.setEnabled(False)
-        self.save_button.setText("Save current lamella")
-        self.save_button.setStyleSheet("color: white")
-        self.go_to_lamella.setEnabled(True)
-        self.remill_fiducial.setEnabled(True)
 
 
     def _clickback(self, layer, event):
         if event.button == 2 :
             coords = self.image_widget.ib_layer.world_to_data(event.position)
-            coords, beam_type, image = self.image_widget.get_data_from_coord(coords)
-            
 
-            if self.comboBox.currentText() == "Fiducial":
-                self.fiducial_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
+
+            hfw = self.image_widget.image_settings.hfw
+            pixelsize = hfw/self.image_widget.image_settings.resolution[0]
+
+            if self.moving_fiducial:
+                fiducial_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
+                self.microscope_settings.image = self.image_widget.image_settings
+                fiducial_length = self.microscope_settings.protocol["fiducial"]["length"]
+                area, flag = calculate_fiducial_area(self.microscope_settings, fiducial_position, fiducial_length, pixelsize)
+                if flag:
+                    show_error("The fiducial area is out of the field of view. Please move fiducial closer to centre of image.")
+                    return
+                self.fiducial_position = fiducial_position
                 logging.info("Moved fiducial")
             else: 
-                self.lamella_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
+                lamella_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
                 logging.info("Moved lamella")
+                if validate_lamella_placement(self.image_widget.image_settings.resolution, self.microscope_settings.protocol, pixelsize, lamella_position):
+                    show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
+                    return
+                self.lamella_position = lamella_position
             self.viewer.layers.selection.active = self.image_widget.eb_layer
-            self.viewer.window.qt_viewer.view.camera.interactive = False
             self.draw_patterns()
             
         return 
 
     def mill_fiducial_ui(self, index):
         
-        self.experiment = save_lamella(
+        self.experiment, flag = save_lamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 microscope_settings=self.microscope_settings,
@@ -839,7 +894,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 microexpansion=self.microexpansionCheckBox.isChecked(),
             )
 
-
+        if flag:
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
+            self.go_to_lamella.setEnabled(False)
+            self.remill_fiducial.setEnabled(False)
+            self.move_fiducial_button.setEnabled(True)
+            self.move_lamella_button.setEnabled(True)
+            return
+        
         self.experiment.positions[index] = mill_fiducial(
                 microscope=self.microscope,
                 microscope_settings=self.microscope_settings,
@@ -856,6 +920,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setText(
             string_lamella
         )
+        self.save_button.setEnabled(False)
+        self.save_button.setText("Save current lamella")
+        self.save_button.setStyleSheet("color: white")
+        self.go_to_lamella.setEnabled(True)
+        self.remill_fiducial.setEnabled(True)
+        self.move_fiducial_button.setEnabled(False)
+        self.move_lamella_button.setEnabled(False)
 
     def remill_fiducial_ui(self):
         self.remill_fiducial.setEnabled(False)
@@ -1014,8 +1085,14 @@ def save_lamella(
     fiducial_centre = experiment.positions[index].fiducial_centre
     fiducial_length = microscope_settings.protocol["fiducial"]["length"]
 
-    fiducial_area = calculate_fiducial_area(microscope_settings, fiducial_centre, fiducial_length, pixelsize)
- 
+    fiducial_area, flag = calculate_fiducial_area(microscope_settings, fiducial_centre, fiducial_length, pixelsize)
+    if flag:
+        _ = message_box_ui(
+            title = "Fiducial area is invalid",
+            text = "The fiducial area is out of the field of view. Please move fiducial closer to centre of image.",
+            buttons = QMessageBox.Ok,
+            )
+        return experiment,flag
     experiment.positions[index].state = initial_state
     experiment.positions[index].reference_image = ref_image
     experiment.positions[index].path = experiment.path
@@ -1028,7 +1105,7 @@ def save_lamella(
 
     logging.info("Lamella parameters saved")
 
-    return experiment
+    return experiment, flag
 
 
 
@@ -1053,9 +1130,45 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
     width = 2 * h_offset
     height = 2 * v_offset
 
+    if left < 0  or (left + width)> 1 or top < 0 or (top + height) > 1:
+        flag = True
+    else:
+        flag = False
+    
     fiducial_area = FibsemRectangle(left, top, width, height)
 
-    return fiducial_area
+    return fiducial_area, flag 
+
+def validate_lamella_placement(resolution, protocol, pixelsize, lamella_centre):
+
+    lamella_centre_area = deepcopy(lamella_centre)
+    lamella_centre_area.y = lamella_centre_area.y * -1
+    lamella_centre_px = conversions.convert_point_from_metres_to_pixel(lamella_centre_area, pixelsize)
+
+
+    rcx = lamella_centre_px.x  / resolution[0] + 0.5
+    rcy = lamella_centre_px.y / resolution[1] + 0.5
+
+    half_lamella_height = protocol["lamella"]["protocol_stages"][0]["trench_height"] + protocol["lamella"]["protocol_stages"][0]["offset"] + protocol["lamella"]["lamella_height"]/2
+    half_lamella_width = protocol["lamella"]["lamella_width"] / 2
+
+    lamella_length_px = conversions.convert_metres_to_pixels(half_lamella_height, pixelsize)
+    lamella_width_px = conversions.convert_metres_to_pixels(half_lamella_width, pixelsize)
+
+    h_offset = lamella_width_px / resolution[0] 
+    v_offset = lamella_length_px / resolution[1]
+
+    left = rcx - h_offset 
+    top =  rcy - v_offset
+    width = 2 * h_offset
+    height = 2 * v_offset
+
+    if left < 0  or (left + width)> 1 or top < 0 or (top + height) > 1:
+        flag = True
+    else:
+        flag = False
+
+    return flag 
 
 def mill_fiducial(
     microscope: FibsemMicroscope,
@@ -1177,7 +1290,7 @@ def run_autolamella(
                     )
 
                 try:
-                    mill_settings.hfw = image_settings.hfw
+                    mill_settings.hfw = lamella.state.microscope_state.ib_settings.hfw
 
                     milling.setup_milling(
                         microscope,
