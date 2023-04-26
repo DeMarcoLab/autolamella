@@ -112,7 +112,7 @@
        </widget>
       </item>
       <item row="8" column="1">
-       <widget class="QComboBox" name="comboBox">
+       <widget class="QComboBox" name="comboBox_moving_pattern">
         <item>
          <property name="text">
           <string>Fiducial</string>

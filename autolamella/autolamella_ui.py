@@ -844,8 +844,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 self.save_button.setStyleSheet("color: white")
                 self.go_to_lamella.setEnabled(False)
                 self.remill_fiducial.setEnabled(False)
-                self.move_fiducial_button.setEnabled(True)
-                self.move_lamella_button.setEnabled(True)
+
                 return
 
             self.experiment.positions[index].lamella_centre = lamella_position
@@ -861,7 +860,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             hfw = self.image_widget.image_settings.hfw
             pixelsize = hfw/self.image_widget.image_settings.resolution[0]
 
-            if self.moving_fiducial:
+            if self.comboBox_moving_pattern.currentText() == "Fiducial":
                 fiducial_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
                 self.microscope_settings.image = self.image_widget.image_settings
                 fiducial_length = self.microscope_settings.protocol["fiducial"]["length"]
@@ -900,8 +899,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.save_button.setStyleSheet("color: white")
             self.go_to_lamella.setEnabled(False)
             self.remill_fiducial.setEnabled(False)
-            self.move_fiducial_button.setEnabled(True)
-            self.move_lamella_button.setEnabled(True)
             return
         
         self.experiment.positions[index] = mill_fiducial(
@@ -925,8 +922,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setStyleSheet("color: white")
         self.go_to_lamella.setEnabled(True)
         self.remill_fiducial.setEnabled(True)
-        self.move_fiducial_button.setEnabled(False)
-        self.move_lamella_button.setEnabled(False)
+
 
     def remill_fiducial_ui(self):
         self.remill_fiducial.setEnabled(False)
@@ -1225,6 +1221,7 @@ def mill_fiducial(
         image_settings.beam_type = BeamType.ION
         image_settings.reduced_area = lamella.fiducial_area
         lamella.reference_image = acquire.new_image(microscope, image_settings)
+        
         image_settings.reduced_area = None
 
         lamella.reference_image.metadata.image_settings.label = "milled_fiducial"
