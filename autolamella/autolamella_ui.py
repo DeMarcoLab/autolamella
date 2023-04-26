@@ -121,10 +121,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setEnabled(False)
         self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
         self.remill_fiducial.setEnabled(False)
-        self.move_fiducial_button.clicked.connect(self.move_fiducial)
-        self.move_fiducial_button.setEnabled(False)
-        self.move_lamella_button.clicked.connect(self.move_lamella)
-        self.move_lamella_button.setEnabled(False)
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.valueChanged.connect(self.lamella_index_changed)
@@ -157,14 +153,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.Setup:
                 self.go_to_lamella.setEnabled(False)
-                self.move_fiducial_button.setEnabled(True)
-                self.move_lamella_button.setEnabled(True)
                 self.remill_fiducial.setEnabled(False)
                 self.save_button.setEnabled(True)
             else:
                 self.go_to_lamella.setEnabled(True)
-                self.move_fiducial_button.setEnabled(False)
-                self.move_lamella_button.setEnabled(False)
                 self.remill_fiducial.setEnabled(True)
                 self.save_button.setEnabled(False)
         
@@ -502,6 +494,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.lamella_index.setMinimum(1)
         self.draw_patterns()
         self.update_displays()
+        self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
 
 
     def disconnect_from_microscope(self):
@@ -626,9 +619,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
-        if self.image_widget.ib_image is not None:
-            self.move_lamella_button.setEnabled(True)
-            self.move_fiducial_button.setEnabled(True)
+        
 
 
     def save_filepath(self):
@@ -860,19 +851,18 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
             self.mill_fiducial_ui(index)
-        
+
 
     def _clickback(self, layer, event):
         if event.button == 2 :
             coords = self.image_widget.ib_layer.world_to_data(event.position)
+
 
             hfw = self.image_widget.image_settings.hfw
             pixelsize = hfw/self.image_widget.image_settings.resolution[0]
 
             if self.moving_fiducial:
                 fiducial_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
-                self.moving_fiducial = False
-                self.image_widget.ib_layer.mouse_drag_callbacks.remove(self._clickback)
                 self.microscope_settings.image = self.image_widget.image_settings
                 fiducial_length = self.microscope_settings.protocol["fiducial"]["length"]
                 area, flag = calculate_fiducial_area(self.microscope_settings, fiducial_position, fiducial_length, pixelsize)
@@ -883,38 +873,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 logging.info("Moved fiducial")
             else: 
                 lamella_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
-                self.image_widget.ib_layer.mouse_drag_callbacks.remove(self._clickback)
                 logging.info("Moved lamella")
                 if validate_lamella_placement(self.image_widget.image_settings.resolution, self.microscope_settings.protocol, pixelsize, lamella_position):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
                 self.lamella_position = lamella_position
             self.viewer.layers.selection.active = self.image_widget.eb_layer
-            self.viewer.window.qt_viewer.view.camera.interactive = False
             self.draw_patterns()
             
         return 
-    
-    def move_fiducial(self):
-        
-        self.moving_fiducial = True
-        self.viewer.layers.selection.active = self.image_widget.ib_layer
-        self.image_widget.ib_layer.mouse_drag_callbacks.append(self._clickback)
-        _ = message_box_ui(
-            title="Place fiducial.",
-            text="Please right click once where you want the fiducial to be.",
-            buttons=QMessageBox.Ok,
-        )
-
-    def move_lamella(self):
-            self.moving_fiducial = False
-            self.viewer.layers.selection.active = self.image_widget.ib_layer
-            self.image_widget.ib_layer.mouse_drag_callbacks.append(self._clickback)
-            _ = message_box_ui(
-                title="Place lamella.",
-                text="Please right click once where you want the lamella centre to be.",
-                buttons=QMessageBox.Ok,
-            )
 
     def mill_fiducial_ui(self, index):
         
@@ -1409,7 +1376,6 @@ def main():
     window = UiInterface(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window, area = 'right', add_vertical_stretch=True, name='Autolamella')
     widget.setMinimumWidth(400)
-
     napari.run()
 
 if __name__ == "__main__":
