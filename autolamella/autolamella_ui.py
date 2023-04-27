@@ -428,31 +428,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_log)
         self.timer.start(1000)
-   
-
-        if isinstance(self.microscope, TescanMicroscope):
-            presets = self.microscope.get('presets')
-            self.presetComboBox.addItems(presets)
-            self.presetComboBox_fiducial.addItems(presets)
-            self.application_file_label.hide()
-            self.comboBoxapplication_file.hide()
-            self.presetComboBox.setEnabled(True)
-            self.presetComboBox.show()
-            self.presetComboBox_fiducial.setEnabled(True)
-            self.presetComboBox_fiducial.show()
-            self.presetLabel.show()
-            self.presetLabel_2.show()
-        elif isinstance(self.microscope, ThermoMicroscope):
-            self.application_file_label.show()
-            self.comboBoxapplication_file.show()
-            self.presetComboBox.setEnabled(False)
-            self.presetComboBox.hide()
-            self.presetComboBox_fiducial.setEnabled(False)
-            self.presetComboBox_fiducial.hide()
-            self.presetLabel.hide()
-            self.presetLabel_2.hide()
-            application_files = self.microscope.get_available_values('application_file')
-            self.comboBoxapplication_file.addItems(application_files)
 
 
     def experiment_created_and_microscope_connected(self):
@@ -493,20 +468,22 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.lamella_index.setMaximum(len(self.experiment.positions))
             self.lamella_index.setMinimum(1)
 
-        if isinstance(self.microscope, ThermoMicroscope):
-            self.comboBoxapplication_file.setCurrentText(self.microscope_settings.protocol["application_file"])
+        
         self.draw_patterns()
         self.update_displays()
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
 
 
     def disconnect_from_microscope(self):
-        self.tabWidget.removeTab("Image")
-        self.tabWidget.removeTab("Movement")
+        self.tabWidget.removeTab(4)
+        self.tabWidget.removeTab(3)
+        self.viewer.layers.clear()
         self.image_widget.deleteLater()
         self.movement_widget.deleteLater()
         self.microscope = None
         self.microscope_settings = None
+        self.image_widget = None
+        self.movement_widget = None
         self.protocol_loaded = False
         self.tabWidget.setTabVisible(0, False)
         self.tabWidget.setTabVisible(1, False)
@@ -527,6 +504,30 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             protocol_path=protocol_path
         ) 
         self.set_ui_from_protocol() 
+        if isinstance(self.microscope, TescanMicroscope):
+            presets = self.microscope.get('presets')
+            self.presetComboBox.addItems(presets)
+            self.presetComboBox_fiducial.addItems(presets)
+            self.application_file_label.hide()
+            self.comboBoxapplication_file.hide()
+            self.presetComboBox.setEnabled(True)
+            self.presetComboBox.show()
+            self.presetComboBox_fiducial.setEnabled(True)
+            self.presetComboBox_fiducial.show()
+            self.presetLabel.show()
+            self.presetLabel_2.show()
+        elif isinstance(self.microscope, ThermoMicroscope):
+            self.application_file_label.show()
+            self.comboBoxapplication_file.show()
+            self.presetComboBox.setEnabled(False)
+            self.presetComboBox.hide()
+            self.presetComboBox_fiducial.setEnabled(False)
+            self.presetComboBox_fiducial.hide()
+            self.presetLabel.hide()
+            self.presetLabel_2.hide()
+            application_files = self.microscope.get_available_values('application_file')
+            self.comboBoxapplication_file.addItems(application_files)
+        
         self.show_lamella.setEnabled(True)
 
     def set_ui_from_protocol(self):
@@ -546,7 +547,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_width.setValue((self.microscope_settings.protocol["microexpansion"]["width"]*constants.SI_TO_MICRO))
         self.micro_exp_height.setValue((self.microscope_settings.protocol["microexpansion"]["height"]*constants.SI_TO_MICRO))
         self.micro_exp_distance.setValue((self.microscope_settings.protocol["microexpansion"]["distance"]*constants.SI_TO_MICRO))
-   
+
+        if isinstance(self.microscope, ThermoMicroscope):
+            self.comboBoxapplication_file.setCurrentText(self.microscope_settings.protocol["application_file"])
         logging.info("Protocol loaded")
 
 
