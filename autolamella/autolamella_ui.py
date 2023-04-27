@@ -699,7 +699,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         string_lamella = ""
         for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number:02d}-{lam._petname}: {lam.state.stage.name}\n"
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
@@ -1272,6 +1272,14 @@ def run_autolamella(
                 microscope.move_stage_absolute(
                     lamella.state.microscope_state.absolute_position
                 )
+
+                image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
+                image_settings.save = True
+                image_settings.label = f"start_mill_stage_{i}"
+                image_settings.reduced_area = None
+                acquire.take_reference_images(microscope, image_settings)
+                image_settings.save = False
+
                 mill_settings = FibsemMillingSettings(
                     patterning_mode="Serial",
                     application_file=microscope_settings.protocol.get("application_file", "autolamella"),
@@ -1327,16 +1335,13 @@ def run_autolamella(
                     # Update Lamella Stage and Experiment
                     lamella = lamella.update(stage=curr_stage)
 
-                    image_settings.beam_type = BeamType.ION
-                    reference_image = acquire.take_reference_images(
-                        microscope, image_settings
-                    )
-                    image_settings.label = f"ref_mill_stage_{i}_eb"
-                    path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
-                    reference_image[0].save(path_image)
-                    image_settings.label = f"ref_mill_stage_{i}_ib"
-                    path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
-                    reference_image[1].save(path_image)
+                    # save reference images
+                    image_settings.save = True
+                    image_settings.label = f"ref_mill_stage_{i}"
+                    image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
+                    image_settings.reduced_area = None
+                    acquire.take_reference_images(microscope, image_settings)
+                    image_settings.save = False
                     
                     experiment.save()
 
