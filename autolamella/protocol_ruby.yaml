@@ -1,0 +1,38 @@
+fiducial:
+    depth: 1.5e-06
+    length: 6.0e-06
+    milling_current: 1.2e-09
+    width: 8.0e-07
+lamella:
+    beam_shift_attempts: 3.0
+    lamella_height: 3.5e-07
+    lamella_width: 6.0e-06
+    protocol_stages:
+    -   lamella_height: 3.5e-07
+        lamella_width: 6.0e-06
+        milling_current: 2.0000000000000003e-10
+        milling_depth: 6.5e-07
+        offset: 1.6e-06
+        size_ratio: 1.0
+        trench_height: 2.8e-06
+    -   lamella_height: 3.5e-07
+        lamella_width: 6.0e-06
+        milling_current: 2.0000000000000003e-10
+        milling_depth: 5.0e-07
+        offset: 8.0e-07
+        size_ratio: 1.0
+        trench_height: 1.2e-06
+    -   lamella_height: 3.5e-07
+        lamella_width: 6.0e-06
+        milling_current: 6.0e-11
+        milling_depth: 6.5e-07
+        offset: 0.0
+        size_ratio: 1.0
+        trench_height: 1.2e-06
+microexpansion:
+    distance: 4.599999999999999e-06
+    height: 4.669999999999999e-06
+    width: 2.0e-07
+name: Autolamella_RubyCells
+stage_rotation: 230.0
+stage_tilt: 56.0
