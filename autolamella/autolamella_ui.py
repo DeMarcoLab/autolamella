@@ -82,9 +82,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise experiment object
         self.experiment: Experiment = None
         self.protocol_loaded = False
-        self.tabWidget.setTabVisible(3, False)
-        self.tabWidget.setTabVisible(4, False)
-        self.tabWidget.setTabVisible(0, False)
         self.remove_button.setStyleSheet("background-color: transparent")
         self.fiducial_position = None
         self.lamella_position = None
@@ -97,7 +94,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 config_path = CONFIG_PATH,
             )
         
-        self.gridLayout_system.addWidget(self.system_widget)
+        self.tabWidget.addTab(self.system_widget, "System")
+        self.tabWidget.setTabVisible(0, False)
+        self.tabWidget.setTabVisible(1, False)
+
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
@@ -470,11 +470,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.image_widget.picture_signal.connect(self.draw_patterns)
         
-        self.gridlayout_imaging.addWidget(self.image_widget,0,0)
-        self.gridlayout_movement.addWidget(self.movement_widget,0,0)
-        self.tabWidget.setTabVisible(3, True)
-        self.tabWidget.setTabVisible(4, True)
+        self.tabWidget.addTab(self.image_widget, "Image")
+        self.tabWidget.addTab(self.movement_widget, "Movement")
         self.tabWidget.setTabVisible(0, True)
+        self.tabWidget.setTabVisible(1, True)
+
         self.system_widget.get_stage_settings_from_ui()
         if self.protocol_loaded is False:
             self.load_protocol()
@@ -501,16 +501,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
     def disconnect_from_microscope(self):
-        self.gridlayout_imaging.removeWidget(self.image_widget)
-        self.gridlayout_movement.removeWidget(self.movement_widget)
+        self.tabWidget.removeTab("Image")
+        self.tabWidget.removeTab("Movement")
         self.image_widget.deleteLater()
         self.movement_widget.deleteLater()
         self.microscope = None
         self.microscope_settings = None
         self.protocol_loaded = False
-        self.tabWidget.setTabVisible(4, False)
-        self.tabWidget.setTabVisible(3, False)
         self.tabWidget.setTabVisible(0, False)
+        self.tabWidget.setTabVisible(1, False)
         self.show_lamella.setEnabled(False)
         self.show_lamella.setChecked(False)
 
@@ -1383,7 +1382,7 @@ def main():
     
     window = UiInterface(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window, area = 'right', add_vertical_stretch=True, name='Autolamella')
-    widget.setMinimumWidth(400)
+    #widget.setMinimumWidth(400)
     napari.run()
 
 if __name__ == "__main__":
