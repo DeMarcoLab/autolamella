@@ -492,6 +492,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             self.lamella_index.setMaximum(len(self.experiment.positions))
             self.lamella_index.setMinimum(1)
+
+        if isinstance(self.microscope, ThermoMicroscope):
+            self.comboBoxapplication_file.setCurrentText(self.microscope_settings.protocol["application_file"])
         self.draw_patterns()
         self.update_displays()
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
