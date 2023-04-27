@@ -1218,13 +1218,17 @@ def mill_fiducial(
 
         lamella = lamella.update(stage=AutoLamellaStage.FiducialMilled)
 
-        image_settings.beam_type = BeamType.ION
         image_settings.reduced_area = lamella.fiducial_area
-        lamella.reference_image = acquire.new_image(microscope, image_settings)
-        
+        reference_image = acquire.take_reference_images(microscope, image_settings)
+        lamella.reference_image = reference_image[1]
+
         image_settings.reduced_area = None
 
-        lamella.reference_image.metadata.image_settings.label = "milled_fiducial"
+        lamella.reference_image.metadata.image_settings.label = "milled_fiducial_ib"
+        path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'),  lamella.reference_image.metadata.image_settings.label)
+        reference_image[1].save(path_image)
+        path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'),  "milled_fiducial_eb")
+        reference_image[0].save(path_image)
 
         logging.info("Fiducial milled successfully")
 
@@ -1279,6 +1283,7 @@ def run_autolamella(
                     int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
                 ):
                     image_settings.beam_type = BeamType.ION
+                    image_settings.reduced_area = lamella.fiducial_area
                     beam_shift_alignment(
                         microscope=microscope,
                         image_settings=image_settings,
@@ -1316,19 +1321,23 @@ def run_autolamella(
                     milling.finish_milling(microscope)
 
                     image_settings.save_path = lamella.path
-                    image_settings.label = f"ref_mill_stage_{i}"
                     image_settings.reduced_area = None
 
                     # Update Lamella Stage and Experiment
                     lamella = lamella.update(stage=curr_stage)
 
                     image_settings.beam_type = BeamType.ION
-                    reference_image = acquire.new_image(
+                    reference_image = acquire.take_reference_images(
                         microscope, image_settings
                     )
+                    image_settings.label = f"ref_mill_stage_{i}_eb"
                     path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
-                    reference_image.save(path_image)
-
+                    reference_image[0].save(path_image)
+                    image_settings.label = f"ref_mill_stage_{i}_ib"
+                    path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
+                    reference_image[1].save(path_image)
+                    
+                    # lamella.reference_image = reference_image[0]
                     experiment.save()
 
                     l_stage = curr_stage.name
