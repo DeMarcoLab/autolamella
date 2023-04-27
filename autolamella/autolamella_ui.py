@@ -279,7 +279,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.timer.stop()
 
         self.experiment = None
-        self.lamella_count_txt.setText("")
+        self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
         self.lamella_index.setMaximum(0)
 
@@ -327,7 +327,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.timer.stop()
 
         self.experiment = None
-        self.lamella_count_txt.setText("")
+        self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
         self.lamella_index.setMaximum(0)
 
@@ -487,7 +487,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 if lam.state.stage == AutoLamellaStage.FiducialMilled:
                     self.remill_fiducial.setEnabled(True)
                 string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
-            self.lamella_count_txt.setText(
+            self.lamella_count_txt.setPlainText(
                 string_lamella
             )
             self.lamella_index.setMaximum(len(self.experiment.positions))
@@ -698,7 +698,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         string_lamella = ""
         for lam in self.experiment.positions:
             string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
-        self.lamella_count_txt.setText(
+        self.lamella_count_txt.setPlainText(
             string_lamella
         )
         self.lamella_index.setMaximum(len(self.experiment.positions))
@@ -748,7 +748,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             lam.lamella_number = i + 1
             string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
 
-        self.lamella_count_txt.setText(
+        self.lamella_count_txt.setPlainText(
             string_lamella
         )
         self.experiment.save()
@@ -914,7 +914,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         for lam in self.experiment.positions:
             string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
   
-        self.lamella_count_txt.setText(
+        self.lamella_count_txt.setPlainText(
             string_lamella
         )
         self.save_button.setEnabled(False)
@@ -1000,7 +1000,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         string_lamella = ""
         for lam in self.experiment.positions:
             string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
-        self.lamella_count_txt.setText(
+        self.lamella_count_txt.setPlainText(
             string_lamella
         )
         self.lamella_index_changed()
@@ -1337,7 +1337,6 @@ def run_autolamella(
                     path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
                     reference_image[1].save(path_image)
                     
-                    # lamella.reference_image = reference_image[0]
                     experiment.save()
 
                     l_stage = curr_stage.name
