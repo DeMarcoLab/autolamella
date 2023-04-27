@@ -941,6 +941,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 title="Fiducial not milled",
                 text="You haven't saved this lamella yet, cannot remill fiducial.",
             )
+            return
         if response:
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
             self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
