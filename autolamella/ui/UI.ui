@@ -32,679 +32,661 @@
    <bool>false</bool>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QTabWidget" name="tabWidget">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>431</width>
-      <height>631</height>
-     </rect>
-    </property>
-    <property name="currentIndex">
-     <number>0</number>
-    </property>
-    <widget class="QWidget" name="tab">
-     <attribute name="title">
-      <string>Experiment</string>
-     </attribute>
-     <layout class="QGridLayout" name="gridLayout_3">
-      <item row="3" column="1">
-       <widget class="QCheckBox" name="microexpansionCheckBox">
-        <property name="text">
-         <string>Microexpansion Joints</string>
-        </property>
-       </widget>
-      </item>
-      <item row="9" column="0" colspan="2">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Right click where you want the pattern centre to be.</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QPushButton" name="add_button">
-        <property name="text">
-         <string>Add Lamella</string>
-        </property>
-       </widget>
-      </item>
-      <item row="14" column="0" colspan="2">
-       <widget class="QPushButton" name="run_button">
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: darkGreen</string>
-        </property>
-        <property name="text">
-         <string>Run Autolamella</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="label_4">
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Current Lamella</string>
-        </property>
-       </widget>
-      </item>
-      <item row="15" column="0" colspan="2">
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="4" column="0" colspan="2">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="3" column="0">
-       <widget class="QCheckBox" name="show_lamella">
-        <property name="text">
-         <string>Show Lamella Pattern</string>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-        <property name="tristate">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="12" column="0" colspan="2">
-       <widget class="QPushButton" name="remill_fiducial">
-        <property name="text">
-         <string>Remill fiducial</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_11">
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Autolamella</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_7">
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Setup</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="1">
-       <widget class="QSpinBox" name="lamella_index">
-        <property name="minimum">
-         <number>0</number>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QLabel" name="protocol_txt">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="0" colspan="2">
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="10" column="0" colspan="2">
-       <widget class="QPushButton" name="save_button">
-        <property name="text">
-         <string>Save current lamella</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="1">
-       <widget class="QComboBox" name="comboBox_moving_pattern">
-        <item>
-         <property name="text">
-          <string>Fiducial</string>
-         </property>
+   <layout class="QFormLayout" name="formLayout_3">
+    <item row="0" column="0" colspan="2">
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <widget class="QWidget" name="tab">
+       <attribute name="title">
+        <string>Experiment</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="3" column="1">
+         <widget class="QCheckBox" name="microexpansionCheckBox">
+          <property name="text">
+           <string>Microexpansion Joints</string>
+          </property>
+         </widget>
         </item>
-        <item>
-         <property name="text">
-          <string>Lamella</string>
-         </property>
+        <item row="9" column="0" colspan="2">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Right click where you want the pattern centre to be.</string>
+          </property>
+         </widget>
         </item>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label_8">
-        <property name="text">
-         <string>Protocol Name</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Moving pattern :</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0" colspan="2">
-       <widget class="QPushButton" name="go_to_lamella">
-        <property name="text">
-         <string>Go to position</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QPushButton" name="remove_button">
-        <property name="styleSheet">
-         <string notr="true"/>
-        </property>
-        <property name="text">
-         <string>Remove Lamella</string>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="0" colspan="2">
-       <widget class="QPlainTextEdit" name="lamella_count_txt">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>100</height>
-         </size>
-        </property>
-        <property name="baseSize">
-         <size>
-          <width>0</width>
-          <height>100</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-        <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-    <widget class="QWidget" name="tab_2">
-     <attribute name="title">
-      <string>Protocol</string>
-     </attribute>
-     <widget class="QWidget" name="formLayoutWidget">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>-10</y>
-        <width>431</width>
-        <height>621</height>
-       </rect>
-      </property>
-      <layout class="QFormLayout" name="formLayout">
-       <item row="0" column="0">
-        <widget class="QLabel" name="stageRotationLabel">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="beamShiftAttemptsLabel">
-         <property name="text">
-          <string>Beam shift attempts</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QDoubleSpinBox" name="beamshift_attempts"/>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="scanDirectionLabel">
-         <property name="text">
-          <string>Scan Direction</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QComboBox" name="scanDirectionComboBox"/>
-       </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="QLabel" name="label_5">
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Fiducial Parameters</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="lengthLabel">
-         <property name="text">
-          <string>Length (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QDoubleSpinBox" name="fiducial_length">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="widthLabel">
-         <property name="text">
-          <string>Width (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QDoubleSpinBox" name="width_fiducial">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="depthLabel">
-         <property name="text">
-          <string>Depth (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QDoubleSpinBox" name="depth_fiducial">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="millingCurrentLabel">
-         <property name="text">
-          <string>Milling current (nA)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QDoubleSpinBox" name="current_fiducial">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="presetLabel_2">
-         <property name="text">
-          <string>Preset</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <widget class="QComboBox" name="presetComboBox_fiducial"/>
-       </item>
-       <item row="10" column="0" colspan="2">
-        <widget class="QLabel" name="label_9">
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Lamella Parameters </string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="0">
-        <widget class="QLabel" name="stageLabel">
-         <property name="text">
-          <string>Stage</string>
-         </property>
-        </widget>
-       </item>
-       <item row="11" column="1">
-        <widget class="QComboBox" name="stage_lamella">
-         <item>
+        <item row="5" column="0">
+         <widget class="QPushButton" name="add_button">
           <property name="text">
-           <string>1. Rough Cut</string>
+           <string>Add Lamella</string>
           </property>
-         </item>
-         <item>
+         </widget>
+        </item>
+        <item row="14" column="0" colspan="2">
+         <widget class="QPushButton" name="run_button">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: darkGreen</string>
+          </property>
           <property name="text">
-           <string>2. Regular Cut</string>
+           <string>Run Autolamella</string>
           </property>
-         </item>
-         <item>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_4">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
           <property name="text">
-           <string>3. Polishing Cut</string>
+           <string>Current Lamella</string>
           </property>
-         </item>
-        </widget>
-       </item>
-       <item row="12" column="0">
-        <widget class="QLabel" name="widthLabel_2">
-         <property name="text">
-          <string>Lamella width (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="12" column="1">
-        <widget class="QDoubleSpinBox" name="lamella_width">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="0">
-        <widget class="QLabel" name="heightLabel">
-         <property name="text">
-          <string>Lamella height (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="13" column="1">
-        <widget class="QDoubleSpinBox" name="lamella_height">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="0">
-        <widget class="QLabel" name="trenchHeightLabel">
-         <property name="text">
-          <string>Trench height (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="14" column="1">
-        <widget class="QDoubleSpinBox" name="trench_height">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="15" column="0">
-        <widget class="QLabel" name="millingDepthLabel">
-         <property name="text">
-          <string>Milling depth (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="15" column="1">
-        <widget class="QDoubleSpinBox" name="depth_trench">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="16" column="0">
-        <widget class="QLabel" name="offsetLabel">
-         <property name="text">
-          <string>Offset (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="16" column="1">
-        <widget class="QDoubleSpinBox" name="offset"/>
-       </item>
-       <item row="17" column="0">
-        <widget class="QLabel" name="sizeRatioLabel">
-         <property name="text">
-          <string>Size ratio</string>
-         </property>
-        </widget>
-       </item>
-       <item row="17" column="1">
-        <widget class="QDoubleSpinBox" name="size_ratio"/>
-       </item>
-       <item row="18" column="0">
-        <widget class="QLabel" name="millingCurrentLabel_2">
-         <property name="text">
-          <string>Milling current (nA)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="18" column="1">
-        <widget class="QDoubleSpinBox" name="current_lamella">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="19" column="0">
-        <widget class="QLabel" name="presetLabel">
-         <property name="text">
-          <string>Preset</string>
-         </property>
-        </widget>
-       </item>
-       <item row="19" column="1">
-        <widget class="QComboBox" name="presetComboBox"/>
-       </item>
-       <item row="20" column="0" colspan="2">
-        <widget class="QLabel" name="label_10">
-         <property name="font">
-          <font>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Microexpansion Joints Parameters</string>
-         </property>
-        </widget>
-       </item>
-       <item row="21" column="0">
-        <widget class="QLabel" name="widthLabel_3">
-         <property name="text">
-          <string>Width (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="21" column="1">
-        <widget class="QDoubleSpinBox" name="micro_exp_width">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="22" column="0">
-        <widget class="QLabel" name="heightLabel_2">
-         <property name="text">
-          <string>Height (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="22" column="1">
-        <widget class="QDoubleSpinBox" name="micro_exp_height">
-         <property name="maximum">
-          <double>1000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="23" column="0">
-        <widget class="QLabel" name="distanceLabel">
-         <property name="text">
-          <string>Distance (µm)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="23" column="1">
-        <widget class="QDoubleSpinBox" name="micro_exp_distance">
-         <property name="maximum">
-          <double>10000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="24" column="1">
-        <widget class="QPushButton" name="export_protocol">
-         <property name="text">
-          <string>Save protocol to file</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="application_file_label">
-         <property name="text">
-          <string>Application file</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QComboBox" name="comboBoxapplication_file"/>
-       </item>
-      </layout>
+         </widget>
+        </item>
+        <item row="15" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="4" column="0" colspan="2">
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="3" column="0">
+         <widget class="QCheckBox" name="show_lamella">
+          <property name="text">
+           <string>Show Lamella Pattern</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="tristate">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0" colspan="2">
+         <widget class="QPushButton" name="remill_fiducial">
+          <property name="text">
+           <string>Remill fiducial</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_11">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Autolamella</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_7">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Setup</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QSpinBox" name="lamella_index">
+          <property name="minimum">
+           <number>0</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLabel" name="protocol_txt">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="0" colspan="2">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="10" column="0" colspan="2">
+         <widget class="QPushButton" name="save_button">
+          <property name="text">
+           <string>Save current lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QComboBox" name="comboBox_moving_pattern">
+          <item>
+           <property name="text">
+            <string>Fiducial</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Lamella</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>Protocol Name</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Moving pattern :</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0" colspan="2">
+         <widget class="QPushButton" name="go_to_lamella">
+          <property name="text">
+           <string>Go to position</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QPushButton" name="remove_button">
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="text">
+           <string>Remove Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0" colspan="2">
+         <widget class="QPlainTextEdit" name="lamella_count_txt">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>100</height>
+           </size>
+          </property>
+          <property name="baseSize">
+           <size>
+            <width>0</width>
+            <height>100</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Protocol</string>
+       </attribute>
+       <layout class="QFormLayout" name="formLayout_2">
+        <item row="0" column="0">
+         <widget class="QLabel" name="application_file_label">
+          <property name="text">
+           <string>Application file</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QComboBox" name="comboBoxapplication_file"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="beamShiftAttemptsLabel">
+          <property name="text">
+           <string>Beam shift attempts</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QDoubleSpinBox" name="beamshift_attempts"/>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="scanDirectionLabel">
+          <property name="text">
+           <string>Scan Direction</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QComboBox" name="scanDirectionComboBox"/>
+        </item>
+        <item row="5" column="1">
+         <widget class="QDoubleSpinBox" name="fiducial_length">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="lengthLabel">
+          <property name="text">
+           <string>Length (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="widthLabel">
+          <property name="text">
+           <string>Width (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QDoubleSpinBox" name="width_fiducial">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="depthLabel">
+          <property name="text">
+           <string>Depth (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QDoubleSpinBox" name="depth_fiducial">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="millingCurrentLabel">
+          <property name="text">
+           <string>Milling current (nA)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QDoubleSpinBox" name="current_fiducial">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0">
+         <widget class="QLabel" name="presetLabel_2">
+          <property name="text">
+           <string>Preset</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="1">
+         <widget class="QComboBox" name="presetComboBox_fiducial"/>
+        </item>
+        <item row="4" column="0" colspan="2">
+         <widget class="QLabel" name="label_5">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Fiducial Parameters</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0" colspan="2">
+         <widget class="QLabel" name="label_9">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Lamella Parameters </string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="0">
+         <widget class="QLabel" name="stageLabel">
+          <property name="text">
+           <string>Stage</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="1">
+         <widget class="QComboBox" name="stage_lamella">
+          <item>
+           <property name="text">
+            <string>1. Rough Cut</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>2. Regular Cut</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>3. Polishing Cut</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="14" column="0">
+         <widget class="QLabel" name="widthLabel_2">
+          <property name="text">
+           <string>Lamella width (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="1">
+         <widget class="QDoubleSpinBox" name="lamella_width">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="0">
+         <widget class="QLabel" name="heightLabel">
+          <property name="text">
+           <string>Lamella height (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="1">
+         <widget class="QDoubleSpinBox" name="lamella_height">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="16" column="0">
+         <widget class="QLabel" name="trenchHeightLabel">
+          <property name="text">
+           <string>Trench height (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="16" column="1">
+         <widget class="QDoubleSpinBox" name="trench_height">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="0">
+         <widget class="QLabel" name="millingDepthLabel">
+          <property name="text">
+           <string>Milling depth (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="1">
+         <widget class="QDoubleSpinBox" name="depth_trench">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="0">
+         <widget class="QLabel" name="offsetLabel">
+          <property name="text">
+           <string>Offset (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="1">
+         <widget class="QDoubleSpinBox" name="offset"/>
+        </item>
+        <item row="19" column="0">
+         <widget class="QLabel" name="sizeRatioLabel">
+          <property name="text">
+           <string>Size ratio</string>
+          </property>
+         </widget>
+        </item>
+        <item row="19" column="1">
+         <widget class="QDoubleSpinBox" name="size_ratio"/>
+        </item>
+        <item row="20" column="0">
+         <widget class="QLabel" name="millingCurrentLabel_2">
+          <property name="text">
+           <string>Milling current (nA)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="20" column="1">
+         <widget class="QDoubleSpinBox" name="current_lamella">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="21" column="0">
+         <widget class="QLabel" name="presetLabel">
+          <property name="text">
+           <string>Preset</string>
+          </property>
+         </widget>
+        </item>
+        <item row="21" column="1">
+         <widget class="QComboBox" name="presetComboBox"/>
+        </item>
+        <item row="22" column="0" colspan="2">
+         <widget class="QLabel" name="label_10">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Microexpansion Joints Parameters</string>
+          </property>
+         </widget>
+        </item>
+        <item row="23" column="0">
+         <widget class="QLabel" name="widthLabel_3">
+          <property name="text">
+           <string>Width (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="23" column="1">
+         <widget class="QDoubleSpinBox" name="micro_exp_width">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="24" column="0">
+         <widget class="QLabel" name="heightLabel_2">
+          <property name="text">
+           <string>Height (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="24" column="1">
+         <widget class="QDoubleSpinBox" name="micro_exp_height">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="25" column="0">
+         <widget class="QLabel" name="distanceLabel">
+          <property name="text">
+           <string>Distance (µm)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="25" column="1">
+         <widget class="QDoubleSpinBox" name="micro_exp_distance">
+          <property name="maximum">
+           <double>10000.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="26" column="0" colspan="2">
+         <widget class="QPushButton" name="export_protocol">
+          <property name="text">
+           <string>Save protocol to file</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>Align at:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QComboBox" name="comboBox_current_alignment">
+          <item>
+           <property name="text">
+            <string>Imaging Current</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Milling current</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
-    </widget>
-   </widget>
-   <widget class="QTabWidget" name="tabWidget_2">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>640</y>
-      <width>471</width>
-      <height>291</height>
-     </rect>
-    </property>
-    <property name="currentIndex">
-     <number>0</number>
-    </property>
-    <widget class="QWidget" name="tab_3">
-     <attribute name="title">
-      <string>Log</string>
-     </attribute>
-     <widget class="QWidget" name="verticalLayoutWidget_2">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>10</y>
-        <width>441</width>
-        <height>131</height>
-       </rect>
+    </item>
+    <item row="1" column="0" colspan="2">
+     <widget class="QTabWidget" name="tabWidget_2">
+      <property name="currentIndex">
+       <number>0</number>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
-       <item>
-        <widget class="QLabel" name="label_3">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-          </font>
-         </property>
-         <property name="text">
-          <string>Console Log</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPlainTextEdit" name="log_txt">
-         <property name="verticalScrollBarPolicy">
-          <enum>Qt::ScrollBarAsNeeded</enum>
-         </property>
-         <property name="horizontalScrollBarPolicy">
-          <enum>Qt::ScrollBarAlwaysOff</enum>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </widget>
-    <widget class="QWidget" name="tab_5">
-     <attribute name="title">
-      <string>Instructions</string>
-     </attribute>
-     <widget class="QWidget" name="verticalLayoutWidget">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>0</y>
-        <width>421</width>
-        <height>261</height>
-       </rect>
-      </property>
-      <layout class="QVBoxLayout" name="verticalLayout">
-       <item>
-        <widget class="QPlainTextEdit" name="plainTextEdit">
-         <property name="font">
-          <font>
-           <pointsize>12</pointsize>
-          </font>
-         </property>
-         <property name="lineWidth">
-          <number>2</number>
-         </property>
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-         <property name="plainText">
-          <string>1. Create experiment (file menu) 
+      <widget class="QWidget" name="tab_3">
+       <attribute name="title">
+        <string>Log</string>
+       </attribute>
+       <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Console Log</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QPlainTextEdit" name="log_txt">
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_5">
+       <attribute name="title">
+        <string>Instructions</string>
+       </attribute>
+       <widget class="QWidget" name="verticalLayoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>0</y>
+          <width>421</width>
+          <height>261</height>
+         </rect>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <widget class="QPlainTextEdit" name="plainTextEdit">
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+            </font>
+           </property>
+           <property name="lineWidth">
+            <number>2</number>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+           <property name="plainText">
+            <string>1. Create experiment (file menu) 
 2. Take images 
 3. Modify protocol if needed
 4. Add lamella
@@ -715,13 +697,15 @@
 9. Repeat 3-8 as needed
 10. Run autolamella
 </string>
-         </property>
-        </widget>
-       </item>
-      </layout>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
      </widget>
-    </widget>
-   </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
