@@ -19,7 +19,7 @@ import numpy as np
 import yaml
 from fibsem import acquire, utils
 from fibsem.alignment import beam_shift_alignment
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope
+from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
 from fibsem.structures import (
     BeamType,
     FibsemImage,
@@ -988,12 +988,17 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             return
         if response:
             show_info(f"Running AutoLamella...")
+            if self.comboBox_current_alignment.currentText() == "Milling current":
+                alignment_current = True
+            else:
+                alignment_current = False
             self.image_widget.image_settings.reduced_area = None
             self.experiment = run_autolamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_widget.image_settings,
+                current_alignment=alignment_current,
             )
         
         self.run_button.setEnabled(True)
@@ -1247,6 +1252,7 @@ def run_autolamella(
     experiment: Experiment,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
+    current_alignment: bool 
 ):
     """
     Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
@@ -1284,6 +1290,11 @@ def run_autolamella(
                 for _ in range(
                     int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
                 ):
+                    if current_alignment:
+                        if isinstance(microscope, ThermoMicroscope) or isinstance(microscope, DemoMicroscope):
+                            microscope.set("current", protocol['milling_current'], BeamType.ION)
+                        elif isinstance(microscope, TescanMicroscope):
+                            microscope.set('preset', protocol["preset"], BeamType.ION)
                     image_settings.beam_type = BeamType.ION
                     image_settings.reduced_area = lamella.fiducial_area
                     beam_shift_alignment(
