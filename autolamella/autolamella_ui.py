@@ -451,7 +451,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.presetComboBox_fiducial.hide()
             self.presetLabel.hide()
             self.presetLabel_2.hide()
-            application_files = self.microscope.get_available_values('application_files')
+            application_files = self.microscope.get_available_values('application_file')
             self.comboBoxapplication_file.addItems(application_files)
 
 
@@ -538,7 +538,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.width_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["width"]*constants.SI_TO_MICRO))
         self.depth_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["depth"]*constants.SI_TO_MICRO))
         self.current_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["milling_current"]*constants.SI_TO_NANO))
-        self.presetComboBox_fiducial.setCurrentText(self.microscope_settings.protocol["fiducial"]["preset"])
+        self.presetComboBox_fiducial.setCurrentText(self.microscope_settings.protocol["fiducial"].get("preset", None))
         self.stage_lamella.setCurrentText("1. Rough Cut")
         self.select_stage()
         self.micro_exp_width.setValue((self.microscope_settings.protocol["microexpansion"]["width"]*constants.SI_TO_MICRO))
@@ -559,7 +559,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.offset.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"]*constants.SI_TO_MICRO))
         self.current_lamella.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"]*constants.SI_TO_NANO))
         self.size_ratio.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"]))
-        self.presetComboBox.setCurrentText(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["preset"])
+        self.presetComboBox.setCurrentText(self.microscope_settings.protocol["lamella"]["protocol_stages"][index].get("preset", None))
 
     def get_protocol_from_ui(self):
         self.microscope_settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
@@ -1202,7 +1202,7 @@ def mill_fiducial(
         fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"],
             hfw = image_settings.hfw,
-            application_file=microscope_settings.protocol.get("application_file", "N/A"),
+            application_file=microscope_settings.protocol.get("application_file", "autolamella"),
             preset = protocol.get("preset", None),
         )
        
@@ -1273,7 +1273,7 @@ def run_autolamella(
                 )
                 mill_settings = FibsemMillingSettings(
                     patterning_mode="Serial",
-                    application_file=microscope_settings.protocol.get("application_file", "N/A"),
+                    application_file=microscope_settings.protocol.get("application_file", "autolamella"),
                     milling_current=protocol["milling_current"],
                     preset = protocol.get("preset", None),
                 )
