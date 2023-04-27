@@ -15,3 +15,4 @@ autolamella/_version.py
 autolamella/log/*
 
 autolamella/_version.py
+*.code-workspace
