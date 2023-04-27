@@ -30,3 +30,5 @@ microexpansion:
 name: Autolamella_Bacteria
 stage_rotation: 230
 stage_tilt: 52
+application_file: autolamella
+

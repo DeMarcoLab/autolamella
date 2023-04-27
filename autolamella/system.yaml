@@ -36,7 +36,7 @@ user:
   imaging: 
     imaging_current: 20.e-12
     resolution: [1536, 1024]
-    hfw: 150.e-6  
+    hfw: 80.e-6  
     beam_type: "Electron"
     autocontrast: False
     dwell_time: 1.e-6
