@@ -528,7 +528,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.microscope_settings.protocol is None:
             return 
         
-        protocol_loaded = self.microscope_settings.protocol
 
         main_headers = {
             "name": "autolamella_demo",
@@ -586,27 +585,27 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         main_header_exception = ["application_file"] if _TESCAN and _DEMO else []
 
-        def _check_helper(answer_dict, protocol_dict, microscope_dict, exception):
+        def _check_helper(answer_dict, microscope_dict, exception):
             
             for name in answer_dict:
                 if name in exception:
                     continue
-                if name not in protocol_dict:
+                if name not in microscope_dict:
                     microscope_dict[name] = answer_dict[name]
-                item = protocol_dict[name]
+                item = microscope_dict[name]
                 if item is None:
                     microscope_dict[name] = answer_dict[name]
             
 
-        _check_helper(main_headers, protocol_loaded, self.microscope_settings.protocol, main_header_exception)
+        _check_helper(main_headers, self.microscope_settings.protocol, main_header_exception)
 
         fiducial_exception = ["preset"] if (_THERMO and _DEMO) else []
 
-        _check_helper(fiducial_headers, protocol_loaded["fiducial"], self.microscope_settings.protocol["fiducial"], fiducial_exception)
+        _check_helper(fiducial_headers, self.microscope_settings.protocol["fiducial"], fiducial_exception)
 
         lamella_exception = ["protocol_stages"]
 
-        _check_helper(lamella_headers, protocol_loaded["lamella"], self.microscope_settings.protocol["lamella"], lamella_exception)
+        _check_helper(lamella_headers, self.microscope_settings.protocol["lamella"], lamella_exception)
 
         protocol_stages = [protocol_stage_1, protocol_stage_2, protocol_stage_3]
 
@@ -616,11 +615,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             protocol_stage_exception = ["preset"] if (_THERMO and _DEMO) else []
 
-            _check_helper(stage, protocol_loaded["lamella"]["protocol_stages"][idx], self.microscope_settings.protocol["lamella"]["protocol_stages"][idx], protocol_stage_exception)
+            _check_helper(stage,  self.microscope_settings.protocol["lamella"]["protocol_stages"][idx], protocol_stage_exception)
 
 
         microexpansion_exception = []
-        _check_helper(microexpansion_headers, protocol_loaded["microexpansion"], self.microscope_settings.protocol["microexpansion"], microexpansion_exception)
+        _check_helper(microexpansion_headers, self.microscope_settings.protocol["microexpansion"], microexpansion_exception)
 
 
     def load_protocol(self): 
