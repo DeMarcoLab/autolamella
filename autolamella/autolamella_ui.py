@@ -48,6 +48,8 @@ from structures import (
 )
 import config as cfg
 
+from utils import check_loaded_protocol
+
 from ui import UI as UI
 from napari.utils.notifications import show_info, show_error
 
@@ -518,108 +520,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
         logging.info("Stage parameters set")  
 
-    def check_loaded_protocol(self):
-
-        _THERMO = isinstance(self.microscope, (ThermoMicroscope))
-        _TESCAN = isinstance(self.microscope, (TescanMicroscope))
-        _DEMO = isinstance(self.microscope, (DemoMicroscope))
-        
-        
-        if self.microscope_settings.protocol is None:
-            return 
-        
-
-        main_headers = {
-            "name": "autolamella_demo",
-            "application_file": "autolamella",
-            "stage_rotation": 230,
-            "stage_tilt": 52,
-        }
-
-        fiducial_headers = {
-            "length": 10.e-6,
-            "width": 1.e-6,
-            "depth": 1.0e-6,
-            "milling_current": 28.e-9,
-            "preset": "30 keV; 20 nA"
-        }
-
-        lamella_headers = {
-            "beam_shift_attempts": 3,
-            "lamella_width": 10.e-6,
-            "lamella_length": 10.e-6,
-        }
-
-        protocol_stage_1 = {
-            "trench_height":10.e-6,
-            "milling_depth": 1.e-6,
-            "offset": 2.e-6,
-            "size_ratio": 1.0,
-            "milling_current": 2.e-9,
-            "preset": "30 keV; 2.5 nA"
-        }
-
-        protocol_stage_2 = {
-            "trench_height":2.e-6,
-            "milling_depth": 1.e-6,
-            "offset": 0.5e-6,
-            "size_ratio": 1.0,
-            "milling_current": 0.74e-9,
-            "preset": "30 keV; 2.5 nA"
-        }
-
-        protocol_stage_3 = {
-            "trench_height":0.5e-6,
-            "milling_depth": 0.4e-6,
-            "offset": 0.0e-6,
-            "size_ratio": 1.0,
-            "milling_current": 60.0e-12,
-            "preset": "30 keV; 2.5 nA"
-        }
-
-        microexpansion_headers = {
-            "width": 0.5e-6,
-            "height": 18.e-6,
-            "distance": 10.e-6,
-        }
-
-        main_header_exception = ["application_file"] if _TESCAN and _DEMO else []
-
-        def _check_helper(answer_dict, microscope_dict, exception):
-            
-            for name in answer_dict:
-                if name in exception:
-                    continue
-                if name not in microscope_dict:
-                    microscope_dict[name] = answer_dict[name]
-                item = microscope_dict[name]
-                if item is None:
-                    microscope_dict[name] = answer_dict[name]
-            
-
-        _check_helper(main_headers, self.microscope_settings.protocol, main_header_exception)
-
-        fiducial_exception = ["preset"] if (_THERMO and _DEMO) else []
-
-        _check_helper(fiducial_headers, self.microscope_settings.protocol["fiducial"], fiducial_exception)
-
-        lamella_exception = ["protocol_stages"]
-
-        _check_helper(lamella_headers, self.microscope_settings.protocol["lamella"], lamella_exception)
-
-        protocol_stages = [protocol_stage_1, protocol_stage_2, protocol_stage_3]
-
-        for idx in range(len(protocol_stages)):
-
-            stage = protocol_stages[idx]
-
-            protocol_stage_exception = ["preset"] if (_THERMO and _DEMO) else []
-
-            _check_helper(stage,  self.microscope_settings.protocol["lamella"]["protocol_stages"][idx], protocol_stage_exception)
-
-
-        microexpansion_exception = []
-        _check_helper(microexpansion_headers, self.microscope_settings.protocol["microexpansion"], microexpansion_exception)
+    
 
 
     def load_protocol(self): 
@@ -631,7 +532,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol = utils.load_protocol(
             protocol_path=protocol_path
         ) 
-        self.check_loaded_protocol()
+
+        _THERMO = isinstance(self.microscope, (ThermoMicroscope))
+        _TESCAN = isinstance(self.microscope, (TescanMicroscope))
+        _DEMO = isinstance(self.microscope, (DemoMicroscope))
+
+        check_loaded_protocol(self.microscope_settings.protocol, _THERMO, _TESCAN, _DEMO)
         self.set_ui_from_protocol() 
         self.show_lamella.setEnabled(True)
 
