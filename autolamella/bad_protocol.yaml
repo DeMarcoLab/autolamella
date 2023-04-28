@@ -11,7 +11,7 @@ fiducial:
   preset: "30 keV; 20 nA" # TESCAN only
 
 lamella:
-  beam_shift_attempts: 3
+  beam_shift_attempts: "3.541"
   lamella_width: 10.e-6
   lamella_height: 800.e-9
   protocol_stages:
@@ -26,7 +26,7 @@ lamella:
     offset: 0.5e-6
     size_ratio: 1.0
     milling_current: 0.74e-9
-    preset: "30 keV; 1 nA" # TESCAN only
+    preset: "30 keV; 11 nA" # TESCAN only
   - trench_height: 
     milling_depth: 0.4e-6
     offset: 0.0e-6

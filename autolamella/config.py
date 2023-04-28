@@ -59,3 +59,6 @@ DEFAULT_PROTOCOL = {
     "distance": 10.e-6,
 }
 }
+
+ACCEPTABLE_APPLICATION_FILES_THERMO = ["autolamella"]
+ACCEPTABLE_PRESETS_TESCAN = ["30 keV; 2.5 nA", "30 keV; 20 nA","30 keV; 1 nA","30 keV; 50 pA"]

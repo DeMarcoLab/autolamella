@@ -19,7 +19,7 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
         if microscope_protocol is None:
             return 
 
-        def _check_helper(answer_dict, microscope_dict, exception):
+        def _check_helper(answer_dict, microscope_dict, exception,acceptable_values = None):
             
             for name in answer_dict:
                 if name in exception:
@@ -29,6 +29,24 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
                 item = microscope_dict[name]
                 if item is None:
                     microscope_dict[name] = answer_dict[name]
+                    item = microscope_dict[name]
+                
+                default_type = type(answer_dict[name])
+
+                if isinstance(answer_dict[name],int):
+                    default_type = float
+
+                if type(item) != default_type:
+                    return f'Protocol value error: {name} is not of type {default_type}'
+                
+                if acceptable_values is None:
+                    continue
+                else:
+                    if name in acceptable_values:
+                        if item not in acceptable_values[name]:
+                            return f'Protocol value error: {item} is not an acceptable value for {name}'
+
+
 
 
         main_headers = autolamella_config.DEFAULT_PROTOCOL["main_headers"]
@@ -38,18 +56,33 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
         protocol_stage_2 = autolamella_config.DEFAULT_PROTOCOL["protocol_stage_2"]
         protocol_stage_3 = autolamella_config.DEFAULT_PROTOCOL["protocol_stage_3"]
         microexpansion_headers = autolamella_config.DEFAULT_PROTOCOL["microexpansion_headers"]
-            
-        main_header_exception = ["application_file"] if _TESCAN and _DEMO else []
+        
+        main_header_exception = ["application_file"]  if _TESCAN and _DEMO else []
+        accept_app_files = {"application_file":autolamella_config.ACCEPTABLE_APPLICATION_FILES_THERMO} if _THERMO or _DEMO else None    
+        
+        
 
-        _check_helper(main_headers, microscope_protocol, main_header_exception)
+        error_check =_check_helper(main_headers, microscope_protocol, main_header_exception,accept_app_files)
+
+        if error_check is not None:
+            return error_check
 
         fiducial_exception = ["preset"] if (_THERMO and _DEMO) else []
+        fiducial_accept_vals = {"preset":autolamella_config.ACCEPTABLE_PRESETS_TESCAN} if _TESCAN or _DEMO else None
 
-        _check_helper(fiducial_headers, microscope_protocol["fiducial"], fiducial_exception)
+        error_check = _check_helper(fiducial_headers, microscope_protocol["fiducial"], fiducial_exception,fiducial_accept_vals)
+
+        if error_check is not None:
+            return error_check
+        
 
         lamella_exception = ["protocol_stages"]
 
-        _check_helper(lamella_headers, microscope_protocol["lamella"], lamella_exception)
+        error_check = _check_helper(lamella_headers, microscope_protocol["lamella"], lamella_exception)
+
+        if error_check is not None:
+            return error_check
+
 
         protocol_stages = [protocol_stage_1, protocol_stage_2, protocol_stage_3]
 
@@ -58,9 +91,17 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
             stage = protocol_stages[idx]
 
             protocol_stage_exception = ["preset"] if (_THERMO and _DEMO) else []
+            protocol_stage_accept_vals = {"preset":autolamella_config.ACCEPTABLE_PRESETS_TESCAN} if _TESCAN or _DEMO else None
 
-            _check_helper(stage,  microscope_protocol["lamella"]["protocol_stages"][idx], protocol_stage_exception)
+            error_check =_check_helper(stage,  microscope_protocol["lamella"]["protocol_stages"][idx], protocol_stage_exception,protocol_stage_accept_vals)
+
+            if error_check is not None:
+                return error_check
+            
 
 
         microexpansion_exception = []
-        _check_helper(microexpansion_headers, microscope_protocol["microexpansion"], microexpansion_exception)
+        error_check = _check_helper(microexpansion_headers, microscope_protocol["microexpansion"], microexpansion_exception)    
+
+        if error_check is not None:
+            return error_check

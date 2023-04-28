@@ -537,7 +537,17 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         _TESCAN = isinstance(self.microscope, (TescanMicroscope))
         _DEMO = isinstance(self.microscope, (DemoMicroscope))
 
-        check_loaded_protocol(self.microscope_settings.protocol, _THERMO, _TESCAN, _DEMO)
+        error_returned = check_loaded_protocol(self.microscope_settings.protocol, _THERMO, _TESCAN, _DEMO)
+
+        if error_returned is not None:
+            _ = message_box_ui(
+                title="Protocol error",
+                text=error_returned,
+                buttons=QMessageBox.Ok,
+            )
+            self.protocol_loaded = False
+            self.load_protocol()
+
         self.set_ui_from_protocol() 
         self.show_lamella.setEnabled(True)
 
