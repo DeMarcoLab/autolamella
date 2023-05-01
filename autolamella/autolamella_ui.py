@@ -14,6 +14,7 @@ import fibsem.constants as constants
 import fibsem.conversions as conversions
 import fibsem.gis as gis
 import fibsem.milling as milling
+from fibsem.patterning import FibsemMillingStage, MicroExpansionPattern, TrenchPattern
 import napari
 import numpy as np
 import yaml
@@ -203,7 +204,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 ]
                 width = microexpansion_protocol["width"]
                 height = microexpansion_protocol["height"]
-                depth = protocol["milling_depth"]
+                depth = protocol["depth"]
                 lamella_width = protocol["lamella_width"]
                 stage.append(
                     FibsemPatternSettings(
@@ -560,7 +561,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_width.setValue((self.microscope_settings.protocol["lamella"]["lamella_width"]*constants.SI_TO_MICRO))
         self.lamella_height.setValue((self.microscope_settings.protocol["lamella"]["lamella_height"]*constants.SI_TO_MICRO))
         self.trench_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"]*constants.SI_TO_MICRO))
-        self.depth_trench.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"]*constants.SI_TO_MICRO))
+        self.depth_trench.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["depth"]*constants.SI_TO_MICRO))
         self.offset.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"]*constants.SI_TO_MICRO))
         self.current_lamella.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"]*constants.SI_TO_NANO))
         self.size_ratio.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"]))
@@ -581,7 +582,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         index = self.stage_lamella.currentIndex()
         
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"] = float(self.trench_height.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"] = float(self.depth_trench.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["depth"] = float(self.depth_trench.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"] = float(self.offset.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"] = float(self.current_lamella.value()*constants.NANO_TO_SI)
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"] = float(self.size_ratio.value())
@@ -1002,6 +1003,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_widget.image_settings,
                 current_alignment=alignment_current,
+                stress_relief = self.microexpansionCheckBox.isChecked(),
             )
         
         self.run_button.setEnabled(True)
@@ -1255,7 +1257,8 @@ def run_autolamella(
     experiment: Experiment,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
-    current_alignment: bool 
+    current_alignment: bool,
+    stress_relief: bool,
 ):
     """
     Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
@@ -1297,6 +1300,74 @@ def run_autolamella(
                     preset = protocol.get("preset", None),
                 )
 
+                if stress_relief and lamella.state.stage == AutoLamellaStage.FiducialMilled:
+                    pattern = MicroExpansionPattern()
+                    microscope_settings.protocol["microexpansion"]["depth"] = protocol["depth"]
+                    microscope_settings.protocol["microexpansion"]["lamella_width"] = protocol["lamella_width"]
+                    pattern.define(
+                            protocol = microscope_settings.protocol["microexpansion"],
+                            point = lamella.lamella_centre
+                        )
+                    mill_stage = FibsemMillingStage(
+                        name = curr_stage.name,
+                        num = curr_stage.value,
+                        milling = mill_settings,
+                        pattern = pattern,
+                        point = lamella.lamella_centre
+                    )
+                    for _ in range(
+                    int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
+                    ):
+                        if current_alignment:
+                            if isinstance(microscope, ThermoMicroscope) or isinstance(microscope, DemoMicroscope):
+                                microscope.set("current", protocol['milling_current'], BeamType.ION)
+                            elif isinstance(microscope, TescanMicroscope):
+                                microscope.set('preset', protocol["preset"], BeamType.ION)
+                        image_settings.beam_type = BeamType.ION
+                        image_settings.reduced_area = lamella.fiducial_area
+                        beam_shift_alignment(
+                            microscope=microscope,
+                            image_settings=image_settings,
+                            ref_image=lamella.reference_image,
+                            reduced_area=lamella.fiducial_area,
+                        )
+
+                    try:
+                        mill_settings.hfw = lamella.state.microscope_state.ib_settings.hfw
+
+                        milling.setup_milling(
+                            microscope,
+                            mill_settings=mill_stage.milling,
+                        )
+                        milling.draw_patterns(
+                            microscope=microscope,
+                            pattern_settings_list = mill_stage.pattern.patterns,
+                        )
+
+                        milling.run_milling(
+                            microscope, milling_current=mill_stage.milling.milling_current
+                        )
+                        milling.finish_milling(microscope)
+
+                        logging.info("Microexpansions milled successfully")
+
+                    except Exception as e:
+                        logging.error(f"Unable to mill the microexpansions: {traceback.format_exc(e)}")
+                        lamella.state.stage = AutoLamellaStage.FiducialMilled
+                        break
+                
+                pattern = TrenchPattern()
+                pattern.define(
+                        protocol = protocol,
+                        point = lamella.lamella_centre
+                    )
+                mill_stage = FibsemMillingStage(
+                    name = curr_stage.name,
+                    num = curr_stage.value,
+                    milling = mill_settings,
+                    pattern = pattern,
+                    point = lamella.lamella_centre
+                )
                 # alignment
                 for _ in range(
                     int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
@@ -1320,27 +1391,15 @@ def run_autolamella(
 
                     milling.setup_milling(
                         microscope,
-                        mill_settings=mill_settings,
+                        mill_settings=mill_stage.milling,
                     )
-                    milling.draw_trench(
+                    milling.draw_patterns(
                         microscope=microscope,
-                        protocol=protocol,
-                        point=lamella.lamella_centre
+                        pattern_settings_list = mill_stage.pattern.patterns,
                     )
-
-                    if (
-                        curr_stage == 2 and lamella.mill_microexpansion
-                    ):  # stage = 2 is RoughCut
-                        milling.draw_stress_relief(
-                            microscope=microscope,
-                            microexpansion_protocol=microscope_settings.protocol[
-                                "microexpansion"
-                            ],
-                            lamella_protocol=protocol
-                        )
 
                     milling.run_milling(
-                        microscope, milling_current=protocol["milling_current"]
+                        microscope, milling_current=mill_stage.milling.milling_current
                     )
                     milling.finish_milling(microscope)
 
@@ -1360,19 +1419,24 @@ def run_autolamella(
                     
                     experiment.save()
 
-                    l_stage = curr_stage.name
+                    l_stage = mill_stage.name
 
                     logging.info(f"Lamella {j+1}, stage: '{l_stage}' milled successfully.")
-
+                    success= True; 
                 except Exception as e:
                     logging.error(
-                        f"Unable to draw/mill the lamella: {traceback.format_exc()}"
+                        f"Unable to draw/mill the lamella: {traceback.format_exc(e)}"
                     )
+                    lamella.state.stage = AutoLamellaStage.FiducialMilled
+                    success = False
                 finally:
                     milling.finish_milling(microscope)
                     experiment.save()
 
-    logging.info("All Lamella milled successfully.")
+    if success:
+        logging.info("All Lamella milled successfully.")
+    else:
+        logging.info("Lamellas were not milled successfully.")
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaStage.PolishingCut:
             lamella = lamella.update(stage=AutoLamellaStage.Finished)
