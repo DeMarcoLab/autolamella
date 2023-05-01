@@ -503,18 +503,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
     def disconnect_from_microscope(self):
-        self.gridlayout_imaging.removeWidget(self.image_widget)
-        self.gridlayout_movement.removeWidget(self.movement_widget)
-        self.image_widget.deleteLater()
-        self.movement_widget.deleteLater()
-        self.microscope = None
-        self.microscope_settings = None
-        self.protocol_loaded = False
-        self.tabWidget.setTabVisible(4, False)
-        self.tabWidget.setTabVisible(3, False)
-        self.tabWidget.setTabVisible(0, False)
-        self.show_lamella.setEnabled(False)
-        self.show_lamella.setChecked(False)
+        if self.microscope is not None:
+            self.microscope = None
+            self.microscope_settings = None
+            self.protocol_loaded = False
+            self.tabWidget.setTabVisible(4, False)
+            self.tabWidget.setTabVisible(3, False)
+            self.tabWidget.setTabVisible(0, False)
+            self.show_lamella.setEnabled(False)
+            self.show_lamella.setChecked(False)
+        
 
     def set_stage_parameters(self):
         self.microscope_settings.system.stage = self.system_widget.settings.system.stage   

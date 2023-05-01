@@ -1,0 +1,37 @@
+application_file: autolamella
+fiducial:
+  depth: 5.0e-07
+  length: 6.0e-06
+  milling_current: 2.0e-10
+  preset: 30 keV; 20 nA
+  width: 8.0e-07
+lamella:
+  beam_shift_attempts: 3
+  lamella_height: 5.5e-07
+  lamella_width: 6.0e-06
+  protocol_stages:
+  - milling_current: 2.0e-10
+    milling_depth: 6.0e-07
+    offset: 1.6e-06
+    preset: 30 keV; 20 nA
+    size_ratio: 1.0
+    trench_height: 2.8e-06
+  - milling_current: 2.0e-10
+    milling_depth: 5.0e-07
+    offset: 8.0e-07
+    preset: 30 keV; 20 nA
+    size_ratio: 1.0
+    trench_height: 1.2e-06
+  - milling_current: 6.0e-11
+    milling_depth: 4.0e-07
+    offset: 0.0
+    preset: 30 keV; 20 nA
+    size_ratio: 1.0
+    trench_height: 1.2e-06
+microexpansion:
+  distance: 4.6e-06
+  height: 4.675e-06
+  width: 2.0e-07
+name: Autolamella
+stage_rotation: 230
+stage_tilt: 52
