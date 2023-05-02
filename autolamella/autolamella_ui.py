@@ -173,72 +173,71 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise the Lamella and Fiducial Settings
         self.patterns_protocol = []
         pixelsize = self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]
+        self.lamella_stages = []
+        self.fiducial_stage = None
+        ############### Lamella Pattern ################
+
+        default_position_lamella = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0) # has the user defined a position manually? If not use 0,0
+        self.lamella_position = default_position_lamella
+        index = self.lamella_index.value() - 1
+        if self.experiment is not None and len(self.experiment.positions) > 0: # do we have an experiment with at least one lamella
+            if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup: # has the lamella been saved 
+                lamella_position = self.experiment.positions[index].lamella_centre
+            else:
+                lamella_position = default_position_lamella
+        else:
+            lamella_position = default_position_lamella  
+
+        if self.microexpansionCheckBox.isChecked():
+            pattern = MicroExpansionPattern()
+            protocol = self.microscope_settings.protocol["microexpansion"]
+            protocol["depth"] = self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["depth"]
+            protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
+            pattern.define(
+                    protocol = protocol,
+                    point = lamella_position
+                )
+            mill_stage = FibsemMillingStage(
+                name = "Microexpansion",
+                num = 0,
+                milling = FibsemMillingSettings(),
+                pattern = pattern,
+                point = lamella_position
+            )
+            self.lamella_stages.append(mill_stage)
 
         for i, protocol in enumerate(
             self.microscope_settings.protocol["lamella"]["protocol_stages"]
         ):
             protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
             protocol["lamella_height"] = self.microscope_settings.protocol["lamella"]["lamella_height"]
-            stage = []
-
-
-            default_position_lamella = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0) # has the user defined a position manually? If not use 0,0
-            self.lamella_position = default_position_lamella
-            index = self.lamella_index.value() - 1
-            if self.experiment is not None and len(self.experiment.positions) > 0: # do we have an experiment with at least one lamella
-                if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup: # has the lamella been saved 
-                    lamella_position = self.experiment.positions[index].lamella_centre
-                else:
-                    lamella_position = default_position_lamella
-            else:
-                lamella_position = default_position_lamella  
-            
-            lower_pattern_settings, upper_pattern_settings = milling.extract_trench_parameters(protocol, lamella_position)
-            stage.append(lower_pattern_settings)
-            stage.append(upper_pattern_settings)
-
-            # stress relief
-            if i == 0 and self.microexpansionCheckBox.isChecked():
-                microexpansion_protocol = self.microscope_settings.protocol[
-                    "microexpansion"
-                ]
-                width = microexpansion_protocol["width"]
-                height = microexpansion_protocol["height"]
-                depth = protocol["depth"]
-                lamella_width = protocol["lamella_width"]
-                stage.append(
-                    FibsemPatternSettings(
-                        width=width,
-                        height=height,
-                        depth=depth,
-                        centre_x=lamella_position.x
-                        - lamella_width / 2
-                        - microexpansion_protocol["distance"],
-                        centre_y=lamella_position.y,
-                        cleaning_cross_section=True,
-                    )
+                  
+            pattern = TrenchPattern()
+            pattern.define(
+                    protocol = protocol,
+                    point = lamella_position
                 )
+            if i == 0:
+                name = "Rough Cut"
+            elif i == 1:
+                name = "Regular Cut"
+            elif i == 2:
+                name = "Polishing Cut"
 
-                stage.append(
-                    FibsemPatternSettings(
-                        width=width,
-                        height=height,
-                        depth=depth,
-                        centre_x=lamella_position.x
-                        + lamella_width / 2
-                        + microexpansion_protocol["distance"],
-                        centre_y=lamella_position.y,
-                        cleaning_cross_section=True,
-                    )
-                )
+            mill_stage = FibsemMillingStage(
+                name = name,
+                num = i + 1,
+                milling = FibsemMillingSettings(),
+                pattern = pattern,
+                point = lamella_position
+            )
 
-            self.patterns_protocol.append(stage)
+            self.lamella_stages.append(mill_stage)
 
-        # Fiducial
-        stage = []
+        ############### Fiducial Pattern ################
+
         protocol = self.microscope_settings.protocol["fiducial"]
 
-    
         default_position_fiducial = self.fiducial_position if self.fiducial_position is not None else Point(-self.image_widget.image_settings.resolution[0]/3 * pixelsize, 0.0) # has the user defined a fiducial position?
         self.fiducial_position = default_position_fiducial
         if self.experiment is not None and len(self.experiment.positions) > 0:
@@ -249,28 +248,19 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         else:
             fiducial_position = default_position_fiducial
 
-
-        stage.append(
-            FibsemPatternSettings(
-                width=protocol["width"],
-                height=protocol["height"],
-                depth=protocol["depth"],
-                rotation=np.deg2rad(45),
-                centre_x=fiducial_position.x,
-                centre_y=fiducial_position.y,
-            )
+        fiducial = FiducialPattern()
+        fiducial.define(
+            protocol = protocol,
+            point = fiducial_position,
         )
-        stage.append(
-            FibsemPatternSettings(
-                width=protocol["width"],
-                height=protocol["height"],
-                depth=protocol["depth"],
-                rotation=np.deg2rad(135),
-                centre_x=fiducial_position.x,
-                centre_y=fiducial_position.y,
-            )
+        stage = FibsemMillingStage(
+            name = "fiducial",
+            num = 0,
+            milling = FibsemMillingSettings,
+            pattern = fiducial,
+            point = fiducial_position,
         )
-        self.patterns_protocol.append(stage)
+        self.fiducial_stage = stage
 
         self.update_displays()
 
@@ -610,9 +600,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             if self.microscope_settings.protocol is None:
                 logging.info("No protocol loaded")
                 return
+            patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in self.lamella_stages if stage.pattern is not None]
+            patterns.append(self.fiducial_stage.pattern.patterns)
             _draw_patterns_in_napari(
-                 self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, self.patterns_protocol
+                 self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, patterns
             )
+            # _draw_patterns_in_napari(
+            #      self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, self.fiducial_stage.pattern.patterns
+            # )
         else:
             if "Stage 1" in self.viewer.layers:
                 self.viewer.layers["Stage 1"].visible = False
