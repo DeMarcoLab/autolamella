@@ -13,6 +13,10 @@ log/*
 autolamella/log/*
 autolamella/_version.py
 autolamella/log/*
+autolamella/*protocol*.y*ml
+!autolamella/default_protocol.yaml
 
 autolamella/_version.py
 *.code-workspace
+.vscode/*
+protocol*

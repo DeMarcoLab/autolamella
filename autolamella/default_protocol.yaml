@@ -32,8 +32,8 @@ lamella:
     milling_depth: 0.4e-6
     offset: 0.0e-6
     size_ratio: 1.0
-    milling_current: 60.0e-12 # TESCAN only
-    preset: "30 keV; 50 pA"
+    milling_current: 60.0e-12 
+    preset: "30 keV; 50 pA" # TESCAN only
 
 microexpansion:
   width: 0.5e-6

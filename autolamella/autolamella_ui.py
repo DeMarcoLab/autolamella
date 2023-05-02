@@ -48,6 +48,8 @@ from structures import (
 )
 import config as cfg
 
+from utils import check_loaded_protocol
+
 from ui import UI as UI
 from napari.utils.notifications import show_info, show_error
 
@@ -475,24 +477,26 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
     def disconnect_from_microscope(self):
-        self.tabWidget.removeTab(4)
-        self.tabWidget.removeTab(3)
-        self.viewer.layers.clear()
-        self.image_widget.deleteLater()
-        self.movement_widget.deleteLater()
-        self.microscope = None
-        self.microscope_settings = None
-        self.image_widget = None
-        self.movement_widget = None
-        self.protocol_loaded = False
-        self.tabWidget.setTabVisible(0, False)
-        self.tabWidget.setTabVisible(1, False)
-        self.show_lamella.setEnabled(False)
-        self.show_lamella.setChecked(False)
+
+        if self.microscope is not None:
+            self.microscope = None
+            self.microscope_settings = None
+            self.protocol_loaded = False
+            self.tabWidget.setTabVisible(4, False)
+            self.tabWidget.setTabVisible(3, False)
+            self.tabWidget.setTabVisible(0, False)
+            self.show_lamella.setEnabled(False)
+            self.show_lamella.setChecked(False)
+            self.viewer.layers.clear()
+        
+
 
     def set_stage_parameters(self):
         self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
         logging.info("Stage parameters set")  
+
+    
+
 
     def load_protocol(self): 
         tkinter.Tk().withdraw()
@@ -503,6 +507,22 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol = utils.load_protocol(
             protocol_path=protocol_path
         ) 
+
+        _THERMO = isinstance(self.microscope, (ThermoMicroscope))
+        _TESCAN = isinstance(self.microscope, (TescanMicroscope))
+        _DEMO = isinstance(self.microscope, (DemoMicroscope))
+
+        error_returned = check_loaded_protocol(self.microscope_settings.protocol, _THERMO, _TESCAN, _DEMO)
+
+        if error_returned is not None:
+            _ = message_box_ui(
+                title="Protocol error",
+                text=error_returned,
+                buttons=QMessageBox.Ok,
+            )
+            self.protocol_loaded = False
+            self.load_protocol()
+
         self.set_ui_from_protocol() 
         if isinstance(self.microscope, TescanMicroscope):
             presets = self.microscope.get('presets')
@@ -556,7 +576,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.draw_patterns()
 
     def select_stage(self):
-        index = self.stage_lamella.currentIndex() - 1
+        index = self.stage_lamella.currentIndex()
         self.lamella_width.setValue((self.microscope_settings.protocol["lamella"]["lamella_width"]*constants.SI_TO_MICRO))
         self.lamella_height.setValue((self.microscope_settings.protocol["lamella"]["lamella_height"]*constants.SI_TO_MICRO))
         self.trench_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"]*constants.SI_TO_MICRO))
@@ -578,7 +598,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["lamella"]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
         
-        index = self.stage_lamella.currentIndex() - 1
+
+        index = self.stage_lamella.currentIndex()
         
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"] = float(self.trench_height.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"] = float(self.depth_trench.value()*constants.MICRO_TO_SI)
@@ -702,7 +723,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         string_lamella = ""
         for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number:02d}-{lam._petname}: {lam.state.stage.name}\n"
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
@@ -761,7 +782,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remove_button.setStyleSheet("color: white")
 
         self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
-        # self.save_button.setEnabled(True)
 
         
 
@@ -1283,6 +1303,14 @@ def run_autolamella(
                 microscope.move_stage_absolute(
                     lamella.state.microscope_state.absolute_position
                 )
+
+                image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
+                image_settings.save = True
+                image_settings.label = f"start_mill_stage_{i}"
+                image_settings.reduced_area = None
+                acquire.take_reference_images(microscope, image_settings)
+                image_settings.save = False
+
                 mill_settings = FibsemMillingSettings(
                     patterning_mode="Serial",
                     application_file=microscope_settings.protocol.get("application_file", "autolamella"),
@@ -1343,16 +1371,13 @@ def run_autolamella(
                     # Update Lamella Stage and Experiment
                     lamella = lamella.update(stage=curr_stage)
 
-                    image_settings.beam_type = BeamType.ION
-                    reference_image = acquire.take_reference_images(
-                        microscope, image_settings
-                    )
-                    image_settings.label = f"ref_mill_stage_{i}_eb"
-                    path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
-                    reference_image[0].save(path_image)
-                    image_settings.label = f"ref_mill_stage_{i}_ib"
-                    path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
-                    reference_image[1].save(path_image)
+                    # save reference images
+                    image_settings.save = True
+                    image_settings.label = f"ref_mill_stage_{i}"
+                    image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
+                    image_settings.reduced_area = None
+                    acquire.take_reference_images(microscope, image_settings)
+                    image_settings.save = False
                     
                     experiment.save()
 
