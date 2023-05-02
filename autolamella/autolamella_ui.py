@@ -84,9 +84,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise experiment object
         self.experiment: Experiment = None
         self.protocol_loaded = False
-        self.tabWidget.setTabVisible(3, False)
-        self.tabWidget.setTabVisible(4, False)
-        self.tabWidget.setTabVisible(0, False)
         self.remove_button.setStyleSheet("background-color: transparent")
         self.fiducial_position = None
         self.lamella_position = None
@@ -99,7 +96,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 config_path = CONFIG_PATH,
             )
         
-        self.gridLayout_system.addWidget(self.system_widget)
+        self.tabWidget.addTab(self.system_widget, "System")
+        self.tabWidget.setTabVisible(0, False)
+        self.tabWidget.setTabVisible(1, False)
+
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
@@ -430,31 +430,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_log)
         self.timer.start(1000)
-   
-
-        if isinstance(self.microscope, TescanMicroscope):
-            presets = self.microscope.get('presets')
-            self.presetComboBox.addItems(presets)
-            self.presetComboBox_fiducial.addItems(presets)
-            self.application_file_label.hide()
-            self.comboBoxapplication_file.hide()
-            self.presetComboBox.setEnabled(True)
-            self.presetComboBox.show()
-            self.presetComboBox_fiducial.setEnabled(True)
-            self.presetComboBox_fiducial.show()
-            self.presetLabel.show()
-            self.presetLabel_2.show()
-        elif isinstance(self.microscope, ThermoMicroscope):
-            self.application_file_label.show()
-            self.comboBoxapplication_file.show()
-            self.presetComboBox.setEnabled(False)
-            self.presetComboBox.hide()
-            self.presetComboBox_fiducial.setEnabled(False)
-            self.presetComboBox_fiducial.hide()
-            self.presetLabel.hide()
-            self.presetLabel_2.hide()
-            application_files = self.microscope.get_available_values('application_file')
-            self.comboBoxapplication_file.addItems(application_files)
 
 
     def experiment_created_and_microscope_connected(self):
@@ -472,11 +447,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         self.image_widget.picture_signal.connect(self.draw_patterns)
         
-        self.gridlayout_imaging.addWidget(self.image_widget,0,0)
-        self.gridlayout_movement.addWidget(self.movement_widget,0,0)
-        self.tabWidget.setTabVisible(3, True)
-        self.tabWidget.setTabVisible(4, True)
+        self.tabWidget.addTab(self.image_widget, "Image")
+        self.tabWidget.addTab(self.movement_widget, "Movement")
         self.tabWidget.setTabVisible(0, True)
+        self.tabWidget.setTabVisible(1, True)
+
         self.system_widget.get_stage_settings_from_ui()
         if self.protocol_loaded is False:
             self.load_protocol()
@@ -495,14 +470,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.lamella_index.setMaximum(len(self.experiment.positions))
             self.lamella_index.setMinimum(1)
 
-        if isinstance(self.microscope, ThermoMicroscope):
-            self.comboBoxapplication_file.setCurrentText(self.microscope_settings.protocol["application_file"])
+        
         self.draw_patterns()
         self.update_displays()
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
 
 
     def disconnect_from_microscope(self):
+
         if self.microscope is not None:
             self.microscope = None
             self.microscope_settings = None
@@ -512,7 +487,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.tabWidget.setTabVisible(0, False)
             self.show_lamella.setEnabled(False)
             self.show_lamella.setChecked(False)
+            self.viewer.layers.clear()
         
+
 
     def set_stage_parameters(self):
         self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
@@ -547,6 +524,30 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.load_protocol()
 
         self.set_ui_from_protocol() 
+        if isinstance(self.microscope, TescanMicroscope):
+            presets = self.microscope.get('presets')
+            self.presetComboBox.addItems(presets)
+            self.presetComboBox_fiducial.addItems(presets)
+            self.application_file_label.hide()
+            self.comboBoxapplication_file.hide()
+            self.presetComboBox.setEnabled(True)
+            self.presetComboBox.show()
+            self.presetComboBox_fiducial.setEnabled(True)
+            self.presetComboBox_fiducial.show()
+            self.presetLabel.show()
+            self.presetLabel_2.show()
+        elif isinstance(self.microscope, ThermoMicroscope):
+            self.application_file_label.show()
+            self.comboBoxapplication_file.show()
+            self.presetComboBox.setEnabled(False)
+            self.presetComboBox.hide()
+            self.presetComboBox_fiducial.setEnabled(False)
+            self.presetComboBox_fiducial.hide()
+            self.presetLabel.hide()
+            self.presetLabel_2.hide()
+            application_files = self.microscope.get_available_values('application_file')
+            self.comboBoxapplication_file.addItems(application_files)
+        
         self.show_lamella.setEnabled(True)
 
     def set_ui_from_protocol(self):
@@ -566,7 +567,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_width.setValue((self.microscope_settings.protocol["microexpansion"]["width"]*constants.SI_TO_MICRO))
         self.micro_exp_height.setValue((self.microscope_settings.protocol["microexpansion"]["height"]*constants.SI_TO_MICRO))
         self.micro_exp_distance.setValue((self.microscope_settings.protocol["microexpansion"]["distance"]*constants.SI_TO_MICRO))
-   
+
+        if isinstance(self.microscope, ThermoMicroscope):
+            self.comboBoxapplication_file.setCurrentText(self.microscope_settings.protocol["application_file"])
         logging.info("Protocol loaded")
 
 
@@ -595,7 +598,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["lamella"]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
         
-        index = self.stage_lamella.currentIndex() 
+
+        index = self.stage_lamella.currentIndex()
         
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"] = float(self.trench_height.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"] = float(self.depth_trench.value()*constants.MICRO_TO_SI)
@@ -719,7 +723,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         string_lamella = ""
         for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number:02d}-{lam._petname}: {lam.state.stage.name}\n"
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
@@ -778,7 +782,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remove_button.setStyleSheet("color: white")
 
         self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
-        # self.save_button.setEnabled(True)
 
         
 
@@ -961,6 +964,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 title="Fiducial not milled",
                 text="You haven't saved this lamella yet, cannot remill fiducial.",
             )
+            return
         if response:
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
             self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
@@ -1008,12 +1012,17 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             return
         if response:
             show_info(f"Running AutoLamella...")
+            if self.comboBox_current_alignment.currentText() == "Milling current":
+                alignment_current = True
+            else:
+                alignment_current = False
             self.image_widget.image_settings.reduced_area = None
             self.experiment = run_autolamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_widget.image_settings,
+                current_alignment=alignment_current,
             )
         
         self.run_button.setEnabled(True)
@@ -1267,6 +1276,7 @@ def run_autolamella(
     experiment: Experiment,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
+    current_alignment: bool 
 ):
     """
     Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
@@ -1293,6 +1303,14 @@ def run_autolamella(
                 microscope.move_stage_absolute(
                     lamella.state.microscope_state.absolute_position
                 )
+
+                image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
+                image_settings.save = True
+                image_settings.label = f"start_mill_stage_{i}"
+                image_settings.reduced_area = None
+                acquire.take_reference_images(microscope, image_settings)
+                image_settings.save = False
+
                 mill_settings = FibsemMillingSettings(
                     patterning_mode="Serial",
                     application_file=microscope_settings.protocol.get("application_file", "autolamella"),
@@ -1304,6 +1322,11 @@ def run_autolamella(
                 for _ in range(
                     int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
                 ):
+                    if current_alignment:
+                        if isinstance(microscope, ThermoMicroscope) or isinstance(microscope, DemoMicroscope):
+                            microscope.set("current", protocol['milling_current'], BeamType.ION)
+                        elif isinstance(microscope, TescanMicroscope):
+                            microscope.set('preset', protocol["preset"], BeamType.ION)
                     image_settings.beam_type = BeamType.ION
                     image_settings.reduced_area = lamella.fiducial_area
                     beam_shift_alignment(
@@ -1348,16 +1371,13 @@ def run_autolamella(
                     # Update Lamella Stage and Experiment
                     lamella = lamella.update(stage=curr_stage)
 
-                    image_settings.beam_type = BeamType.ION
-                    reference_image = acquire.take_reference_images(
-                        microscope, image_settings
-                    )
-                    image_settings.label = f"ref_mill_stage_{i}_eb"
-                    path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
-                    reference_image[0].save(path_image)
-                    image_settings.label = f"ref_mill_stage_{i}_ib"
-                    path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
-                    reference_image[1].save(path_image)
+                    # save reference images
+                    image_settings.save = True
+                    image_settings.label = f"ref_mill_stage_{i}"
+                    image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
+                    image_settings.reduced_area = None
+                    acquire.take_reference_images(microscope, image_settings)
+                    image_settings.save = False
                     
                     experiment.save()
 
@@ -1402,7 +1422,7 @@ def main():
     
     window = UiInterface(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window, area = 'right', add_vertical_stretch=True, name='Autolamella')
-    widget.setMinimumWidth(400)
+    #widget.setMinimumWidth(400)
     napari.run()
 
 if __name__ == "__main__":
