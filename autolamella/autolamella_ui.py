@@ -48,6 +48,8 @@ from structures import (
 )
 import config as cfg
 
+from utils import check_loaded_protocol
+
 from ui import UI as UI
 from napari.utils.notifications import show_info, show_error
 
@@ -475,24 +477,26 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
     def disconnect_from_microscope(self):
-        self.tabWidget.removeTab(4)
-        self.tabWidget.removeTab(3)
-        self.viewer.layers.clear()
-        self.image_widget.deleteLater()
-        self.movement_widget.deleteLater()
-        self.microscope = None
-        self.microscope_settings = None
-        self.image_widget = None
-        self.movement_widget = None
-        self.protocol_loaded = False
-        self.tabWidget.setTabVisible(0, False)
-        self.tabWidget.setTabVisible(1, False)
-        self.show_lamella.setEnabled(False)
-        self.show_lamella.setChecked(False)
+
+        if self.microscope is not None:
+            self.microscope = None
+            self.microscope_settings = None
+            self.protocol_loaded = False
+            self.tabWidget.setTabVisible(4, False)
+            self.tabWidget.setTabVisible(3, False)
+            self.tabWidget.setTabVisible(0, False)
+            self.show_lamella.setEnabled(False)
+            self.show_lamella.setChecked(False)
+            self.viewer.layers.clear()
+        
+
 
     def set_stage_parameters(self):
         self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
         logging.info("Stage parameters set")  
+
+    
+
 
     def load_protocol(self): 
         tkinter.Tk().withdraw()
@@ -503,6 +507,22 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol = utils.load_protocol(
             protocol_path=protocol_path
         ) 
+
+        _THERMO = isinstance(self.microscope, (ThermoMicroscope))
+        _TESCAN = isinstance(self.microscope, (TescanMicroscope))
+        _DEMO = isinstance(self.microscope, (DemoMicroscope))
+
+        error_returned = check_loaded_protocol(self.microscope_settings.protocol, _THERMO, _TESCAN, _DEMO)
+
+        if error_returned is not None:
+            _ = message_box_ui(
+                title="Protocol error",
+                text=error_returned,
+                buttons=QMessageBox.Ok,
+            )
+            self.protocol_loaded = False
+            self.load_protocol()
+
         self.set_ui_from_protocol() 
         if isinstance(self.microscope, TescanMicroscope):
             presets = self.microscope.get('presets')
@@ -578,6 +598,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["lamella"]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
         
+
         index = self.stage_lamella.currentIndex()
         
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"] = float(self.trench_height.value()*constants.MICRO_TO_SI)
