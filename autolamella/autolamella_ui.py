@@ -14,7 +14,7 @@ import fibsem.constants as constants
 import fibsem.conversions as conversions
 import fibsem.gis as gis
 import fibsem.milling as milling
-from fibsem.patterning import FibsemMillingStage, MicroExpansionPattern, TrenchPattern
+from fibsem.patterning import FibsemMillingStage, MicroExpansionPattern, TrenchPattern, FiducialPattern
 import napari
 import numpy as np
 import yaml
@@ -253,7 +253,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         stage.append(
             FibsemPatternSettings(
                 width=protocol["width"],
-                height=protocol["length"],
+                height=protocol["height"],
                 depth=protocol["depth"],
                 rotation=np.deg2rad(45),
                 centre_x=fiducial_position.x,
@@ -263,7 +263,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         stage.append(
             FibsemPatternSettings(
                 width=protocol["width"],
-                height=protocol["length"],
+                height=protocol["height"],
                 depth=protocol["depth"],
                 rotation=np.deg2rad(135),
                 centre_x=fiducial_position.x,
@@ -538,7 +538,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         ## Loading protocol tab 
         self.beamshift_attempts.setValue((self.microscope_settings.protocol["lamella"]["beam_shift_attempts"]))
-        self.fiducial_length.setValue((self.microscope_settings.protocol["fiducial"]["length"]*constants.SI_TO_MICRO))
+        self.fiducial_length.setValue((self.microscope_settings.protocol["fiducial"]["height"]*constants.SI_TO_MICRO))
         self.width_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["width"]*constants.SI_TO_MICRO))
         self.depth_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["depth"]*constants.SI_TO_MICRO))
         self.current_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["milling_current"]*constants.SI_TO_NANO))
@@ -570,7 +570,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def get_protocol_from_ui(self):
         self.microscope_settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
         self.microscope_settings.protocol["lamella"]["beam_shift_attempts"] = float(self.beamshift_attempts.value())
-        self.microscope_settings.protocol["fiducial"]["length"] = float(self.fiducial_length.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["fiducial"]["height"] = float(self.fiducial_length.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["width"] = float(self.width_fiducial.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["depth"] = float(self.depth_fiducial.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["milling_current"] = float(self.current_fiducial.value()*constants.NANO_TO_SI)
@@ -626,8 +626,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
         
-
-
     def save_filepath(self):
         """Opens file explorer to choose location to save image files"""
 
@@ -868,7 +866,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             if self.comboBox_moving_pattern.currentText() == "Fiducial":
                 fiducial_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
                 self.microscope_settings.image = self.image_widget.image_settings
-                fiducial_length = self.microscope_settings.protocol["fiducial"]["length"]
+                fiducial_length = self.microscope_settings.protocol["fiducial"]["height"]
                 area, flag = calculate_fiducial_area(self.microscope_settings, fiducial_position, fiducial_length, pixelsize)
                 if flag:
                     show_error("The fiducial area is out of the field of view. Please move fiducial closer to centre of image.")
@@ -1091,7 +1089,7 @@ def save_lamella(
 
     pixelsize = ref_image.metadata.pixel_size.x
     fiducial_centre = experiment.positions[index].fiducial_centre
-    fiducial_length = microscope_settings.protocol["fiducial"]["length"]
+    fiducial_length = microscope_settings.protocol["fiducial"]["height"]
 
     fiducial_area, flag = calculate_fiducial_area(microscope_settings, fiducial_centre, fiducial_length, pixelsize)
     if flag:
@@ -1201,30 +1199,34 @@ def mill_fiducial(
         - "Fiducial milled successfully" if successful
         - "Unable to draw/mill the fiducial: {e}" if unsuccessful, where {e} is the error message
     """
-
-    try:
-        protocol = microscope_settings.protocol["fiducial"]
-        fiducial_pattern = FibsemPatternSettings(
-            width=protocol["width"],
-            height=protocol["length"],
-            depth=protocol["depth"],
-            centre_x=lamella.fiducial_centre.x,
-            centre_y=lamella.fiducial_centre.y,
-        )
-        fiducial_milling = FibsemMillingSettings(
+    protocol = microscope_settings.protocol["fiducial"]
+    fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"],
             hfw = image_settings.hfw,
             application_file=microscope_settings.protocol.get("application_file", "autolamella"),
             preset = protocol.get("preset", None),
         )
-       
-        milling.setup_milling(microscope, mill_settings=fiducial_milling)
-        milling.draw_fiducial(
+    fiducial = FiducialPattern()
+    fiducial.define(
+        protocol = protocol,
+        point = lamella.fiducial_centre,
+    )
+    stage = FibsemMillingStage(
+        name = "fiducial",
+        num = 0,
+        milling = fiducial_milling,
+        pattern = fiducial,
+        point = lamella.fiducial_centre,
+    )
+    try:
+        
+        milling.setup_milling(microscope, mill_settings=stage.milling)
+        milling.draw_patterns(
             microscope,
-            fiducial_pattern,
+            stage.pattern.patterns,
         )
         milling.run_milling(
-            microscope, milling_current=fiducial_milling.milling_current
+            microscope, milling_current=stage.milling.milling_current
         )
         milling.finish_milling(microscope)
 
