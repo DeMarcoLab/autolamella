@@ -24,6 +24,7 @@ def protocol_converter(old_protocol_path: str, new_protocol_path: str):
             'lamella_width': float(old_protocol["lamella"]["lamella_width"]),
             'lamella_height': float(old_protocol["lamella"]["lamella_height"]),
             'protocol_stages': [],
+            'alignment_current': "Imaging Current"
         }
     }
 
