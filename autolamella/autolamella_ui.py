@@ -109,6 +109,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["welcome_message"])
         self.initial_setup_stage = False
         self.lamella_saved = 0
+        self.lamella_finished = 0
 
 
 
@@ -308,6 +309,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
         self.lamella_index.setMaximum(0)
+        self.lamella_finished = 0
+        self.lamella_saved = 0
 
         tkinter.Tk().withdraw()
         folder_path = filedialog.askdirectory(initialdir = cfg.LOG_PATH, title="Select experiment directory")
@@ -357,6 +360,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
         self.lamella_index.setMaximum(0)
+        self.lamella_finished = 0
+        self.lamella_saved = 0
 
 
         tkinter.Tk().withdraw()
@@ -513,15 +518,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if add is True or len(self.experiment.positions) > 0:
             
-            lamellae_added = len(self.experiment.positions)
+            lamellae_added = len(self.experiment.positions) - self.lamella_finished
 
-            if len(self.experiment.positions) > 0:
+            if lamellae_added > 0:
                 self.lamella_saved = 0
                 for lam in self.experiment.positions:
                     if lam.state.stage == AutoLamellaStage.FiducialMilled:
                         self.lamella_saved += 1
 
-            create_lamella_text = INSTRUCTION_MESSAGES["mod_lamella_message"].format(len(self.experiment.positions),self.lamella_saved,len(self.experiment.positions))
+            create_lamella_text = INSTRUCTION_MESSAGES["mod_lamella_message"].format(lamellae_added,self.lamella_saved,lamellae_added,self.lamella_finished,len(self.experiment.positions))
 
             self.instructions_textEdit.setPlainText(create_lamella_text)
 
@@ -1117,7 +1122,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             string_lamella
         )
         self.lamella_index_changed()
+
+        self.lamella_finished = len(self.experiment.positions)
+
+        instruction_text = INSTRUCTION_MESSAGES["lamella_milled"].format(self.lamella_finished)
+
+        self.instructions_textEdit.setPlainText(instruction_text)
         
+
+
     def splutter_platinum(self):
         _ = message_box_ui(
                 title="Not implemented",

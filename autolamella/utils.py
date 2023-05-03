@@ -110,5 +110,6 @@ INSTRUCTION_MESSAGES = {
     "create_experiment_message":"Create/Load an experiment from the file menu",
     "take_images_message":"Experiment loaded and microscope connected successfully\nEnsure protocol has been loaded correctly in the protocol tab\nBegin by taking images",
     "add_lamella_message":"-Images Taken\nMove to area to perform lamella milling\nEnsure image quality is good\nAdd Lamella from the experiment tab",
-    "mod_lamella_message": "Lamella added\nMove lamella\\fiducial by right clicking on the image\nRemove a lamella by clicking Remove\nOnce confirmed, save lamella by clicking Save Current Lamella\nThis will mill the fiducial crosshair\nOnce all Lamellae are saved click Run Autolamella\n\nLamellae created: {}\nLamellae ready: {}/{}"
+    "mod_lamella_message": "Lamella added\nMove lamella\\fiducial by right clicking on the image\nRemove a lamella by clicking Remove\nOnce confirmed, save lamella by clicking Save Current Lamella\nThis will mill the fiducial crosshair\nOnce all Lamellae are saved click Run Autolamella\n\nLamellae created: {}\nLamellae ready: {}/{}\nLamellae milled: {}/{}",
+    "lamella_milled":"Lamella Milled!\nLamellae Milled: {}\n\nClick Add Lamella to mill further lamellae\nThe program can now be closed if finished"
 }
