@@ -110,6 +110,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.initial_setup_stage = False
 
 
+
     def setup_connections(self):
         
         # Buttons setup
@@ -533,6 +534,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.viewer.layers.clear()
             self.instructions_textEdit.setPlainText("Connect to a microscope")
             self.initial_setup_stage = False
+            self.lamella_saved = 0
         
 
 
@@ -1015,6 +1017,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setStyleSheet("color: white")
         self.go_to_lamella.setEnabled(True)
         self.remill_fiducial.setEnabled(True)
+        self.lamella_saved += 1 
 
 
     def remill_fiducial_ui(self):
