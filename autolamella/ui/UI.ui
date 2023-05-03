@@ -605,18 +605,7 @@
          </widget>
         </item>
         <item row="2" column="1">
-         <widget class="QComboBox" name="comboBox_current_alignment">
-          <item>
-           <property name="text">
-            <string>Imaging Current</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Milling current</string>
-           </property>
-          </item>
-         </widget>
+         <widget class="QComboBox" name="comboBox_current_alignment"/>
         </item>
        </layout>
       </widget>

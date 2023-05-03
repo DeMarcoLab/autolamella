@@ -587,6 +587,19 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if isinstance(self.microscope, ThermoMicroscope):
             self.comboBoxapplication_file.setCurrentText(self.microscope_settings.protocol["application_file"])
+
+        if self.comboBox_current_alignment.count() == 0:
+            self.comboBox_current_alignment.addItems(["Imaging Current","Milling Current"])
+
+        protocol_alignment_current = self.microscope_settings.protocol["lamella"]["alignment_current"]
+
+        if protocol_alignment_current.lower() in ["imaging","imaging current","imagingcurrent"]:
+            self.comboBox_current_alignment.setCurrentText("Imaging Current")
+        elif protocol_alignment_current.lower() in ["milling","milling current","millingcurrent"]:
+            self.comboBox_current_alignment.setCurrentText("Milling Current")
+        else:
+            self.comboBox_current_alignment.setCurrentText("Imaging Current")
+        
        
         logging.info("Protocol loaded")
 
@@ -629,6 +642,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["microexpansion"]["width"] = float(self.micro_exp_width.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["microexpansion"]["height"] = float(self.micro_exp_height.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["microexpansion"]["distance"] = float(self.micro_exp_distance.value()*constants.MICRO_TO_SI)
+
+        self.microscope_settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText().lower()
         
         self.draw_patterns()
    
@@ -1033,7 +1048,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             return
         if response:
             show_info(f"Running AutoLamella...")
-            if self.comboBox_current_alignment.currentText() == "Milling current":
+            if self.comboBox_current_alignment.currentText() == "Milling Current":
                 alignment_current = True
             else:
                 alignment_current = False
