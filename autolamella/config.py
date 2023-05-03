@@ -13,9 +13,10 @@ DEFAULT_PROTOCOL = {
         },
 
 "fiducial_headers" : {
-    "length": 10.e-6,
+    "height": 10.e-6,
     "width": 1.e-6,
     "depth": 1.0e-6,
+    "rotation": 45,
     "milling_current": 28.e-9,
     "preset": "30 keV; 20 nA"
 },
@@ -28,7 +29,7 @@ DEFAULT_PROTOCOL = {
 
 "protocol_stage_1" : {
     "trench_height":10.e-6,
-    "milling_depth": 1.e-6,
+    "depth": 1.e-6,
     "offset": 2.e-6,
     "size_ratio": 1.0,
     "milling_current": 2.e-9,
@@ -37,7 +38,7 @@ DEFAULT_PROTOCOL = {
 
 "protocol_stage_2" : {
     "trench_height":2.e-6,
-    "milling_depth": 1.e-6,
+    "depth": 1.e-6,
     "offset": 0.5e-6,
     "size_ratio": 1.0,
     "milling_current": 0.74e-9,
@@ -46,7 +47,7 @@ DEFAULT_PROTOCOL = {
 
 "protocol_stage_3" : {
     "trench_height":0.5e-6,
-    "milling_depth": 0.4e-6,
+    "depth": 0.4e-6,
     "offset": 0.0e-6,
     "size_ratio": 1.0,
     "milling_current": 60.0e-12,
@@ -59,6 +60,3 @@ DEFAULT_PROTOCOL = {
     "distance": 10.e-6,
 }
 }
-
-ACCEPTABLE_APPLICATION_FILES_THERMO = ["autolamella"]
-ACCEPTABLE_PRESETS_TESCAN = ["30 keV; 2.5 nA", "30 keV; 20 nA","30 keV; 1 nA","30 keV; 50 pA"]
