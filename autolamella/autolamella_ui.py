@@ -516,7 +516,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             
             lamellae_added = len(self.experiment.positions)
 
-            create_lamella_text = f"Lamella added\nMove lamella\\fiducial by right clicking on the image\nRemove a lamella by clicking Remove\nOnce confirmed, save lamella by clicking Save Current Lamella\nThis will mill the fiducial crosshair\nOnce all Lamellae are saved click Run Autolamella\n\nLamellae Saved {lamellae_added}"
+            create_lamella_text = f"Lamella added\nMove lamella\\fiducial by right clicking on the image\nRemove a lamella by clicking Remove\nOnce confirmed, save lamella by clicking Save Current Lamella\nThis will mill the fiducial crosshair\nOnce all Lamellae are saved click Run Autolamella\n\nLamellae created: {lamellae_added}"
 
             self.instructions_textEdit.setPlainText(create_lamella_text)
 
