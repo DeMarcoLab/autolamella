@@ -49,7 +49,7 @@ from structures import (
 )
 import config as cfg
 
-from utils import check_loaded_protocol
+from utils import check_loaded_protocol, INSTRUCTION_MESSAGES
 
 from ui import UI as UI
 from napari.utils.notifications import show_info, show_error
@@ -106,8 +106,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
 
         self.instructions_textEdit.setReadOnly(True)
-        self.instructions_textEdit.setPlainText("Welcome to AutoLamella! \nBegin by connecting to a microscope.\nOr Create/Load an experiment from the file menu")
+        self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["welcome_message"])
         self.initial_setup_stage = False
+        self.lamella_saved = 0
 
 
 
@@ -336,7 +337,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.timer.start(1000)
             self.experiment_created_and_microscope_connected()
         else:
-            self.instructions_textEdit.setPlainText("Connect to a microscope.")
+            self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["connect_message"])
             _ = message_box_ui(
                 title="Next step:",
                 text="Please connect to a microscope.",
@@ -445,7 +446,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.experiment is not None:
             self.experiment_created_and_microscope_connected()
         else:
-            self.instructions_textEdit.setPlainText("Create/Load an experiment from the file menu")
+            self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["create_experiment_message"])
             _ = message_box_ui(
                 title="Next step:",
                 text="Please create an experiment (file menu).",
@@ -502,21 +503,25 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
         self.image_widget.picture_signal.connect(self.update_image_message)
 
-        self.instructions_textEdit.setPlainText("Experiment loaded and microscope connected successfully\nEnsure protocol has been loaded correctly in the protocol tab\nBegin by taking images")
+        self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["take_images_message"])
 
     def update_image_message(self,add=False):
 
         if self.initial_setup_stage is False:
 
-            create_lamella_text = "-Images Taken\nMove to area to perform lamella milling\nEnsure image quality is good\nAdd Lamella from the experiment tab"
+            self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["add_lamella_message"])
 
-            self.instructions_textEdit.setPlainText(create_lamella_text)
-
-        if add is True:
+        if add is True or len(self.experiment.positions) > 0:
             
             lamellae_added = len(self.experiment.positions)
 
-            create_lamella_text = f"Lamella added\nMove lamella\\fiducial by right clicking on the image\nRemove a lamella by clicking Remove\nOnce confirmed, save lamella by clicking Save Current Lamella\nThis will mill the fiducial crosshair\nOnce all Lamellae are saved click Run Autolamella\n\nLamellae created: {lamellae_added}"
+            if len(self.experiment.positions) > 0:
+                self.lamella_saved = 0
+                for lam in self.experiment.positions:
+                    if lam.state.stage == AutoLamellaStage.FiducialMilled:
+                        self.lamella_saved += 1
+
+            create_lamella_text = INSTRUCTION_MESSAGES["mod_lamella_message"].format(len(self.experiment.positions),self.lamella_saved,len(self.experiment.positions))
 
             self.instructions_textEdit.setPlainText(create_lamella_text)
 
@@ -833,7 +838,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.remove_button.setStyleSheet("color: white")
             return
 
-        
+        if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.FiducialMilled:
+            self.lamella_saved -= 1
 
         self.experiment = remove_lamella(self.experiment, self.lamella_index.value()-1)
         self.lamella_index.setMaximum(len(self.experiment.positions))
@@ -851,6 +857,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remove_button.setStyleSheet("color: white")
 
         self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
+
+        self.update_image_message(add=True)
 
         
 
@@ -944,6 +952,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
             self.mill_fiducial_ui(index)
+            self.update_image_message(add=True)
 
 
     def _clickback(self, layer, event):

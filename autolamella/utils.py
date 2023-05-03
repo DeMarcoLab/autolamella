@@ -102,3 +102,13 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
 
         if error_check is not None:
             return error_check
+        
+
+INSTRUCTION_MESSAGES = {
+    "welcome_message":"Welcome to AutoLamella! \nBegin by connecting to a microscope.\nOr Create/Load an experiment from the file menu",
+    "connect_message":"Connect to a microscope",
+    "create_experiment_message":"Create/Load an experiment from the file menu",
+    "take_images_message":"Experiment loaded and microscope connected successfully\nEnsure protocol has been loaded correctly in the protocol tab\nBegin by taking images",
+    "add_lamella_message":"-Images Taken\nMove to area to perform lamella milling\nEnsure image quality is good\nAdd Lamella from the experiment tab",
+    "mod_lamella_message": "Lamella added\nMove lamella\\fiducial by right clicking on the image\nRemove a lamella by clicking Remove\nOnce confirmed, save lamella by clicking Save Current Lamella\nThis will mill the fiducial crosshair\nOnce all Lamellae are saved click Run Autolamella\n\nLamellae created: {}\nLamellae ready: {}/{}"
+}
