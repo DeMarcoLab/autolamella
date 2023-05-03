@@ -1,6 +1,6 @@
 
 name: autolamella_demo
-application_file: autolamella # Thermo only
+application_file: Si # Thermo only
 stage_rotation: 230
 stage_tilt: 52
 
