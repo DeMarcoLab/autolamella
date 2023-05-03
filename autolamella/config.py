@@ -25,6 +25,7 @@ DEFAULT_PROTOCOL = {
     "beam_shift_attempts": 3,
     "lamella_width": 10.e-6,
     "lamella_length": 10.e-6,
+    "alignment_current": "Imaging Current",
 },
 
 "protocol_stage_1" : {
