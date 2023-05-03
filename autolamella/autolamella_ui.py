@@ -105,6 +105,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
 
+        self.instructions_textEdit.setReadOnly(True)
+        self.instructions_textEdit.setPlainText("Welcome to AutoLamella! \nBegin by connecting to a microscope.\nOr Create/Load an experiment from the file menu")
+
     def setup_connections(self):
         
         # Buttons setup
@@ -328,6 +331,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.timer.start(1000)
             self.experiment_created_and_microscope_connected()
         else:
+            self.instructions_textEdit.setPlainText("Connect to a microscope.")
             _ = message_box_ui(
                 title="Next step:",
                 text="Please connect to a microscope.",
@@ -436,11 +440,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.experiment is not None:
             self.experiment_created_and_microscope_connected()
         else:
+            self.instructions_textEdit.setPlainText("Create/Load an experiment from the file menu")
             _ = message_box_ui(
                 title="Next step:",
                 text="Please create an experiment (file menu).",
                 buttons=QMessageBox.Ok,
             )
+            
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_log)
@@ -490,6 +496,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.update_displays()
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
 
+        self.instructions_textEdit.setPlainText("Experiment loaded and microscope connected successfully\nBegin by taking images")
+
 
     def disconnect_from_microscope(self):
 
@@ -503,6 +511,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.show_lamella.setEnabled(False)
             self.show_lamella.setChecked(False)
             self.viewer.layers.clear()
+            self.instructions_textEdit.setPlainText("Connect to a microscope")
         
 
 

@@ -329,14 +329,14 @@ class Ui_MainWindow(object):
         self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.plainTextEdit = QtWidgets.QPlainTextEdit(self.verticalLayoutWidget)
+        self.instructions_textEdit = QtWidgets.QPlainTextEdit(self.verticalLayoutWidget)
         font = QtGui.QFont()
-        font.setPointSize(12)
-        self.plainTextEdit.setFont(font)
-        self.plainTextEdit.setLineWidth(2)
-        self.plainTextEdit.setReadOnly(True)
-        self.plainTextEdit.setObjectName("plainTextEdit")
-        self.verticalLayout.addWidget(self.plainTextEdit)
+        font.setPointSize(10)
+        self.instructions_textEdit.setFont(font)
+        self.instructions_textEdit.setLineWidth(2)
+        self.instructions_textEdit.setReadOnly(True)
+        self.instructions_textEdit.setObjectName("instructions_textEdit")
+        self.verticalLayout.addWidget(self.instructions_textEdit)
         self.tabWidget_2.addTab(self.tab_5, "")
         self.formLayout_3.setWidget(1, QtWidgets.QFormLayout.SpanningRole, self.tabWidget_2)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -368,7 +368,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(1)
-        self.tabWidget_2.setCurrentIndex(0)
+        self.tabWidget_2.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -422,7 +422,7 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Protocol"))
         self.label_3.setText(_translate("MainWindow", "Console Log"))
         self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tab_3), _translate("MainWindow", "Log"))
-        self.plainTextEdit.setPlainText(_translate("MainWindow", "1. Create experiment (file menu) \n"
+        self.instructions_textEdit.setPlainText(_translate("MainWindow", "1. Create experiment (file menu) \n"
 "2. Take images \n"
 "3. Modify protocol if needed\n"
 "4. Add lamella\n"
