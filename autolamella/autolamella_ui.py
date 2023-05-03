@@ -107,6 +107,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.instructions_textEdit.setReadOnly(True)
         self.instructions_textEdit.setPlainText("Welcome to AutoLamella! \nBegin by connecting to a microscope.\nOr Create/Load an experiment from the file menu")
+        self.initial_setup_stage = False
+
 
     def setup_connections(self):
         
@@ -130,6 +132,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.valueChanged.connect(self.lamella_index_changed)
+
+        
 
         
 
@@ -495,9 +499,25 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.draw_patterns()
         self.update_displays()
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
+        self.image_widget.picture_signal.connect(self.update_image_message)
 
-        self.instructions_textEdit.setPlainText("Experiment loaded and microscope connected successfully\nBegin by taking images")
+        self.instructions_textEdit.setPlainText("Experiment loaded and microscope connected successfully\nEnsure protocol has been loaded correctly in the protocol tab\nBegin by taking images")
 
+    def update_image_message(self,add=False):
+
+        if self.initial_setup_stage is False:
+
+            create_lamella_text = "-Images Taken\nMove to area to perform lamella milling\nEnsure image quality is good\nAdd Lamella from the experiment tab"
+
+            self.instructions_textEdit.setPlainText(create_lamella_text)
+
+        if add is True:
+            
+            lamellae_added = len(self.experiment.positions)
+
+            create_lamella_text = f"Lamella added\nMove lamella\\fiducial by right clicking on the image\nRemove a lamella by clicking Remove\nOnce confirmed, save lamella by clicking Save Current Lamella\nThis will mill the fiducial crosshair\nOnce all Lamellae are saved click Run Autolamella\n\nLamellae Saved {lamellae_added}"
+
+            self.instructions_textEdit.setPlainText(create_lamella_text)
 
     def disconnect_from_microscope(self):
 
@@ -512,6 +532,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.show_lamella.setChecked(False)
             self.viewer.layers.clear()
             self.instructions_textEdit.setPlainText("Connect to a microscope")
+            self.initial_setup_stage = False
         
 
 
@@ -779,6 +800,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setEnabled(True)
         self.remove_button.setEnabled(True)
         self.remove_button.setStyleSheet("color: white")
+
+        self.update_image_message(add=True)
 
     def remove_lamella_ui(self):
         
