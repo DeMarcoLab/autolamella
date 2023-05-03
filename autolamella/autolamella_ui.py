@@ -126,6 +126,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.valueChanged.connect(self.lamella_index_changed)
 
+        
+
+
+    def connect_protocol_signals(self):
         # Protocol setup
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
         self.fiducial_length.editingFinished.connect(self.get_protocol_from_ui)
@@ -145,7 +149,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_height.editingFinished.connect(self.get_protocol_from_ui)
         self.micro_exp_width.editingFinished.connect(self.get_protocol_from_ui)
         self.comboBoxapplication_file.currentTextChanged.connect(self.get_protocol_from_ui)
-        
+
     def lamella_index_changed(self):
 
         if self.lamella_index.value() > 0:
@@ -228,7 +232,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 )
             mill_settings = FibsemMillingSettings(
                 patterning_mode="Serial",
-                application_file=self.microscope_settings.protocol.get("application_file", "autolamella"),
+                application_file=self.microscope_settings.protocol.get("application_file", "Si"),
                 milling_current=protocol["milling_current"],
                 preset = protocol.get("preset", None),
             )
@@ -265,7 +269,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"],
             hfw = self.image_widget.image_settings.hfw,
-            application_file=self.microscope_settings.protocol.get("application_file", "autolamella"),
+            application_file=self.microscope_settings.protocol.get("application_file", "Si"),
             preset = protocol.get("preset", None),
         )
         fiducial = FiducialPattern()
@@ -463,7 +467,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.system_widget.get_stage_settings_from_ui()
         if self.protocol_loaded is False:
-            protocol_loaded = self.load_protocol()
+            self.load_protocol()
 
         if len(self.experiment.positions) > 0:
             string_lamella = ""
@@ -538,6 +542,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             application_files = self.microscope.get_available_values('application_file')
             self.comboBoxapplication_file.addItems(application_files)
         self.set_ui_from_protocol() 
+        self.connect_protocol_signals()
         self.show_lamella.setEnabled(True)
         return True
 
@@ -586,6 +591,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["fiducial"]["depth"] = float(self.depth_fiducial.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["milling_current"] = float(self.current_fiducial.value()*constants.NANO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["preset"] = self.presetComboBox_fiducial.currentText()
+        self.microscope_settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
 
         self.microscope_settings.protocol["lamella"]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
