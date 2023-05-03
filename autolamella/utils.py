@@ -58,19 +58,17 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
         microexpansion_headers = autolamella_config.DEFAULT_PROTOCOL["microexpansion_headers"]
         
         main_header_exception = ["application_file"]  if _TESCAN and _DEMO else []
-        accept_app_files = {"application_file":autolamella_config.ACCEPTABLE_APPLICATION_FILES_THERMO} if _THERMO or _DEMO else None    
         
         
 
-        error_check =_check_helper(main_headers, microscope_protocol, main_header_exception,accept_app_files)
+        error_check =_check_helper(main_headers, microscope_protocol, main_header_exception)
 
         if error_check is not None:
             return error_check
 
         fiducial_exception = ["preset"] if (_THERMO and _DEMO) else []
-        fiducial_accept_vals = {"preset":autolamella_config.ACCEPTABLE_PRESETS_TESCAN} if _TESCAN or _DEMO else None
 
-        error_check = _check_helper(fiducial_headers, microscope_protocol["fiducial"], fiducial_exception,fiducial_accept_vals)
+        error_check = _check_helper(fiducial_headers, microscope_protocol["fiducial"], fiducial_exception)
 
         if error_check is not None:
             return error_check
@@ -91,9 +89,8 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
             stage = protocol_stages[idx]
 
             protocol_stage_exception = ["preset"] if (_THERMO and _DEMO) else []
-            protocol_stage_accept_vals = {"preset":autolamella_config.ACCEPTABLE_PRESETS_TESCAN} if _TESCAN or _DEMO else None
 
-            error_check =_check_helper(stage,  microscope_protocol["lamella"]["protocol_stages"][idx], protocol_stage_exception,protocol_stage_accept_vals)
+            error_check =_check_helper(stage,  microscope_protocol["lamella"]["protocol_stages"][idx], protocol_stage_exception)
 
             if error_check is not None:
                 return error_check

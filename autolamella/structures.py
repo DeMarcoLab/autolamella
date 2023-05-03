@@ -25,10 +25,11 @@ class MovementType(Enum):
 class AutoLamellaStage(Enum):
     Setup = 0
     FiducialMilled = 1
-    RoughCut = 2
-    RegularCut = 3
-    PolishingCut = 4
-    Finished = 5
+    MicroExpansion = 2
+    RoughCut = 3
+    RegularCut = 4
+    PolishingCut = 5
+    Finished = 6
 
 @dataclass
 class LamellaState:
