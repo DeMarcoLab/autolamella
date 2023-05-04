@@ -594,6 +594,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_distance.setValue((self.microscope_settings.protocol["microexpansion"]["distance"]*constants.SI_TO_MICRO))
 
         if isinstance(self.microscope, ThermoMicroscope):
+            if self.comboBoxapplication_file.findText(self.microscope_settings.protocol["application_file"]) == -1:
+                napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
+                self.microscope_settings.protocol["application_file"] = "Si"
             self.comboBoxapplication_file.setCurrentText(self.microscope_settings.protocol["application_file"])
 
         if self.comboBox_current_alignment.count() == 0:
