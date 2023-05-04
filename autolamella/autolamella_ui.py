@@ -110,6 +110,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.initial_setup_stage = False
         self.lamella_saved = 0
         self.lamella_finished = 0
+        
 
 
 
@@ -518,7 +519,17 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if add is True or len(self.experiment.positions) > 0:
             
-            lamellae_added = len(self.experiment.positions) - self.lamella_finished
+            
+            lamellae_added = 0
+
+            for lam in self.experiment.positions:
+                if lam.state.stage == AutoLamellaStage.Finished:
+                    continue
+                lamellae_added += 1
+
+            
+            
+
 
             if lamellae_added > 0:
                 self.lamella_saved = 0
@@ -526,7 +537,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     if lam.state.stage == AutoLamellaStage.FiducialMilled:
                         self.lamella_saved += 1
 
-            create_lamella_text = INSTRUCTION_MESSAGES["mod_lamella_message"].format(lamellae_added,self.lamella_saved,lamellae_added,self.lamella_finished,len(self.experiment.positions))
+            if len(self.experiment.positions) < self.lamella_finished:
+                total = self.lamella_finished
+            else:
+                total = len(self.experiment.positions)
+            
+
+            create_lamella_text = INSTRUCTION_MESSAGES["mod_lamella_message"].format(lamellae_added,self.lamella_saved,lamellae_added,self.lamella_finished,total)
 
             self.instructions_textEdit.setPlainText(create_lamella_text)
 
@@ -545,6 +562,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.instructions_textEdit.setPlainText("Connect to a microscope")
             self.initial_setup_stage = False
             self.lamella_saved = 0
+            
         
 
 
@@ -814,6 +832,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remove_button.setStyleSheet("color: white")
 
         self.update_image_message(add=True)
+        
 
     def remove_lamella_ui(self):
         
@@ -843,7 +862,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.remove_button.setStyleSheet("color: white")
             return
 
-        if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.FiducialMilled:
+        if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.FiducialMilled and self.lamella_saved > 0:
             self.lamella_saved -= 1
 
         self.experiment = remove_lamella(self.experiment, self.lamella_index.value()-1)
@@ -863,7 +882,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
 
-        self.update_image_message(add=True)
+
+
+        self.update_image_message(add=False)
 
         
 
@@ -957,7 +978,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
             self.mill_fiducial_ui(index)
-            self.update_image_message(add=True)
+            self.update_image_message(add=False)
 
 
     def _clickback(self, layer, event):
@@ -1126,6 +1147,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_finished = len(self.experiment.positions)
 
         instruction_text = INSTRUCTION_MESSAGES["lamella_milled"].format(self.lamella_finished)
+        
 
         self.instructions_textEdit.setPlainText(instruction_text)
         
