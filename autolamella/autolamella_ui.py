@@ -516,8 +516,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def load_protocol(self): 
         tkinter.Tk().withdraw()
         protocol_path = filedialog.askopenfilename(initialdir = cfg.BASE_PATH, title="Select protocol file")
+
         if protocol_path == '':
-            return
+             _ = message_box_ui(
+                title="Protocol error",
+                text="No Protocol Selected: Please select a protocol file",
+                buttons=QMessageBox.Ok,
+            )
+             self.protocol_loaded = False
+             self.load_protocol()
+            
         
         self.microscope_settings.protocol = utils.load_protocol(
             protocol_path=protocol_path
