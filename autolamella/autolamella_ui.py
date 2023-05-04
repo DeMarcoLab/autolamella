@@ -1323,13 +1323,31 @@ def run_autolamella(
     Returns:
         Experiment: The updated Experiment object after the successful milling of all the lamella positions specified in the `microscope_settings` protocol.
     """
+
+    _microexpansion_used = any([stage for stage in lamella_stages if stage.name == AutoLamellaStage.MicroExpansion.name])
+
     lamella: Lamella
     for i, stage in enumerate(
         lamella_stages
     ):
-        curr_stage =  getattr(AutoLamellaStage, stage.name)  
+        curr_stage = AutoLamellaStage[stage.name]
+
+        lamella:Lamella
         for j, lamella in enumerate(experiment.positions):
-                
+            
+            _COMPLETE_STAGE = False
+            if curr_stage is AutoLamellaStage.RoughCut:
+                if not _microexpansion_used: #, check if last stage was fiducial milled
+                    if lamella.state.stage is AutoLamellaStage.FiducialMilled:
+                        _COMPLETE_STAGE = True
+                elif lamella.state.stage is AutoLamellaStage.MicroExpansion:
+                        _COMPLETE_STAGE = True
+            elif (lamella.state.stage.value == curr_stage.value - 1):
+                _COMPLETE_STAGE = True
+
+            if not _COMPLETE_STAGE:
+                continue
+
             microscope.move_stage_absolute(
                 lamella.state.microscope_state.absolute_position
             )
@@ -1388,6 +1406,13 @@ def run_autolamella(
                 image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
                 image_settings.reduced_area = None
                 acquire.take_reference_images(microscope, image_settings)
+
+                # image_settings.save = True
+                # image_settings.label = f"ref_mill_stage_{i}"
+                # image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
+                # image_settings.reduced_area = None
+                # acquire.take_set_of_reference_images(microscope, image_settings, hfws=[80e-6, 50e-6], label=f"ref_mill_stage_{i}")
+
                 image_settings.save = False
                 
                 experiment.save()

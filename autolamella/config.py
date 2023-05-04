@@ -16,7 +16,7 @@ DEFAULT_PROTOCOL = {
     "height": 10.e-6,
     "width": 1.e-6,
     "depth": 1.0e-6,
-    "rotation": 45,
+    "rotation": 45.0,
     "milling_current": 28.e-9,
     "preset": "30 keV; 20 nA"
 },
