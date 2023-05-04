@@ -1392,6 +1392,10 @@ def run_autolamella(
                     microscope,
                     mill_settings=stage.milling,
                 )
+
+                # redefine pattern for each lamella
+                stage.pattern.define(stage.pattern.protocol, lamella.lamella_centre)
+
                 milling.draw_patterns(
                     microscope=microscope,
                     patterns = stage.pattern.patterns,
