@@ -650,7 +650,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def save_protocol(self):
         tkinter.Tk().withdraw()
         protocol_path = filedialog.asksaveasfilename(title="Select protocol file")
-
+        if protocol_path == '':
+            return
         with open(os.path.join(protocol_path), "w") as f:
             yaml.safe_dump(self.microscope_settings.protocol, f, indent=4)
 
@@ -906,11 +907,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 self.remill_fiducial.setEnabled(False)
 
                 return
-
+        
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
             self.mill_fiducial_ui(index)
-
+        else:
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
+            self.go_to_lamella.setEnabled(False)
+            self.remill_fiducial.setEnabled(False)
 
     def _clickback(self, layer, event):
         if event.button == 2 :
