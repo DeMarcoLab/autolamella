@@ -108,8 +108,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.instructions_textEdit.setReadOnly(True)
         self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["welcome_message"])
         self.initial_setup_stage = False
-        self.lamella_saved = 0
-        self.lamella_finished = 0
+
         
 
 
@@ -310,8 +309,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
         self.lamella_index.setMaximum(0)
-        self.lamella_finished = 0
-        self.lamella_saved = 0
 
         tkinter.Tk().withdraw()
         folder_path = filedialog.askdirectory(initialdir = cfg.LOG_PATH, title="Select experiment directory")
@@ -360,9 +357,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = None
         self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
-        self.lamella_index.setMaximum(0)
-        self.lamella_finished = 0
-        self.lamella_saved = 0
 
 
         tkinter.Tk().withdraw()
@@ -519,31 +513,22 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if add is True or len(self.experiment.positions) > 0:
             
-            
-            lamellae_added = 0
 
-            for lam in self.experiment.positions:
-                if lam.state.stage == AutoLamellaStage.Finished:
-                    continue
-                lamellae_added += 1
+            stages = [lamella.state.stage for lamella in self.experiment.positions]
 
-            
-            
+            from collections import Counter
+            stages = Counter(stages)
+            self.lamella_finished = stages[AutoLamellaStage.Finished]
+            self.lamella_saved = stages[AutoLamellaStage.FiducialMilled]
+            self.lamella_added = len(self.experiment.positions) - self.lamella_finished
+            self.lamella_total = len(self.experiment.positions)
 
 
-            if lamellae_added > 0:
-                self.lamella_saved = 0
-                for lam in self.experiment.positions:
-                    if lam.state.stage == AutoLamellaStage.FiducialMilled:
-                        self.lamella_saved += 1
-
-            if len(self.experiment.positions) < self.lamella_finished:
-                total = self.lamella_finished
-            else:
-                total = len(self.experiment.positions)
-            
-
-            create_lamella_text = INSTRUCTION_MESSAGES["mod_lamella_message"].format(lamellae_added,self.lamella_saved,lamellae_added,self.lamella_finished,total)
+            create_lamella_text = INSTRUCTION_MESSAGES["mod_lamella_message"].format(self.lamella_added,
+                                                                                     self.lamella_saved,
+                                                                                     self.lamella_added,
+                                                                                     self.lamella_finished,
+                                                                                     self.lamella_total)
 
             self.instructions_textEdit.setPlainText(create_lamella_text)
 
@@ -881,7 +866,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remove_button.setStyleSheet("color: white")
 
         self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
-
 
 
         self.update_image_message(add=False)
