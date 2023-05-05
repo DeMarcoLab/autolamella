@@ -1297,7 +1297,7 @@ def validate_lamella_placement(protocol, lamella_centre, ib_image, micro_expansi
     
     for pattern_settings in pattern.patterns:
         shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
-        resolution = ib_image.data.shape
+        resolution = [ib_image.data.shape[1],ib_image.data.shape[0]]
         output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
         if not output:
             return False
