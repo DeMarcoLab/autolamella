@@ -1006,7 +1006,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             else: 
                 lamella_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
                 logging.info("Moved lamella")
-                if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.image_settings.resolution, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+                if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
                 self.lamella_position = lamella_position
@@ -1287,7 +1287,7 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
 
     return fiducial_area, flag 
 
-def validate_lamella_placement(protocol, lamella_centre, resolution, ib_image, micro_expansions):
+def validate_lamella_placement(protocol, lamella_centre, ib_image, micro_expansions):
 
     pattern = TrenchPattern()
     protocol_trench = protocol["lamella"]["protocol_stages"][0]
@@ -1297,7 +1297,7 @@ def validate_lamella_placement(protocol, lamella_centre, resolution, ib_image, m
     
     for pattern_settings in pattern.patterns:
         shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
-
+        resolution = ib_image.data.shape
         output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
         if not output:
             return False
@@ -1311,7 +1311,7 @@ def validate_lamella_placement(protocol, lamella_centre, resolution, ib_image, m
 
         for pattern_settings in pattern.patterns:
             shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
-
+            resolution = ib_image.data.shape
             output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
             if not output:
                 return False
