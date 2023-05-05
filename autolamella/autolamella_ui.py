@@ -817,8 +817,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
-        self.lamella_index.setIndex(len(self.experiment.positions))
+        
         self.lamella_index.setMaximum(len(self.experiment.positions))
+        self.lamella_index.setValue(len(self.experiment.positions))
         self.lamella_index.setValue(len(self.experiment.positions))
         self.lamella_index.setMinimum(1)
         self.add_button.setEnabled(True)
