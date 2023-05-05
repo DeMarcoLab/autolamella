@@ -49,7 +49,7 @@ from structures import (
 )
 import config as cfg
 
-from utils import check_loaded_protocol
+from utils import check_loaded_protocol, INSTRUCTION_MESSAGES
 
 from ui import UI as UI
 from napari.utils.notifications import show_info, show_error
@@ -105,6 +105,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
 
+        self.instructions_textEdit.setReadOnly(True)
+        self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["welcome_message"])
+        self.initial_setup_stage = False
+
+        
+
+
+
     def setup_connections(self):
         
         # Buttons setup
@@ -127,6 +135,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.valueChanged.connect(self.lamella_index_changed)
+
+        
 
         
 
@@ -326,6 +336,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.timer.start(1000)
             self.experiment_created_and_microscope_connected()
         else:
+            self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["connect_message"])
             _ = message_box_ui(
                 title="Next step:",
                 text="Please connect to a microscope.",
@@ -344,7 +355,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = None
         self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
-        self.lamella_index.setMaximum(0)
 
 
         tkinter.Tk().withdraw()
@@ -434,11 +444,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.experiment is not None:
             self.experiment_created_and_microscope_connected()
         else:
+            self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["create_experiment_message"])
             _ = message_box_ui(
                 title="Next step:",
                 text="Please create an experiment (file menu).",
                 buttons=QMessageBox.Ok,
             )
+            
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_log)
@@ -487,7 +499,36 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.draw_patterns()
         self.update_displays()
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
+        self.image_widget.picture_signal.connect(self.update_image_message)
 
+        self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["take_images_message"])
+
+    def update_image_message(self,add=False):
+
+        if self.initial_setup_stage is False:
+
+            self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["add_lamella_message"])
+
+        if add is True or len(self.experiment.positions) > 0:
+            
+
+            stages = [lamella.state.stage for lamella in self.experiment.positions]
+
+            from collections import Counter
+            stages = Counter(stages)
+            self.lamella_finished = stages[AutoLamellaStage.Finished]
+            self.lamella_saved = stages[AutoLamellaStage.FiducialMilled]
+            self.lamella_added = len(self.experiment.positions) - self.lamella_finished
+            self.lamella_total = len(self.experiment.positions)
+
+
+            create_lamella_text = INSTRUCTION_MESSAGES["mod_lamella_message"].format(self.lamella_added,
+                                                                                     self.lamella_saved,
+                                                                                     self.lamella_added,
+                                                                                     self.lamella_finished,
+                                                                                     self.lamella_total)
+
+            self.instructions_textEdit.setPlainText(create_lamella_text)
 
     def disconnect_from_microscope(self):
 
@@ -501,6 +542,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.show_lamella.setEnabled(False)
             self.show_lamella.setChecked(False)
             self.viewer.layers.clear()
+            self.instructions_textEdit.setPlainText("Connect to a microscope")
+            self.initial_setup_stage = False
+            self.lamella_saved = 0
+            
         
 
 
@@ -772,8 +817,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
-        self.lamella_index.setIndex(len(self.experiment.positions))
+        
         self.lamella_index.setMaximum(len(self.experiment.positions))
+        self.lamella_index.setValue(len(self.experiment.positions))
         self.lamella_index.setValue(len(self.experiment.positions))
         self.lamella_index.setMinimum(1)
         self.add_button.setEnabled(True)
@@ -782,6 +828,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setEnabled(True)
         self.remove_button.setEnabled(True)
         self.remove_button.setStyleSheet("color: white")
+
+        self.update_image_message(add=True)
+        
 
     def remove_lamella_ui(self):
         
@@ -811,7 +860,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.remove_button.setStyleSheet("color: white")
             return
 
-        
+        if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.FiducialMilled and self.lamella_saved > 0:
+            self.lamella_saved -= 1
 
         self.experiment = remove_lamella(self.experiment, self.lamella_index.value()-1)
         self.lamella_index.setMaximum(len(self.experiment.positions))
@@ -829,6 +879,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remove_button.setStyleSheet("color: white")
 
         self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
+
+
+        self.update_image_message(add=False)
 
         
 
@@ -922,6 +975,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
             self.mill_fiducial_ui(index)
+            self.update_image_message(add=False)
         else:
             self.save_button.setEnabled(True)
             self.save_button.setText("Save current lamella")
@@ -1000,6 +1054,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setStyleSheet("color: white")
         self.go_to_lamella.setEnabled(True)
         self.remill_fiducial.setEnabled(True)
+        self.lamella_saved += 1 
 
 
     def remill_fiducial_ui(self):
@@ -1090,7 +1145,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             string_lamella
         )
         self.lamella_index_changed()
+
+        self.lamella_finished = len(self.experiment.positions)
+
+        instruction_text = INSTRUCTION_MESSAGES["lamella_milled"].format(self.lamella_finished)
         
+
+        self.instructions_textEdit.setPlainText(instruction_text)
+        
+
+
     def splutter_platinum(self):
         _ = message_box_ui(
                 title="Not implemented",
