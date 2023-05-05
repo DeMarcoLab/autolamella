@@ -614,7 +614,7 @@
     <item row="1" column="0" colspan="2">
      <widget class="QTabWidget" name="tabWidget_2">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab_3">
        <attribute name="title">
@@ -662,10 +662,10 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
-          <widget class="QPlainTextEdit" name="plainTextEdit">
+          <widget class="QPlainTextEdit" name="instructions_textEdit">
            <property name="font">
             <font>
-             <pointsize>12</pointsize>
+             <pointsize>10</pointsize>
             </font>
            </property>
            <property name="lineWidth">
