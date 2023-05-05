@@ -202,9 +202,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             protocol["depth"] = self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["depth"]
             protocol["milling_current"] = self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["milling_current"]
             protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
+            protocol["application_file"] = self.microscope_settings.protocol["application_file"]
             mill_settings = FibsemMillingSettings(
                 patterning_mode="Serial",
-                application_file=protocol.get("application_file", "autolamella"),
+                application_file=protocol["application_file"],
                 milling_current=protocol["milling_current"],
                 preset = protocol.get("preset", None),
             )
@@ -217,7 +218,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 num = 0,
                 milling = mill_settings,
                 pattern = pattern,
-                point = lamella_position
             )
             self.lamella_stages.append(mill_stage)
 
@@ -234,7 +234,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 )
             mill_settings = FibsemMillingSettings(
                 patterning_mode="Serial",
-                application_file=self.microscope_settings.protocol.get("application_file", "Si"),
+                application_file=self.microscope_settings.protocol["application_file"],
                 milling_current=protocol["milling_current"],
                 preset = protocol.get("preset", None),
             )
@@ -250,7 +250,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 num = i + 1,
                 milling = mill_settings,
                 pattern = pattern,
-                point = lamella_position
             )
 
             self.lamella_stages.append(mill_stage)
@@ -271,7 +270,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"],
             hfw = self.image_widget.image_settings.hfw,
-            application_file=self.microscope_settings.protocol.get("application_file", "Si"),
+            application_file=self.microscope_settings.protocol["application_file"],
             preset = protocol.get("preset", None),
         )
         fiducial = FiducialPattern()
@@ -284,7 +283,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             num = 0,
             milling = fiducial_milling,
             pattern = fiducial,
-            point = fiducial_position,
         )
         self.fiducial_stage = stage
 
@@ -774,6 +772,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
+        self.lamella_index.setIndex(len(self.experiment.positions))
         self.lamella_index.setMaximum(len(self.experiment.positions))
         self.lamella_index.setMinimum(1)
         self.add_button.setEnabled(True)
