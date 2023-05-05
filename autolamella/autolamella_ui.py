@@ -12,6 +12,8 @@ from time import sleep
 
 import fibsem.constants as constants
 import fibsem.conversions as conversions
+from fibsem.ui.utils import _draw_patterns_in_napari, convert_pattern_to_napari_rect, validate_pattern_placement
+
 import fibsem.gis as gis
 import fibsem.milling as milling
 from fibsem.patterning import FibsemMillingStage, MicroExpansionPattern, TrenchPattern, FiducialPattern
@@ -958,7 +960,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             fiducial_position.y = float(self.fiducial_position.y)
 
             pixelsize = hfw/self.image_widget.image_settings.resolution[0]
-            if validate_lamella_placement(self.image_widget.image_settings.resolution, self.microscope_settings.protocol, pixelsize, lamella_position):
+            if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.image_settings.resolution, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                 _ = message_box_ui(
                     title="Lamella placement invalid",
                     text="The lamella placement is invalid, please move the lamella so it is fully in the image.",
@@ -1004,7 +1006,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             else: 
                 lamella_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
                 logging.info("Moved lamella")
-                if validate_lamella_placement(self.image_widget.image_settings.resolution, self.microscope_settings.protocol, pixelsize, lamella_position):
+                if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.image_settings.resolution, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
                 self.lamella_position = lamella_position
@@ -1285,36 +1287,36 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
 
     return fiducial_area, flag 
 
-def validate_lamella_placement(resolution, protocol, pixelsize, lamella_centre):
+def validate_lamella_placement(protocol, lamella_centre, resolution, ib_image, micro_expansions):
 
-    lamella_centre_area = deepcopy(lamella_centre)
-    lamella_centre_area.y = lamella_centre_area.y * -1
-    lamella_centre_px = conversions.convert_point_from_metres_to_pixel(lamella_centre_area, pixelsize)
+    pattern = TrenchPattern()
+    protocol_trench = protocol["lamella"]["protocol_stages"][0]
+    protocol_trench["lamella_height"] = protocol["lamella"]["lamella_height"]
+    protocol_trench["lamella_width"] = protocol["lamella"]["lamella_width"]
+    pattern.define(protocol_trench, lamella_centre)
+    
+    for pattern_settings in pattern.patterns:
+        shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
 
+        output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
+        if not output:
+            return False
+    
+    if micro_expansions :
+        protocol_micro = protocol["microexpansion"]
+        protocol_micro["depth"] = protocol["lamella"]["protocol_stages"][0]["depth"]
+        protocol_micro["lamella_width"] = protocol["lamella"]["lamella_width"]
+        pattern = MicroExpansionPattern()
+        pattern.define(protocol_micro, lamella_centre)
 
-    rcx = lamella_centre_px.x  / resolution[0] + 0.5
-    rcy = lamella_centre_px.y / resolution[1] + 0.5
+        for pattern_settings in pattern.patterns:
+            shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
 
-    half_lamella_height = protocol["lamella"]["protocol_stages"][0]["trench_height"] + protocol["lamella"]["protocol_stages"][0]["offset"] + protocol["lamella"]["lamella_height"]/2
-    half_lamella_width = protocol["lamella"]["lamella_width"] / 2
+            output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
+            if not output:
+                return False
 
-    lamella_length_px = conversions.convert_metres_to_pixels(half_lamella_height, pixelsize)
-    lamella_width_px = conversions.convert_metres_to_pixels(half_lamella_width, pixelsize)
-
-    h_offset = lamella_width_px / resolution[0] 
-    v_offset = lamella_length_px / resolution[1]
-
-    left = rcx - h_offset 
-    top =  rcy - v_offset
-    width = 2 * h_offset
-    height = 2 * v_offset
-
-    if left < 0  or (left + width)> 1 or top < 0 or (top + height) > 1:
-        flag = True
-    else:
-        flag = False
-
-    return flag 
+    return True
 
 def mill_fiducial(
     microscope: FibsemMicroscope,
