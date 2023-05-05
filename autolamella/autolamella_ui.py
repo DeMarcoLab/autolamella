@@ -775,6 +775,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             string_lamella
         )
         self.lamella_index.setMaximum(len(self.experiment.positions))
+        self.lamella_index.setValue(len(self.experiment.positions))
         self.lamella_index.setMinimum(1)
         self.add_button.setEnabled(True)
         self.add_button.setText("Add Lamella")
