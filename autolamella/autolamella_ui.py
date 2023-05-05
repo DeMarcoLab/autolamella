@@ -212,9 +212,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             protocol["depth"] = self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["depth"]
             protocol["milling_current"] = self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["milling_current"]
             protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
+            protocol["application_file"] = self.microscope_settings.protocol["application_file"]
             mill_settings = FibsemMillingSettings(
                 patterning_mode="Serial",
-                application_file=protocol.get("application_file", "autolamella"),
+                application_file=protocol["application_file"],
                 milling_current=protocol["milling_current"],
                 preset = protocol.get("preset", None),
             )
@@ -227,7 +228,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 num = 0,
                 milling = mill_settings,
                 pattern = pattern,
-                point = lamella_position
             )
             self.lamella_stages.append(mill_stage)
 
@@ -244,7 +244,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 )
             mill_settings = FibsemMillingSettings(
                 patterning_mode="Serial",
-                application_file=self.microscope_settings.protocol.get("application_file", "Si"),
+                application_file=self.microscope_settings.protocol["application_file"],
                 milling_current=protocol["milling_current"],
                 preset = protocol.get("preset", None),
             )
@@ -260,7 +260,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 num = i + 1,
                 milling = mill_settings,
                 pattern = pattern,
-                point = lamella_position
             )
 
             self.lamella_stages.append(mill_stage)
@@ -281,7 +280,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         fiducial_milling = FibsemMillingSettings(
             milling_current=protocol["milling_current"],
             hfw = self.image_widget.image_settings.hfw,
-            application_file=self.microscope_settings.protocol.get("application_file", "Si"),
+            application_file=self.microscope_settings.protocol["application_file"],
             preset = protocol.get("preset", None),
         )
         fiducial = FiducialPattern()
@@ -294,7 +293,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             num = 0,
             milling = fiducial_milling,
             pattern = fiducial,
-            point = fiducial_position,
         )
         self.fiducial_stage = stage
 
@@ -561,8 +559,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def load_protocol(self): 
         tkinter.Tk().withdraw()
         protocol_path = filedialog.askopenfilename(initialdir = cfg.BASE_PATH, title="Select protocol file")
+
         if protocol_path == '':
-            return
+             _ = message_box_ui(
+                title="Protocol error",
+                text="No Protocol Selected: Please select a protocol file",
+                buttons=QMessageBox.Ok,
+            )
+             self.protocol_loaded = False
+             self.load_protocol()
+            
         
         self.microscope_settings.protocol = utils.load_protocol(
             protocol_path=protocol_path
@@ -631,6 +637,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_distance.setValue((self.microscope_settings.protocol["microexpansion"]["distance"]*constants.SI_TO_MICRO))
 
         if isinstance(self.microscope, ThermoMicroscope):
+            if self.comboBoxapplication_file.findText(self.microscope_settings.protocol["application_file"]) == -1:
+                napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
+                self.microscope_settings.protocol["application_file"] = "Si"
             self.comboBoxapplication_file.setCurrentText(self.microscope_settings.protocol["application_file"])
 
         if self.comboBox_current_alignment.count() == 0:
@@ -695,7 +704,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def save_protocol(self):
         tkinter.Tk().withdraw()
         protocol_path = filedialog.asksaveasfilename(title="Select protocol file")
-
+        if protocol_path == '':
+            return
         with open(os.path.join(protocol_path), "w") as f:
             yaml.safe_dump(self.microscope_settings.protocol, f, indent=4)
 
@@ -807,7 +817,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
+        self.lamella_index.setIndex(len(self.experiment.positions))
         self.lamella_index.setMaximum(len(self.experiment.positions))
+        self.lamella_index.setValue(len(self.experiment.positions))
         self.lamella_index.setMinimum(1)
         self.add_button.setEnabled(True)
         self.add_button.setText("Add Lamella")
@@ -958,12 +970,17 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 self.remill_fiducial.setEnabled(False)
 
                 return
-
+        
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
             self.mill_fiducial_ui(index)
             self.update_image_message(add=False)
-
+        else:
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
+            self.go_to_lamella.setEnabled(False)
+            self.remill_fiducial.setEnabled(False)
 
     def _clickback(self, layer, event):
         if event.button == 2 :
@@ -1380,13 +1397,31 @@ def run_autolamella(
     Returns:
         Experiment: The updated Experiment object after the successful milling of all the lamella positions specified in the `microscope_settings` protocol.
     """
+
+    _microexpansion_used = any([stage for stage in lamella_stages if stage.name == AutoLamellaStage.MicroExpansion.name])
+
     lamella: Lamella
     for i, stage in enumerate(
         lamella_stages
     ):
-        curr_stage =  getattr(AutoLamellaStage, stage.name)  
+        curr_stage = AutoLamellaStage[stage.name]
+
+        lamella:Lamella
         for j, lamella in enumerate(experiment.positions):
-                
+            
+            _COMPLETE_STAGE = False
+            if curr_stage is AutoLamellaStage.RoughCut:
+                if not _microexpansion_used: #, check if last stage was fiducial milled
+                    if lamella.state.stage is AutoLamellaStage.FiducialMilled:
+                        _COMPLETE_STAGE = True
+                elif lamella.state.stage is AutoLamellaStage.MicroExpansion:
+                        _COMPLETE_STAGE = True
+            elif (lamella.state.stage.value == curr_stage.value - 1):
+                _COMPLETE_STAGE = True
+
+            if not _COMPLETE_STAGE:
+                continue
+
             microscope.move_stage_absolute(
                 lamella.state.microscope_state.absolute_position
             )
@@ -1423,6 +1458,10 @@ def run_autolamella(
                     microscope,
                     mill_settings=stage.milling,
                 )
+
+                # redefine pattern for each lamella
+                stage.pattern.define(stage.pattern.protocol, lamella.lamella_centre)
+
                 milling.draw_patterns(
                     microscope=microscope,
                     patterns = stage.pattern.patterns,
@@ -1445,6 +1484,13 @@ def run_autolamella(
                 image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
                 image_settings.reduced_area = None
                 acquire.take_reference_images(microscope, image_settings)
+
+                # image_settings.save = True
+                # image_settings.label = f"ref_mill_stage_{i}"
+                # image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
+                # image_settings.reduced_area = None
+                # acquire.take_set_of_reference_images(microscope, image_settings, hfws=[80e-6, 50e-6], label=f"ref_mill_stage_{i}")
+
                 image_settings.save = False
                 
                 experiment.save()

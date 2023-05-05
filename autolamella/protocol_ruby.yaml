@@ -7,29 +7,29 @@ fiducial:
     width: 8.0e-07
 lamella:
     beam_shift_attempts: 3.0
-    lamella_height: 6.0e-07
+    lamella_height: 5.0e-07
     lamella_width: 6.0e-06
     protocol_stages:
-    -   lamella_height: 6.0e-07
+    -   lamella_height: 5.0e-07
         lamella_width: 6.0e-06
         milling_current: 7.4e-10
-        milling_depth: 6.5e-07
+        depth: 6.5e-07
         offset: 2.0e-06
         preset: ''
         size_ratio: 1.0
         trench_height: 2.4999999999999998e-06
-    -   lamella_height: 6.0e-07
+    -   lamella_height: 5.0e-07
         lamella_width: 6.0e-06
         milling_current: 2.0000000000000003e-10
-        milling_depth: 6.5e-07
+        depth: 6.5e-07
         offset: 8.0e-07
         preset: ''
         size_ratio: 1.0
         trench_height: 2.0e-06
-    -   lamella_height: 6.0e-07
+    -   lamella_height: 5.0e-07
         lamella_width: 6.0e-06
         milling_current: 6.0e-11
-        milling_depth: 5.0e-07
+        depth: 5.0e-07
         offset: 0.0
         preset: ''
         size_ratio: 1.0

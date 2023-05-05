@@ -14,7 +14,7 @@ fiducial:
 
 lamella:
   beam_shift_attempts: 3
-  alingment_current: "Imaging"
+  alignment_current: "Imaging"
   lamella_width: 10.e-6
   lamella_height: 800.e-9
   protocol_stages:
