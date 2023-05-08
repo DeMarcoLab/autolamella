@@ -79,7 +79,7 @@ class Lamella:
             self.history = []
         return {
             "state": self.state.__to_dict__() if self.state is not None else "Not defined",
-            "reference_image": str(os.path.join(self.path, str(self.lamella_number).rjust(6, '0'), f"{self.reference_image.metadata.image_settings.label}.tif")) if self.reference_image is not None else "Not defined",
+            "reference_image": str(os.path.join(self.path, f"{str(self.lamella_number).rjust(6, '0')}-{self._petname}", f"{self.reference_image.metadata.image_settings.label}.tif")) if self.reference_image is not None else "Not defined",
             "path": str(self.path) if self.path is not None else "Not defined",
             "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else "Not defined",
             "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
