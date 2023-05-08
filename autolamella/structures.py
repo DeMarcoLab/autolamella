@@ -78,6 +78,7 @@ class Lamella:
         if self.history is None:
             self.history = []
         return {
+            "petname": self._petname,
             "state": self.state.__to_dict__() if self.state is not None else "Not defined",
             "reference_image": str(os.path.join(self.path, f"{str(self.lamella_number).rjust(6, '0')}-{self._petname}", f"{self.reference_image.metadata.image_settings.label}.tif")) if self.reference_image is not None else "Not defined",
             "path": str(self.path) if self.path is not None else "Not defined",
@@ -95,6 +96,7 @@ class Lamella:
         fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
         lamella_centre = Point.__from_dict__(data["lamella_centre"])
         return cls(
+            _petname=data["petname"],
             state=state,
             reference_image=FibsemImage.load(data["reference_image"]),
             path=data["path"],
