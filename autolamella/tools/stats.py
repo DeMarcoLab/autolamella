@@ -45,4 +45,5 @@ def create_history_dataframe(sample: Experiment) -> pd.DataFrame:
 
     return df_stage_history
 
-main()
+if __name__ == "__main__":
+    main()
