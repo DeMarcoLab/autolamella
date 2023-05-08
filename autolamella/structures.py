@@ -80,7 +80,7 @@ class Lamella:
         return {
             "petname": self._petname,
             "state": self.state.__to_dict__() if self.state is not None else "Not defined",
-            "reference_image": str(os.path.join(self.path, f"{str(self.lamella_number).rjust(6, '0')}-{self._petname}", f"{self.reference_image.metadata.image_settings.label}.tif")) if self.reference_image is not None else "Not defined",
+            "reference_image": str(os.path.join(self.path, f"{str(self.lamella_number).rjust(2, '0')}-{self._petname}", f"{self.reference_image.metadata.image_settings.label}.tif")) if self.reference_image is not None else "Not defined",
             "path": str(self.path) if self.path is not None else "Not defined",
             "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else "Not defined",
             "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
@@ -151,7 +151,7 @@ class Experiment:
             yaml.safe_dump(self.__to_dict__(), f, indent=4)
 
         for lamella in self.positions:
-            path_image = os.path.join(self.path, f"{str(lamella.lamella_number).rjust(6, '0')}-{lamella._petname}", lamella.reference_image.metadata.image_settings.label)
+            path_image = os.path.join(self.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}", lamella.reference_image.metadata.image_settings.label)
             if lamella.reference_image is not None:
                 lamella.reference_image.save(path_image)
 
