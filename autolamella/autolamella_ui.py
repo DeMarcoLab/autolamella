@@ -1311,7 +1311,7 @@ def validate_lamella_placement(protocol, lamella_centre, ib_image, micro_expansi
 
         for pattern_settings in pattern.patterns:
             shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
-            resolution = ib_image.data.shape
+            resolution = [ib_image.data.shape[1],ib_image.data.shape[0]]
             output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
             if not output:
                 return False
@@ -1344,7 +1344,7 @@ def mill_fiducial(
     """
    
     try:
-        
+        lamella.state.start_timestamp = datetime.timestamp(datetime.now())
         milling.setup_milling(microscope, mill_settings=fiducial_stage.milling)
         milling.draw_patterns(
             microscope,
@@ -1354,7 +1354,7 @@ def mill_fiducial(
             microscope, milling_current=fiducial_stage.milling.milling_current
         )
         milling.finish_milling(microscope)
-
+        lamella.state.end_timestamp = datetime.timestamp(datetime.now())
         lamella = lamella.update(stage=AutoLamellaStage.FiducialMilled)
 
         image_settings.reduced_area = lamella.fiducial_area
@@ -1425,6 +1425,7 @@ def run_autolamella(
             if not _COMPLETE_STAGE:
                 continue
 
+            lamella.state.start_timestamp = datetime.timestamp(datetime.now())
             microscope.move_stage_absolute(
                 lamella.state.microscope_state.absolute_position
             )
@@ -1435,6 +1436,7 @@ def run_autolamella(
             image_settings.reduced_area = None
             acquire.take_reference_images(microscope, image_settings)
             image_settings.save = False
+            
 
             # alignment
             for _ in range(
@@ -1474,7 +1476,7 @@ def run_autolamella(
                     microscope, milling_current=stage.milling.milling_current
                 )
                 milling.finish_milling(microscope)
-
+                lamella.state.end_timestamp = datetime.timestamp(datetime.now())
                 image_settings.save_path = lamella.path
                 image_settings.reduced_area = None
 
