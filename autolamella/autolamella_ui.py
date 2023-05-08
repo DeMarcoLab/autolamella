@@ -41,7 +41,7 @@ from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QTextCursor
 from qtpy import QtWidgets
-from structures import (
+from autolamella.structures import (
     AutoLamellaStage,
     Experiment,
     Lamella,
@@ -49,11 +49,11 @@ from structures import (
     MovementMode,
     MovementType,
 )
-import config as cfg
+import autolamella.config as cfg
 
-from utils import check_loaded_protocol, INSTRUCTION_MESSAGES
+from autolamella.utils import check_loaded_protocol, INSTRUCTION_MESSAGES
 
-from ui import UI as UI
+from autolamella.ui import UI as UI
 from napari.utils.notifications import show_info, show_error
 
 def log_status_message(lamella: Lamella, step: str):
