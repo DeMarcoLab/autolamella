@@ -56,6 +56,11 @@ from utils import check_loaded_protocol, INSTRUCTION_MESSAGES
 from ui import UI as UI
 from napari.utils.notifications import show_info, show_error
 
+def log_status_message(lamella: Lamella, step: str):
+    logging.debug(
+        f"STATUS | {lamella._petname} | {lamella.state.stage.name} | {step}"
+    )
+
 class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def __init__(self, viewer, *args, obj=None, **kwargs) -> None:
         super(UiInterface, self).__init__(*args, **kwargs)
@@ -66,22 +71,17 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.setup_connections()
         self.lines = 0
 
-
         self.viewer.window.qt_viewer.dockLayerList.hide()
         self.viewer.window.qt_viewer.dockLayerControls.hide()
 
         self.pattern_settings = []
         self.save_path = None
-
         self.log_txt.setPlainText(
             "Welcome to OpenFIBSEM AutoLamella! Begin by Connecting to a Microscope. \n"
         )
-
         # Initialise microscope object
         self.microscope = None
         self.microscope_settings = None
-        #self.connect_to_microscope()
-
         self.viewer.grid.enabled = False
 
         # Initialise experiment object
@@ -111,10 +111,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["welcome_message"])
         self.initial_setup_stage = False
 
-        
-
-
-
     def setup_connections(self):
         
         # Buttons setup
@@ -138,11 +134,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.valueChanged.connect(self.lamella_index_changed)
 
-        
-
-        
-
-
     def connect_protocol_signals(self):
         # Protocol setup
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
@@ -165,11 +156,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.comboBoxapplication_file.currentTextChanged.connect(self.get_protocol_from_ui)
 
     def lamella_index_changed(self):
-
         if self.lamella_index.value() > 0:
-
             self.draw_patterns()
-
             if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.Setup:
                 self.go_to_lamella.setEnabled(False)
                 self.remill_fiducial.setEnabled(False)
@@ -178,9 +166,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 self.go_to_lamella.setEnabled(True)
                 self.remill_fiducial.setEnabled(True)
                 self.save_button.setEnabled(False)
-        
         else:
-
             return
 
 
@@ -205,8 +191,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 lamella_position = default_position_lamella
         else:
             lamella_position = default_position_lamella  
-
-        
 
         if self.microexpansionCheckBox.isChecked():
             pattern = MicroExpansionPattern()
@@ -301,10 +285,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.update_displays()
 
     def create_experiment(self):
-
         if self.experiment is not None:
             self.timer.stop()
-
         self.experiment = None
         self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
@@ -317,11 +299,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if folder_path == '':
             logging.info("No path selected, experiment not created")
             return
-
         name = simpledialog.askstring(
             "Experiment name", "Please enter experiment name"
         )
-
         if name is None:
             logging.info("No name entered, experiment not created")
             return
@@ -329,9 +309,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment_name = name
         self.experiment = Experiment(path=self.save_path, name=self.experiment_name)
         self.log_path = os.path.join(self.save_path, self.experiment_name, "logfile.log")
-
         self.lines = 0
-    
         self.add_button.setEnabled(True)
 
         if self.microscope is not None:
@@ -345,7 +323,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
             
-        
         logging.info("Experiment created")
 
 
@@ -358,21 +335,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
 
-
         tkinter.Tk().withdraw()
         file_path = filedialog.askopenfilename(title="Select experiment directory")
         self.experiment = Experiment.load(file_path) if file_path != '' else self.experiment
-
         if file_path == '':
             return
-
+        
         folder_path = os.path.dirname(file_path)
         self.log_path = os.path.join(folder_path, "logfile.log")
         self.save_path = folder_path
-
         self.lines = 0
-        
-
         self.add_button.setEnabled(True)
         
         _ = message_box_ui(
@@ -410,6 +382,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         self.lines = lin_len
                         continue
                     if re.search("Unknown key", line_display):
+                        self.lines = lin_len
+                        continue
+                    if re.search("STATUS", line_display):
                         self.lines = lin_len
                         continue
                     line_divided = line_display.split(",")
@@ -453,7 +428,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
             
-
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_log)
         self.timer.start(1000)
@@ -471,7 +445,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             viewer=self.viewer,
             image_widget=self.image_widget,
         )
-        
         self.image_widget.picture_signal.connect(self.draw_patterns)
         
         self.tabWidget.addTab(self.image_widget, "Image")
@@ -496,7 +469,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             self.lamella_index.setMaximum(len(self.experiment.positions))
             self.lamella_index.setMinimum(1)
-
         
         self.draw_patterns()
         self.update_displays()
@@ -513,7 +485,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if add is True or len(self.experiment.positions) > 0:
             
-
             stages = [lamella.state.stage for lamella in self.experiment.positions]
 
             from collections import Counter
@@ -547,16 +518,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.instructions_textEdit.setPlainText("Connect to a microscope")
             self.initial_setup_stage = False
             self.lamella_saved = 0
-            
-        
-
 
     def set_stage_parameters(self):
         self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
         logging.info("Stage parameters set")  
-
-    
-
 
     def load_protocol(self): 
         tkinter.Tk().withdraw()
@@ -656,7 +621,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         else:
             self.comboBox_current_alignment.setCurrentText("Imaging Current")
         
-       
         logging.info("Protocol loaded")
 
 
@@ -686,7 +650,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["lamella"]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
         
-
         index = self.stage_lamella.currentIndex()
         
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"] = float(self.trench_height.value()*constants.MICRO_TO_SI)
@@ -763,6 +726,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         position = self.experiment.positions[index].state.microscope_state.absolute_position
         self.microscope.move_stage_absolute(position)
         logging.info(f"Moved to position of lamella {index}.")
+        log_status_message(self.experiment.positions[index], "MOVING TO POSITION")
         self.movement_widget.update_ui()
 
     def add_lamella_ui(self):
@@ -811,7 +775,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment.positions[-1].lamella_centre = lamella_position
         self.experiment.positions[-1].fiducial_centre = fiducial_position
-
+        log_status_message(self.experiment.positions[-1], "LAMELLA ADDED")
 
         string_lamella = ""
         for lam in self.experiment.positions:
@@ -882,10 +846,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
 
-
         self.update_image_message(add=False)
-
-        
 
     def save_lamella_ui(self):
         self.save_button.setEnabled(False)
@@ -1076,6 +1037,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             return
         if response:
+            log_status_message(self.experiment.positions[index], "REMILLING FIDUCIAL")
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
             self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
             self.mill_fiducial_ui(index=index)
@@ -1196,7 +1158,9 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
 
 
 def remove_lamella(experiment: Experiment, index: int):
+    log_status_message(experiment.positions[index], "REMOVED LAMELLA")
     experiment.positions.pop(index)
+    logging.info("Lamella removed from experiment")
     return experiment
 
 
@@ -1356,7 +1320,7 @@ def mill_fiducial(
         milling.finish_milling(microscope)
         lamella.state.end_timestamp = datetime.timestamp(datetime.now())
         lamella = lamella.update(stage=AutoLamellaStage.FiducialMilled)
-
+        log_status_message(lamella, "FIDUCIAL MILLED")
         image_settings.reduced_area = lamella.fiducial_area
         reference_image = acquire.take_reference_images(microscope, image_settings)
         lamella.reference_image = reference_image[1]
@@ -1441,7 +1405,8 @@ def run_autolamella(
             # alignment
             for _ in range(
                 int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
-            ):
+            ):  
+                log_status_message(lamella, "BEAM ALIGNMENT")
                 if current_alignment:
                     if isinstance(microscope, ThermoMicroscope) or isinstance(microscope, DemoMicroscope):
                         microscope.set("current", stage.milling.milling_current, BeamType.ION)
@@ -1458,7 +1423,7 @@ def run_autolamella(
 
             try:
                 stage.milling.hfw = lamella.state.microscope_state.ib_settings.hfw
-
+                log_status_message(lamella, F"MILLING TRENCH {curr_stage.name} for lamella {lamella.lamella_number}-{lamella._petname}")
                 milling.setup_milling(
                     microscope,
                     mill_settings=stage.milling,
