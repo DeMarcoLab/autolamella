@@ -960,7 +960,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             fiducial_position.y = float(self.fiducial_position.y)
 
             pixelsize = hfw/self.image_widget.image_settings.resolution[0]
-            if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.image_settings.resolution, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+            if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                 _ = message_box_ui(
                     title="Lamella placement invalid",
                     text="The lamella placement is invalid, please move the lamella so it is fully in the image.",
@@ -1364,9 +1364,9 @@ def mill_fiducial(
         image_settings.reduced_area = None
 
         lamella.reference_image.metadata.image_settings.label = "milled_fiducial_ib"
-        path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'),  lamella.reference_image.metadata.image_settings.label)
+        path_image = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(6, '0')}-{lamella._petname}",  lamella.reference_image.metadata.image_settings.label)
         reference_image[1].save(path_image)
-        path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'),  "milled_fiducial_eb")
+        path_image = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(6, '0')}-{lamella._petname}",  "milled_fiducial_eb")
         reference_image[0].save(path_image)
 
         logging.info("Fiducial milled successfully")
@@ -1429,7 +1429,7 @@ def run_autolamella(
                 lamella.state.microscope_state.absolute_position
             )
 
-            image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
+            image_settings.save_path = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(6, '0')}-{lamella._petname}")
             image_settings.save = True
             image_settings.label = f"start_mill_stage_{i}"
             image_settings.reduced_area = None
@@ -1484,7 +1484,7 @@ def run_autolamella(
                 # save reference images
                 image_settings.save = True
                 image_settings.label = f"ref_mill_stage_{i}"
-                image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
+                image_settings.save_path = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(6, '0')}-{lamella._petname}")
                 image_settings.reduced_area = None
                 acquire.take_reference_images(microscope, image_settings)
 

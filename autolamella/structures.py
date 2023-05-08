@@ -149,7 +149,7 @@ class Experiment:
             yaml.safe_dump(self.__to_dict__(), f, indent=4)
 
         for lamella in self.positions:
-            path_image = os.path.join(self.path, str(lamella.lamella_number).rjust(6, '0'), lamella.reference_image.metadata.image_settings.label)
+            path_image = os.path.join(self.path, f"{str(lamella.lamella_number).rjust(6, '0')}-{lamella._petname}", lamella.reference_image.metadata.image_settings.label)
             if lamella.reference_image is not None:
                 lamella.reference_image.save(path_image)
 
