@@ -110,6 +110,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.instructions_textEdit.setReadOnly(True)
         self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["welcome_message"])
         self.initial_setup_stage = False
+        self.image_widget = None
+        self.movement_widget = None
 
     def setup_connections(self):
         
@@ -330,6 +332,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def load_experiment(self):
         if self.microscope is not None:
             self.timer.stop()
+            self.show_lamella.setEnabled(False)
+            if self.image_widget is not None:
+                self.image_widget.deleteLater()
+                self.image_widget = None
+                self.movement_widget.deleteLater()
+                self.movement_widget = None
+            self.tabWidget.setTabVisible(4, False)
+            self.tabWidget.setTabVisible(3, False)
+            self.tabWidget.setTabVisible(0, False)
 
         self.experiment = None
         self.lamella_count_txt.setPlainText("")
@@ -474,7 +485,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.update_displays()
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
         self.image_widget.picture_signal.connect(self.update_image_message)
-
+        self.show_lamella.setEnabled(True)
         self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["take_images_message"])
 
     def update_image_message(self,add=False):
