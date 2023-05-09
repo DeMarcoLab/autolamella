@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 import fibsem.config as config
 from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
-import config as autolamella_config
+import autolamella.config as autolamella_config
 
 # PPP: remove this and use the fibsem one with a default path in experiment
 def make_logging_directory(path: Path = None, name="run"):
