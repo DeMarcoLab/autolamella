@@ -726,7 +726,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         position = self.experiment.positions[index].state.microscope_state.absolute_position
         self.microscope.move_stage_absolute(position)
         logging.info(f"Moved to position of lamella {index}.")
-        log_status_message(self.experiment.positions[index], "MOVING TO POSITION")
+        log_status_message(self.experiment.positions[index], "MOVING_TO_POSITION")
         self.movement_widget.update_ui()
 
     def add_lamella_ui(self):
@@ -775,7 +775,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment.positions[-1].lamella_centre = lamella_position
         self.experiment.positions[-1].fiducial_centre = fiducial_position
-        log_status_message(self.experiment.positions[-1], "LAMELLA ADDED")
+        log_status_message(self.experiment.positions[-1], "LAMELLA_ADDED")
 
         string_lamella = ""
         for lam in self.experiment.positions:
@@ -1037,7 +1037,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             return
         if response:
-            log_status_message(self.experiment.positions[index], "REMILLING FIDUCIAL")
+            log_status_message(self.experiment.positions[index], "REMILLING_FIDUCIAL")
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
             self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
             self.mill_fiducial_ui(index=index)
@@ -1158,7 +1158,7 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
 
 
 def remove_lamella(experiment: Experiment, index: int):
-    log_status_message(experiment.positions[index], "REMOVED LAMELLA")
+    log_status_message(experiment.positions[index], "REMOVED_LAMELLA")
     experiment.positions.pop(index)
     logging.info("Lamella removed from experiment")
     return experiment
@@ -1309,7 +1309,7 @@ def mill_fiducial(
    
     try:
         lamella.state.start_timestamp = datetime.timestamp(datetime.now())
-        log_status_message(lamella, "MILLING FIDUCIAL")
+        log_status_message(lamella, "MILLING_FIDUCIAL")
         milling.setup_milling(microscope, mill_settings=fiducial_stage.milling)
         milling.draw_patterns(
             microscope,
@@ -1321,7 +1321,7 @@ def mill_fiducial(
         milling.finish_milling(microscope)
         lamella.state.end_timestamp = datetime.timestamp(datetime.now())
         lamella = lamella.update(stage=AutoLamellaStage.FiducialMilled)
-        log_status_message(lamella, "FIDUCIAL MILLED SUCCESSFULLY")
+        log_status_message(lamella, "FIDUCIAL_MILLED_SUCCESSFULLY")
         image_settings.reduced_area = lamella.fiducial_area
         lamella.path = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}")
         image_settings.save_path = lamella.path
@@ -1392,7 +1392,7 @@ def run_autolamella(
             microscope.move_stage_absolute(
                 lamella.state.microscope_state.absolute_position
             )
-            log_status_message(lamella, "MOVING TO POSITION")
+            log_status_message(lamella, "MOVING_TO_POSITION")
             image_settings.save_path = lamella.path
             image_settings.save = True
             image_settings.label = f"start_mill_stage_{i}"
@@ -1405,7 +1405,7 @@ def run_autolamella(
             for _ in range(
                 int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
             ):  
-                log_status_message(lamella, "BEAM ALIGNMENT")
+                log_status_message(lamella, "BEAM_ALIGNMENT")
                 if current_alignment:
                     if isinstance(microscope, ThermoMicroscope) or isinstance(microscope, DemoMicroscope):
                         microscope.set("current", stage.milling.milling_current, BeamType.ION)
@@ -1422,7 +1422,7 @@ def run_autolamella(
 
             try:
                 stage.milling.hfw = lamella.state.microscope_state.ib_settings.hfw
-                log_status_message(lamella, F"MILLING TRENCH {curr_stage.name}")
+                log_status_message(lamella, F"MILLING_TRENCH {curr_stage.name}")
                 milling.setup_milling(
                     microscope,
                     mill_settings=stage.milling,
@@ -1443,7 +1443,7 @@ def run_autolamella(
                 lamella.state.end_timestamp = datetime.timestamp(datetime.now())
                 image_settings.save_path = lamella.path
                 image_settings.reduced_area = None
-                log_status_message(lamella, F"{curr_stage.name} COMPLETED SUCCESSFULLY")
+                log_status_message(lamella, F"{curr_stage.name}_COMPLETED_SUCCESSFULLY")
                 # Update Lamella Stage and Experiment
                 lamella = lamella.update(stage=curr_stage)
 
