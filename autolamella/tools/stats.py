@@ -56,12 +56,8 @@ def calculate_statistics_dataframe(path: Path):
     current_lamella = None 
     current_stage = "Setup"
     current_step = None
-
-    end_timestamp = None
     step_n = 0 
 
-    old_feature = None
-    old_correct = None
     print("-" * 80)
     with open(fname, encoding="cp1252") as f:
         # Note: need to check the encoding as this is required for em dash (long dash) # TODO: change this delimiter so this isnt required.
@@ -79,6 +75,8 @@ def calculate_statistics_dataframe(path: Path):
                 if "log_status_message" in func:
                     current_lamella = msg.split("|")[1].strip()
                     current_stage = msg.split("|")[2].strip().split(".")[-1].strip()
+                    if "Widget" in current_stage:
+                        break
                     current_step = msg.split("|")[3].strip()
 
                     # datetime string to timestamp int
@@ -89,44 +87,31 @@ def calculate_statistics_dataframe(path: Path):
                     step_n += 1
 
                 if "beam_shift" in func:
-                    beam_type, shift = msg.split("|")[-2:]
+                    beam_type, shiftx, shifty = msg.split("|")[-3:]
                     beam_type = beam_type.strip()
-                    if beam_type in ["Electron", "Ion", "Photon"]:
+                    if beam_type in ["Electron", "Ion", "Photon", "ELECTRON", "ION", "PHOTON"]:
                         gamma_d = {
                             "beam_type": beam_type,
-                            "shift": Point(shift),
+                            "shift": Point(float(shiftx), float(shifty)),
                             "lamella": current_lamella,
                             "stage": current_stage,
                             "step": current_step,
                         }
                         beam_shift_info.append(deepcopy(gamma_d))
             except Exception as e:
-                pass
-                # print(f"EXCEPTION: {msg} {e}")
-
-            # gamma
-            # clicks
-            # crosscorrelation
-            # ml
-            # history
-            # sample
+                print(e)
 
     # sample
     experiment = load_experiment(path)
     df_sample = experiment.__to_dataframe__()
     df_history = create_history_dataframe(experiment)
 
-    # convert to datetime
-    date = experiment.name.split("-")[-5:]
-    date = datetime.datetime.strptime("-".join(date), "%Y-%m-%d.%I-%M-%S%p")
+
 
     # add date and name to all dataframes
-    df_sample["date"] = date
     df_sample["name"] = experiment.name
-    df_history["date"] = date
     df_history["name"] = experiment.name
     beam_shift_info = pd.DataFrame.from_dict(beam_shift_info)
-    beam_shift_info["date"] = date
     beam_shift_info["name"] = experiment.name
 
     filename = os.path.join("autolamella", "tools", 'duration.csv')
