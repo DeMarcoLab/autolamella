@@ -1323,16 +1323,13 @@ def mill_fiducial(
         lamella = lamella.update(stage=AutoLamellaStage.FiducialMilled)
         log_status_message(lamella, "FIDUCIAL MILLED SUCCESSFULLY")
         image_settings.reduced_area = lamella.fiducial_area
+        lamella.path = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}")
+        image_settings.save_path = lamella.path
+        image_settings.label = "milled_fiducial"
+        image_settings.save = True
         reference_image = acquire.take_reference_images(microscope, image_settings)
         lamella.reference_image = reference_image[1]
-
         image_settings.reduced_area = None
-
-        lamella.reference_image.metadata.image_settings.label = "milled_fiducial_ib"
-        path_image = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}",  lamella.reference_image.metadata.image_settings.label)
-        reference_image[1].save(path_image)
-        path_image = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}",  "milled_fiducial_eb")
-        reference_image[0].save(path_image)
 
         logging.info("Fiducial milled successfully")
 
@@ -1396,7 +1393,7 @@ def run_autolamella(
                 lamella.state.microscope_state.absolute_position
             )
             log_status_message(lamella, "MOVING TO POSITION")
-            image_settings.save_path = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}")
+            image_settings.save_path = lamella.path
             image_settings.save = True
             image_settings.label = f"start_mill_stage_{i}"
             image_settings.reduced_area = None
@@ -1453,15 +1450,8 @@ def run_autolamella(
                 # save reference images
                 image_settings.save = True
                 image_settings.label = f"ref_mill_stage_{i}"
-                image_settings.save_path = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}")
                 image_settings.reduced_area = None
                 acquire.take_reference_images(microscope, image_settings)
-
-                # image_settings.save = True
-                # image_settings.label = f"ref_mill_stage_{i}"
-                # image_settings.save_path = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'))
-                # image_settings.reduced_area = None
-                # acquire.take_set_of_reference_images(microscope, image_settings, hfws=[80e-6, 50e-6], label=f"ref_mill_stage_{i}")
 
                 image_settings.save = False
                 
