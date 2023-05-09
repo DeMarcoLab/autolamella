@@ -2,10 +2,12 @@
 The following is a short explanation of the basic workflow of the AutoLamella program. 
 
 ## Step 1: Creating a protocol
-The AutoLamella package uses a yaml file to store all of the necessary information on the dimensions and characteristics of the fiducial, lamella, and optional microexpansion joints such as the width and height of the lamella, in how many stages the lamella trenches are milled, the dimensions of each stage, milling current, etc. The protocol format was updated alongside the rest of the AutoLamella package, as such an in-depth explanation of what all the values in the new protocol format are and how to convert from the old protocol format to the new one can be found in the [AutoLamella Protocol](protocol.md) section. 
+The AutoLamella package uses a yaml file to store all of the necessary information on the dimensions and characteristics of the fiducial, lamella, and optional microexpansion joints. Details such as the width and height of the lamella, in how many stages the lamella trenches are milled, the dimensions of each stage, milling current, etc are outlined in the yaml file. 
+
+The protocol format was updated alongside the rest of the AutoLamella package. As such, an in-depth explanation of the parameters in the new protocol format, and how to convert from the old protocol format to the new one can be found in the [AutoLamella Protocol](protocol.md) section. 
 
 ## Step 2: Connecting to a microscope
-The first thing to do when opening the AutoLamella program is to connect to a microscope. This can be done by entering the IP address of the microscope you would like to connect to in the 'IP adress' field and selecting the correct manufacturer, then clicking the 'Connect' button. 
+The first thing to do when opening the AutoLamella program is to connect to a microscope. This can be done by entering the IP address of the microscope you would like to connect to in the 'IP address' field and selecting the correct manufacturer, then clicking the 'Connect' button. 
 
 ![connect to microscope](img/walkthrough/connectToMicroscope.png)   
 
@@ -14,7 +16,9 @@ Once the hardware is properly connected, the status bar will update, as well as 
 ![Microscope connected and stage parameters](img/walkthrough/connectToMicroscope2.png)
 
 ## Step 3: Creating/Loading an Experiment
-AutoLamella requires an Experiment to be created/loaded before any saving and milling of lamellae can begin. An 'Experiment' groups all of the fiducials and lamellae into a single object that is logged and saved upon any updates to any of the current lamellae or any additions. The Experiment is automatically saved, this does not need to be done by hand and can then be loaded again later by importing the .yaml file. To create/load an experiment:
+AutoLamella requires an experiment to be created/loaded before any saving and milling of lamellae can begin. An 'experiment' groups all of the fiducials and lamellae into a single object that is logged and saved upon any updates to any of the current lamellae or any additions. The Experiment is automatically saved, this does not need to be done by hand and can then be loaded again later by importing the .yaml file. 
+
+To create/load an experiment, click on the file menu and click on either create or load experiment as shown in the figure below: 
 
 ![create/load experiment](img/walkthrough/createExperiment.png)
 
@@ -30,7 +34,7 @@ Finally, you will be prompted to choose a protocol file to load (.yaml). Select 
 
 You can update/verify the protocol by navigating to the protocol tab. 
 
-![protocol tab](img/walkthrough/protocolTab.png)
+![protocol tab](img/walkthrough/protoTab.png)
 
 ## Step 4: Adding Lamellae
 You will first need to take atleast one set of reference images before adding any lamellae to the Experiment. This can be done by simply clicking the 'Acquire All Images' button in the imaging tab of the UI. 
