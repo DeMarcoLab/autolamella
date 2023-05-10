@@ -7,54 +7,44 @@ import traceback
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from tkinter import filedialog, simpledialog
 from time import sleep
+from tkinter import filedialog, simpledialog
 
 import fibsem.constants as constants
 import fibsem.conversions as conversions
-from fibsem.ui.utils import _draw_patterns_in_napari, convert_pattern_to_napari_rect, validate_pattern_placement
-
 import fibsem.gis as gis
 import fibsem.milling as milling
-from fibsem.patterning import FibsemMillingStage, MicroExpansionPattern, TrenchPattern, FiducialPattern
 import napari
 import numpy as np
 import yaml
 from fibsem import acquire, utils
 from fibsem.alignment import beam_shift_alignment
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope, DemoMicroscope
-from fibsem.structures import (
-    BeamType,
-    FibsemImage,
-    FibsemMillingSettings,
-    FibsemPatternSettings,
-    FibsemRectangle,
-    MicroscopeSettings,
-    Point,
-    ImageSettings,
-)
-from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui, convert_point_to_napari
+from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
+                               TescanMicroscope, ThermoMicroscope)
+from fibsem.patterning import (FibsemMillingStage, FiducialPattern,
+                               MicroExpansionPattern, TrenchPattern)
+from fibsem.structures import (BeamType, FibsemImage, FibsemMillingSettings,
+                               FibsemPatternSettings, FibsemRectangle,
+                               ImageSettings, MicroscopeSettings, Point)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
+from fibsem.ui.utils import (_draw_patterns_in_napari,
+                             convert_pattern_to_napari_rect,
+                             convert_point_to_napari, message_box_ui,
+                             validate_pattern_placement)
+from napari.utils.notifications import show_error, show_info
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QTextCursor
+from PyQt5.QtWidgets import QMessageBox
 from qtpy import QtWidgets
-from autolamella.structures import (
-    AutoLamellaStage,
-    Experiment,
-    Lamella,
-    LamellaState,
-    MovementMode,
-    MovementType,
-)
+
 import autolamella.config as cfg
-
-from autolamella.utils import check_loaded_protocol, INSTRUCTION_MESSAGES
-
+from autolamella.structures import (AutoLamellaStage, Experiment, Lamella,
+                                    LamellaState, MovementMode, MovementType)
 from autolamella.ui import UI as UI
-from napari.utils.notifications import show_info, show_error
+from autolamella.utils import INSTRUCTION_MESSAGES, check_loaded_protocol
+
 
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(
