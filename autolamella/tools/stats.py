@@ -57,6 +57,7 @@ def calculate_statistics_dataframe(path: Path):
     current_stage = "Setup"
     current_step = None
     step_n = 0 
+    steps_data = []
 
     print("-" * 80)
     with open(fname, encoding="cp1252") as f:
@@ -82,9 +83,11 @@ def calculate_statistics_dataframe(path: Path):
                     # datetime string to timestamp int
                     ts = line.split("—")[0].split(",")[0].strip()
                     tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
-
+                    print(msg)
                     step_d = {"lamella": current_lamella, "stage": current_stage, "step": current_step, "timestamp": tsd, "step_n": step_n}
                     step_n += 1
+                    print(step_d)
+                    steps_data.append(deepcopy(step_d))
 
                 if "beam_shift" in func:
                     beam_type, shiftx, shifty = msg.split("|")[-3:]
@@ -99,13 +102,14 @@ def calculate_statistics_dataframe(path: Path):
                         }
                         beam_shift_info.append(deepcopy(gamma_d))
             except Exception as e:
-                print(e)
+                pass
+                #print(e)
 
     # sample
     experiment = load_experiment(path)
     df_sample = experiment.__to_dataframe__()
     df_history = create_history_dataframe(experiment)
-
+    df_steps = pd.DataFrame(steps_data)
 
 
     # add date and name to all dataframes
@@ -114,13 +118,14 @@ def calculate_statistics_dataframe(path: Path):
     beam_shift_info = pd.DataFrame.from_dict(beam_shift_info)
     beam_shift_info["name"] = experiment.name
 
-    filename = os.path.join("autolamella", "tools", 'duration.csv')
+    filename = os.path.join(path, 'duration.csv')
     df_history.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
-    filename = os.path.join("autolamella", "tools", 'beam_shift.csv')
+    filename = os.path.join(path, 'beam_shift.csv')
     beam_shift_info.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
-    filename = os.path.join("autolamella", "tools", 'sample.csv')
+    filename = os.path.join(path, 'sample.csv')
     df_sample.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
 
+    return df_sample, df_history, beam_shift_info, df_steps
 
 def main():
     tkinter.Tk().withdraw()

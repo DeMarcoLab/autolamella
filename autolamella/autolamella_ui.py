@@ -1423,7 +1423,7 @@ def run_autolamella(
 
             try:
                 stage.milling.hfw = lamella.state.microscope_state.ib_settings.hfw
-                log_status_message(lamella, F"MILLING_TRENCH {curr_stage.name}")
+                log_status_message(lamella, F"MILLING_TRENCH")
                 milling.setup_milling(
                     microscope,
                     mill_settings=stage.milling,
@@ -1444,7 +1444,7 @@ def run_autolamella(
                 lamella.state.end_timestamp = datetime.timestamp(datetime.now())
                 image_settings.save_path = lamella.path
                 image_settings.reduced_area = None
-                log_status_message(lamella, F"{curr_stage.name}_COMPLETED_SUCCESSFULLY")
+                log_status_message(lamella, F"MILLING_COMPLETED_SUCCESSFULLY")
                 # Update Lamella Stage and Experiment
                 lamella = lamella.update(stage=curr_stage)
 
@@ -1461,6 +1461,7 @@ def run_autolamella(
                 l_stage = stage.name
 
                 logging.info(f"Lamella {j+1}, stage: '{l_stage}' milled successfully.")
+                log_status_message(lamella, F"STAGE_COMPLETE")
                 success= True; 
             except Exception as e:
                 logging.error(
