@@ -376,18 +376,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             if self.lines != lin_len:
                 for i in reversed(range(lin_len - self.lines)):
                     line_display = lines[-1 - i]
-                    if re.search("DEBUG", line_display):
+                    if re.search("DEBUG", line_display) or re.search("vispy", line_display) or re.search("Unknown key", line_display) or re.search("STATUS", line_display):
                         self.lines = lin_len
                         continue
-                    if re.search("vispy", line_display):
-                        self.lines = lin_len
-                        continue
-                    if re.search("Unknown key", line_display):
-                        self.lines = lin_len
-                        continue
-                    if re.search("STATUS", line_display):
-                        self.lines = lin_len
-                        continue
+
                     line_divided = line_display.split(",")
                     time = line_divided[0]
                     message = line_display.split("—")
@@ -921,7 +913,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             fiducial_position.x = float(self.fiducial_position.x)
             fiducial_position.y = float(self.fiducial_position.y)
 
-            pixelsize = hfw/self.image_widget.image_settings.resolution[0]
             if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                 _ = message_box_ui(
                     title="Lamella placement invalid",
