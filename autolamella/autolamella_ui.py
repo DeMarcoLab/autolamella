@@ -46,6 +46,7 @@ from autolamella.ui import UI as UI
 from autolamella.utils import INSTRUCTION_MESSAGES, check_loaded_protocol
 
 
+
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(
         f"STATUS | {lamella.lamella_number:02d}-{lamella._petname} | {lamella.state.stage.name} | {step}"
@@ -886,7 +887,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         hfw = self.image_widget.image_settings.hfw
         trench_height = self.microscope_settings.protocol["lamella"]["protocol_stages"][2]["trench_height"]
-        if trench_height/hfw < 0.005:
+        if trench_height/hfw < cfg.HFW_THRESHOLD:
             response = message_box_ui(
                 title="Field width too hight",
                 text="The field width is too high for this pattern, please save lamella with lower hfw (take new Ion beam image).",
@@ -1462,7 +1463,6 @@ def run_autolamella(
                 success = False
             finally:
                 milling.finish_milling(microscope)
-                experiment.save()
 
     if success:
         logging.info("All Lamella milled successfully.")
