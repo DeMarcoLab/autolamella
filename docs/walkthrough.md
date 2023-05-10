@@ -45,7 +45,11 @@ Once images have been taken, you can optionally tick the 'Show Lamella' and 'Mic
 
 ![show lamella and microexpansion joints](img/walkthrough/showLamellaAndMicroexpansionJoints.png)
 
-An empty lamella can be created by pressing the 'Add Lamella' button in the UI. Nothing happens after pressing this button besides telling AutoLamella how many lamellae you are working with. A lamella (and fidicual) is not properly created until you click the 'Save Lamella' button, upon which a fiducial will be milled for said lamella. You can either sequentially 'Add Lamella' and 'Save Lamella' as needed, or if you are aware of how many lamellae you are planning to mill for a particular experiment, you can add X number of lamellae all at once, and save them later. You can select which lamella you would like to save with the 'Current Lamella' bar. The fiducial and lamella patterns can be moved within the bounds of the ion beam image. Simply select the pattern you would like to move via the comboBox on the side of the UI, and right click on the desired location.
+An empty lamella can be created by pressing the 'Add Lamella' button in the UI. This button tells AutoLamella how many lamellae you are working with. A lamella (and fidicual) is not properly created until you click the 'Save Lamella' button, upon which a fiducial will be milled for said lamella. You can either sequentially 'Add Lamella' and 'Save Lamella' as needed, or if you are aware of how many lamellae you are planning to mill for a particular experiment, you can add X number of lamellae all at once, and save them later. 
+
+You can remove lamella as you wish by clicking remove lamella. If lamellae have been added but not saved, removing lamellae simply removes them from the experiment. If lamellae have been added and saved, removing them will remove them from the experiment, however the fiducial that is already milled will remain. You can selectively remove lamella by selecting the lamella from the "Current Lamella" box and clicking remove.
+
+You can select which lamella you would like to save with the 'Current Lamella' bar. The fiducial and lamella patterns can be moved within the bounds of the ion beam image. Simply select the pattern you would like to move via the comboBox on the side of the UI, and right click on the desired location.
 
 ![move lamella](img/walkthrough/movingPatterns.png)
 
