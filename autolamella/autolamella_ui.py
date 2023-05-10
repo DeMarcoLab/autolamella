@@ -162,6 +162,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         else:
             return
 
+    def get_milling_settings(self, protocol):
+        mill_settings = FibsemMillingSettings(
+                patterning_mode="Serial",
+                application_file=self.microscope_settings.protocol["application_file"],
+                milling_current=protocol["milling_current"],
+                hfw = self.image_widget.image_settings.hfw,
+                preset = protocol.get("preset", None),
+            )
+        return mill_settings
+
 
     def draw_patterns(self):
         if self.microscope_settings.protocol is None:
@@ -192,12 +202,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             protocol["milling_current"] = self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["milling_current"]
             protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
             protocol["application_file"] = self.microscope_settings.protocol["application_file"]
-            mill_settings = FibsemMillingSettings(
-                patterning_mode="Serial",
-                application_file=protocol["application_file"],
-                milling_current=protocol["milling_current"],
-                preset = protocol.get("preset", None),
-            )
+            mill_settings = self.get_milling_settings(protocol)
             pattern.define(
                     protocol = protocol,
                     point = lamella_position
@@ -221,12 +226,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     protocol = protocol,
                     point = lamella_position
                 )
-            mill_settings = FibsemMillingSettings(
-                patterning_mode="Serial",
-                application_file=self.microscope_settings.protocol["application_file"],
-                milling_current=protocol["milling_current"],
-                preset = protocol.get("preset", None),
-            )
+            mill_settings = self.get_milling_settings(protocol)
             if i == 0:
                 name = "RoughCut"
             elif i == 1:
@@ -256,12 +256,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     fiducial_position = default_position_fiducial
         else:
             fiducial_position = default_position_fiducial
-        fiducial_milling = FibsemMillingSettings(
-            milling_current=protocol["milling_current"],
-            hfw = self.image_widget.image_settings.hfw,
-            application_file=self.microscope_settings.protocol["application_file"],
-            preset = protocol.get("preset", None),
-        )
+        fiducial_milling = self.get_milling_settings(protocol)
         fiducial = FiducialPattern()
         fiducial.define(
             protocol = protocol,
