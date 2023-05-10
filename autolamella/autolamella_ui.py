@@ -7,8 +7,8 @@ import traceback
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from tkinter import filedialog, simpledialog
 from time import sleep
+from tkinter import filedialog, simpledialog
 
 import fibsem.constants as constants
 import fibsem.conversions as conversions
@@ -19,37 +19,37 @@ import numpy as np
 import yaml
 from fibsem import acquire, utils
 from fibsem.alignment import beam_shift_alignment
-from fibsem.microscope import FibsemMicroscope, TescanMicroscope, ThermoMicroscope
-from fibsem.structures import (
-    BeamType,
-    FibsemImage,
-    FibsemMillingSettings,
-    FibsemPatternSettings,
-    FibsemRectangle,
-    MicroscopeSettings,
-    Point,
-    ImageSettings,
-)
-from fibsem.ui.utils import _draw_patterns_in_napari, message_box_ui, convert_point_to_napari
+from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
+                               TescanMicroscope, ThermoMicroscope)
+from fibsem.patterning import (FibsemMillingStage, FiducialPattern,
+                               MicroExpansionPattern, TrenchPattern)
+from fibsem.structures import (BeamType, FibsemImage, FibsemMillingSettings,
+                               FibsemPatternSettings, FibsemRectangle,
+                               ImageSettings, MicroscopeSettings, Point)
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
+from fibsem.ui.utils import (_draw_patterns_in_napari,
+                             convert_pattern_to_napari_rect,
+                             convert_point_to_napari, message_box_ui,
+                             validate_pattern_placement)
+from napari.utils.notifications import show_error, show_info
 from PyQt5.QtCore import QTimer
-from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QTextCursor
+from PyQt5.QtWidgets import QMessageBox
 from qtpy import QtWidgets
-from structures import (
-    AutoLamellaStage,
-    Experiment,
-    Lamella,
-    LamellaState,
-    MovementMode,
-    MovementType,
-)
-import config as cfg
 
-from ui import UI as UI
-from napari.utils.notifications import show_info
+import autolamella.config as cfg
+from autolamella.structures import (AutoLamellaStage, Experiment, Lamella,
+                                    LamellaState, MovementMode, MovementType)
+from autolamella.ui import UI as UI
+from autolamella.utils import INSTRUCTION_MESSAGES, check_loaded_protocol
+
+
+def log_status_message(lamella: Lamella, step: str):
+    logging.debug(
+        f"STATUS | {lamella.lamella_number:02d}-{lamella._petname} | {lamella.state.stage.name} | {step}"
+    )
 
 class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def __init__(self, viewer, *args, obj=None, **kwargs) -> None:
@@ -61,30 +61,22 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.setup_connections()
         self.lines = 0
 
-
         self.viewer.window.qt_viewer.dockLayerList.hide()
         self.viewer.window.qt_viewer.dockLayerControls.hide()
 
         self.pattern_settings = []
         self.save_path = None
-
         self.log_txt.setPlainText(
             "Welcome to OpenFIBSEM AutoLamella! Begin by Connecting to a Microscope. \n"
         )
-
         # Initialise microscope object
         self.microscope = None
         self.microscope_settings = None
-        #self.connect_to_microscope()
-
         self.viewer.grid.enabled = False
 
         # Initialise experiment object
         self.experiment: Experiment = None
         self.protocol_loaded = False
-        self.tabWidget.setTabVisible(4, False)
-        self.tabWidget.setTabVisible(5, False)
-        self.tabWidget.setTabVisible(0, False)
         self.remove_button.setStyleSheet("background-color: transparent")
         self.fiducial_position = None
         self.lamella_position = None
@@ -97,10 +89,19 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 config_path = CONFIG_PATH,
             )
         
-        self.gridLayout_system.addWidget(self.system_widget)
+        self.tabWidget.addTab(self.system_widget, "System")
+        self.tabWidget.setTabVisible(0, False)
+        self.tabWidget.setTabVisible(1, False)
+
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
+
+        self.instructions_textEdit.setReadOnly(True)
+        self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["welcome_message"])
+        self.initial_setup_stage = False
+        self.image_widget = None
+        self.movement_widget = None
 
     def setup_connections(self):
         
@@ -121,14 +122,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setEnabled(False)
         self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
         self.remill_fiducial.setEnabled(False)
-        self.move_fiducial_button.clicked.connect(self.move_fiducial)
-        self.move_fiducial_button.setEnabled(False)
-        self.move_lamella_button.clicked.connect(self.move_lamella)
-        self.move_lamella_button.setEnabled(False)
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.valueChanged.connect(self.lamella_index_changed)
 
+    def connect_protocol_signals(self):
         # Protocol setup
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
         self.fiducial_length.editingFinished.connect(self.get_protocol_from_ui)
@@ -148,28 +146,19 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_height.editingFinished.connect(self.get_protocol_from_ui)
         self.micro_exp_width.editingFinished.connect(self.get_protocol_from_ui)
         self.comboBoxapplication_file.currentTextChanged.connect(self.get_protocol_from_ui)
-        
+
     def lamella_index_changed(self):
-
         if self.lamella_index.value() > 0:
-
             self.draw_patterns()
-
             if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.Setup:
                 self.go_to_lamella.setEnabled(False)
-                self.move_fiducial_button.setEnabled(True)
-                self.move_lamella_button.setEnabled(True)
                 self.remill_fiducial.setEnabled(False)
                 self.save_button.setEnabled(True)
             else:
                 self.go_to_lamella.setEnabled(True)
-                self.move_fiducial_button.setEnabled(False)
-                self.move_lamella_button.setEnabled(False)
                 self.remill_fiducial.setEnabled(True)
                 self.save_button.setEnabled(False)
-        
         else:
-
             return
 
 
@@ -180,114 +169,118 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise the Lamella and Fiducial Settings
         self.patterns_protocol = []
         pixelsize = self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]
+        self.lamella_stages = []
+        self.fiducial_stage = None
+        ############### Lamella Pattern ################
+
+        default_position_lamella = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0) # has the user defined a position manually? If not use 0,0
+        self.lamella_position = default_position_lamella
+        index = self.lamella_index.value() - 1
+        if self.experiment is not None and len(self.experiment.positions) > 0: # do we have an experiment with at least one lamella
+            if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup: # has the lamella been saved 
+                lamella_position = self.experiment.positions[index].lamella_centre
+            else:
+                lamella_position = default_position_lamella
+        else:
+            lamella_position = default_position_lamella  
+
+        if self.microexpansionCheckBox.isChecked():
+            pattern = MicroExpansionPattern()
+            protocol = self.microscope_settings.protocol["microexpansion"]
+            protocol["depth"] = self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["depth"]
+            protocol["milling_current"] = self.microscope_settings.protocol["lamella"]["protocol_stages"][0]["milling_current"]
+            protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
+            protocol["application_file"] = self.microscope_settings.protocol["application_file"]
+            mill_settings = FibsemMillingSettings(
+                patterning_mode="Serial",
+                application_file=protocol["application_file"],
+                milling_current=protocol["milling_current"],
+                preset = protocol.get("preset", None),
+            )
+            pattern.define(
+                    protocol = protocol,
+                    point = lamella_position
+                )
+            mill_stage = FibsemMillingStage(
+                name = "MicroExpansion",
+                num = 0,
+                milling = mill_settings,
+                pattern = pattern,
+            )
+            self.lamella_stages.append(mill_stage)
 
         for i, protocol in enumerate(
             self.microscope_settings.protocol["lamella"]["protocol_stages"]
         ):
             protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
             protocol["lamella_height"] = self.microscope_settings.protocol["lamella"]["lamella_height"]
-            stage = []
-
-
-            default_position_lamella = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0) # has the user defined a position manually? If not use 0,0
-            self.lamella_position = default_position_lamella
-            index = self.lamella_index.value() - 1
-            if self.experiment is not None and len(self.experiment.positions) > 0: # do we have an experiment with at least one lamella
-                if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup: # has the lamella been saved 
-                    lamella_position = self.experiment.positions[index].lamella_centre
-                else:
-                    lamella_position = default_position_lamella
-            else:
-                lamella_position = default_position_lamella  
-            
-            lower_pattern_settings, upper_pattern_settings = milling.extract_trench_parameters(protocol, lamella_position)
-            stage.append(lower_pattern_settings)
-            stage.append(upper_pattern_settings)
-
-            # stress relief
-            if i == 0 and self.microexpansionCheckBox.isChecked():
-                microexpansion_protocol = self.microscope_settings.protocol[
-                    "microexpansion"
-                ]
-                width = microexpansion_protocol["width"]
-                height = microexpansion_protocol["height"]
-                depth = protocol["milling_depth"]
-                lamella_width = protocol["lamella_width"]
-                stage.append(
-                    FibsemPatternSettings(
-                        width=width,
-                        height=height,
-                        depth=depth,
-                        centre_x=lamella_position.x
-                        - lamella_width / 2
-                        - microexpansion_protocol["distance"],
-                        centre_y=lamella_position.y,
-                        cleaning_cross_section=True,
-                    )
+                  
+            pattern = TrenchPattern()
+            pattern.define(
+                    protocol = protocol,
+                    point = lamella_position
                 )
+            mill_settings = FibsemMillingSettings(
+                patterning_mode="Serial",
+                application_file=self.microscope_settings.protocol["application_file"],
+                milling_current=protocol["milling_current"],
+                preset = protocol.get("preset", None),
+            )
+            if i == 0:
+                name = "RoughCut"
+            elif i == 1:
+                name = "RegularCut"
+            elif i == 2:
+                name = "PolishingCut"
 
-                stage.append(
-                    FibsemPatternSettings(
-                        width=width,
-                        height=height,
-                        depth=depth,
-                        centre_x=lamella_position.x
-                        + lamella_width / 2
-                        + microexpansion_protocol["distance"],
-                        centre_y=lamella_position.y,
-                        cleaning_cross_section=True,
-                    )
-                )
+            mill_stage = FibsemMillingStage(
+                name = name,
+                num = i + 1,
+                milling = mill_settings,
+                pattern = pattern,
+            )
 
-            self.patterns_protocol.append(stage)
+            self.lamella_stages.append(mill_stage)
 
-        # Fiducial
-        stage = []
+        ############### Fiducial Pattern ################
+
         protocol = self.microscope_settings.protocol["fiducial"]
 
-    
         default_position_fiducial = self.fiducial_position if self.fiducial_position is not None else Point(-self.image_widget.image_settings.resolution[0]/3 * pixelsize, 0.0) # has the user defined a fiducial position?
         self.fiducial_position = default_position_fiducial
         if self.experiment is not None and len(self.experiment.positions) > 0:
-                if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled: # if the current lamella has been saved, display relevant pattern 
+                if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup: # if the current lamella has been saved, display relevant pattern 
                     fiducial_position = self.experiment.positions[index].fiducial_centre
                 else:
                     fiducial_position = default_position_fiducial
         else:
             fiducial_position = default_position_fiducial
-
-
-        stage.append(
-            FibsemPatternSettings(
-                width=protocol["width"],
-                height=protocol["length"],
-                depth=protocol["depth"],
-                rotation=np.deg2rad(45),
-                centre_x=fiducial_position.x,
-                centre_y=fiducial_position.y,
-            )
+        fiducial_milling = FibsemMillingSettings(
+            milling_current=protocol["milling_current"],
+            hfw = self.image_widget.image_settings.hfw,
+            application_file=self.microscope_settings.protocol["application_file"],
+            preset = protocol.get("preset", None),
         )
-        stage.append(
-            FibsemPatternSettings(
-                width=protocol["width"],
-                height=protocol["length"],
-                depth=protocol["depth"],
-                rotation=np.deg2rad(135),
-                centre_x=fiducial_position.x,
-                centre_y=fiducial_position.y,
-            )
+        fiducial = FiducialPattern()
+        fiducial.define(
+            protocol = protocol,
+            point = fiducial_position,
         )
-        self.patterns_protocol.append(stage)
+        stage = FibsemMillingStage(
+            name = "fiducial",
+            num = 0,
+            milling = fiducial_milling,
+            pattern = fiducial,
+        )
+        self.fiducial_stage = stage
 
         self.update_displays()
 
     def create_experiment(self):
-
         if self.experiment is not None:
             self.timer.stop()
-
         self.experiment = None
-        self.lamella_count_txt.setText("")
+        self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
         self.lamella_index.setMaximum(0)
 
@@ -298,11 +291,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if folder_path == '':
             logging.info("No path selected, experiment not created")
             return
-
         name = simpledialog.askstring(
             "Experiment name", "Please enter experiment name"
         )
-
         if name is None:
             logging.info("No name entered, experiment not created")
             return
@@ -310,15 +301,20 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment_name = name
         self.experiment = Experiment(path=self.save_path, name=self.experiment_name)
         self.log_path = os.path.join(self.save_path, self.experiment_name, "logfile.log")
-
         self.lines = 0
-    
         self.add_button.setEnabled(True)
 
         if self.microscope is not None:
             self.timer.start(1000)
             self.experiment_created_and_microscope_connected()
-        
+        else:
+            self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["connect_message"])
+            _ = message_box_ui(
+                title="Next step:",
+                text="Please connect to a microscope.",
+                buttons=QMessageBox.Ok,
+            )
+            
         logging.info("Experiment created")
 
 
@@ -326,27 +322,30 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def load_experiment(self):
         if self.microscope is not None:
             self.timer.stop()
+            self.show_lamella.setEnabled(False)
+            if self.image_widget is not None:
+                self.image_widget.deleteLater()
+                self.image_widget = None
+                self.movement_widget.deleteLater()
+                self.movement_widget = None
+            self.tabWidget.setTabVisible(4, False)
+            self.tabWidget.setTabVisible(3, False)
+            self.tabWidget.setTabVisible(0, False)
 
         self.experiment = None
-        self.lamella_count_txt.setText("")
+        self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
-        self.lamella_index.setMaximum(0)
-
 
         tkinter.Tk().withdraw()
         file_path = filedialog.askopenfilename(title="Select experiment directory")
         self.experiment = Experiment.load(file_path) if file_path != '' else self.experiment
-
         if file_path == '':
             return
-
+        
         folder_path = os.path.dirname(file_path)
         self.log_path = os.path.join(folder_path, "logfile.log")
         self.save_path = folder_path
-
         self.lines = 0
-        
-
         self.add_button.setEnabled(True)
         
         _ = message_box_ui(
@@ -357,6 +356,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.microscope is not None:
             self.timer.start(1000)
             self.experiment_created_and_microscope_connected()
+        else:
+            _ = message_box_ui(
+                title="Next step:",
+                text="Please connect to a microscope.",
+                buttons=QMessageBox.Ok,
+            )
             
         logging.info("Experiment loaded")
 
@@ -378,6 +383,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                         self.lines = lin_len
                         continue
                     if re.search("Unknown key", line_display):
+                        self.lines = lin_len
+                        continue
+                    if re.search("STATUS", line_display):
                         self.lines = lin_len
                         continue
                     line_divided = line_display.split(",")
@@ -413,12 +421,143 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if self.experiment is not None:
             self.experiment_created_and_microscope_connected()
-
+        else:
+            self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["create_experiment_message"])
+            _ = message_box_ui(
+                title="Next step:",
+                text="Please create an experiment (file menu).",
+                buttons=QMessageBox.Ok,
+            )
+            
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_log)
         self.timer.start(1000)
-   
 
+
+    def experiment_created_and_microscope_connected(self):
+        self.image_widget = FibsemImageSettingsWidget(
+                microscope=self.microscope,
+                image_settings=self.microscope_settings.image,
+                viewer=self.viewer,
+            )
+        self.movement_widget = FibsemMovementWidget(
+            microscope=self.microscope,
+            settings=self.microscope_settings,
+            viewer=self.viewer,
+            image_widget=self.image_widget,
+        )
+        self.image_widget.picture_signal.connect(self.draw_patterns)
+        
+        self.tabWidget.addTab(self.image_widget, "Image")
+        self.tabWidget.addTab(self.movement_widget, "Movement")
+        self.tabWidget.setTabVisible(0, True)
+        self.tabWidget.setTabVisible(1, True)
+
+        self.system_widget.get_stage_settings_from_ui()
+        if self.protocol_loaded is False:
+            self.load_protocol()
+
+        if len(self.experiment.positions) > 0:
+            string_lamella = ""
+            for lam in self.experiment.positions:
+                self.save_button.setEnabled(True)
+                self.go_to_lamella.setEnabled(True)
+                if lam.state.stage == AutoLamellaStage.FiducialMilled:
+                    self.remill_fiducial.setEnabled(True)
+                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            self.lamella_count_txt.setPlainText(
+                string_lamella
+            )
+            self.lamella_index.setMaximum(len(self.experiment.positions))
+            self.lamella_index.setMinimum(1)
+        
+        self.draw_patterns()
+        self.update_displays()
+        self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
+        self.image_widget.picture_signal.connect(self.update_image_message)
+        self.show_lamella.setEnabled(True)
+        self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["take_images_message"])
+
+    def update_image_message(self,add=False):
+
+        if self.initial_setup_stage is False:
+
+            self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["add_lamella_message"])
+
+        if add is True or len(self.experiment.positions) > 0:
+            
+            stages = [lamella.state.stage for lamella in self.experiment.positions]
+
+            from collections import Counter
+            stages = Counter(stages)
+            self.lamella_finished = stages[AutoLamellaStage.Finished]
+            self.lamella_saved = stages[AutoLamellaStage.FiducialMilled]
+            self.lamella_added = len(self.experiment.positions) - self.lamella_finished
+            self.lamella_total = len(self.experiment.positions)
+
+
+            create_lamella_text = INSTRUCTION_MESSAGES["mod_lamella_message"].format(self.lamella_added,
+                                                                                     self.lamella_saved,
+                                                                                     self.lamella_added,
+                                                                                     self.lamella_finished,
+                                                                                     self.lamella_total)
+
+            self.instructions_textEdit.setPlainText(create_lamella_text)
+
+    def disconnect_from_microscope(self):
+
+        if self.microscope is not None:
+            self.microscope = None
+            self.microscope_settings = None
+            self.protocol_loaded = False
+            self.tabWidget.setTabVisible(4, False)
+            self.tabWidget.setTabVisible(3, False)
+            self.tabWidget.setTabVisible(0, False)
+            self.show_lamella.setEnabled(False)
+            self.show_lamella.setChecked(False)
+            self.viewer.layers.clear()
+            self.instructions_textEdit.setPlainText("Connect to a microscope")
+            self.initial_setup_stage = False
+            self.lamella_saved = 0
+
+    def set_stage_parameters(self):
+        self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
+        logging.info("Stage parameters set")  
+
+    def load_protocol(self): 
+        tkinter.Tk().withdraw()
+        protocol_path = filedialog.askopenfilename(initialdir = cfg.BASE_PATH, title="Select protocol file")
+
+        if protocol_path == '':
+             _ = message_box_ui(
+                title="Protocol error",
+                text="No Protocol Selected: Please select a protocol file",
+                buttons=QMessageBox.Ok,
+            )
+             self.protocol_loaded = False
+             self.load_protocol()
+            
+        
+        self.microscope_settings.protocol = utils.load_protocol(
+            protocol_path=protocol_path
+        ) 
+
+        _THERMO = isinstance(self.microscope, (ThermoMicroscope))
+        _TESCAN = isinstance(self.microscope, (TescanMicroscope))
+        _DEMO = isinstance(self.microscope, (DemoMicroscope))
+
+        error_returned = check_loaded_protocol(self.microscope_settings.protocol, _THERMO, _TESCAN, _DEMO)
+
+        if error_returned is not None:
+            _ = message_box_ui(
+                title="Protocol error",
+                text=error_returned,
+                buttons=QMessageBox.Ok,
+            )
+            self.protocol_loaded = False
+            self.load_protocol()
+
+        self.set_ui_from_protocol() 
         if isinstance(self.microscope, TescanMicroscope):
             presets = self.microscope.get('presets')
             self.presetComboBox.addItems(presets)
@@ -440,80 +579,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.presetComboBox_fiducial.hide()
             self.presetLabel.hide()
             self.presetLabel_2.hide()
-            application_files = self.microscope.get_available_values('application_files')
+            application_files = self.microscope.get_available_values('application_file')
             self.comboBoxapplication_file.addItems(application_files)
-
-
-    def experiment_created_and_microscope_connected(self):
-        self.image_widget = FibsemImageSettingsWidget(
-                microscope=self.microscope,
-                image_settings=self.microscope_settings.image,
-                viewer=self.viewer,
-            )
-        self.movement_widget = FibsemMovementWidget(
-            microscope=self.microscope,
-            settings=self.microscope_settings,
-            viewer=self.viewer,
-            image_widget=self.image_widget,
-        )
-        
-        self.image_widget.picture_signal.connect(self.draw_patterns)
-        
-        self.gridlayout_imaging.addWidget(self.image_widget,0,0)
-        self.gridlayout_movement.addWidget(self.movement_widget,0,0)
-        self.tabWidget.setTabVisible(4, True)
-        self.tabWidget.setTabVisible(5, True)
-        self.tabWidget.setTabVisible(0, True)
-        self.system_widget.get_stage_settings_from_ui()
-        if self.protocol_loaded is False:
-            self.load_protocol()
-
-        if len(self.experiment.positions) > 0:
-            string_lamella = ""
-            for lam in self.experiment.positions:
-                self.save_button.setEnabled(True)
-                self.go_to_lamella.setEnabled(True)
-                if lam.state.stage == AutoLamellaStage.FiducialMilled:
-                    self.remill_fiducial.setEnabled(True)
-                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
-            self.lamella_count_txt.setText(
-                string_lamella
-            )
-            self.lamella_index.setMaximum(len(self.experiment.positions))
-            self.lamella_index.setMinimum(1)
-        self.draw_patterns()
-        self.update_displays()
-
-
-    def disconnect_from_microscope(self):
-        self.gridlayout_imaging.removeWidget(self.image_widget)
-        self.gridlayout_movement.removeWidget(self.movement_widget)
-        self.image_widget.deleteLater()
-        self.movement_widget.deleteLater()
-        self.microscope = None
-        self.microscope_settings = None
-        self.protocol_loaded = False
-        self.tabWidget.setTabVisible(4, False)
-        self.tabWidget.setTabVisible(5, False)
-        self.tabWidget.setTabVisible(0, False)
-        self.show_lamella.setEnabled(False)
-        self.show_lamella.setChecked(False)
-
-    def set_stage_parameters(self):
-        self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
-        logging.info("Stage parameters set")  
-
-    def load_protocol(self): 
-        tkinter.Tk().withdraw()
-        protocol_path = filedialog.askopenfilename(initialdir = cfg.BASE_PATH, title="Select protocol file")
-        if protocol_path == '':
-            return
-        
-        self.microscope_settings.protocol = utils.load_protocol(
-            protocol_path=protocol_path
-        ) 
         self.set_ui_from_protocol() 
+        self.connect_protocol_signals()
         self.show_lamella.setEnabled(True)
+        return True
 
     def set_ui_from_protocol(self):
 
@@ -522,49 +593,68 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         ## Loading protocol tab 
         self.beamshift_attempts.setValue((self.microscope_settings.protocol["lamella"]["beam_shift_attempts"]))
-        self.fiducial_length.setValue((self.microscope_settings.protocol["fiducial"]["length"]*constants.SI_TO_MICRO))
+        self.fiducial_length.setValue((self.microscope_settings.protocol["fiducial"]["height"]*constants.SI_TO_MICRO))
         self.width_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["width"]*constants.SI_TO_MICRO))
         self.depth_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["depth"]*constants.SI_TO_MICRO))
         self.current_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["milling_current"]*constants.SI_TO_NANO))
-        self.presetComboBox_fiducial.setCurrentText(self.microscope_settings.protocol["fiducial"]["preset"])
+        self.presetComboBox_fiducial.setCurrentText(self.microscope_settings.protocol["fiducial"].get("preset", None))
         self.stage_lamella.setCurrentText("1. Rough Cut")
         self.select_stage()
         self.micro_exp_width.setValue((self.microscope_settings.protocol["microexpansion"]["width"]*constants.SI_TO_MICRO))
         self.micro_exp_height.setValue((self.microscope_settings.protocol["microexpansion"]["height"]*constants.SI_TO_MICRO))
         self.micro_exp_distance.setValue((self.microscope_settings.protocol["microexpansion"]["distance"]*constants.SI_TO_MICRO))
-   
+
+        if isinstance(self.microscope, ThermoMicroscope):
+            if self.comboBoxapplication_file.findText(self.microscope_settings.protocol["application_file"]) == -1:
+                napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
+                self.microscope_settings.protocol["application_file"] = "Si"
+            self.comboBoxapplication_file.setCurrentText(self.microscope_settings.protocol["application_file"])
+
+        if self.comboBox_current_alignment.count() == 0:
+            self.comboBox_current_alignment.addItems(["Imaging Current","Milling Current"])
+
+        protocol_alignment_current = self.microscope_settings.protocol["lamella"]["alignment_current"]
+
+        if protocol_alignment_current.lower() in ["imaging","imaging current","imagingcurrent"]:
+            self.comboBox_current_alignment.setCurrentText("Imaging Current")
+        elif protocol_alignment_current.lower() in ["milling","milling current","millingcurrent"]:
+            self.comboBox_current_alignment.setCurrentText("Milling Current")
+        else:
+            self.comboBox_current_alignment.setCurrentText("Imaging Current")
+        
         logging.info("Protocol loaded")
 
 
         self.draw_patterns()
 
     def select_stage(self):
-        index = self.stage_lamella.currentIndex() - 1
+        index = self.stage_lamella.currentIndex()
         self.lamella_width.setValue((self.microscope_settings.protocol["lamella"]["lamella_width"]*constants.SI_TO_MICRO))
         self.lamella_height.setValue((self.microscope_settings.protocol["lamella"]["lamella_height"]*constants.SI_TO_MICRO))
         self.trench_height.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"]*constants.SI_TO_MICRO))
-        self.depth_trench.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"]*constants.SI_TO_MICRO))
+        self.depth_trench.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["depth"]*constants.SI_TO_MICRO))
         self.offset.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"]*constants.SI_TO_MICRO))
         self.current_lamella.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"]*constants.SI_TO_NANO))
         self.size_ratio.setValue((self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"]))
-        self.presetComboBox.setCurrentText(self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["preset"])
+        self.presetComboBox.setCurrentText(self.microscope_settings.protocol["lamella"]["protocol_stages"][index].get("preset", None))
 
     def get_protocol_from_ui(self):
         self.microscope_settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
         self.microscope_settings.protocol["lamella"]["beam_shift_attempts"] = float(self.beamshift_attempts.value())
-        self.microscope_settings.protocol["fiducial"]["length"] = float(self.fiducial_length.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["fiducial"]["height"] = float(self.fiducial_length.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["width"] = float(self.width_fiducial.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["depth"] = float(self.depth_fiducial.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["milling_current"] = float(self.current_fiducial.value()*constants.NANO_TO_SI)
         self.microscope_settings.protocol["fiducial"]["preset"] = self.presetComboBox_fiducial.currentText()
+        self.microscope_settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
 
         self.microscope_settings.protocol["lamella"]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
         
-        index = self.stage_lamella.currentIndex() - 1
+        index = self.stage_lamella.currentIndex()
         
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["trench_height"] = float(self.trench_height.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_depth"] = float(self.depth_trench.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["depth"] = float(self.depth_trench.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["offset"] = float(self.offset.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["milling_current"] = float(self.current_lamella.value()*constants.NANO_TO_SI)
         self.microscope_settings.protocol["lamella"]["protocol_stages"][index]["size_ratio"] = float(self.size_ratio.value())
@@ -572,13 +662,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["microexpansion"]["width"] = float(self.micro_exp_width.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["microexpansion"]["height"] = float(self.micro_exp_height.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["microexpansion"]["distance"] = float(self.micro_exp_distance.value()*constants.MICRO_TO_SI)
+
+        self.microscope_settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText().lower()
         
         self.draw_patterns()
    
     def save_protocol(self):
         tkinter.Tk().withdraw()
         protocol_path = filedialog.asksaveasfilename(title="Select protocol file")
-
+        if protocol_path == '':
+            return
         with open(os.path.join(protocol_path), "w") as f:
             yaml.safe_dump(self.microscope_settings.protocol, f, indent=4)
 
@@ -592,9 +685,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             if self.microscope_settings.protocol is None:
                 logging.info("No protocol loaded")
                 return
+            patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in self.lamella_stages if stage.pattern is not None]
+            patterns.append(self.fiducial_stage.pattern.patterns)
             _draw_patterns_in_napari(
-                 self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, self.patterns_protocol
+                 self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, patterns
             )
+
         else:
             if "Stage 1" in self.viewer.layers:
                 self.viewer.layers["Stage 1"].visible = False
@@ -607,11 +703,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
-        if self.image_widget.ib_image is not None:
-            self.move_lamella_button.setEnabled(True)
-            self.move_fiducial_button.setEnabled(True)
-
-
+        
     def save_filepath(self):
         """Opens file explorer to choose location to save image files"""
 
@@ -635,6 +727,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         position = self.experiment.positions[index].state.microscope_state.absolute_position
         self.microscope.move_stage_absolute(position)
         logging.info(f"Moved to position of lamella {index}.")
+        log_status_message(self.experiment.positions[index], "MOVING_TO_POSITION")
         self.movement_widget.update_ui()
 
     def add_lamella_ui(self):
@@ -683,15 +776,18 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment.positions[-1].lamella_centre = lamella_position
         self.experiment.positions[-1].fiducial_centre = fiducial_position
-
+        log_status_message(self.experiment.positions[-1], "LAMELLA_ADDED")
 
         string_lamella = ""
         for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
-        self.lamella_count_txt.setText(
+            string_lamella += f"Lamella {lam.lamella_number:02d}-{lam._petname}: {lam.state.stage.name}\n"
+        self.lamella_count_txt.setPlainText(
             string_lamella
         )
+        
         self.lamella_index.setMaximum(len(self.experiment.positions))
+        self.lamella_index.setValue(len(self.experiment.positions))
+        self.lamella_index.setValue(len(self.experiment.positions))
         self.lamella_index.setMinimum(1)
         self.add_button.setEnabled(True)
         self.add_button.setText("Add Lamella")
@@ -699,6 +795,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setEnabled(True)
         self.remove_button.setEnabled(True)
         self.remove_button.setStyleSheet("color: white")
+
+        self.update_image_message(add=True)
+        
 
     def remove_lamella_ui(self):
         
@@ -728,7 +827,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.remove_button.setStyleSheet("color: white")
             return
 
-        
+        if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.FiducialMilled and self.lamella_saved > 0:
+            self.lamella_saved -= 1
 
         self.experiment = remove_lamella(self.experiment, self.lamella_index.value()-1)
         self.lamella_index.setMaximum(len(self.experiment.positions))
@@ -738,7 +838,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             lam.lamella_number = i + 1
             string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
 
-        self.lamella_count_txt.setText(
+        self.lamella_count_txt.setPlainText(
             string_lamella
         )
         self.experiment.save()
@@ -746,9 +846,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remove_button.setStyleSheet("color: white")
 
         self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
-        # self.save_button.setEnabled(True)
 
-        
+        self.update_image_message(add=False)
 
     def save_lamella_ui(self):
         self.save_button.setEnabled(False)
@@ -792,6 +891,20 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.save_button.setText("Save current lamella")
             self.save_button.setStyleSheet("color: white")
             return
+        
+        hfw = self.image_widget.image_settings.hfw
+        trench_height = self.microscope_settings.protocol["lamella"]["protocol_stages"][2]["trench_height"]
+        if trench_height/hfw < 0.005:
+            response = message_box_ui(
+                title="Field width too hight",
+                text="The field width is too high for this pattern, please save lamella with lower hfw (take new Ion beam image).",
+                buttons=QMessageBox.Ok,
+            )
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
+            return
+
         # check to mill fiducial
         response = message_box_ui(
             title="Begin milling fiducial?",
@@ -807,64 +920,66 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             lamella_position.y = float(self.lamella_position.y)    if self.lamella_position is not None else 0.0
             fiducial_position.x = float(self.fiducial_position.x)
             fiducial_position.y = float(self.fiducial_position.y)
-            
+
+            pixelsize = hfw/self.image_widget.image_settings.resolution[0]
+            if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+                _ = message_box_ui(
+                    title="Lamella placement invalid",
+                    text="The lamella placement is invalid, please move the lamella so it is fully in the image.",
+                    buttons=QMessageBox.Ok,
+                )
+                self.save_button.setEnabled(True)
+                self.save_button.setText("Save current lamella")
+                self.save_button.setStyleSheet("color: white")
+                self.go_to_lamella.setEnabled(False)
+                self.remill_fiducial.setEnabled(False)
+
+                return
+        
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
-
             self.mill_fiducial_ui(index)
-        self.save_button.setEnabled(False)
-        self.save_button.setText("Save current lamella")
-        self.save_button.setStyleSheet("color: white")
-        self.go_to_lamella.setEnabled(True)
-        self.remill_fiducial.setEnabled(True)
-        self.move_fiducial_button.setEnabled(False)
-        self.move_lamella_button.setEnabled(False)
+            self.update_image_message(add=False)
+        else:
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
+            self.go_to_lamella.setEnabled(False)
+            self.remill_fiducial.setEnabled(False)
 
     def _clickback(self, layer, event):
         if event.button == 2 :
             coords = self.image_widget.ib_layer.world_to_data(event.position)
 
-            
 
-            if self.moving_fiducial:
-                self.fiducial_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
-                self.moving_fiducial = False
-                self.image_widget.ib_layer.mouse_drag_callbacks.remove(self._clickback)
+            hfw = self.image_widget.image_settings.hfw
+            pixelsize = hfw/self.image_widget.image_settings.resolution[0]
+
+            if self.comboBox_moving_pattern.currentText() == "Fiducial":
+                fiducial_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
+                self.microscope_settings.image = self.image_widget.image_settings
+                fiducial_length = self.microscope_settings.protocol["fiducial"]["height"]
+                area, flag = calculate_fiducial_area(self.microscope_settings, fiducial_position, fiducial_length, pixelsize)
+                if flag:
+                    show_error("The fiducial area is out of the field of view. Please move fiducial closer to centre of image.")
+                    return
+                self.fiducial_position = fiducial_position
                 logging.info("Moved fiducial")
             else: 
-                self.lamella_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
-                self.image_widget.ib_layer.mouse_drag_callbacks.remove(self._clickback)
+                lamella_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
                 logging.info("Moved lamella")
+                if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+                    show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
+                    return
+                self.lamella_position = lamella_position
             self.viewer.layers.selection.active = self.image_widget.eb_layer
-            self.viewer.window.qt_viewer.view.camera.interactive = False
             self.draw_patterns()
             
         return 
-    
-    def move_fiducial(self):
-        
-        self.moving_fiducial = True
-        self.viewer.layers.selection.active = self.image_widget.ib_layer
-        self.image_widget.ib_layer.mouse_drag_callbacks.append(self._clickback)
-        _ = message_box_ui(
-            title="Place fiducial.",
-            text="Please right click once where you want the fiducial to be.",
-            buttons=QMessageBox.Ok,
-        )
-
-    def move_lamella(self):
-            self.moving_fiducial = False
-            self.viewer.layers.selection.active = self.image_widget.ib_layer
-            self.image_widget.ib_layer.mouse_drag_callbacks.append(self._clickback)
-            _ = message_box_ui(
-                title="Place lamella.",
-                text="Please right click once where you want the lamella centre to be.",
-                buttons=QMessageBox.Ok,
-            )
 
     def mill_fiducial_ui(self, index):
         
-        self.experiment = save_lamella(
+        self.experiment, flag = save_lamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 microscope_settings=self.microscope_settings,
@@ -873,12 +988,20 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 microexpansion=self.microexpansionCheckBox.isChecked(),
             )
 
-
+        if flag:
+            self.save_button.setEnabled(True)
+            self.save_button.setText("Save current lamella")
+            self.save_button.setStyleSheet("color: white")
+            self.go_to_lamella.setEnabled(False)
+            self.remill_fiducial.setEnabled(False)
+            return
+        
         self.experiment.positions[index] = mill_fiducial(
                 microscope=self.microscope,
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_widget.image_settings,
                 lamella=self.experiment.positions[index],
+                fiducial_stage = self.fiducial_stage,
             )
         if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
             self.experiment.save()
@@ -887,9 +1010,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         for lam in self.experiment.positions:
             string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
   
-        self.lamella_count_txt.setText(
+        self.lamella_count_txt.setPlainText(
             string_lamella
         )
+        self.save_button.setEnabled(False)
+        self.save_button.setText("Save current lamella")
+        self.save_button.setStyleSheet("color: white")
+        self.go_to_lamella.setEnabled(True)
+        self.remill_fiducial.setEnabled(True)
+        self.lamella_saved += 1 
+
 
     def remill_fiducial_ui(self):
         self.remill_fiducial.setEnabled(False)
@@ -906,7 +1036,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 title="Fiducial not milled",
                 text="You haven't saved this lamella yet, cannot remill fiducial.",
             )
+            return
         if response:
+            log_status_message(self.experiment.positions[index], "REMILLING_FIDUCIAL")
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
             self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
             self.mill_fiducial_ui(index=index)
@@ -953,12 +1085,19 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             return
         if response:
             show_info(f"Running AutoLamella...")
+            if self.comboBox_current_alignment.currentText() == "Milling Current":
+                alignment_current = True
+            else:
+                alignment_current = False
             self.image_widget.image_settings.reduced_area = None
             self.experiment = run_autolamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 microscope_settings=self.microscope_settings,
                 image_settings=self.image_widget.image_settings,
+                current_alignment=alignment_current,
+                stress_relief = self.microexpansionCheckBox.isChecked(),
+                lamella_stages=self.lamella_stages,
             )
         
         self.run_button.setEnabled(True)
@@ -967,11 +1106,20 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         string_lamella = ""
         for lam in self.experiment.positions:
             string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
-        self.lamella_count_txt.setText(
+        self.lamella_count_txt.setPlainText(
             string_lamella
         )
         self.lamella_index_changed()
+
+        self.lamella_finished = len(self.experiment.positions)
+
+        instruction_text = INSTRUCTION_MESSAGES["lamella_milled"].format(self.lamella_finished)
         
+
+        self.instructions_textEdit.setPlainText(instruction_text)
+        
+
+
     def splutter_platinum(self):
         _ = message_box_ui(
                 title="Not implemented",
@@ -1011,7 +1159,9 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
 
 
 def remove_lamella(experiment: Experiment, index: int):
+    log_status_message(experiment.positions[index], "REMOVED_LAMELLA")
     experiment.positions.pop(index)
+    logging.info("Lamella removed from experiment")
     return experiment
 
 
@@ -1046,10 +1196,16 @@ def save_lamella(
 
     pixelsize = ref_image.metadata.pixel_size.x
     fiducial_centre = experiment.positions[index].fiducial_centre
-    fiducial_length = microscope_settings.protocol["fiducial"]["length"]
+    fiducial_length = microscope_settings.protocol["fiducial"]["height"]
 
-    fiducial_area = calculate_fiducial_area(microscope_settings, fiducial_centre, fiducial_length, pixelsize)
- 
+    fiducial_area, flag = calculate_fiducial_area(microscope_settings, fiducial_centre, fiducial_length, pixelsize)
+    if flag:
+        _ = message_box_ui(
+            title = "Fiducial area is invalid",
+            text = "The fiducial area is out of the field of view. Please move fiducial closer to centre of image.",
+            buttons = QMessageBox.Ok,
+            )
+        return experiment,flag
     experiment.positions[index].state = initial_state
     experiment.positions[index].reference_image = ref_image
     experiment.positions[index].path = experiment.path
@@ -1062,7 +1218,7 @@ def save_lamella(
 
     logging.info("Lamella parameters saved")
 
-    return experiment
+    return experiment, flag
 
 
 
@@ -1087,15 +1243,52 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
     width = 2 * h_offset
     height = 2 * v_offset
 
+    if left < 0  or (left + width)> 1 or top < 0 or (top + height) > 1:
+        flag = True
+    else:
+        flag = False
+    
     fiducial_area = FibsemRectangle(left, top, width, height)
 
-    return fiducial_area
+    return fiducial_area, flag 
+
+def validate_lamella_placement(protocol, lamella_centre, ib_image, micro_expansions):
+
+    pattern = TrenchPattern()
+    protocol_trench = protocol["lamella"]["protocol_stages"][0]
+    protocol_trench["lamella_height"] = protocol["lamella"]["lamella_height"]
+    protocol_trench["lamella_width"] = protocol["lamella"]["lamella_width"]
+    pattern.define(protocol_trench, lamella_centre)
+    
+    for pattern_settings in pattern.patterns:
+        shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
+        resolution = [ib_image.data.shape[1],ib_image.data.shape[0]]
+        output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
+        if not output:
+            return False
+    
+    if micro_expansions :
+        protocol_micro = protocol["microexpansion"]
+        protocol_micro["depth"] = protocol["lamella"]["protocol_stages"][0]["depth"]
+        protocol_micro["lamella_width"] = protocol["lamella"]["lamella_width"]
+        pattern = MicroExpansionPattern()
+        pattern.define(protocol_micro, lamella_centre)
+
+        for pattern_settings in pattern.patterns:
+            shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
+            resolution = [ib_image.data.shape[1],ib_image.data.shape[0]]
+            output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
+            if not output:
+                return False
+
+    return True
 
 def mill_fiducial(
     microscope: FibsemMicroscope,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
     lamella: Lamella,
+    fiducial_stage: FibsemMillingStage,
 ):
     """
     Mill a fiducial
@@ -1114,41 +1307,30 @@ def mill_fiducial(
         - "Fiducial milled successfully" if successful
         - "Unable to draw/mill the fiducial: {e}" if unsuccessful, where {e} is the error message
     """
-
+   
     try:
-        protocol = microscope_settings.protocol["fiducial"]
-        fiducial_pattern = FibsemPatternSettings(
-            width=protocol["width"],
-            height=protocol["length"],
-            depth=protocol["depth"],
-            centre_x=lamella.fiducial_centre.x,
-            centre_y=lamella.fiducial_centre.y,
-        )
-        fiducial_milling = FibsemMillingSettings(
-            milling_current=protocol["milling_current"],
-            hfw = image_settings.hfw,
-            application_file=microscope_settings.protocol.get("application_file", "N/A"),
-            preset = protocol.get("preset", None),
-        )
-       
-        milling.setup_milling(microscope, mill_settings=fiducial_milling)
-        milling.draw_fiducial(
+        lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+        log_status_message(lamella, "MILLING_FIDUCIAL")
+        milling.setup_milling(microscope, mill_settings=fiducial_stage.milling)
+        milling.draw_patterns(
             microscope,
-            fiducial_pattern,
+            fiducial_stage.pattern.patterns,
         )
         milling.run_milling(
-            microscope, milling_current=fiducial_milling.milling_current
+            microscope, milling_current=fiducial_stage.milling.milling_current
         )
         milling.finish_milling(microscope)
-
+        lamella.state.end_timestamp = datetime.timestamp(datetime.now())
         lamella = lamella.update(stage=AutoLamellaStage.FiducialMilled)
-
-        image_settings.beam_type = BeamType.ION
+        log_status_message(lamella, "FIDUCIAL_MILLED_SUCCESSFULLY")
         image_settings.reduced_area = lamella.fiducial_area
-        lamella.reference_image = acquire.new_image(microscope, image_settings)
+        lamella.path = os.path.join(lamella.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}")
+        image_settings.save_path = lamella.path
+        image_settings.label = "milled_fiducial"
+        image_settings.save = True
+        reference_image = acquire.take_reference_images(microscope, image_settings)
+        lamella.reference_image = reference_image[1]
         image_settings.reduced_area = None
-
-        lamella.reference_image.metadata.image_settings.label = "milled_fiducial"
 
         logging.info("Fiducial milled successfully")
 
@@ -1165,6 +1347,9 @@ def run_autolamella(
     experiment: Experiment,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
+    current_alignment: bool,
+    stress_relief: bool,
+    lamella_stages = list[FibsemMillingStage]
 ):
     """
     Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
@@ -1178,96 +1363,119 @@ def run_autolamella(
     Returns:
         Experiment: The updated Experiment object after the successful milling of all the lamella positions specified in the `microscope_settings` protocol.
     """
+
+    _microexpansion_used = any([stage for stage in lamella_stages if stage.name == AutoLamellaStage.MicroExpansion.name])
+
     lamella: Lamella
-    for i, protocol in enumerate(
-        microscope_settings.protocol["lamella"]["protocol_stages"]
+    for i, stage in enumerate(
+        lamella_stages
     ):
-        protocol["lamella_height"] = microscope_settings.protocol["lamella"]["lamella_height"]
-        protocol["lamella_width"] = microscope_settings.protocol["lamella"]["lamella_width"]
-        curr_stage = AutoLamellaStage(i + 2)  # Skipping stages 0 and 1, Set up and Fiducial milled
+        curr_stage = AutoLamellaStage[stage.name]
+
+        lamella:Lamella
         for j, lamella in enumerate(experiment.positions):
-            if lamella.state.stage == AutoLamellaStage(curr_stage.value - 1):  # Checks to make sure the previous stage for the selected Lamella is the current protocol
+            
+            _COMPLETE_STAGE = False
+            if curr_stage is AutoLamellaStage.RoughCut:
+                if not _microexpansion_used: #, check if last stage was fiducial milled
+                    if lamella.state.stage is AutoLamellaStage.FiducialMilled:
+                        _COMPLETE_STAGE = True
+                elif lamella.state.stage is AutoLamellaStage.MicroExpansion:
+                        _COMPLETE_STAGE = True
+            elif (lamella.state.stage.value == curr_stage.value - 1):
+                _COMPLETE_STAGE = True
+
+            if not _COMPLETE_STAGE:
+                continue
+
+            lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+            
+            microscope.move_stage_absolute(
+                lamella.state.microscope_state.absolute_position
+            )
+            log_status_message(lamella, "MOVING_TO_POSITION")
+            image_settings.save_path = lamella.path
+            image_settings.save = True
+            image_settings.label = f"start_mill_stage_{i}"
+            image_settings.reduced_area = None
+            acquire.take_reference_images(microscope, image_settings)
+            image_settings.save = False
+            
+
+            # alignment
+            for _ in range(
+                int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
+            ):  
+                log_status_message(lamella, "BEAM_ALIGNMENT")
+                if current_alignment:
+                    if isinstance(microscope, ThermoMicroscope) or isinstance(microscope, DemoMicroscope):
+                        microscope.set("current", stage.milling.milling_current, BeamType.ION)
+                    elif isinstance(microscope, TescanMicroscope):
+                        microscope.set('preset', stage.milling.preset, BeamType.ION)
+                image_settings.beam_type = BeamType.ION
+                image_settings.reduced_area = lamella.fiducial_area
+                beam_shift_alignment(
+                    microscope=microscope,
+                    image_settings=image_settings,
+                    ref_image=lamella.reference_image,
+                    reduced_area=lamella.fiducial_area,
+                )
+
+            try:
+                stage.milling.hfw = lamella.state.microscope_state.ib_settings.hfw
+                log_status_message(lamella, F"MILLING_TRENCH {curr_stage.name}")
+                milling.setup_milling(
+                    microscope,
+                    mill_settings=stage.milling,
+                )
+
+                # redefine pattern for each lamella
+                stage.pattern.define(stage.pattern.protocol, lamella.lamella_centre)
+
+                milling.draw_patterns(
+                    microscope=microscope,
+                    patterns = stage.pattern.patterns,
+                )
+
+                milling.run_milling(
+                    microscope, milling_current=stage.milling.milling_current
+                )
+                milling.finish_milling(microscope)
+                lamella.state.end_timestamp = datetime.timestamp(datetime.now())
+                image_settings.save_path = lamella.path
+                image_settings.reduced_area = None
+                log_status_message(lamella, F"{curr_stage.name}_COMPLETED_SUCCESSFULLY")
+                # Update Lamella Stage and Experiment
+                lamella = lamella.update(stage=curr_stage)
+
+                # save reference images
+                image_settings.save = True
+                image_settings.label = f"ref_mill_stage_{i}"
+                image_settings.reduced_area = None
+                acquire.take_reference_images(microscope, image_settings)
+
+                image_settings.save = False
                 
-                microscope.move_stage_absolute(
-                    lamella.state.microscope_state.absolute_position
+                experiment.save()
+
+                l_stage = stage.name
+
+                logging.info(f"Lamella {j+1}, stage: '{l_stage}' milled successfully.")
+                success= True; 
+            except Exception as e:
+                logging.error(
+                    f"Unable to draw/mill the lamella: {traceback.format_exc()}"
                 )
-                mill_settings = FibsemMillingSettings(
-                    patterning_mode="Serial",
-                    application_file=microscope_settings.protocol.get("application_file", "N/A"),
-                    milling_current=protocol["milling_current"],
-                    preset = protocol.get("preset", None),
-                )
+                lamella.state.stage = AutoLamellaStage.FiducialMilled
+                success = False
+            finally:
+                milling.finish_milling(microscope)
+                experiment.save()
 
-                # alignment
-                for _ in range(
-                    int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
-                ):
-                    image_settings.beam_type = BeamType.ION
-                    beam_shift_alignment(
-                        microscope=microscope,
-                        image_settings=image_settings,
-                        ref_image=lamella.reference_image,
-                        reduced_area=lamella.fiducial_area,
-                    )
-
-                try:
-                    mill_settings.hfw = image_settings.hfw
-
-                    milling.setup_milling(
-                        microscope,
-                        mill_settings=mill_settings,
-                    )
-                    milling.draw_trench(
-                        microscope=microscope,
-                        protocol=protocol,
-                        point=lamella.lamella_centre
-                    )
-
-                    if (
-                        curr_stage == 2 and lamella.mill_microexpansion
-                    ):  # stage = 2 is RoughCut
-                        milling.draw_stress_relief(
-                            microscope=microscope,
-                            microexpansion_protocol=microscope_settings.protocol[
-                                "microexpansion"
-                            ],
-                            lamella_protocol=protocol
-                        )
-
-                    milling.run_milling(
-                        microscope, milling_current=protocol["milling_current"]
-                    )
-                    milling.finish_milling(microscope)
-
-                    image_settings.save_path = lamella.path
-                    image_settings.label = f"ref_mill_stage_{i}"
-                    image_settings.reduced_area = None
-
-                    # Update Lamella Stage and Experiment
-                    lamella = lamella.update(stage=curr_stage)
-
-                    image_settings.beam_type = BeamType.ION
-                    reference_image = acquire.new_image(
-                        microscope, image_settings
-                    )
-                    path_image = os.path.join(lamella.path, str(lamella.lamella_number).rjust(6, '0'), image_settings.label)
-                    reference_image.save(path_image)
-
-                    experiment.save()
-
-                    l_stage = curr_stage.name
-
-                    logging.info(f"Lamella {j+1}, stage: '{l_stage}' milled successfully.")
-
-                except Exception as e:
-                    logging.error(
-                        f"Unable to draw/mill the lamella: {traceback.format_exc()}"
-                    )
-                finally:
-                    milling.finish_milling(microscope)
-                    experiment.save()
-
-    logging.info("All Lamella milled successfully.")
+    if success:
+        logging.info("All Lamella milled successfully.")
+    else:
+        logging.info("Lamellas were not milled successfully.")
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaStage.PolishingCut:
             lamella = lamella.update(stage=AutoLamellaStage.Finished)
@@ -1296,8 +1504,7 @@ def main():
     
     window = UiInterface(viewer=napari.Viewer())
     widget = window.viewer.window.add_dock_widget(window, area = 'right', add_vertical_stretch=True, name='Autolamella')
-    widget.setMinimumWidth(400)
-
+    #widget.setMinimumWidth(400)
     napari.run()
 
 if __name__ == "__main__":

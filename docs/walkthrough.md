@@ -2,13 +2,25 @@
 The following is a short explanation of the basic workflow of the AutoLamella program. 
 
 ## Step 1: Creating a protocol
-The AutoLamella package uses a yaml file to store all of the necessary information on the dimensions and characteristics of the fiducial, lamella, and optional microexpansion joints such as the width and height of the lamella, in how many stages the lamella trenches are milled, the dimensions of each stage, milling current, etc. The protocol format was updated alongside the rest of the AutoLamella package, as such an in-depth explanation of what all the values in the new protocol format are and how to convert from the old protocol format to the new one can be found in the [AutoLamella Protocol](protocol.md) section. 
+The AutoLamella package uses a yaml file to store all of the necessary information on the dimensions and characteristics of the fiducial, lamella, and optional microexpansion joints. Details such as the width and height of the lamella, in how many stages the lamella trenches are milled, the dimensions of each stage, milling current, etc are outlined in the yaml file. 
 
-## Step 2: Creating/Loading an Experiment
-AutoLamella requires an Experiment to be created/loaded before any saving and milling of lamellae can begin. An 'Experiment' groups all of the fiducials and lamellae into a single object that is logged and saved upon any updates to any of the current lamellae or any additions. The Experiment is automatically saved, this does not need to be done by hand and can then be loaded again later by importing the .yaml file. To create/load an experiment:
+The protocol format was updated alongside the rest of the AutoLamella package. As such, an in-depth explanation of the parameters in the new protocol format, and how to convert from the old protocol format to the new one can be found in the [AutoLamella Protocol](protocol.md) section. 
 
-![create/load experiment](img/walkthrough/createExerimentOne.png)
-![create/load experiment two](img/walkthrough/createExperimentTwo.png)
+## Step 2: Connecting to a microscope
+The first thing to do when opening the AutoLamella program is to connect to a microscope. This can be done by entering the IP address of the microscope you would like to connect to in the 'IP address' field and selecting the correct manufacturer, then clicking the 'Connect' button. 
+
+![connect to microscope](img/walkthrough/connectToMicroscope.png)   
+
+Once the hardware is properly connected, the status bar will update, as well as the stage parameters, which can be updated by clicking the 'Set Stage Parameters' button.
+
+![Microscope connected and stage parameters](img/walkthrough/connectToMicroscope2.png)
+
+## Step 3: Creating/Loading an Experiment
+AutoLamella requires an experiment to be created/loaded before any saving and milling of lamellae can begin. An 'experiment' groups all of the fiducials and lamellae into a single object that is logged and saved upon any updates to any of the current lamellae or any additions. The Experiment is automatically saved, this does not need to be done by hand and can then be loaded again later by importing the .yaml file. 
+
+To create/load an experiment, click on the file menu and click on either create or load experiment as shown in the figure below: 
+
+![create/load experiment](img/walkthrough/createExperiment.png)
 
 Once you have navigated to either creating or loading an experiment, you will be prompted to either select a directory to save the experiment to in the case of Experiment creation, or select the filepath of the Experiment's yaml file in the case of loading an Experiment. 
 
@@ -20,16 +32,34 @@ If you are creating a new Experiment, you will also be prompted to select a name
 
 Finally, you will be prompted to choose a protocol file to load (.yaml). Select (one of) the protocol file(s) you created in Step 1 to begin. If you would like to later change the protocol you are using, you can do so by navigating through file > load protocol.
 
-## Step 3: Adding Lamellae
-You will first need to take atleast one set of reference images before adding any lamellae to the Experiment. This can be done by simply clicking the 'Take Reference Images' button in the UI. 
+You can update/verify the protocol by navigating to the protocol tab. 
 
-Once images have been taken, you can optionally tick the 'Show Lamella' and 'Microexpansion Joints' checkboxes. The 'Show Lamella' checkbox will draw the lamella and fiducial patterns onto the napari viewer over the ion beam image when ticked, to help you visualise what the lamella will look like. The 'Microexpansion Joints' checkbox will add stress relief joints to the sides of the lamella, if the microexpansion attributes were added to the protocol. Microexpansion joints will be milled as part of the first stage of the lamella if selected.
+![protocol tab](img/walkthrough/protoTab.png)
 
-An empty lamella can be created by pressing the 'Add Lamella' button in the UI. Nothing happens after pressing this button besides telling AutoLamella how many lamellae you are working with. A lamella (and fidicual) is not properly created until you click the 'Save Lamella' button, upon which a fiducial will be milled for said lamella. You can either sequentially 'Add Lamella' and 'Save Lamella' as needed, or if you are aware of how many lamellae you are planning to mill for a particular experiment, you can add X number of lamellae all at once, and save them later. You can select which lamella you would like to save with the 'Current Lamella' bar.
+## Step 4: Adding Lamellae
+You will first need to take atleast one set of reference images before adding any lamellae to the Experiment. This can be done by simply clicking the 'Acquire All Images' button in the imaging tab of the UI. 
 
-You can move the microscope stage by either double clicking on somewhere on one of the images to move there, or move the microscope through your microscope's API. Once you are happy with the placement of a lamella, click 'Save Lamella'. This will begin the milling process of a fiducial a fixed distance to the left of the lamella, and save the lamella's position for later. Once you have saved the desired number of lamellae and milled a fiducial for each, the AutoLamella process can begin.
+![take reference images](img/walkthrough/takeReferenceImages.png)
 
-## Step 4: Run AutoLamella
+Once images have been taken, you can optionally tick the 'Show Lamella' and 'Microexpansion Joints' checkboxes. The 'Show Lamella' checkbox will draw the lamella and fiducial patterns onto the napari viewer over the ion beam image when ticked, to help you visualise what the lamella will look like. The 'Microexpansion Joints' checkbox will add stress relief joints to the sides of the lamella, if the microexpansion attributes were added to the protocol. Microexpansion joints will be milled as the first stage of the lamella if selected.
+
+![show lamella and microexpansion joints](img/walkthrough/showLamellaAndMicroexpansionJoints.png)
+
+An empty lamella can be created by pressing the 'Add Lamella' button in the UI. This button tells AutoLamella how many lamellae you are working with. A lamella (and fidicual) is not properly created until you click the 'Save Lamella' button, upon which a fiducial will be milled for said lamella. You can either sequentially 'Add Lamella' and 'Save Lamella' as needed, or if you are aware of how many lamellae you are planning to mill for a particular experiment, you can add X number of lamellae all at once, and save them later. 
+
+You can remove lamella as you wish by clicking remove lamella. If lamellae have been added but not saved, removing lamellae simply removes them from the experiment. If lamellae have been added and saved, removing them will remove them from the experiment, however the fiducial that is already milled will remain. You can selectively remove lamella by selecting the lamella from the "Current Lamella" box and clicking remove.
+
+You can select which lamella you would like to save with the 'Current Lamella' bar. The fiducial and lamella patterns can be moved within the bounds of the ion beam image. Simply select the pattern you would like to move via the comboBox on the side of the UI, and right click on the desired location.
+
+![move lamella](img/walkthrough/movingPatterns.png)
+
+You can move the microscope stage by either double clicking on somewhere on one of the images to move there, or via the movement tab. 
+
+![move stage](img/walkthrough/moveStage.png)
+
+Once you are happy with the placement of a lamella, click 'Save Lamella'. This will begin the milling process of the fiducial, and save the lamella's position. Once a lamella has been saved, its position can not be changed. Remill the fiducial if needed. Once you have saved the desired number of lamellae and milled a fiducial for each, the AutoLamella process can begin.
+
+## Step 5: Run AutoLamella
 Click the 'Run AutoLamella' button to begin the process. The program will check behind the scenes that you have met the prerequisites before beginning. If you do not meet these prerequisites a pop-up message will let you know. These prerequisites are:
 
     1. A microscope is connected.

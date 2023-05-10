@@ -21,9 +21,9 @@ system:
   stage:
     rotation_flat_to_electron: 49 # degrees
     rotation_flat_to_ion: 229 # degrees
-    tilt_flat_to_electron: 0 # degrees (pre-tilt)
+    tilt_flat_to_electron: 35 # degrees (pre-tilt)
     tilt_flat_to_ion: 52 # degrees
-    pre_tilt: 0
+    pre_tilt: 35
     needle_stage_height_limit: 3.7e-3
 # user config settings
 user:
@@ -36,9 +36,9 @@ user:
   imaging: 
     imaging_current: 20.e-12
     resolution: [1536, 1024]
-    hfw: 150.e-6  
+    hfw: 80.e-6  
     beam_type: "Electron"
-    autocontrast: True
+    autocontrast: False
     dwell_time: 1.e-6
     save: False
     gamma_enabled: False

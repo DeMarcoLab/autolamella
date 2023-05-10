@@ -1,0 +1,43 @@
+application_file: autolamella
+fiducial:
+    depth: 1.5e-06
+    length: 8.0e-06
+    milling_current: 7.4e-10
+    preset: ''
+    width: 8.0e-07
+lamella:
+    beam_shift_attempts: 3.0
+    lamella_height: 5.0e-07
+    lamella_width: 6.0e-06
+    protocol_stages:
+    -   lamella_height: 5.0e-07
+        lamella_width: 6.0e-06
+        milling_current: 7.4e-10
+        depth: 6.5e-07
+        offset: 2.0e-06
+        preset: ''
+        size_ratio: 1.0
+        trench_height: 2.4999999999999998e-06
+    -   lamella_height: 5.0e-07
+        lamella_width: 6.0e-06
+        milling_current: 2.0000000000000003e-10
+        depth: 6.5e-07
+        offset: 8.0e-07
+        preset: ''
+        size_ratio: 1.0
+        trench_height: 2.0e-06
+    -   lamella_height: 5.0e-07
+        lamella_width: 6.0e-06
+        milling_current: 6.0e-11
+        depth: 5.0e-07
+        offset: 0.0
+        preset: ''
+        size_ratio: 1.0
+        trench_height: 1.2e-06
+microexpansion:
+    distance: 4.599999999999999e-06
+    height: 3.6699999999999996e-06
+    width: 2.0e-07
+name: Autolamella_RubyCells
+stage_rotation: 230.0
+stage_tilt: 56.0

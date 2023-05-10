@@ -11,17 +11,20 @@ def protocol_converter(old_protocol_path: str, new_protocol_path: str):
         'name': 'Autolamella',
         'stage_rotation': 230,
         'stage_tilt': 52,
+        'application_file': "autolamella",
         'fiducial': {
             'length': float(old_protocol["fiducial"]["fiducial_length"]),
             'width': float(old_protocol["fiducial"]["fiducial_width"]),
             'depth': float(old_protocol["fiducial"]["fiducial_milling_depth"]),
-            'milling_current': float(old_protocol["fiducial"]["fiducial_milling_current"])
+            'milling_current': float(old_protocol["fiducial"]["fiducial_milling_current"]),
+            'preset': "30 keV; 20 nA",
         },
         'lamella': {
             'beam_shift_attempts': 3,
             'lamella_width': float(old_protocol["lamella"]["lamella_width"]),
             'lamella_height': float(old_protocol["lamella"]["lamella_height"]),
             'protocol_stages': [],
+            'alignment_current': "Imaging Current"
         }
     }
 
@@ -60,7 +63,8 @@ def protocol_converter(old_protocol_path: str, new_protocol_path: str):
                 'milling_depth': float(old_stage["milling_depth"]),
                 'offset': offset,
                 'size_ratio': 1.0,
-                'milling_current': float(old_stage["milling_current"])
+                'milling_current': float(old_stage["milling_current"]),
+                'preset': "30 keV; 20 nA",
             }
         )
     

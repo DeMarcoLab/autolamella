@@ -25,10 +25,11 @@ class MovementType(Enum):
 class AutoLamellaStage(Enum):
     Setup = 0
     FiducialMilled = 1
-    RoughCut = 2
-    RegularCut = 3
-    PolishingCut = 4
-    Finished = 5
+    MicroExpansion = 2
+    RoughCut = 3
+    RegularCut = 4
+    PolishingCut = 5
+    Finished = 6
 
 @dataclass
 class LamellaState:
@@ -77,8 +78,9 @@ class Lamella:
         if self.history is None:
             self.history = []
         return {
+            "petname": self._petname,
             "state": self.state.__to_dict__() if self.state is not None else "Not defined",
-            "reference_image": str(os.path.join(self.path, str(self.lamella_number).rjust(6, '0'), f"{self.reference_image.metadata.image_settings.label}.tif")) if self.reference_image is not None else "Not defined",
+            "reference_image": str(os.path.join(self.path, f"{self.reference_image.metadata.image_settings.label}.tif")) if self.reference_image is not None else "Not defined",
             "path": str(self.path) if self.path is not None else "Not defined",
             "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else "Not defined",
             "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
@@ -94,6 +96,7 @@ class Lamella:
         fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
         lamella_centre = Point.__from_dict__(data["lamella_centre"])
         return cls(
+            _petname=data["petname"],
             state=state,
             reference_image=FibsemImage.load(data["reference_image"]),
             path=data["path"],
@@ -148,7 +151,7 @@ class Experiment:
             yaml.safe_dump(self.__to_dict__(), f, indent=4)
 
         for lamella in self.positions:
-            path_image = os.path.join(self.path, str(lamella.lamella_number).rjust(6, '0'), lamella.reference_image.metadata.image_settings.label)
+            path_image = os.path.join(self.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}", lamella.reference_image.metadata.image_settings.label)
             if lamella.reference_image is not None:
                 lamella.reference_image.save(path_image)
 

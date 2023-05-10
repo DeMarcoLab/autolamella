@@ -1,39 +1,42 @@
 
 name: autolamella_demo
-application_file: autolamella # Thermo only
+application_file: Si # Thermo only
+
 stage_rotation: 230
 stage_tilt: 52
 
 fiducial:
-  length: 10.e-6
+  height: 10.e-6
   width: 1.e-6
   depth: 1.0e-6
+  rotation: 45
   milling_current: 28.e-9
   preset: "30 keV; 20 nA" # TESCAN only
 
 lamella:
   beam_shift_attempts: 3
+  alignment_current: "Imaging"
   lamella_width: 10.e-6
   lamella_height: 800.e-9
   protocol_stages:
   - trench_height: 10.e-6
-    milling_depth: 1.e-6
+    depth: 1.e-6
     offset: 2.e-6
     size_ratio: 1.0
     milling_current: 2.e-9
     preset: "30 keV; 2.5 nA" # TESCAN only
   - trench_height: 2.e-6
-    milling_depth: 1.e-6
+    depth: 1.e-6
     offset: 0.5e-6
     size_ratio: 1.0
     milling_current: 0.74e-9
     preset: "30 keV; 1 nA" # TESCAN only
   - trench_height: 0.5e-6
-    milling_depth: 0.4e-6
+    depth: 0.4e-6
     offset: 0.0e-6
     size_ratio: 1.0
-    milling_current: 60.0e-12 # TESCAN only
-    preset: "30 keV; 50 pA"
+    milling_current: 60.0e-12 
+    preset: "30 keV; 50 pA" # TESCAN only
 
 microexpansion:
   width: 0.5e-6
