@@ -557,7 +557,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.protocol_loaded = False
             self.load_protocol()
 
-        self.set_ui_from_protocol() 
+        # self.set_ui_from_protocol() 
         if isinstance(self.microscope, TescanMicroscope):
             presets = self.microscope.get('presets')
             self.presetComboBox.addItems(presets)
@@ -623,6 +623,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.comboBox_current_alignment.setCurrentText("Imaging Current")
         
         logging.info("Protocol loaded")
+
+
+        # list all items in a combobox
+        # 
+        #     print([self.comboBoxapplication_file.itemText(i)) for i in range(self.comboBoxapplication_file.count())]
 
 
         self.draw_patterns()
