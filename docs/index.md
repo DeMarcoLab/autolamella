@@ -1,3 +1,7 @@
+## Overview
+
+AutoLamella is a python package for automated cryo-lamella preparation with focused ion beam milling. It is based on [openFIBSEM](https://github.com/DeMarcoLab/fibsem), and currently supports the [TESCAN Automation SDK](https://www.tescan.com/en/products/automation-sdk/) and [ThermoFisher AutoScript](https://www.tescan.com/en/products/autoscript/). Support for other FIBSEM systems is planned.
+
 ## Install
 
 ### Install OpenFIBSEM
@@ -27,6 +31,8 @@ Install dependencies and package
 $ conda activate fibsem
 $ cd autolamella
 $ pip install -e .
+$ pip install pywin32==228
+$ conda install -c conda-forge petname
 
 ```
 
@@ -49,5 +55,23 @@ See [Installation Guide](INSTALLATION.md) for full details
 
 
 ### Getting started 
+To run autolamella:
+```bash
+$ conda activate autolamella
+$ autolamella
+```
+![UI](docs/img/ui.png)
 
-![UI](img/ui.png)
+
+## Citation
+If you find this useful, please cite our work.
+
+Genevieve Buckley, Gediminas Gervinskas, Cyntia Taveneau, Hariprasad Venugopal, James C. Whisstock, Alex de Marco,
+**Automated cryo-lamella preparation for high-throughput in-situ structural biology**,
+*Journal of Structural Biology*,
+Volume 210, Issue 2,
+2020
+https://doi.org/10.1016/j.jsb.2020.107488.
+
+See [CITATION](CITATION.md) for more details.
+
