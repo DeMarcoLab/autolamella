@@ -10,8 +10,6 @@ DEFAULT_PROTOCOL = {
 "main_headers" : {
             "name": "autolamella_demo",
             "application_file": "autolamella",
-            "stage_rotation": 230,
-            "stage_tilt": 52,
         },
 
 "fiducial_headers" : {
