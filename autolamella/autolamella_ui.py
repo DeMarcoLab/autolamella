@@ -10,14 +10,10 @@ from pathlib import Path
 from time import sleep
 from tkinter import filedialog, simpledialog
 
-import fibsem.constants as constants
-import fibsem.conversions as conversions
-import fibsem.gis as gis
-import fibsem.milling as milling
 import napari
 import numpy as np
 import yaml
-from fibsem import acquire, utils
+from fibsem import acquire, utils, constants, conversions, milling, gis
 from fibsem.alignment import beam_shift_alignment
 from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
                                TescanMicroscope, ThermoMicroscope)
@@ -127,6 +123,38 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.valueChanged.connect(self.lamella_index_changed)
 
+        # import from piescope
+        self.actionImport_Positions.triggered.connect(self._import_positions)
+
+    def _import_positions(self):
+
+        # if exp not created return
+        if self.experiment is None:
+            logging.warning("No experiment loaded")
+            return
+        
+        # get file path
+        tkinter.Tk().withdraw()
+        path = filedialog.askopenfilename(initialdir = cfg.BASE_PATH, title="Select PIESCOPE positions file", filetypes=[("yaml files", "*.yaml")])
+
+        # if no file selected return
+        if path == "":
+            logging.warning("No file selected")
+            return
+        
+        # load positions
+        from openlm.structures import Experiment as OpenLMExperiment
+
+        openlm_exp = OpenLMExperiment.load(path)
+        
+        for pos in openlm_exp.positions:
+            self.add_lamella_ui()
+            self.experiment.positions[-1].state.microscope_state = pos[1]
+        
+        # figure out what other data we need to make this compatible with autolamella
+        from pprint import pprint
+        pprint(self.experiment)
+
     def connect_protocol_signals(self):
         # Protocol setup
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
@@ -152,7 +180,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.lamella_index.value() > 0:
             self.draw_patterns()
             if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.Setup:
-                self.go_to_lamella.setEnabled(False)
+                self.go_to_lamella.setEnabled(True)
                 self.remill_fiducial.setEnabled(False)
                 self.save_button.setEnabled(True)
             else:
@@ -705,15 +733,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def go_to_lamella_ui(self):
         index = self.lamella_index.value() -1 
-        if self.experiment.positions[index].state.stage == AutoLamellaStage.Setup:
-            _ = message_box_ui(
-                title="Lamella not saved.",
-                text="Please save the lamella before moving to it.",
-                buttons=QMessageBox.Ok,
-            )
-            return
+        # if self.experiment.positions[index].state.stage == AutoLamellaStage.Setup:
+        #     _ = message_box_ui(
+        #         title="Lamella not saved.",
+        #         text="Please save the lamella before moving to it.",
+        #         buttons=QMessageBox.Ok,
+        #     )
+        #     return
         log_status_message(self.experiment.positions[index], "MOVING_TO_POSITION")
-        position = self.experiment.positions[index].state.microscope_state.absolute_position
+        position = self.experiment.positions[index].state.microscope_state.absolute_position # TODO: change to restore state
         self.microscope.move_stage_absolute(position)
         logging.info(f"Moved to position of lamella {index}.")
         log_status_message(self.experiment.positions[index], "MOVE_SUCCESSFUL")
