@@ -712,10 +712,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
             return
+        log_status_message(self.experiment.positions[index], "MOVING_TO_POSITION")
         position = self.experiment.positions[index].state.microscope_state.absolute_position
         self.microscope.move_stage_absolute(position)
         logging.info(f"Moved to position of lamella {index}.")
-        log_status_message(self.experiment.positions[index], "MOVING_TO_POSITION")
+        log_status_message(self.experiment.positions[index], "MOVE_SUCCESSFUL")
         self.movement_widget.update_ui()
 
     def add_lamella_ui(self):
@@ -1376,11 +1377,11 @@ def run_autolamella(
                 continue
 
             lamella.state.start_timestamp = datetime.timestamp(datetime.now())
-            
+            log_status_message(lamella, "MOVING_TO_POSITION")
             microscope.move_stage_absolute(
                 lamella.state.microscope_state.absolute_position
             )
-            log_status_message(lamella, "MOVING_TO_POSITION")
+            log_status_message(lamella, "MOVE_TO_POSITION_SUCCESSFUL")
             image_settings.save_path = lamella.path
             image_settings.save = True
             image_settings.label = f"start_mill_stage_{i}"
