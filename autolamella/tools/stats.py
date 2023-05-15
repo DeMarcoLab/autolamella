@@ -44,9 +44,12 @@ st.subheader("Stage duration")
 
 # calculate difference in timestamp between rows
 df_steps['delta'] = df_steps['timestamp'].diff()
+steps_to_drop = ["MILLING_COMPLETED_SUCCESSFULLY", "MOVE_TO_POSITION_SUCCESSFUL", "FIDUCIAL_MILLED_SUCCESSFULLY", "MOVE_SUCCESSFUL"]
+df_steps_filtered = df_steps[~df_steps["step"].isin(steps_to_drop)]
+df_history_filtered = df_history[~df_history["stage"].isin(steps_to_drop)]
 
-fig_duration1 = px.bar(df_steps, x="lamella", y="delta", color="step", facet_col="stage")
-fig_duration2 = px.bar(df_history, x="stage", y="duration", color="petname", barmode="group")
+fig_duration1 = px.bar(df_steps_filtered, x="lamella", y="delta", color="step", facet_col="stage")
+fig_duration2 = px.bar(df_history_filtered, x="stage", y="duration", color="petname", barmode="group")
 st.plotly_chart(fig_duration1, use_container_width=True)
 st.plotly_chart(fig_duration2, use_container_width=True)
 
