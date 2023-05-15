@@ -17,7 +17,7 @@ from pathlib import Path
 
 def load_experiment(path):
     
-    directory_name = os.path.basename(path)
+    directory_name = os.path.basename(os.path.normpath(path))
     full_path = os.path.join(path, directory_name)
     experiment = Experiment.load(full_path) 
 
