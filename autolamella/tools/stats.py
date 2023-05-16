@@ -26,7 +26,7 @@ paths = glob.glob(os.path.join(LOG_PATH, FILTER_STR))
 EXPERIMENT_PATH = st.selectbox(label="Experiment Path ", options=paths)
 # sample = load_experiment(EXPERIMENT_PATH)
 
-df_sample, df_history, beam_shift_info, df_steps = data.calculate_statistics_dataframe(EXPERIMENT_PATH)
+df_sample, df_history, df_shift, df_steps = data.calculate_statistics_dataframe(EXPERIMENT_PATH)
 
 # experiment metrics
 n_lamella = len(df_history["petname"])
@@ -70,3 +70,12 @@ df_sample["petname"] = df_history["petname"].unique()
 fig = px.scatter_3d(df_sample, x="lamella.x", y='lamella.y', z='lamella.z', color="petname")
 fig.update_layout(title="Lamella positions in sample")
 st.plotly_chart(fig, use_container_width=True)  
+
+st.markdown("---")
+st.subheader("Beam shift")
+
+points = pd.DataFrame(df_shift["shift"].tolist(), columns=["x", "y"])
+points["lamella"] = df_shift["lamella"]
+fig = px.scatter(points, x="x", y='y', color="lamella")
+fig.update_layout(title="Beam shift")
+st.plotly_chart(fig, use_container_width=True)
