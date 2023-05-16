@@ -54,5 +54,19 @@ st.plotly_chart(fig_duration1, use_container_width=True)
 st.plotly_chart(fig_duration2, use_container_width=True)
 
 
+st.markdown("---")
+
+st.subheader("Lamella positions")
+
+points = pd.DataFrame(df_sample["lamella.centre"].tolist(), columns=["x", "y"])
+points["petname"] = df_history["petname"].unique()
+fig = px.scatter(points, x="x", y='y', color="petname")
+fig.update_layout(title="Lamella positions in image")
+
+st.plotly_chart(fig, use_container_width=True)
 
 
+df_sample["petname"] = df_history["petname"].unique()
+fig = px.scatter_3d(df_sample, x="lamella.x", y='lamella.y', z='lamella.z', color="petname")
+fig.update_layout(title="Lamella positions in sample")
+st.plotly_chart(fig, use_container_width=True)  
