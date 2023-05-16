@@ -10,14 +10,14 @@ from pathlib import Path
 from time import sleep
 from tkinter import filedialog, simpledialog
 
-import fibsem.constants as constants
-import fibsem.conversions as conversions
-import fibsem.gis as gis
-import fibsem.milling as milling
+# import fibsem.constants as constants
+# import fibsem.conversions as conversions
+# import fibsem.gis as gis
+# import fibsem.milling as milling
 import napari
 import numpy as np
 import yaml
-from fibsem import acquire, utils
+from fibsem import acquire, utils, constants, conversions, gis, milling
 from fibsem.alignment import beam_shift_alignment
 from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
                                TescanMicroscope, ThermoMicroscope)
@@ -452,7 +452,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 self.go_to_lamella.setEnabled(True)
                 if lam.state.stage == AutoLamellaStage.FiducialMilled:
                     self.remill_fiducial.setEnabled(True)
-                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
             self.lamella_count_txt.setPlainText(
                 string_lamella
             )
@@ -769,7 +769,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         string_lamella = ""
         for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number:02d}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number:02d}-{lam._petname}: \t\t{lam.state.stage.name}\n"
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
@@ -825,7 +825,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         string_lamella = ""
         for i, lam in enumerate(self.experiment.positions):
             lam.lamella_number = i + 1
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
 
         self.lamella_count_txt.setPlainText(
             string_lamella
@@ -996,7 +996,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         string_lamella = ""
         for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
   
         self.lamella_count_txt.setPlainText(
             string_lamella
@@ -1064,7 +1064,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             # check to mill fiducial
             _ = message_box_ui(
                 title="Milling Requirements have not been met.",
-                text="The following requirements must be met:\n1. Microscope Connected.\n2. Experiment created.\n3.Atleast 1 Lamella saved.\n4. All fiducials milled.",
+                text="The following requirements must be met:\n1. Microscope Connected.\n2. Experiment created.\n3. Atleast 1 Lamella saved.\n4. All fiducials milled.",
                 buttons=QMessageBox.Ok,
             )
             self.run_button.setEnabled(True)
@@ -1093,7 +1093,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.run_button.setStyleSheet("background-color: green")
         string_lamella = ""
         for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
