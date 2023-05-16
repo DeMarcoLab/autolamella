@@ -39,7 +39,7 @@ from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QMessageBox
 from qtpy import QtWidgets
 
-import autolamella.config as cfg
+import autolamella.config as cfg                                  
 from autolamella.structures import (AutoLamellaStage, Experiment, Lamella,
                                     LamellaState, MovementMode, MovementType)
 from autolamella.ui import UI as UI
