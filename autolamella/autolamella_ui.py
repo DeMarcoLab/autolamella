@@ -287,8 +287,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if folder_path == '':
             logging.info("No path selected, experiment not created")
             return
+        
+        now = datetime.now()
+        DATE = now.strftime("%Y-%m-%d-%H-%M")
         name = simpledialog.askstring(
-            "Experiment name", "Please enter experiment name"
+            "Experiment name", "Please enter experiment name", initialvalue=f"Autolamella-{DATE}"
         )
         if name is None:
             logging.info("No name entered, experiment not created")
