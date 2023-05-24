@@ -14,6 +14,7 @@ import napari
 import numpy as np
 import yaml
 from fibsem import acquire, utils, constants, conversions, milling, gis
+
 from fibsem.alignment import beam_shift_alignment
 from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
                                TescanMicroscope, ThermoMicroscope)
@@ -35,7 +36,7 @@ from PyQt5.QtGui import QTextCursor
 from PyQt5.QtWidgets import QMessageBox
 from qtpy import QtWidgets
 
-import autolamella.config as cfg
+import autolamella.config as cfg                                  
 from autolamella.structures import (AutoLamellaStage, Experiment, Lamella,
                                     LamellaState, MovementMode, MovementType)
 from autolamella.ui import UI as UI
@@ -315,8 +316,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if folder_path == '':
             logging.info("No path selected, experiment not created")
             return
+        
+        now = datetime.now()
+        DATE = now.strftime("%Y-%m-%d-%H-%M")
         name = simpledialog.askstring(
-            "Experiment name", "Please enter experiment name"
+            "Experiment name", "Please enter experiment name", initialvalue=f"Autolamella-{DATE}"
         )
         if name is None:
             logging.info("No name entered, experiment not created")
@@ -480,7 +484,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 self.go_to_lamella.setEnabled(True)
                 if lam.state.stage == AutoLamellaStage.FiducialMilled:
                     self.remill_fiducial.setEnabled(True)
-                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
             self.lamella_count_txt.setPlainText(
                 string_lamella
             )
@@ -797,7 +801,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         string_lamella = ""
         for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number:02d}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number:02d}-{lam._petname}: \t\t{lam.state.stage.name}\n"
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
@@ -853,7 +857,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         string_lamella = ""
         for i, lam in enumerate(self.experiment.positions):
             lam.lamella_number = i + 1
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
 
         self.lamella_count_txt.setPlainText(
             string_lamella
@@ -1024,7 +1028,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         string_lamella = ""
         for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
   
         self.lamella_count_txt.setPlainText(
             string_lamella
@@ -1092,7 +1096,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             # check to mill fiducial
             _ = message_box_ui(
                 title="Milling Requirements have not been met.",
-                text="The following requirements must be met:\n1. Microscope Connected.\n2. Experiment created.\n3.Atleast 1 Lamella saved.\n4. All fiducials milled.",
+                text="The following requirements must be met:\n1. Microscope Connected.\n2. Experiment created.\n3. Atleast 1 Lamella saved.\n4. All fiducials milled.",
                 buttons=QMessageBox.Ok,
             )
             self.run_button.setEnabled(True)
@@ -1121,7 +1125,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.run_button.setStyleSheet("background-color: green")
         string_lamella = ""
         for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: {lam.state.stage.name}\n"
+            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
         self.lamella_count_txt.setPlainText(
             string_lamella
         )

@@ -26,7 +26,7 @@ paths = glob.glob(os.path.join(LOG_PATH, FILTER_STR))
 EXPERIMENT_PATH = st.selectbox(label="Experiment Path ", options=paths)
 # sample = load_experiment(EXPERIMENT_PATH)
 
-df_sample, df_history, beam_shift_info, df_steps = data.calculate_statistics_dataframe(EXPERIMENT_PATH)
+df_sample, df_history, df_shift, df_steps = data.calculate_statistics_dataframe(EXPERIMENT_PATH)
 
 # experiment metrics
 n_lamella = len(df_history["petname"])
@@ -44,12 +44,38 @@ st.subheader("Stage duration")
 
 # calculate difference in timestamp between rows
 df_steps['delta'] = df_steps['timestamp'].diff()
+steps_to_drop = ["MILLING_COMPLETED_SUCCESSFULLY", "MOVE_TO_POSITION_SUCCESSFUL", "FIDUCIAL_MILLED_SUCCESSFULLY", "MOVE_SUCCESSFUL"]
+df_steps_filtered = df_steps[~df_steps["step"].isin(steps_to_drop)]
+df_history_filtered = df_history[~df_history["stage"].isin(steps_to_drop)]
 
-fig_duration1 = px.bar(df_steps, x="lamella", y="delta", color="step", facet_col="stage")
-fig_duration2 = px.bar(df_history, x="stage", y="duration", color="petname", barmode="group")
+fig_duration1 = px.bar(df_steps_filtered, x="lamella", y="delta", color="step", facet_col="stage")
+fig_duration2 = px.bar(df_history_filtered, x="stage", y="duration", color="petname", barmode="group")
 st.plotly_chart(fig_duration1, use_container_width=True)
 st.plotly_chart(fig_duration2, use_container_width=True)
 
 
+st.markdown("---")
+
+st.subheader("Lamella positions")
+
+points = pd.DataFrame(df_sample["lamella.centre"].tolist(), columns=["x", "y"])
+points["petname"] = df_history["petname"].unique()
+fig = px.scatter(points, x="x", y='y', color="petname")
+fig.update_layout(title="Lamella positions in image")
+
+st.plotly_chart(fig, use_container_width=True)
 
 
+df_sample["petname"] = df_history["petname"].unique()
+fig = px.scatter_3d(df_sample, x="lamella.x", y='lamella.y', z='lamella.z', color="petname")
+fig.update_layout(title="Lamella positions in sample")
+st.plotly_chart(fig, use_container_width=True)  
+
+st.markdown("---")
+st.subheader("Beam shift")
+
+points = pd.DataFrame(df_shift["shift"].tolist(), columns=["x", "y"])
+points["lamella"] = df_shift["lamella"]
+fig = px.scatter(points, x="x", y='y', color="lamella")
+fig.update_layout(title="Beam shift")
+st.plotly_chart(fig, use_container_width=True)

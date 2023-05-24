@@ -24,11 +24,11 @@ def load_experiment(path):
     return experiment
     
 
-def create_history_dataframe(sample: Experiment) -> pd.DataFrame:
+def create_history_dataframe(experiment: Experiment) -> pd.DataFrame:
     history = []
     lam: Lamella
     hist: LamellaState
-    for lam in sample.positions:
+    for lam in experiment.positions:
 
         petname = lam._petname
 
