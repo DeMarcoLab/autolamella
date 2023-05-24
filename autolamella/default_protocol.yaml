@@ -2,8 +2,6 @@
 name: autolamella_demo
 application_file: Si # Thermo only
 
-stage_rotation: 230
-stage_tilt: 52
 
 fiducial:
   height: 10.e-6

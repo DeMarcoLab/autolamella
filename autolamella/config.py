@@ -3,13 +3,13 @@ import os
 BASE_PATH = os.path.dirname(__file__)
 LOG_PATH = os.path.join(BASE_PATH, 'log')
 
+HFW_THRESHOLD = 0.005 # 0.5% of the image height
+
 DEFAULT_PROTOCOL = {
 
 "main_headers" : {
             "name": "autolamella_demo",
             "application_file": "autolamella",
-            "stage_rotation": 230,
-            "stage_tilt": 52,
         },
 
 "fiducial_headers" : {
