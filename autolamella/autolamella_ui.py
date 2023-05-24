@@ -40,12 +40,11 @@ from PyQt5.QtWidgets import QMessageBox
 from qtpy import QtWidgets
 
 import autolamella.config as cfg                                  
+
 from autolamella.structures import (AutoLamellaStage, Experiment, Lamella,
                                     LamellaState, MovementMode, MovementType)
 from autolamella.ui import UI as UI
 from autolamella.utils import INSTRUCTION_MESSAGES, check_loaded_protocol
-
-
 
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(
@@ -203,6 +202,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
             protocol["application_file"] = self.microscope_settings.protocol["application_file"]
             mill_settings = self.get_milling_settings(protocol)
+
             pattern.define(
                     protocol = protocol,
                     point = lamella_position
@@ -227,6 +227,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     point = lamella_position
                 )
             mill_settings = self.get_milling_settings(protocol)
+
             if i == 0:
                 name = "RoughCut"
             elif i == 1:
@@ -268,6 +269,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             milling = fiducial_milling,
             pattern = fiducial,
         )
+
         self.fiducial_stage = stage
 
         self.update_displays()
@@ -290,6 +292,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         now = datetime.now()
         DATE = now.strftime("%Y-%m-%d-%H-%M")
+
         name = simpledialog.askstring(
             "Experiment name", "Please enter experiment name", initialvalue=f"Autolamella-{DATE}"
         )
@@ -378,7 +381,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     if re.search("DEBUG", line_display) or re.search("vispy", line_display) or re.search("Unknown key", line_display) or re.search("STATUS", line_display):
                         self.lines = lin_len
                         continue
-
                     line_divided = line_display.split(",")
                     time = line_divided[0]
                     message = line_display.split("—")
@@ -456,6 +458,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 if lam.state.stage == AutoLamellaStage.FiducialMilled:
                     self.remill_fiducial.setEnabled(True)
                 string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
+
             self.lamella_count_txt.setPlainText(
                 string_lamella
             )
@@ -548,7 +551,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.protocol_loaded = False
             self.load_protocol()
 
-        self.set_ui_from_protocol() 
+        #self.set_ui_from_protocol() 
         if isinstance(self.microscope, TescanMicroscope):
             presets = self.microscope.get('presets')
             self.presetComboBox.addItems(presets)
@@ -614,6 +617,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.comboBox_current_alignment.setCurrentText("Imaging Current")
         
         logging.info("Protocol loaded")
+
+
+        # list all items in a combobox
+        # 
+        #     print([self.comboBoxapplication_file.itemText(i)) for i in range(self.comboBoxapplication_file.count())]
 
 
         self.draw_patterns()
@@ -720,6 +728,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope.move_stage_absolute(position)
         logging.info(f"Moved to position of lamella {index}.")
         log_status_message(self.experiment.positions[index], "MOVE_SUCCESSFUL")
+
         self.movement_widget.update_ui()
 
     def add_lamella_ui(self):
@@ -773,6 +782,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         string_lamella = ""
         for lam in self.experiment.positions:
             string_lamella += f"Lamella {lam.lamella_number:02d}-{lam._petname}: \t\t{lam.state.stage.name}\n"
+
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
@@ -887,6 +897,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         hfw = self.image_widget.image_settings.hfw
         trench_height = self.microscope_settings.protocol["lamella"]["protocol_stages"][2]["trench_height"]
         if trench_height/hfw < cfg.HFW_THRESHOLD:
+
             response = message_box_ui(
                 title="Field width too hight",
                 text="The field width is too high for this pattern, please save lamella with lower hfw (take new Ion beam image).",
@@ -1097,6 +1108,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         string_lamella = ""
         for lam in self.experiment.positions:
             string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
+
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
@@ -1385,6 +1397,7 @@ def run_autolamella(
                 lamella.state.microscope_state.absolute_position
             )
             log_status_message(lamella, "MOVE_TO_POSITION_SUCCESSFUL")
+
             image_settings.save_path = lamella.path
             image_settings.save = True
             image_settings.label = f"start_mill_stage_{i}"
@@ -1415,6 +1428,7 @@ def run_autolamella(
             try:
                 stage.milling.hfw = lamella.state.microscope_state.ib_settings.hfw
                 log_status_message(lamella, F"MILLING_TRENCH")
+
                 milling.setup_milling(
                     microscope,
                     mill_settings=stage.milling,
@@ -1436,6 +1450,7 @@ def run_autolamella(
                 image_settings.save_path = lamella.path
                 image_settings.reduced_area = None
                 log_status_message(lamella, F"MILLING_COMPLETED_SUCCESSFULLY")
+
                 # Update Lamella Stage and Experiment
                 lamella = lamella.update(stage=curr_stage)
 
@@ -1453,6 +1468,7 @@ def run_autolamella(
 
                 logging.info(f"Lamella {j+1}, stage: '{l_stage}' milled successfully.")
                 log_status_message(lamella, F"STAGE_COMPLETE")
+
                 success= True; 
             except Exception as e:
                 logging.error(
@@ -1462,6 +1478,7 @@ def run_autolamella(
                 success = False
             finally:
                 milling.finish_milling(microscope)
+
 
     if success:
         logging.info("All Lamella milled successfully.")
