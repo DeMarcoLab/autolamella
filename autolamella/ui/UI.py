@@ -62,6 +62,7 @@ class Ui_MainWindow(object):
         self.verticalLayout.addWidget(self.instructions_textEdit)
         self.tabWidget_2.addTab(self.tab_5, "")
         self.formLayout_3.setWidget(1, QtWidgets.QFormLayout.SpanningRole, self.tabWidget_2)
+
         self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName("tabWidget")
         self.tab = QtWidgets.QWidget()
@@ -108,8 +109,8 @@ class Ui_MainWindow(object):
         self.microexpansionCheckBox.setObjectName("microexpansionCheckBox")
         self.gridLayout_3.addWidget(self.microexpansionCheckBox, 3, 1, 1, 1)
         self.label_11 = QtWidgets.QLabel(self.tab)
+
         font = QtGui.QFont()
-        font.setPointSize(12)
         font.setBold(True)
         font.setWeight(75)
         self.label_11.setFont(font)
@@ -138,6 +139,7 @@ class Ui_MainWindow(object):
         self.gridLayout_3.addWidget(self.remove_button, 5, 1, 1, 1)
         self.run_button = QtWidgets.QPushButton(self.tab)
         font = QtGui.QFont()
+        font.setPointSize(12)
         font.setBold(True)
         font.setWeight(75)
         self.run_button.setFont(font)
@@ -369,6 +371,7 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         self.tabWidget_2.setCurrentIndex(1)
         self.tabWidget.setCurrentIndex(0)
+
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
