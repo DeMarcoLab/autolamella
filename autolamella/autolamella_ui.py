@@ -151,11 +151,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.lamella_index.value() > 0:
             self.draw_patterns()
             if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.Setup:
-                self.go_to_lamella.setEnabled(False)
                 self.remill_fiducial.setEnabled(False)
                 self.save_button.setEnabled(True)
             else:
-                self.go_to_lamella.setEnabled(True)
                 self.remill_fiducial.setEnabled(True)
                 self.save_button.setEnabled(False)
         else:
@@ -316,7 +314,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="Please connect to a microscope.",
                 buttons=QMessageBox.Ok,
             )
-            
+        self.experiment.save()
         logging.info("Experiment created")
 
 
@@ -716,19 +714,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def go_to_lamella_ui(self):
         index = self.lamella_index.value() -1 
-        if self.experiment.positions[index].state.stage == AutoLamellaStage.Setup:
-            _ = message_box_ui(
-                title="Lamella not saved.",
-                text="Please save the lamella before moving to it.",
-                buttons=QMessageBox.Ok,
-            )
-            return
         log_status_message(self.experiment.positions[index], "MOVING_TO_POSITION")
         position = self.experiment.positions[index].state.microscope_state.absolute_position
         self.microscope.move_stage_absolute(position)
         logging.info(f"Moved to position of lamella {index}.")
         log_status_message(self.experiment.positions[index], "MOVE_SUCCESSFUL")
-
+        self.image_widget.take_reference_images()
         self.movement_widget.update_ui()
 
     def add_lamella_ui(self):
@@ -761,14 +752,18 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = add_lamella(experiment=self.experiment, ref_image=self.image_widget.ib_image)
 
         pixelsize = self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]
-        if self.lamella_position is None:
-            lamella_position = Point(0.0,0.0)
+        if len(self.experiment.positions) > 1:
+            lamella_position = self.experiment.positions[-2].lamella_centre
+            fiducial_position = self.experiment.positions[-2].fiducial_centre
         else:
-            lamella_position = conversions.image_to_microscope_image_coordinates(coord=self.lamella_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
-        if self.fiducial_position is None:
-            fiducial_position = Point(-((self.image_widget.image_settings.resolution[0] / 3) * pixelsize), 0.0)
-        else:
-            fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
+            if self.lamella_position is None:
+                lamella_position = Point(0.0,0.0)
+            else:
+                lamella_position = conversions.image_to_microscope_image_coordinates(coord=self.lamella_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
+            if self.fiducial_position is None:
+                fiducial_position = Point(-((self.image_widget.image_settings.resolution[0] / 3) * pixelsize), 0.0)
+            else:
+                fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
         
         lamella_position.x = float(lamella_position.x)
         lamella_position.y = float(lamella_position.y)
@@ -777,6 +772,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment.positions[-1].lamella_centre = lamella_position
         self.experiment.positions[-1].fiducial_centre = fiducial_position
+        self.experiment.positions[-1].state.microscope_state.absolute_position = self.microscope.get_stage_position()
+        self.experiment.save()
         log_status_message(self.experiment.positions[-1], "LAMELLA_ADDED")
 
         string_lamella = ""
@@ -792,6 +789,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_index.setValue(len(self.experiment.positions))
         self.lamella_index.setMinimum(1)
         self.add_button.setEnabled(True)
+        self.go_to_lamella.setEnabled(True)
         self.add_button.setText("Add Lamella")
         self.add_button.setStyleSheet("color: white")
         self.save_button.setEnabled(True)
@@ -953,7 +951,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if event.button == 2 :
             coords = self.image_widget.ib_layer.world_to_data(event.position)
 
-
             hfw = self.image_widget.image_settings.hfw
             pixelsize = hfw/self.image_widget.image_settings.resolution[0]
 
@@ -994,7 +991,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.save_button.setEnabled(True)
             self.save_button.setText("Save current lamella")
             self.save_button.setStyleSheet("color: white")
-            self.go_to_lamella.setEnabled(False)
             self.remill_fiducial.setEnabled(False)
             return
         
@@ -1018,7 +1014,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setEnabled(False)
         self.save_button.setText("Save current lamella")
         self.save_button.setStyleSheet("color: white")
-        self.go_to_lamella.setEnabled(True)
         self.remill_fiducial.setEnabled(True)
         self.lamella_saved += 1 
 
