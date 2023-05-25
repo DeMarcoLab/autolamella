@@ -124,7 +124,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remill_fiducial.setEnabled(False)
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
-        self.lamella_index.valueChanged.connect(self.lamella_index_changed)
+        self.lamella_index.currentIndexChanged.connect(self.lamella_index_changed)
 
     def connect_protocol_signals(self):
         # Protocol setup
@@ -148,9 +148,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.comboBoxapplication_file.currentTextChanged.connect(self.get_protocol_from_ui)
 
     def lamella_index_changed(self):
-        if self.lamella_index.value() > 0:
+        if self.lamella_index.currentIndex() != -1:
             self.draw_patterns()
-            if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.Setup:
+            if self.experiment.positions[self.lamella_index.currentIndex()].state.stage == AutoLamellaStage.Setup:
                 self.remill_fiducial.setEnabled(False)
                 self.save_button.setEnabled(True)
             else:
@@ -183,7 +183,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         default_position_lamella = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0) # has the user defined a position manually? If not use 0,0
         self.lamella_position = default_position_lamella
-        index = self.lamella_index.value() - 1
+        index = self.lamella_index.currentIndex()
         if self.experiment is not None and len(self.experiment.positions) > 0: # do we have an experiment with at least one lamella
                 lamella_position = self.experiment.positions[index].lamella_centre
         else:
@@ -271,8 +271,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.timer.stop()
         self.experiment = None
         self.lamella_count_txt.setPlainText("")
-        self.lamella_index.setValue(0)
-        self.lamella_index.setMaximum(0)
 
         tkinter.Tk().withdraw()
         folder_path = filedialog.askdirectory(initialdir = cfg.LOG_PATH, title="Select experiment directory")
@@ -328,7 +326,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment = None
         self.lamella_count_txt.setPlainText("")
-        self.lamella_index.setValue(0)
 
         tkinter.Tk().withdraw()
         file_path = filedialog.askopenfilename(title="Select experiment directory")
@@ -447,6 +444,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             for lam in self.experiment.positions:
                 self.save_button.setEnabled(True)
                 self.go_to_lamella.setEnabled(True)
+                self.lamella_index.addItem(f"{lam.lamella_number}-{lam._petname}")
                 if lam.state.stage == AutoLamellaStage.FiducialMilled:
                     self.remill_fiducial.setEnabled(True)
                 string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
@@ -454,8 +452,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.lamella_count_txt.setPlainText(
                 string_lamella
             )
-            self.lamella_index.setMaximum(len(self.experiment.positions))
-            self.lamella_index.setMinimum(1)
+
         
         self.draw_patterns()
         self.update_displays()
@@ -707,11 +704,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.path = self.save_path
 
     def go_to_lamella_ui(self):
-        index = self.lamella_index.value() -1 
+        index = self.lamella_index.currentIndex() 
         log_status_message(self.experiment.positions[index], "MOVING_TO_POSITION")
         position = self.experiment.positions[index].state.microscope_state.absolute_position
         self.microscope.move_stage_absolute(position)
-        logging.info(f"Moved to position of lamella {index}.")
+        logging.info(f"Moved to position of lamella {index+1}.")
         log_status_message(self.experiment.positions[index], "MOVE_SUCCESSFUL")
         self.image_widget.take_reference_images()
         self.movement_widget.update_ui()
@@ -772,10 +769,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             string_lamella
         )
         
-        self.lamella_index.setMaximum(len(self.experiment.positions))
-        self.lamella_index.setValue(len(self.experiment.positions))
-        self.lamella_index.setValue(len(self.experiment.positions))
-        self.lamella_index.setMinimum(1)
+        self.lamella_index.addItem(f"{self.experiment.positions[-1].lamella_number:02d}-{self.experiment.positions[-1]._petname}")
+        self.lamella_index.setCurrentIndex(self.lamella_index.count() - 1)
         self.add_button.setEnabled(True)
         self.go_to_lamella.setEnabled(True)
         self.add_button.setText("Add Lamella")
@@ -815,17 +810,19 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.remove_button.setStyleSheet("color: white")
             return
 
-        if self.experiment.positions[self.lamella_index.value()-1].state.stage == AutoLamellaStage.FiducialMilled and self.lamella_saved > 0:
+        if self.experiment.positions[self.lamella_index.currentIndex()].state.stage == AutoLamellaStage.FiducialMilled and self.lamella_saved > 0:
             self.lamella_saved -= 1
 
-        self.experiment = remove_lamella(self.experiment, self.lamella_index.value()-1)
-        self.lamella_index.setMaximum(len(self.experiment.positions))
+        name = self.lamella_index.currentText()
+        self.experiment = remove_lamella(self.experiment, self.lamella_index.currentIndex())
+        self.lamella_index.clear()
 
         string_lamella = ""
         for i, lam in enumerate(self.experiment.positions):
             lam.lamella_number = i + 1
             string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
-
+            self.lamella_index.addItem(f"{lam.lamella_number:02d}-{lam._petname}")
+        self.lamella_index.setCurrentIndex(self.lamella_index.count() - 1)
         self.lamella_count_txt.setPlainText(
             string_lamella
         )
@@ -867,7 +864,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             folder_path = filedialog.askdirectory()
             self.save_path = folder_path
 
-        index = self.lamella_index.value() - 1
+        index = self.lamella_index.currentIndex()
 
         if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup:
             response = message_box_ui(
@@ -950,8 +947,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 if flag:
                     show_error("The fiducial area is out of the field of view. Please move fiducial closer to centre of image.")
                     return
-                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.value())-1].state.stage == AutoLamellaStage.Setup:
-                    self.experiment.positions[int(self.lamella_index.value())-1].fiducial_centre = fiducial_position
+                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage == AutoLamellaStage.Setup:
+                    self.experiment.positions[int(self.lamella_index.currentIndex())].fiducial_centre = fiducial_position
                 else:
                     self.fiducial_position = fiducial_position
                 logging.info("Moved fiducial")
@@ -961,8 +958,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
-                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.value())-1].state.stage == AutoLamellaStage.Setup:
-                    self.experiment.positions[int(self.lamella_index.value())-1].lamella_centre = lamella_position
+                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.valcurrentIndexue())].state.stage == AutoLamellaStage.Setup:
+                    self.experiment.positions[int(self.lamella_index.currentIndex())].lamella_centre = lamella_position
                 else:
                     self.lamella_position = lamella_position
             self.viewer.layers.selection.active = self.image_widget.eb_layer
@@ -1021,7 +1018,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             text="If you want to remill this fiducial, press yes.",
         )
         
-        index = self.lamella_index.value() - 1
+        index = self.lamella_index.currentIndex()
         if self.experiment.positions[index].state.stage == AutoLamellaStage.Setup:
             _ = message_box_ui(
                 title="Fiducial not milled",
