@@ -185,10 +185,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_position = default_position_lamella
         index = self.lamella_index.value() - 1
         if self.experiment is not None and len(self.experiment.positions) > 0: # do we have an experiment with at least one lamella
-            if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup: # has the lamella been saved 
                 lamella_position = self.experiment.positions[index].lamella_centre
-            else:
-                lamella_position = default_position_lamella
         else:
             lamella_position = default_position_lamella  
 
@@ -249,10 +246,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         default_position_fiducial = self.fiducial_position if self.fiducial_position is not None else Point(-self.image_widget.image_settings.resolution[0]/3 * pixelsize, 0.0) # has the user defined a fiducial position?
         self.fiducial_position = default_position_fiducial
         if self.experiment is not None and len(self.experiment.positions) > 0:
-                if self.experiment.positions[index].state.stage != AutoLamellaStage.Setup: # if the current lamella has been saved, display relevant pattern 
                     fiducial_position = self.experiment.positions[index].fiducial_centre
-                else:
-                    fiducial_position = default_position_fiducial
         else:
             fiducial_position = default_position_fiducial
         fiducial_milling = self.get_milling_settings(protocol)
@@ -756,14 +750,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             lamella_position = self.experiment.positions[-2].lamella_centre
             fiducial_position = self.experiment.positions[-2].fiducial_centre
         else:
-            if self.lamella_position is None:
-                lamella_position = Point(0.0,0.0)
-            else:
-                lamella_position = conversions.image_to_microscope_image_coordinates(coord=self.lamella_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
-            if self.fiducial_position is None:
-                fiducial_position = Point(-((self.image_widget.image_settings.resolution[0] / 3) * pixelsize), 0.0)
-            else:
-                fiducial_position = conversions.image_to_microscope_image_coordinates(coord=self.fiducial_position, image=self.image_widget.ib_image.data, pixelsize=pixelsize)
+            lamella_position = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0)
+            fiducial_position = self.fiducial_position if self.fiducial_position is not None else  Point(-((self.image_widget.image_settings.resolution[0] / 3) * pixelsize), 0.0)
         
         lamella_position.x = float(lamella_position.x)
         lamella_position.y = float(lamella_position.y)
@@ -797,7 +785,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remove_button.setStyleSheet("color: white")
 
         self.update_image_message(add=True)
-        
+        self.update_displays()
 
     def remove_lamella_ui(self):
         
@@ -861,7 +849,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
             self.save_button.setEnabled(True)
-            self.save_button.setText("Save current lamella")
+            self.save_button.setText("Mill fiducila for current lamella")
             self.save_button.setStyleSheet("color: white")
             return
         if len(self.experiment.positions) == 0:
@@ -871,7 +859,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
             self.save_button.setEnabled(True)
-            self.save_button.setText("Save current lamella")
+            self.save_button.setText("Mill fiducila for current lamella")
             self.save_button.setStyleSheet("color: white")
             return
         if self.save_path is None:
@@ -888,7 +876,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
             self.save_button.setEnabled(True)
-            self.save_button.setText("Save current lamella")
+            self.save_button.setText("Mill fiducila for current lamella")
             self.save_button.setStyleSheet("color: white")
             return
         
@@ -902,7 +890,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
             self.save_button.setEnabled(True)
-            self.save_button.setText("Save current lamella")
+            self.save_button.setText("Mill fiducila for current lamella")
             self.save_button.setStyleSheet("color: white")
             return
 
@@ -929,7 +917,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     buttons=QMessageBox.Ok,
                 )
                 self.save_button.setEnabled(True)
-                self.save_button.setText("Save current lamella")
+                self.save_button.setText("Mill fiducila for current lamella")
                 self.save_button.setStyleSheet("color: white")
                 self.go_to_lamella.setEnabled(False)
                 self.remill_fiducial.setEnabled(False)
@@ -942,7 +930,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.update_image_message(add=False)
         else:
             self.save_button.setEnabled(True)
-            self.save_button.setText("Save current lamella")
+            self.save_button.setText("Mill fiducila for current lamella")
             self.save_button.setStyleSheet("color: white")
             self.go_to_lamella.setEnabled(False)
             self.remill_fiducial.setEnabled(False)
@@ -962,7 +950,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 if flag:
                     show_error("The fiducial area is out of the field of view. Please move fiducial closer to centre of image.")
                     return
-                self.fiducial_position = fiducial_position
+                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.value())-1].state.stage == AutoLamellaStage.Setup:
+                    self.experiment.positions[int(self.lamella_index.value())-1].fiducial_centre = fiducial_position
+                else:
+                    self.fiducial_position = fiducial_position
                 logging.info("Moved fiducial")
             else: 
                 lamella_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
@@ -970,7 +961,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
-                self.lamella_position = lamella_position
+                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.value())-1].state.stage == AutoLamellaStage.Setup:
+                    self.experiment.positions[int(self.lamella_index.value())-1].lamella_centre = lamella_position
+                else:
+                    self.lamella_position = lamella_position
             self.viewer.layers.selection.active = self.image_widget.eb_layer
             self.draw_patterns()
             
@@ -989,7 +983,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if flag:
             self.save_button.setEnabled(True)
-            self.save_button.setText("Save current lamella")
+            self.save_button.setText("Mill fiducila for current lamella")
             self.save_button.setStyleSheet("color: white")
             self.remill_fiducial.setEnabled(False)
             return
@@ -1012,7 +1006,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             string_lamella
         )
         self.save_button.setEnabled(False)
-        self.save_button.setText("Save current lamella")
+        self.save_button.setText("Mill fiducila for current lamella")
         self.save_button.setStyleSheet("color: white")
         self.remill_fiducial.setEnabled(True)
         self.lamella_saved += 1 
