@@ -2,13 +2,12 @@ import logging
 import os
 import re
 import sys
-import tkinter
 import traceback
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from time import sleep
-from tkinter import filedialog, simpledialog
+
 
 # import fibsem.constants as constants
 # import fibsem.conversions as conversions
@@ -289,8 +288,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_index.setValue(0)
         self.lamella_index.setMaximum(0)
 
-        # tkinter.Tk().withdraw()
-        # folder_path = filedialog.askdirectory(initialdir = cfg.LOG_PATH, title="Select experiment directory")
         folder_path = _get_directory_ui(msg="Select experiment directory",path=cfg.LOG_PATH) 
         self.save_path = folder_path if folder_path != "" else None
 
@@ -349,9 +346,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
 
-        # tkinter.Tk().withdraw()
-        # file_path = filedialog.askopenfilename(title="Select experiment directory")
-        file_path = _get_directory_ui(msg="Select experiment directory",path=cfg.LOG_PATH)
+
+        file_path = _get_file_ui(msg="Select experiment yaml file",path=cfg.LOG_PATH)
         self.experiment = Experiment.load(file_path) if file_path != '' else self.experiment
         if file_path == '':
             return
@@ -531,8 +527,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         logging.info("Stage parameters set")  
 
     def load_protocol(self): 
-        # tkinter.Tk().withdraw()
-        # protocol_path = filedialog.askopenfilename(initialdir = cfg.BASE_PATH, title="Select protocol file")
+
         protocol_path = _get_file_ui(path=cfg.BASE_PATH, msg="Select protocol file",_filter="*yaml")
 
         if protocol_path == '':
@@ -680,8 +675,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.draw_patterns()
    
     def save_protocol(self):
-        # tkinter.Tk().withdraw()
-        # protocol_path = filedialog.asksaveasfilename(title="Select protocol file")
+
         protocol_path = _get_file_ui(msg="Select protocol file")
         if protocol_path == '':
             return
@@ -720,8 +714,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def save_filepath(self):
         """Opens file explorer to choose location to save image files"""
 
-        # tkinter.Tk().withdraw()
-        # folder_path = filedialog.askdirectory()
         folder_path = _get_directory_ui(msg="Select folder to save images")
         self.label_5.setText(folder_path)
         self.save_path = folder_path
@@ -886,8 +878,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.save_button.setStyleSheet("color: white")
             return
         if self.save_path is None:
-            # tkinter.Tk().withdraw()
-            # folder_path = filedialog.askdirectory()
             folder_path = _get_directory_ui(msg="Please select a folder to save the lamella to.")
             self.save_path = folder_path
 
