@@ -50,21 +50,6 @@ def log_status_message(lamella: Lamella, step: str):
         f"STATUS | {lamella.lamella_number:02d}-{lamella._petname} | {lamella.state.stage.name} | {step}"
     )
 
-# class TextInputDialog(QDialog):
-#     def __init__(self, parent=None):
-#         super(TextInputDialog, self).__init__(parent)
-#         self.setWindowTitle("Text Input Dialog")
-        
-#         layout = QVBoxLayout(self)
-#         self.button = QPushButton("Open Dialog", self)
-#         self.button.clicked.connect(self.show_dialog)
-#         layout.addWidget(self.button)
-        
-#     def show_dialog(self):
-#         text, ok = QInputDialog.getText(self, "Text Input Dialog", "Enter text:")
-#         if ok:
-#             print("Entered text:", text)
-
 class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def __init__(self, viewer, *args, obj=None, **kwargs) -> None:
         super(UiInterface, self).__init__(*args, **kwargs)
@@ -297,11 +282,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         
         now = datetime.now()
         DATE = now.strftime("%Y-%m-%d-%H-%M")
-
-        # name = simpledialog.askstring(
-        #     "Experiment name", "Please enter experiment name", initialvalue=f"Autolamella-{DATE}"
-        # )
-
         name, ok = QInputDialog.getText(self, "Experiment name", "Please enter experiment name", text=f"Autolamella-{DATE}")
 
         if name is None:
