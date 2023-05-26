@@ -32,11 +32,11 @@ from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 from fibsem.ui.utils import (_draw_patterns_in_napari,
                              convert_pattern_to_napari_rect,
                              convert_point_to_napari, message_box_ui,
-                             validate_pattern_placement)
+                             validate_pattern_placement,_get_directory_ui,_get_file_ui)
 from napari.utils.notifications import show_error, show_info
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QTextCursor
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox,QInputDialog
 from qtpy import QtWidgets
 
 import autolamella.config as cfg                                  
@@ -50,6 +50,21 @@ def log_status_message(lamella: Lamella, step: str):
     logging.debug(
         f"STATUS | {lamella.lamella_number:02d}-{lamella._petname} | {lamella.state.stage.name} | {step}"
     )
+
+# class TextInputDialog(QDialog):
+#     def __init__(self, parent=None):
+#         super(TextInputDialog, self).__init__(parent)
+#         self.setWindowTitle("Text Input Dialog")
+        
+#         layout = QVBoxLayout(self)
+#         self.button = QPushButton("Open Dialog", self)
+#         self.button.clicked.connect(self.show_dialog)
+#         layout.addWidget(self.button)
+        
+#     def show_dialog(self):
+#         text, ok = QInputDialog.getText(self, "Text Input Dialog", "Enter text:")
+#         if ok:
+#             print("Entered text:", text)
 
 class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def __init__(self, viewer, *args, obj=None, **kwargs) -> None:
@@ -274,8 +289,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_index.setValue(0)
         self.lamella_index.setMaximum(0)
 
-        tkinter.Tk().withdraw()
-        folder_path = filedialog.askdirectory(initialdir = cfg.LOG_PATH, title="Select experiment directory")
+        # tkinter.Tk().withdraw()
+        # folder_path = filedialog.askdirectory(initialdir = cfg.LOG_PATH, title="Select experiment directory")
+        folder_path = _get_directory_ui(msg="Select experiment directory",path=cfg.LOG_PATH) 
         self.save_path = folder_path if folder_path != "" else None
 
         if folder_path == '':
@@ -285,9 +301,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         now = datetime.now()
         DATE = now.strftime("%Y-%m-%d-%H-%M")
 
-        name = simpledialog.askstring(
-            "Experiment name", "Please enter experiment name", initialvalue=f"Autolamella-{DATE}"
-        )
+        # name = simpledialog.askstring(
+        #     "Experiment name", "Please enter experiment name", initialvalue=f"Autolamella-{DATE}"
+        # )
+
+        name, ok = QInputDialog.getText(self, "Experiment name", "Please enter experiment name", text=f"Autolamella-{DATE}")
+
         if name is None:
             logging.info("No name entered, experiment not created")
             return
@@ -330,8 +349,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_count_txt.setPlainText("")
         self.lamella_index.setValue(0)
 
-        tkinter.Tk().withdraw()
-        file_path = filedialog.askopenfilename(title="Select experiment directory")
+        # tkinter.Tk().withdraw()
+        # file_path = filedialog.askopenfilename(title="Select experiment directory")
+        file_path = _get_directory_ui(msg="Select experiment directory",path=cfg.LOG_PATH)
         self.experiment = Experiment.load(file_path) if file_path != '' else self.experiment
         if file_path == '':
             return
@@ -511,8 +531,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         logging.info("Stage parameters set")  
 
     def load_protocol(self): 
-        tkinter.Tk().withdraw()
-        protocol_path = filedialog.askopenfilename(initialdir = cfg.BASE_PATH, title="Select protocol file")
+        # tkinter.Tk().withdraw()
+        # protocol_path = filedialog.askopenfilename(initialdir = cfg.BASE_PATH, title="Select protocol file")
+        protocol_path = _get_file_ui(path=cfg.BASE_PATH, msg="Select protocol file",_filter="*yaml")
 
         if protocol_path == '':
              _ = message_box_ui(
@@ -659,8 +680,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.draw_patterns()
    
     def save_protocol(self):
-        tkinter.Tk().withdraw()
-        protocol_path = filedialog.asksaveasfilename(title="Select protocol file")
+        # tkinter.Tk().withdraw()
+        # protocol_path = filedialog.asksaveasfilename(title="Select protocol file")
+        protocol_path = _get_file_ui(msg="Select protocol file")
         if protocol_path == '':
             return
         with open(os.path.join(protocol_path), "w") as f:
@@ -694,12 +716,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
-        
+        ## THIS function is not used anywhere???
     def save_filepath(self):
         """Opens file explorer to choose location to save image files"""
 
-        tkinter.Tk().withdraw()
-        folder_path = filedialog.askdirectory()
+        # tkinter.Tk().withdraw()
+        # folder_path = filedialog.askdirectory()
+        folder_path = _get_directory_ui(msg="Select folder to save images")
         self.label_5.setText(folder_path)
         self.save_path = folder_path
 
@@ -863,8 +886,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.save_button.setStyleSheet("color: white")
             return
         if self.save_path is None:
-            tkinter.Tk().withdraw()
-            folder_path = filedialog.askdirectory()
+            # tkinter.Tk().withdraw()
+            # folder_path = filedialog.askdirectory()
+            folder_path = _get_directory_ui(msg="Please select a folder to save the lamella to.")
             self.save_path = folder_path
 
         index = self.lamella_index.value() - 1
