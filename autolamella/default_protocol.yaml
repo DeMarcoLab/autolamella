@@ -7,12 +7,12 @@ fiducial:
   height: 10.e-6
   width: 1.e-6
   depth: 1.0e-6
-  rotation: 45
+  rotation: 0.7853
   milling_current: 28.e-9
   preset: "30 keV; 20 nA" # TESCAN only
 
 lamella:
-  beam_shift_attempts: 3
+  beam_shift_attempts: 3.0
   alignment_current: "Imaging"
   lamella_width: 10.e-6
   lamella_height: 800.e-9
