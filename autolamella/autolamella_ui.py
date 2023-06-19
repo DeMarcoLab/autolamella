@@ -71,7 +71,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         # Initialise experiment object
         self.experiment: Experiment = None
         self.protocol_loaded = False
-        self.remove_button.setStyleSheet("background-color: transparent")
         self.fiducial_position = None
         self.lamella_position = None
         self.moving_fiducial = False   
@@ -116,7 +115,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remill_fiducial.setEnabled(False)
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
-        self.lamella_index.currentIndexChanged.connect(self.lamella_index_changed)
+        self.lamella_index.currentIndexChanged.connect(self.update_ui)
 
     def connect_protocol_signals(self):
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
@@ -138,15 +137,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_width.editingFinished.connect(self.get_protocol_from_ui)
         self.comboBoxapplication_file.currentTextChanged.connect(self.get_protocol_from_ui)
 
-    def lamella_index_changed(self):
-        if self.lamella_index.currentIndex() != -1:
-            self.draw_patterns()
-            if self.experiment.positions[self.lamella_index.currentIndex()].state.stage == AutoLamellaStage.Setup:
-                self.remill_fiducial.setEnabled(False)
-                self.save_button.setEnabled(True)
-            else:
-                self.remill_fiducial.setEnabled(True)
-                self.save_button.setEnabled(False)
 
     def get_milling_settings(self, protocol):
         mill_settings = FibsemMillingSettings(
@@ -261,7 +251,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.experiment is not None:
             self.timer.stop()
         self.experiment = None
-        self.lamella_count_txt.setPlainText("")
 
         folder_path = _get_directory_ui(msg="Select experiment directory",path=cfg.LOG_PATH) 
         self.save_path = folder_path if folder_path != "" else None
@@ -282,7 +271,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = Experiment(path=self.save_path, name=self.experiment_name)
         self.log_path = os.path.join(self.save_path, self.experiment_name, "logfile.log")
         self.lines = 0
-        self.add_button.setEnabled(True)
 
         if self.microscope is not None:
             self.timer.start(1000)
@@ -296,8 +284,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
         self.experiment.save()
         logging.info("Experiment created")
-
-
+        self.update_ui()
 
     def load_experiment(self):
         if self.microscope is not None:
@@ -324,7 +311,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.log_path = os.path.join(folder_path, "logfile.log")
         self.save_path = folder_path
         self.lines = 0
-        self.add_button.setEnabled(True)
         
         _ = message_box_ui(
                 title="Please take images.",
@@ -340,7 +326,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="Please connect to a microscope.",
                 buttons=QMessageBox.Ok,
             )
-            
+        self.update_ui()
         logging.info("Experiment loaded")
 
     ##################################################################
@@ -425,27 +411,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.system_widget.get_stage_settings_from_ui()
         if self.protocol_loaded is False:
             self.load_protocol()
-
-        if len(self.experiment.positions) > 0:
-            string_lamella = ""
-            for lam in self.experiment.positions:
-                self.save_button.setEnabled(True)
-                self.go_to_lamella.setEnabled(True)
-                self.lamella_index.addItem(f"{lam.lamella_number}-{lam._petname}")
-                if lam.state.stage == AutoLamellaStage.FiducialMilled:
-                    self.remill_fiducial.setEnabled(True)
-                string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
-
-            self.lamella_count_txt.setPlainText(
-                string_lamella
-            )
-
         
         self.draw_patterns()
-        self.update_displays()
+        self.update_ui()
         self.image_widget.eb_layer.mouse_drag_callbacks.append(self._clickback)
-        self.image_widget.picture_signal.connect(self.update_image_message)
-        self.show_lamella.setEnabled(True)
+        self.image_widget.picture_signal.connect(self.update_ui)
         self.instructions_textEdit.setPlainText(INSTRUCTION_MESSAGES["take_images_message"])
 
     def update_image_message(self,add=False):
@@ -672,6 +642,55 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
+    def enable_buttons(
+        self,
+        add: bool = False,
+        remove: bool = False,
+        fiducial: bool = False,
+        go_to: bool = False,
+        remill: bool = False,
+    ):
+        self.add_button.setEnabled(add)
+        self.remove_button.setEnabled(remove)
+        self.save_button.setEnabled(fiducial)
+        self.save_button.setText("Mill fiducila for current lamella")
+        self.save_button.setStyleSheet("color: white")
+        self.go_to_lamella.setEnabled(go_to)
+        self.remill_fiducial.setEnabled(remill)
+        self.remill_fiducial.setText("Remill fiducial")
+        self.remill_fiducial.setStyleSheet("color: white")
+        self.run_button.setEnabled(self.can_run_milling())
+        self.run_button.setText("Run Autolamella")
+        self.run_button.setStyleSheet("color: white, background-color: green")
+
+    def update_ui(self):
+        if self.image_widget.ib_image is not None:
+            self.update_displays()
+            self.show_lamella.setEnabled(True)
+        else:
+            self.enable_buttons()
+            self.show_lamella.setEnabled(False)
+            return
+        if self.experiment.positions == []:
+            self.enable_buttons(add=True)
+        else:
+            current_lamella = self.experiment.positions[self.lamella_index.currentIndex()]
+            if current_lamella.state.stage is AutoLamellaStage.Setup:
+                self.enable_buttons(add=True, remove=True, fiducial=True, go_to=True)
+            elif current_lamella.state.stage is AutoLamellaStage.FiducialMilled:
+                self.enable_buttons(add=True, go_to=True, remill=True)
+            elif current_lamella.state.stage is AutoLamellaStage.Finished:
+                self.enable_buttons(add=True, remove=True, go_to=True)
+
+        string_lamella = ""
+        for lamella in self.experiment.positions:
+            string_lamella += f"Lamella {lamella.lamella_number:02d}-{lamella._petname}: \t\t{lamella.state.stage.name}\n"
+        self.lamella_count_txt.setPlainText(
+            string_lamella
+        )
+        self.update_image_message()
+        return 
+        
     def go_to_lamella_ui(self):
         index = self.lamella_index.currentIndex() 
         log_status_message(self.experiment.positions[index], "MOVING_TO_POSITION")
@@ -690,9 +709,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="Before adding a lamella please take at least one image for each beam.",
                 buttons=QMessageBox.Ok,
             )
-            self.add_button.setEnabled(True)
-            self.add_button.setText("Add Lamella")
-            self.add_button.setStyleSheet("color: white")
             return
 
         self.experiment = add_lamella(experiment=self.experiment, ref_image=self.image_widget.ib_image)
@@ -715,27 +731,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment.positions[-1].state.microscope_state.absolute_position = self.microscope.get_stage_position()
         self.experiment.save()
         log_status_message(self.experiment.positions[-1], "LAMELLA_ADDED")
-
-        string_lamella = ""
-        for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number:02d}-{lam._petname}: \t\t{lam.state.stage.name}\n"
-
-        self.lamella_count_txt.setPlainText(
-            string_lamella
-        )
         
         self.lamella_index.addItem(f"{self.experiment.positions[-1].lamella_number:02d}-{self.experiment.positions[-1]._petname}")
         self.lamella_index.setCurrentIndex(self.lamella_index.count() - 1)
-        self.add_button.setEnabled(True)
-        self.go_to_lamella.setEnabled(True)
-        self.add_button.setText("Add Lamella")
-        self.add_button.setStyleSheet("color: white")
-        self.save_button.setEnabled(True)
-        self.remove_button.setEnabled(True)
-        self.remove_button.setStyleSheet("color: white")
 
-        self.update_image_message(add=True)
-        self.update_displays()
+        self.update_ui()
 
     def remove_lamella_ui(self):
         
@@ -746,22 +746,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = remove_lamella(self.experiment, self.lamella_index.currentIndex())
         self.lamella_index.clear()
 
-        string_lamella = ""
         for i, lam in enumerate(self.experiment.positions):
             lam.lamella_number = i + 1
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
             self.lamella_index.addItem(f"{lam.lamella_number:02d}-{lam._petname}")
         self.lamella_index.setCurrentIndex(self.lamella_index.count() - 1)
-        self.lamella_count_txt.setPlainText(
-            string_lamella
-        )
+        self.update_ui()
         self.experiment.save()
-        self.remove_button.setText("Remove Lamella")
-        self.remove_button.setStyleSheet("color: white")
-
-        self.remove_button.setEnabled(True) if len(self.experiment.positions) > 0 else self.remove_button.setEnabled(False)
-
-        self.update_image_message(add=False)
 
     def save_lamella_ui(self):
         self.save_button.setEnabled(False)
@@ -774,9 +764,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="Before saving a lamella please load a protocol.",
                 buttons=QMessageBox.Ok,
             )
-            self.save_button.setEnabled(True)
-            self.save_button.setText("Mill fiducila for current lamella")
-            self.save_button.setStyleSheet("color: white")
+            self.update_ui()
             return
         if len(self.experiment.positions) == 0:
             _ = message_box_ui(
@@ -784,9 +772,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="Before saving a lamella please add one to the experiment.",
                 buttons=QMessageBox.Ok,
             )
-            self.save_button.setEnabled(True)
-            self.save_button.setText("Mill fiducila for current lamella")
-            self.save_button.setStyleSheet("color: white")
+            self.update_ui()
             return
 
         index = self.lamella_index.currentIndex()
@@ -797,9 +783,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="This lamella has already been defined, please move on to next lamella.",
                 buttons=QMessageBox.Ok,
             )
-            self.save_button.setEnabled(True)
-            self.save_button.setText("Mill fiducila for current lamella")
-            self.save_button.setStyleSheet("color: white")
+            self.update_ui()
             return
         
         hfw = self.image_widget.image_settings.hfw
@@ -811,9 +795,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="The field width is too high for this pattern, please save lamella with lower hfw (take new Ion beam image).",
                 buttons=QMessageBox.Ok,
             )
-            self.save_button.setEnabled(True)
-            self.save_button.setText("Mill fiducila for current lamella")
-            self.save_button.setStyleSheet("color: white")
+            self.update_ui()
             return
 
         # check to mill fiducial
@@ -838,24 +820,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     text="The lamella placement is invalid, please move the lamella so it is fully in the image.",
                     buttons=QMessageBox.Ok,
                 )
-                self.save_button.setEnabled(True)
-                self.save_button.setText("Mill fiducila for current lamella")
-                self.save_button.setStyleSheet("color: white")
-                self.go_to_lamella.setEnabled(False)
-                self.remill_fiducial.setEnabled(False)
+                self.update_ui()
 
                 return
         
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
             self.mill_fiducial_ui(index)
-            self.update_image_message(add=False)
-        else:
-            self.save_button.setEnabled(True)
-            self.save_button.setText("Mill fiducila for current lamella")
-            self.save_button.setStyleSheet("color: white")
-            self.go_to_lamella.setEnabled(False)
-            self.remill_fiducial.setEnabled(False)
+        self.update_ui()
 
     def _clickback(self, layer, event):
         if event.button == 2 :
@@ -904,10 +876,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
 
         if flag:
-            self.save_button.setEnabled(True)
-            self.save_button.setText("Mill fiducila for current lamella")
-            self.save_button.setStyleSheet("color: white")
-            self.remill_fiducial.setEnabled(False)
+            self.update_ui()
             return
         
         self.experiment.positions[index] = mill_fiducial(
@@ -919,17 +888,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
             self.experiment.save()
 
-        string_lamella = ""
-        for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
-  
-        self.lamella_count_txt.setPlainText(
-            string_lamella
-        )
-        self.save_button.setEnabled(False)
-        self.save_button.setText("Mill fiducila for current lamella")
-        self.save_button.setStyleSheet("color: white")
-        self.remill_fiducial.setEnabled(True)
+        self.update_ui()
         self.lamella_saved += 1 
 
 
@@ -949,9 +908,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].state.stage = AutoLamellaStage.Setup
             self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
             self.mill_fiducial_ui(index=index)
-        self.remill_fiducial.setEnabled(True)
-        self.remill_fiducial.setText("Remill fiducial")
-        self.remill_fiducial.setStyleSheet("color: white")    
+        self.update_ui()
 
     def can_run_milling(self):
         ## First condition
@@ -986,9 +943,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 text="The following requirements must be met:\n1. Microscope Connected.\n2. Experiment created.\n3. Atleast 1 Lamella saved.\n4. All fiducials milled.",
                 buttons=QMessageBox.Ok,
             )
-            self.run_button.setEnabled(True)
-            self.run_button.setText("Run Autolamella")
-            self.run_button.setStyleSheet("color: white")
+            self.update_ui()
             return
         if response:
             show_info(f"Running AutoLamella...")
@@ -1006,18 +961,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 lamella_stages=self.lamella_stages,
             )
         
-        self.run_button.setEnabled(True)
-        self.run_button.setText("Run Autolamella")
-        self.run_button.setStyleSheet("background-color: green")
-        string_lamella = ""
-        for lam in self.experiment.positions:
-            string_lamella += f"Lamella {lam.lamella_number}-{lam._petname}: \t\t{lam.state.stage.name}\n"
-
-        self.lamella_count_txt.setPlainText(
-            string_lamella
-        )
-        self.lamella_index_changed()
-
+        self.update_ui()
+        
         self.lamella_finished = len(self.experiment.positions)
 
         instruction_text = INSTRUCTION_MESSAGES["lamella_milled"].format(self.lamella_finished)
@@ -1279,7 +1224,7 @@ def run_autolamella(
     """
 
     _microexpansion_used = any([stage for stage in lamella_stages if stage.name == AutoLamellaStage.MicroExpansion.name])
-
+    success = True 
     lamella: Lamella
     for i, stage in enumerate(
         lamella_stages
