@@ -661,7 +661,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remill_fiducial.setStyleSheet("color: white")
         self.run_button.setEnabled(self.can_run_milling())
         self.run_button.setText("Run Autolamella")
-        self.run_button.setStyleSheet("color: white, background-color: green")
+        self.run_button.setStyleSheet("color: white")
 
     def update_ui(self):
         if self.image_widget.ib_image is not None:
@@ -827,7 +827,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].lamella_centre = lamella_position
             self.experiment.positions[index].fiducial_centre = fiducial_position
             self.mill_fiducial_ui(index)
-        self.update_ui()
+        else:
+            self.update_ui()
 
     def _clickback(self, layer, event):
         if event.button == 2 :
@@ -879,17 +880,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.update_ui()
             return
         
-        self.experiment.positions[index] = mill_fiducial(
+        self.experiment.positions[index] = run_fiducial(
+                ui=self,
                 microscope=self.microscope,
                 image_settings=self.image_widget.image_settings,
                 lamella=self.experiment.positions[index],
                 fiducial_stage = self.fiducial_stage,
             )
-        if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
-            self.experiment.save()
-
-        self.update_ui()
-        self.lamella_saved += 1 
+        
 
 
     def remill_fiducial_ui(self):
@@ -953,6 +951,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 alignment_current = False
             self.image_widget.image_settings.reduced_area = None
             self.experiment = run_autolamella(
+                ui = self,
                 microscope=self.microscope,
                 experiment=self.experiment,
                 microscope_settings=self.microscope_settings,
@@ -961,16 +960,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 lamella_stages=self.lamella_stages,
             )
         
-        self.update_ui()
-        
-        self.lamella_finished = len(self.experiment.positions)
-
-        instruction_text = INSTRUCTION_MESSAGES["lamella_milled"].format(self.lamella_finished)
-
-        self.instructions_textEdit.setPlainText(instruction_text)
-        
-
-
+    
     def splutter_platinum(self):
         _ = message_box_ui(
                 title="Not implemented",
@@ -979,21 +969,45 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
 
     def fiducial_finished(self, lamella):
-        self.experiment.positions[self.lamella_index.currentIndex()] = lamella
-        self.update_image_message(add=False)
+        index = self.lamella_index.currentIndex()
+        self.experiment.positions[index] = lamella
+        if self.experiment.positions[index].state.stage == AutoLamellaStage.FiducialMilled:
+            self.experiment.save()
+            logging.info("Saved experiment")
+
         self.update_ui()
+        self.lamella_saved += 1 
+        self.update_image_message(add=False)
+        self._toggle_interaction(enabled=True)
+
+    def autolamella_finished(self, experiment):
+        self.experiment = experiment
+        self.experiment.save()
+        logging.info("Saved experiement")
+        self.update_ui()
+        
+        self.lamella_finished = len(self.experiment.positions)
+
+        instruction_text = INSTRUCTION_MESSAGES["lamella_milled"].format(self.lamella_finished)
+
+        self.instructions_textEdit.setPlainText(instruction_text)
+        self._toggle_interaction(enabled=True)
 
     def _toggle_interaction(self, enabled: bool = True):
 
         """Toggle microscope and pattern interactions."""
+        self.tabWidget.setTabVisible(3, enabled)
+        self.tabWidget.setTabVisible(4, enabled)
+        self.remill_fiducial.setEnabled(enabled)
+        self.save_button.setEnabled(enabled)
+        self.go_to_lamella.setEnabled(enabled)
+        self.run_button.setEnabled(enabled)
 
-        self.pushButton.setEnabled(enabled)
-        self.pushButton_add_milling_stage.setEnabled(enabled)
-        self.pushButton_remove_milling_stage.setEnabled(enabled)
-        # self.pushButton_save_milling_stage.setEnabled(enabled)
-        self.pushButton_run_milling.setEnabled(enabled)
-
-
+    def update_milling_ui(self, msg: str):
+        logging.info(msg)
+        napari.utils.notifications.notification_manager.records.clear()
+        napari.utils.notifications.show_info(msg)
+        # TODO: progress bar?
 
 ########################## End of Main Window Class ########################################
 
@@ -1152,29 +1166,31 @@ def run_fiducial(ui: UiInterface,
     image_settings: ImageSettings,
     lamella: Lamella,
     fiducial_stage: FibsemMillingStage,):
-
-        worker = run_fiducial_step(ui, microscope, image_settings, lamella, fiducial_stage)
-        worker.finished.connect(ui.fiducial_finished)
-        worker.yielded.connect(update_milling_ui)
+        ui._toggle_interaction(enabled=False)
+        worker = run_fiducial_step(lamella=lamella, fiducial_stage = fiducial_stage, microscope=microscope, image_settings = image_settings)
+        finished_callback = lambda: ui.fiducial_finished(lamella)
+        worker.finished.connect(finished_callback)
+        worker.yielded.connect(ui.update_milling_ui)
         worker.start()
 
 @thread_worker
 def run_fiducial_step(lamella: Lamella, fiducial_stage: FibsemMillingStage, microscope: FibsemMicroscope, image_settings: ImageSettings):
+
     try:
         lamella.state.start_timestamp = datetime.timestamp(datetime.now())
         log_status_message(lamella, "MILLING_FIDUCIAL")
-        yield "setting up milling"
+        yield "Setting up milling"
         milling.setup_milling(microscope, mill_settings=fiducial_stage.milling)
         milling.draw_patterns(
             microscope,
             fiducial_stage.pattern.patterns,
         )
-        yield "running milling"
+        yield "Running milling"
         milling.run_milling(
             microscope, milling_current=fiducial_stage.milling.milling_current
         )
         milling.finish_milling(microscope)
-        yield "finished milling"
+        yield "Updating lamella state"
         lamella.state.end_timestamp = datetime.timestamp(datetime.now())
         lamella = lamella.update(stage=AutoLamellaStage.FiducialMilled)
         log_status_message(lamella, "FIDUCIAL_MILLED_SUCCESSFULLY")
@@ -1195,14 +1211,11 @@ def run_fiducial_step(lamella: Lamella, fiducial_stage: FibsemMillingStage, micr
     finally:
         return lamella
 
-def update_milling_ui(self, msg: str):
-    logging.info(msg)
-    napari.utils.notifications.notification_manager.records.clear()
-    napari.utils.notifications.show_info(msg)
-    # TODO: progress bar?
+
   
 
 def run_autolamella(
+    ui: UiInterface,
     microscope: FibsemMicroscope,
     experiment: Experiment,
     microscope_settings: MicroscopeSettings,
@@ -1222,6 +1235,26 @@ def run_autolamella(
     Returns:
         Experiment: The updated Experiment object after the successful milling of all the lamella positions specified in the `microscope_settings` protocol.
     """
+    ui._toggle_interaction(enabled=False)
+    worker = run_autolamella_step(microscope,
+    experiment,
+    microscope_settings,
+    image_settings,
+    current_alignment,
+    lamella_stages)
+
+    finished_callback = lambda: ui.autolamella_finished(experiment)
+    worker.finished.connect(finished_callback)
+    worker.yielded.connect(ui.update_milling_ui)
+    worker.start()
+    
+
+def run_autolamella_step(microscope: FibsemMicroscope,
+    experiment: Experiment,
+    microscope_settings: MicroscopeSettings,
+    image_settings: ImageSettings,
+    current_alignment: bool,
+    lamella_stages = list[FibsemMillingStage]):
 
     _microexpansion_used = any([stage for stage in lamella_stages if stage.name == AutoLamellaStage.MicroExpansion.name])
     success = True 
@@ -1248,6 +1281,7 @@ def run_autolamella(
                 continue
 
             lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+            yield f"Moving to Lamella {lamella.lamella_number}-{lamella._petname}"
             log_status_message(lamella, "MOVING_TO_POSITION")
             microscope.move_stage_absolute(
                 lamella.state.microscope_state.absolute_position
@@ -1263,6 +1297,7 @@ def run_autolamella(
             
 
             # alignment
+            yield "Beam alignment"
             for _ in range(
                 int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
             ):  
@@ -1284,7 +1319,7 @@ def run_autolamella(
             try:
                 stage.milling.hfw = lamella.state.microscope_state.ib_settings.hfw
                 log_status_message(lamella, F"MILLING_TRENCH")
-
+                yield f"Milling stage {curr_stage.name} for Lamella {lamella.lamella_number}-{lamella._petname}"
                 milling.setup_milling(
                     microscope,
                     mill_settings=stage.milling,
@@ -1314,6 +1349,7 @@ def run_autolamella(
                 image_settings.save = True
                 image_settings.label = f"ref_mill_stage_{i}"
                 image_settings.reduced_area = None
+                yield "Taking reference images"
                 acquire.take_reference_images(microscope, image_settings)
 
                 image_settings.save = False
@@ -1344,8 +1380,6 @@ def run_autolamella(
         if lamella.state.stage == AutoLamellaStage.PolishingCut:
             lamella = lamella.update(stage=AutoLamellaStage.Finished)
 
-    experiment.save()
-    
     return experiment
 
 
