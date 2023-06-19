@@ -74,6 +74,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.fiducial_position = None
         self.lamella_position = None
         self.moving_fiducial = False   
+        self.running_fiducial = False
+        self.running_lamella = False
         CONFIG_PATH = os.path.join(os.path.dirname(__file__))
         self.system_widget = FibsemSystemSetupWidget(
                 microscope=self.microscope,
@@ -652,16 +654,21 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     ):
         self.add_button.setEnabled(add)
         self.remove_button.setEnabled(remove)
-        self.save_button.setEnabled(fiducial)
-        self.save_button.setText("Mill fiducila for current lamella")
-        self.save_button.setStyleSheet("color: white")
+        
+        if not self.running_fiducial:
+            self.save_button.setEnabled(fiducial)
+            self.save_button.setText("Mill fiducila for current lamella")
+            self.save_button.setStyleSheet("color: white")
         self.go_to_lamella.setEnabled(go_to)
-        self.remill_fiducial.setEnabled(remill)
-        self.remill_fiducial.setText("Remill fiducial")
-        self.remill_fiducial.setStyleSheet("color: white")
+        
+        if not self.running_fiducial:
+            self.remill_fiducial.setEnabled(remill)
+            self.remill_fiducial.setText("Remill fiducial")
+            self.remill_fiducial.setStyleSheet("color: white")
         self.run_button.setEnabled(self.can_run_milling())
-        self.run_button.setText("Run Autolamella")
-        self.run_button.setStyleSheet("color: white")
+        if not self.running_lamella:
+            self.run_button.setText("Run Autolamella")
+            self.run_button.setStyleSheet("color: white")
 
     def update_ui(self):
         if self.image_widget.ib_image is not None:
@@ -880,6 +887,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.update_ui()
             return
         
+        self.running_fiducial = True
         run_fiducial(
                 ui=self,
                 microscope=self.microscope,
@@ -950,6 +958,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             else:
                 alignment_current = False
             self.image_widget.image_settings.reduced_area = None
+            self.running_lamella = True
             run_autolamella(
                 ui = self,
                 microscope=self.microscope,
@@ -976,6 +985,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             logging.info("Saved experiment")
 
         self.lamella_saved += 1 
+        self.running_fiducial = False
         self.update_image_message(add=False)
         self._toggle_interaction(enabled=True)
         self.update_ui()
@@ -987,6 +997,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = experiment
         self.experiment.save()
         logging.info("Saved experiement")
+        self.running_lamella = False
         
         self.lamella_finished = len(self.experiment.positions)
 
@@ -1240,7 +1251,7 @@ def run_autolamella(
         Experiment: The updated Experiment object after the successful milling of all the lamella positions specified in the `microscope_settings` protocol.
     """
     ui._toggle_interaction(enabled=False)
-    worker = run_autolamella_step(ui, microscope,
+    worker = run_autolamella_step(microscope,
     experiment,
     microscope_settings,
     image_settings,
@@ -1253,7 +1264,7 @@ def run_autolamella(
     worker.start()
     
 @thread_worker
-def run_autolamella_step(ui: UiInterface, microscope: FibsemMicroscope,
+def run_autolamella_step(microscope: FibsemMicroscope,
     experiment: Experiment,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
