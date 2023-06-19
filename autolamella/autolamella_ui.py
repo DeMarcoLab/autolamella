@@ -38,7 +38,7 @@ from autolamella.structures import (AutoLamellaStage, Experiment, Lamella,
                                     LamellaState)
 from autolamella.ui import UI as UI
 from autolamella.utils import INSTRUCTION_MESSAGES, check_loaded_protocol
-
+from napari.qt.threading import thread_worker
 
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(
@@ -1033,6 +1033,22 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 buttons=QMessageBox.Ok,
             )
 
+    def fiducial_finished(self, lamella):
+        self.experiment.positions[self.lamella_index.currentIndex()] = lamella
+        self.update_image_message(add=False)
+        self.update_ui()
+
+    def _toggle_interaction(self, enabled: bool = True):
+
+        """Toggle microscope and pattern interactions."""
+
+        self.pushButton.setEnabled(enabled)
+        self.pushButton_add_milling_stage.setEnabled(enabled)
+        self.pushButton_remove_milling_stage.setEnabled(enabled)
+        # self.pushButton_save_milling_stage.setEnabled(enabled)
+        self.pushButton_run_milling.setEnabled(enabled)
+
+
 
 ########################## End of Main Window Class ########################################
 
@@ -1186,42 +1202,34 @@ def validate_lamella_placement(protocol, lamella_centre, ib_image, micro_expansi
 
     return True
 
-def mill_fiducial(
+def run_fiducial(ui: UiInterface,
     microscope: FibsemMicroscope,
     image_settings: ImageSettings,
     lamella: Lamella,
-    fiducial_stage: FibsemMillingStage,
-):
-    """
-    Mill a fiducial
+    fiducial_stage: FibsemMillingStage,):
 
-    Args:
-        microscope (FibsemMicroscope): An instance of the FibsemMicroscope class.
-        microscope_settings (MicroscopeSettings): microscope settings object
-        image_settings (ImageSettings): image settings object
-        lamella (Lamella): current lamella object
-        pixelsize (float): size of pixels in the image
+        worker = run_fiducial_step(ui, microscope, image_settings, lamella, fiducial_stage)
+        worker.finished.connect(ui.fiducial_finished)
+        worker.yielded.connect(update_milling_ui)
+        worker.start()
 
-    Returns:
-        lamella (Lamella): updated lamella object
-
-    Logs:
-        - "Fiducial milled successfully" if successful
-        - "Unable to draw/mill the fiducial: {e}" if unsuccessful, where {e} is the error message
-    """
-   
+@thread_worker
+def run_fiducial_step(lamella: Lamella, fiducial_stage: FibsemMillingStage, microscope: FibsemMicroscope, image_settings: ImageSettings):
     try:
         lamella.state.start_timestamp = datetime.timestamp(datetime.now())
         log_status_message(lamella, "MILLING_FIDUCIAL")
+        yield "setting up milling"
         milling.setup_milling(microscope, mill_settings=fiducial_stage.milling)
         milling.draw_patterns(
             microscope,
             fiducial_stage.pattern.patterns,
         )
+        yield "running milling"
         milling.run_milling(
             microscope, milling_current=fiducial_stage.milling.milling_current
         )
         milling.finish_milling(microscope)
+        yield "finished milling"
         lamella.state.end_timestamp = datetime.timestamp(datetime.now())
         lamella = lamella.update(stage=AutoLamellaStage.FiducialMilled)
         log_status_message(lamella, "FIDUCIAL_MILLED_SUCCESSFULLY")
@@ -1242,7 +1250,12 @@ def mill_fiducial(
     finally:
         return lamella
 
-
+def update_milling_ui(self, msg: str):
+    logging.info(msg)
+    napari.utils.notifications.notification_manager.records.clear()
+    napari.utils.notifications.show_info(msg)
+    # TODO: progress bar?
+  
 
 def run_autolamella(
     microscope: FibsemMicroscope,
