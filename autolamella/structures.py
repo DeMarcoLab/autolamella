@@ -31,6 +31,18 @@ class AutoLamellaStage(Enum):
     PolishingCut = 5
     Finished = 6
 
+class AutoLamellaWaffleStage(Enum):
+    Setup = 0
+    MillTrench = 1
+    MillUndercut = 2
+    MillNotch = 3
+    MillRoughCut = 4
+    MillRegularCut = 5
+    MillPolishingCut = 6
+    Finished = 7
+
+
+
 @dataclass
 class LamellaState:
     microscope_state: MicroscopeState = MicroscopeState()
@@ -100,7 +112,7 @@ class Lamella:
         return cls(
             _petname=data["petname"],
             state=state,
-            reference_image=FibsemImage.load(data["reference_image"]),
+            reference_image=None,
             path=data["path"],
             fiducial_centre=fiducial_centre,
             fiducial_area=fiducial_area,
@@ -149,7 +161,7 @@ class Experiment:
     def save(self) -> None:
         """Save the sample data to yaml file"""
 
-        with open(os.path.join(self.path, f"{self.name}.yaml"), "w") as f:
+        with open(os.path.join(self.path, f"experiment.yaml"), "w") as f:
             yaml.safe_dump(self.__to_dict__(), f, indent=4)
 
         # for lamella in self.positions:
