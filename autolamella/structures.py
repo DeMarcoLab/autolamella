@@ -73,6 +73,8 @@ class Lamella:
     def __post_init__(self):
         if self._petname is None:
             self._petname = f"{petname.generate(2)}"
+            self.path = os.path.join(self.path, f"{self.lamella_number:02d}-{self._petname}")
+            os.makedirs(self.path, exist_ok=True)
 
     def __to_dict__(self):
         if self.history is None:
@@ -150,10 +152,10 @@ class Experiment:
         with open(os.path.join(self.path, f"{self.name}.yaml"), "w") as f:
             yaml.safe_dump(self.__to_dict__(), f, indent=4)
 
-        for lamella in self.positions:
-            path_image = os.path.join(self.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}", lamella.reference_image.metadata.image_settings.label)
-            if lamella.reference_image is not None:
-                lamella.reference_image.save(path_image)
+        # for lamella in self.positions:
+        #     path_image = os.path.join(self.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}", lamella.reference_image.metadata.image_settings.label)
+        #     if lamella.reference_image is not None:
+        #         lamella.reference_image.save(path_image)
 
     def __repr__(self) -> str:
 
