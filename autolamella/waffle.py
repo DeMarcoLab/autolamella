@@ -22,7 +22,7 @@ def select_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings,
     # move flat to ION
     microscope.move_flat_to_beam(settings=settings, beam_type=BeamType.ION)
 
-    response = input("Land another lamella?")
+    response = input("Enter y to set this position for the lamella.")
     response = True if "y" in response else False    
     while response:
         # create another lamella
@@ -48,7 +48,7 @@ def select_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings,
 
         experiment.positions.append(deepcopy(lamella))
 
-        response = input("Land another lamella?")
+        response = input("Enter y to set this position for the lamella.")
         response = True if "y" in response else False 
 
     return experiment   
@@ -114,3 +114,18 @@ def start_of_stage_update(
     logging.info(f"STATUS | {lamella._petname} | {lamella.state.stage} | STARTED")
 
     return lamella
+
+
+from autolamella.structures import AutoLamellaWaffleStage
+
+def run_trench_milling(microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment) -> Experiment:
+
+    for lamella in experiment.positions:
+
+        lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.MillTrench)
+
+        lamella = mill_trench(microscope, settings, lamella)
+
+        experiment = end_of_stage_update(microscope, experiment, lamella)
+
+    return experiment
