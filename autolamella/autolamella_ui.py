@@ -672,6 +672,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.image_widget.ib_image is not None:
             self.update_displays()
             self.show_lamella.setEnabled(True)
+
+            if self.show_lamella.isChecked():
+                self.draw_patterns()
+
         else:
             self.enable_buttons()
             self.show_lamella.setEnabled(False)
@@ -694,6 +698,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             string_lamella
         )
         self.update_image_message()
+
         return 
         
     def go_to_lamella_ui(self):
@@ -733,6 +738,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment.positions[-1].lamella_centre = lamella_position
         self.experiment.positions[-1].fiducial_centre = fiducial_position
+        self.experiment.positions[-1].trench_centre = lamella_position
         # self.experiment.positions[-1].state.microscope_state = self.microscope.get_current_microscope_state()
         self.experiment.save()
         log_status_message(self.experiment.positions[-1], "LAMELLA_ADDED")
@@ -851,7 +857,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     show_error("The fiducial area is out of the field of view. Please move fiducial closer to centre of image.")
                     return
                 if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_stages:
-                    self.experiment.positions[int(self.lamella_index.currentIndex())].fiducial_centre = fiducial_position
+                    self.experiment.positions[int(self.lamella_index.currentIndex())].fiducial_centre = deepcopy(fiducial_position)
                 else:
                     self.fiducial_position = fiducial_position
                 logging.info("Moved fiducial")
@@ -862,11 +868,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
                 if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_stages:
-                    self.experiment.positions[int(self.lamella_index.currentIndex())].lamella_centre = lamella_position
+                    self.experiment.positions[int(self.lamella_index.currentIndex())].lamella_centre = deepcopy(lamella_position)
+                    self.experiment.positions[int(self.lamella_index.currentIndex())].trench_centre = deepcopy(lamella_position)
+
                 else:
                     self.lamella_position = lamella_position
             self.viewer.layers.selection.active = self.image_widget.eb_layer
             self.draw_patterns()
+
+            self.experiment.save()
             
         return 
 
