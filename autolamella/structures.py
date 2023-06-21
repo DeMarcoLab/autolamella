@@ -37,7 +37,7 @@ class AutoLamellaWaffleStage(Enum):
 @dataclass
 class LamellaState:
     microscope_state: MicroscopeState = MicroscopeState()
-    stage: AutoLamellaStage = AutoLamellaStage.Setup
+    stage: AutoLamellaWaffleStage = AutoLamellaWaffleStage.Setup
     start_timestamp: float = datetime.timestamp(datetime.now())
     end_timestamp: float = None
 
@@ -54,7 +54,7 @@ class LamellaState:
         state = MicroscopeState.__from_dict__(data["microscope_state"])
         return cls(
             microscope_state=state,
-            stage=AutoLamellaStage[data["stage"]],
+            stage=AutoLamellaWaffleStage[data["stage"]],
             start_timestamp=data["start_timestamp"],
             end_timestamp=data["end_timestamp"]
         )
@@ -72,12 +72,14 @@ class Lamella:
     mill_microexpansion: bool = False
     history: list[LamellaState] = None
     _petname: str = None
+    _name: str = None
     
     def __post_init__(self):
         if self._petname is None:
             self._petname = f"{petname.generate(2)}"
-            self.path = os.path.join(self.path, f"{self.lamella_number:02d}-{self._petname}")
-            os.makedirs(self.path, exist_ok=True)
+        self._name = f"{self.lamella_number:02d}-{self._petname}"
+        self.path = os.path.join(self.path, self._name)
+        os.makedirs(self.path, exist_ok=True)
 
     def __to_dict__(self):
         if self.history is None:
@@ -112,18 +114,18 @@ class Lamella:
             history=[LamellaState().__from_dict__(state) for state in data["history"]],
         )
     
-    def update(self, stage: AutoLamellaStage):
+    def update(self, stage: AutoLamellaWaffleStage):
         """_summary_
 
         Args:
-            stage (AutoLamellaStage): current stage of the lamella
+            stage (AutoLamellaWaffleStage): current stage of the lamella
 
         Returns:
             lamella: lamella with udpated stage and history
         """
         self.state.end_timestamp = datetime.timestamp(datetime.now())
         self.history.append(deepcopy(self.state))
-        self.state.stage = AutoLamellaStage(stage)
+        self.state.stage = AutoLamellaWaffleStage(stage)
         self.state.start_timestamp = datetime.timestamp(datetime.now())
         return self
 

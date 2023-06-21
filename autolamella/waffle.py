@@ -120,16 +120,16 @@ def start_of_stage_update(
     return lamella
 
 
-from autolamella.structures import AutoLamellaWaffleStage
 
 def run_trench_milling(microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment) -> Experiment:
 
     for lamella in experiment.positions:
 
-        lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.MillTrench)
+        if lamella.state.stage == AutoLamellaWaffleStage.Setup:
+            lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.MillTrench)
+        
+            lamella = mill_trench(microscope, settings, lamella)
 
-        lamella = mill_trench(microscope, settings, lamella)
-
-        experiment = end_of_stage_update(microscope, experiment, lamella)
+            experiment = end_of_stage_update(microscope, experiment, lamella)
 
     return experiment
