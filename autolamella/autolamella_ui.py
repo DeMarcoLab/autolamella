@@ -98,6 +98,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def setup_connections(self):
         self.show_lamella.stateChanged.connect(self.update_displays)
         self.show_lamella.setEnabled(False)
+        self.checkBox_show_trench.stateChanged.connect(self.update_displays)
+        self.checkBox_show_trench.setEnabled(False)
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
         self.add_button.clicked.connect(self.add_lamella_ui)
         self.add_button.setEnabled(False)
@@ -138,6 +140,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.micro_exp_width.editingFinished.connect(self.get_protocol_from_ui)
         self.comboBoxapplication_file.currentTextChanged.connect(self.get_protocol_from_ui)
 
+        # trench
+        self.doubleSpinBox_trench_lamella_height.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_trench_lamella_width.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_trench_milling_depth.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_trench_trench_height.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_trench_offset.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_trench_size_ratio.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_trench_milling_current.editingFinished.connect(self.get_protocol_from_ui)
 
     def get_milling_settings(self, protocol):
         mill_settings = FibsemMillingSettings(
@@ -245,6 +255,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
 
         self.fiducial_stage = stage
+
+        # TRENCH
+        from fibsem import patterning
+        self.trench_stages = patterning._get_milling_stages("trench", self.microscope_settings.protocol, point = lamella_position)
 
         self.update_displays()
 
@@ -530,6 +544,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.set_ui_from_protocol() 
         self.connect_protocol_signals()
         self.show_lamella.setEnabled(True)
+        self.checkBox_show_trench.setEnabled(True)
         return True
 
     def set_ui_from_protocol(self):
@@ -656,6 +671,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                  self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, patterns
             )
 
+        elif self.checkBox_show_trench.isChecked():
+            patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in self.trench_stages if stage.pattern is not None]
+            _draw_patterns_in_napari(
+                 self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, patterns
+            )
+
         else:
             if "Stage 1" in self.viewer.layers:
                 self.viewer.layers["Stage 1"].visible = False
@@ -693,13 +714,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         if self.image_widget.ib_image is not None:
             self.update_displays()
             self.show_lamella.setEnabled(True)
+            self.checkBox_show_trench.setEnabled(True)
 
-            if self.show_lamella.isChecked():
+            if self.show_lamella.isChecked() or self.checkBox_show_trench.isChecked():
                 self.draw_patterns()
 
         else:
             self.enable_buttons()
             self.show_lamella.setEnabled(False)
+            self.checkBox_show_trench.setEnabled(False)
             return
         if self.experiment.positions == []:
             self.enable_buttons(add=True)
