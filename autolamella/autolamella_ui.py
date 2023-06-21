@@ -696,7 +696,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.add_button.setStyleSheet("color: white")
             return
 
-        self.experiment = add_lamella(experiment=self.experiment, ref_image=self.image_widget.ib_image)
+        self.experiment = add_lamella(microscope=self.microscope, experiment=self.experiment, ref_image=self.image_widget.ib_image)
 
         pixelsize = self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]
         if len(self.experiment.positions) > 1:
@@ -1034,56 +1034,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         microscope_settings: MicroscopeSettings = self.microscope_settings
         image_settings: ImageSettings = self.image_widget.image_settings
 
-        for lamella in self.experiment.positions:
+        from autolamella import waffle as wfl
 
-            lamella.state.start_timestamp = datetime.timestamp(datetime.now())
-            log_status_message(lamella, "MOVING_TO_POSITION")
-            microscope.move_stage_absolute(
-                lamella.state.microscope_state.absolute_position
-            )
-            log_status_message(lamella, "MOVE_TO_POSITION_SUCCESSFUL")
+        self.experiment = wfl.run_trench_milling(microscope, microscope_settings, experiment)
 
-            image_settings.save_path = lamella.path
-            image_settings.save = True
-            image_settings.label = f"ref_trench_mill"
-            image_settings.reduced_area = None
-            acquire.take_reference_images(microscope, image_settings)
-            image_settings.save = False
-
-            log_status_message(lamella, F"MILLING_TRENCH")
-
-            PROTOCOL_PATH = r"C:\Users\pcle0002\Documents\repos\autolamella\autolamella\protocol_waffle.yaml"
-            protocol_wfl = utils.load_protocol(PROTOCOL_PATH)
-
-            from fibsem import patterning
-            stages = patterning._get_milling_stages("trench", protocol_wfl)
-
-            stage = stages[0]
-            stage.milling.hfw = 80e-6 # lamella.state.microscope_state.ib_settings.hfw
-
-            milling.setup_milling(
-                microscope,
-                mill_settings=stage.milling,
-            )
-
-            # redefine pattern for each lamella
-            stage.pattern.define(stage.pattern.protocol, lamella.lamella_centre)
-
-            milling.draw_patterns(
-                microscope=microscope,
-                patterns = stage.pattern.patterns,
-            )
-
-            milling.run_milling(
-                microscope, milling_current=stage.milling.milling_current
-            )
-            milling.finish_milling(microscope)
-            lamella.state.end_timestamp = datetime.timestamp(datetime.now())
-            image_settings.save_path = lamella.path
-            image_settings.reduced_area = None
-            log_status_message(lamella, F"MILLING_COMPLETED_SUCCESSFULLY")
-
-
+        
 
     def splutter_platinum(self):
         _ = message_box_ui(
@@ -1095,7 +1050,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 ########################## End of Main Window Class ########################################
 
-def add_lamella(experiment: Experiment, ref_image: FibsemImage):
+def add_lamella(microscope: FibsemMicroscope, experiment: Experiment, ref_image: FibsemImage):
     """
     Add an empty lamella to an Experiment and associate it with a reference image.
 
@@ -1113,6 +1068,12 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
         path = experiment.path,
         lamella_number=index + 1,
         reference_image=ref_image,
+    )
+
+    from autolamella.structures import AutoLamellaWaffleStage
+    lamella.state.stage = AutoLamellaWaffleStage.Setup
+    lamella.state.microscope_state = (
+        microscope.get_current_microscope_state()
     )
 
     lamella.reference_image.metadata.image_settings.label = "Empty_ref"

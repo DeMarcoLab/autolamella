@@ -34,7 +34,7 @@ def select_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings,
         lamella.state.stage = AutoLamellaWaffleStage.Setup
         lamella.state.microscope_state = (
             microscope.get_current_microscope_state()
-        )z
+        )
 
         settings.image.save_path = lamella.path
 
@@ -60,7 +60,12 @@ def mill_trench(microscope: FibsemMicroscope, settings: MicroscopeSettings, lame
 
 
     # define trench
-    stages = patterning._get_milling_stages("trench", settings.protocol)
+    PROTOCOL_PATH = r"C:\Users\pcle0002\Documents\repos\autolamella\autolamella\protocol_waffle.yaml"
+    protocol_wfl = utils.load_protocol(PROTOCOL_PATH)
+    stages = patterning._get_milling_stages("trench", protocol_wfl)
+
+    for stage in stages:
+        stage.milling.hfw = 80e-6
 
     # mill stages
     milling.mill_stages(microscope, settings, stages)
@@ -86,7 +91,6 @@ def end_of_stage_update(
     lamella.history.append(deepcopy(lamella.state))
 
     # # update and save experiment
-    # experiment.update(lamella)
     experiment.save()
 
     logging.info(f"STATUS | {lamella._petname} | {lamella.state.stage} | FINISHED")
