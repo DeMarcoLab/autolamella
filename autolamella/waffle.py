@@ -60,10 +60,10 @@ def mill_trench(microscope: FibsemMicroscope, settings: MicroscopeSettings, lame
 
 
     # define trench
-    PROTOCOL_PATH = r"C:\Users\pcle0002\Documents\repos\autolamella\autolamella\protocol_waffle.yaml"
-    protocol_wfl = utils.load_protocol(PROTOCOL_PATH)
-    protocol_wfl["trench"]["hfw"] = 80e-6
-    stages = patterning._get_milling_stages("trench", protocol_wfl, point=lamella.lamella_centre)
+    # PROTOCOL_PATH = r"C:\Users\pcle0002\Documents\repos\autolamella\autolamella\protocol_waffle.yaml"
+    # protocol_wfl = utils.load_protocol(PROTOCOL_PATH)
+    settings.protocol["trench"]["hfw"] = 80e-6
+    stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.lamella_centre)
 
     # mill stages
     milling.mill_stages(microscope, settings, stages)

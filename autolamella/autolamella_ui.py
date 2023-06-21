@@ -996,6 +996,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         from autolamella import waffle as wfl
 
+        self.microscope_settings.protocol["trench"] = {}
+        self.microscope_settings.protocol["trench"] = deepcopy(self.microscope_settings.protocol["lamella"]["protocol_stages"][0])
+
         self.experiment = wfl.run_trench_milling(microscope, microscope_settings, experiment)
 
         self.update_ui()
