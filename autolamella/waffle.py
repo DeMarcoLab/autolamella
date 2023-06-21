@@ -34,7 +34,7 @@ def select_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings,
         lamella.state.stage = AutoLamellaWaffleStage.Setup
         lamella.state.microscope_state = (
             microscope.get_current_microscope_state()
-        )
+        )z
 
         settings.image.save_path = lamella.path
 

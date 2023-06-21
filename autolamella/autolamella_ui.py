@@ -117,6 +117,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.currentIndexChanged.connect(self.lamella_index_changed)
+        self.pushButton_run_waffle_trench.clicked.connect(self.run_waffle_trench)
 
     def connect_protocol_signals(self):
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
@@ -1024,6 +1025,64 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.instructions_textEdit.setPlainText(instruction_text)
         
+    def run_waffle_trench(self):
+
+        logging.info(f"Running waffle trench...")
+
+        microscope = self.microscope
+        experiment: Experiment = self.experiment
+        microscope_settings: MicroscopeSettings = self.microscope_settings
+        image_settings: ImageSettings = self.image_widget.image_settings
+
+        for lamella in self.experiment.positions:
+
+            lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+            log_status_message(lamella, "MOVING_TO_POSITION")
+            microscope.move_stage_absolute(
+                lamella.state.microscope_state.absolute_position
+            )
+            log_status_message(lamella, "MOVE_TO_POSITION_SUCCESSFUL")
+
+            image_settings.save_path = lamella.path
+            image_settings.save = True
+            image_settings.label = f"ref_trench_mill"
+            image_settings.reduced_area = None
+            acquire.take_reference_images(microscope, image_settings)
+            image_settings.save = False
+
+            log_status_message(lamella, F"MILLING_TRENCH")
+
+            PROTOCOL_PATH = r"C:\Users\pcle0002\Documents\repos\autolamella\autolamella\protocol_waffle.yaml"
+            protocol_wfl = utils.load_protocol(PROTOCOL_PATH)
+
+            from fibsem import patterning
+            stages = patterning._get_milling_stages("trench", protocol_wfl)
+
+            stage = stages[0]
+            stage.milling.hfw = 80e-6 # lamella.state.microscope_state.ib_settings.hfw
+
+            milling.setup_milling(
+                microscope,
+                mill_settings=stage.milling,
+            )
+
+            # redefine pattern for each lamella
+            stage.pattern.define(stage.pattern.protocol, lamella.lamella_centre)
+
+            milling.draw_patterns(
+                microscope=microscope,
+                patterns = stage.pattern.patterns,
+            )
+
+            milling.run_milling(
+                microscope, milling_current=stage.milling.milling_current
+            )
+            milling.finish_milling(microscope)
+            lamella.state.end_timestamp = datetime.timestamp(datetime.now())
+            image_settings.save_path = lamella.path
+            image_settings.reduced_area = None
+            log_status_message(lamella, F"MILLING_COMPLETED_SUCCESSFULLY")
+
 
 
     def splutter_platinum(self):
@@ -1051,6 +1110,7 @@ def add_lamella(experiment: Experiment, ref_image: FibsemImage):
     index = len(experiment.positions)
 
     lamella = Lamella(
+        path = experiment.path,
         lamella_number=index + 1,
         reference_image=ref_image,
     )

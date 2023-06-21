@@ -1,26 +1,17 @@
-from dataclasses import dataclass, asdict
-from fibsem.structures import MicroscopeState, FibsemImage, Point, FibsemRectangle
-import fibsem.utils as utils
-from copy import deepcopy
-from pathlib import Path
-from enum import Enum
-import yaml
 import os
-import pandas as pd
+from copy import deepcopy
+from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
+from pathlib import Path
+
+import fibsem.utils as utils
+import pandas as pd
 import petname
+import yaml
+from fibsem.structures import (FibsemImage, FibsemRectangle, MicroscopeState,
+                               Point)
 
-# PPP: remove this
-class MovementMode(Enum):
-    Stable = 1
-    Eucentric = 2
-    # Needle = 3
-
-# PPP: remove this
-class MovementType(Enum):
-    StableEnabled = 0 
-    EucentricEnabled = 1
-    TiltEnabled = 2
 
 class AutoLamellaStage(Enum):
     Setup = 0
@@ -35,7 +26,7 @@ class AutoLamellaWaffleStage(Enum):
     Setup = 0
     MillTrench = 1
     MillUndercut = 2
-    MillNotch = 3
+    MillFeatures = 3
     MillRoughCut = 4
     MillRegularCut = 5
     MillPolishingCut = 6
