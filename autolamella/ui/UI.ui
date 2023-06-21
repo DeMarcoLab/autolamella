@@ -126,7 +126,7 @@
         <string>Experiment</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="15" column="0" colspan="2">
+        <item row="14" column="0" colspan="2">
          <widget class="QPushButton" name="remill_fiducial">
           <property name="text">
            <string>Remill fiducial</string>
@@ -140,7 +140,7 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="1">
+        <item row="5" column="1">
          <widget class="QPushButton" name="remove_button">
           <property name="styleSheet">
            <string notr="true"/>
@@ -150,7 +150,7 @@
           </property>
          </widget>
         </item>
-        <item row="17" column="0" colspan="2">
+        <item row="15" column="0" colspan="2">
          <widget class="QPushButton" name="run_button">
           <property name="font">
            <font>
@@ -166,7 +166,14 @@
           </property>
          </widget>
         </item>
-        <item row="19" column="0" colspan="2">
+        <item row="10" column="1">
+         <widget class="QPushButton" name="go_to_lamella">
+          <property name="text">
+           <string>Go to position</string>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="0" colspan="2">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -179,14 +186,14 @@
           </property>
          </spacer>
         </item>
-        <item row="12" column="0" colspan="2">
+        <item row="11" column="0" colspan="2">
          <widget class="QPushButton" name="save_button">
           <property name="text">
-           <string>Mill fiducila for current lamella</string>
+           <string>Mill Fiducial for current lamella</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
+        <item row="5" column="0">
          <widget class="QPushButton" name="add_button">
           <property name="text">
            <string>Add Lamella</string>
@@ -200,7 +207,7 @@
           </property>
          </widget>
         </item>
-        <item row="7" column="0">
+        <item row="6" column="0">
          <widget class="QLabel" name="label_current_lamella_header">
           <property name="font">
            <font>
@@ -213,7 +220,7 @@
           </property>
          </widget>
         </item>
-        <item row="9" column="0">
+        <item row="8" column="0">
          <widget class="QLabel" name="label_movement_instructions2">
           <property name="text">
            <string>Moving pattern :</string>
@@ -250,34 +257,21 @@
           </property>
          </widget>
         </item>
-        <item row="18" column="0" colspan="2">
+        <item row="16" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_waffle_trench">
           <property name="text">
            <string>Run Waffle Trench Milling</string>
           </property>
          </widget>
         </item>
-        <item row="10" column="0" colspan="2">
+        <item row="9" column="0" colspan="2">
          <widget class="QLabel" name="label_movement_instructions">
           <property name="text">
            <string>Right click where you want the pattern centre to be.</string>
           </property>
          </widget>
         </item>
-        <item row="16" column="0" colspan="2">
-         <spacer name="horizontalSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="9" column="1">
+        <item row="8" column="1">
          <widget class="QComboBox" name="comboBox_moving_pattern">
           <item>
            <property name="text">
@@ -291,19 +285,6 @@
           </item>
          </widget>
         </item>
-        <item row="5" column="0" colspan="2">
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="1" column="1">
          <widget class="QLabel" name="protocol_txt">
           <property name="text">
@@ -311,14 +292,21 @@
           </property>
          </widget>
         </item>
-        <item row="11" column="0">
+        <item row="10" column="0">
          <widget class="QPushButton" name="pushButton_save_position">
           <property name="text">
            <string>Save Position</string>
           </property>
          </widget>
         </item>
-        <item row="14" column="0" colspan="2">
+        <item row="4" column="0">
+         <widget class="QCheckBox" name="checkBox_show_trench">
+          <property name="text">
+           <string>Show Trench Pattern</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="0" colspan="2">
          <widget class="QPlainTextEdit" name="lamella_count_txt">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
@@ -349,13 +337,6 @@
           </property>
          </widget>
         </item>
-        <item row="13" column="0" colspan="2">
-         <widget class="QPushButton" name="go_to_lamella">
-          <property name="text">
-           <string>Go to position</string>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_setup_header">
           <property name="font">
@@ -370,15 +351,8 @@
           </property>
          </widget>
         </item>
-        <item row="7" column="1">
+        <item row="6" column="1">
          <widget class="QComboBox" name="lamella_index"/>
-        </item>
-        <item row="4" column="0">
-         <widget class="QCheckBox" name="checkBox_show_trench">
-          <property name="text">
-           <string>Show Trench Pattern</string>
-          </property>
-         </widget>
         </item>
        </layout>
       </widget>
@@ -436,8 +410,170 @@
            <enum>QTabWidget::Rounded</enum>
           </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>0</number>
           </property>
+          <widget class="QWidget" name="tab_8">
+           <attribute name="title">
+            <string>Trench</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_5">
+            <item row="8" column="1">
+             <widget class="QComboBox" name="comboBox_trench_preset"/>
+            </item>
+            <item row="8" column="0">
+             <widget class="QLabel" name="label_trench_preset">
+              <property name="text">
+               <string>Preset</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_trench_height">
+              <property name="maximum">
+               <double>1000.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="9" column="0" colspan="2">
+             <spacer name="verticalSpacer_5">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_trench_lamella_width">
+              <property name="text">
+               <string>Lamella Width (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_lamella_width">
+              <property name="maximum">
+               <double>1000.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_milling_depth">
+              <property name="maximum">
+               <double>1000.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_milling_current">
+              <property name="maximum">
+               <double>1000.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_trench_size_ratio">
+              <property name="text">
+               <string>Size Ratio</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_trench_milling_depth">
+              <property name="text">
+               <string>Milling Depth (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_lamella_height">
+              <property name="maximum">
+               <double>1000.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_trench_lamella_height">
+              <property name="text">
+               <string>Lamella Height (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_size_ratio">
+              <property name="maximum">
+               <double>1000.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_trench_trench_height">
+              <property name="text">
+               <string>Trench Height (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="0">
+             <widget class="QLabel" name="label_trench_milling_current">
+              <property name="text">
+               <string>Milling Current (nA)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_offset">
+              <property name="maximum">
+               <double>1000.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.010000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="label_trench_offset">
+              <property name="text">
+               <string>Offset (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0" colspan="2">
+             <widget class="QLabel" name="label">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Trench Parameters</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
           <widget class="QWidget" name="tab_4">
            <attribute name="title">
             <string>Fiducial</string>
@@ -771,154 +907,10 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab_8">
+          <widget class="QWidget" name="tab_9">
            <attribute name="title">
-            <string>Trench</string>
+            <string>UnderCut</string>
            </attribute>
-           <layout class="QGridLayout" name="gridLayout_5">
-            <item row="7" column="1">
-             <widget class="QComboBox" name="comboBox_trench_preset"/>
-            </item>
-            <item row="7" column="0">
-             <widget class="QLabel" name="label_trench_preset">
-              <property name="text">
-               <string>Preset</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_trench_height">
-              <property name="maximum">
-               <double>1000.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.010000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_trench_lamella_width">
-              <property name="text">
-               <string>Lamella Width (um)</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_lamella_width">
-              <property name="maximum">
-               <double>1000.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.010000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_milling_depth">
-              <property name="maximum">
-               <double>1000.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.010000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_milling_current">
-              <property name="maximum">
-               <double>1000.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.010000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="5" column="0">
-             <widget class="QLabel" name="label_trench_size_ratio">
-              <property name="text">
-               <string>Size Ratio</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="0">
-             <widget class="QLabel" name="label_trench_milling_depth">
-              <property name="text">
-               <string>Milling Depth (um)</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_lamella_height">
-              <property name="maximum">
-               <double>1000.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.010000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_trench_lamella_height">
-              <property name="text">
-               <string>Lamella Height (um)</string>
-              </property>
-             </widget>
-            </item>
-            <item row="5" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_size_ratio">
-              <property name="maximum">
-               <double>1000.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.010000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="0">
-             <widget class="QLabel" name="label_trench_trench_height">
-              <property name="text">
-               <string>Trench Height (um)</string>
-              </property>
-             </widget>
-            </item>
-            <item row="6" column="0">
-             <widget class="QLabel" name="label_trench_milling_current">
-              <property name="text">
-               <string>Milling Current (nA)</string>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_trench_offset">
-              <property name="maximum">
-               <double>1000.000000000000000</double>
-              </property>
-              <property name="singleStep">
-               <double>0.010000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="0">
-             <widget class="QLabel" name="label_trench_offset">
-              <property name="text">
-               <string>Offset (um)</string>
-              </property>
-             </widget>
-            </item>
-            <item row="8" column="0" colspan="2">
-             <spacer name="verticalSpacer_5">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
-           </layout>
           </widget>
          </widget>
         </item>
