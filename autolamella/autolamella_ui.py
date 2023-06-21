@@ -567,6 +567,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         else:
             self.comboBox_current_alignment.setCurrentText("Imaging Current")
         
+        # trench
+        self.doubleSpinBox_trench_lamella_height.setValue((self.microscope_settings.protocol["trench"]["lamella_height"]*constants.SI_TO_MICRO))
+        self.doubleSpinBox_trench_lamella_width.setValue((self.microscope_settings.protocol["trench"]["lamella_width"]*constants.SI_TO_MICRO))
+        self.doubleSpinBox_trench_milling_depth.setValue((self.microscope_settings.protocol["trench"]["depth"]*constants.SI_TO_MICRO))
+        self.doubleSpinBox_trench_trench_height.setValue((self.microscope_settings.protocol["trench"]["trench_height"]*constants.SI_TO_MICRO))
+        self.doubleSpinBox_trench_offset.setValue((self.microscope_settings.protocol["trench"]["offset"]*constants.SI_TO_MICRO))
+        self.doubleSpinBox_trench_size_ratio.setValue((self.microscope_settings.protocol["trench"]["size_ratio"]))
+        self.doubleSpinBox_trench_milling_current.setValue((self.microscope_settings.protocol["trench"]["milling_current"]*constants.SI_TO_NANO))
+
         logging.info("Protocol loaded")
 
         self.draw_patterns()
@@ -609,6 +618,17 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.microscope_settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText().lower()
         
+
+        # trench
+        self.microscope_settings.protocol["trench"]["lamella_width"] = float(self.doubleSpinBox_trench_lamella_width.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["trench"]["lamella_height"] = float(self.doubleSpinBox_trench_lamella_height.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["trench"]["trench_height"] = float(self.doubleSpinBox_trench_trench_height.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["trench"]["depth"] = float(self.doubleSpinBox_trench_milling_depth.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["trench"]["offset"] = float(self.doubleSpinBox_trench_offset.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["trench"]["size_ratio"] = float(self.doubleSpinBox_trench_size_ratio.value())
+        self.microscope_settings.protocol["trench"]["milling_current"] = float(self.doubleSpinBox_trench_milling_current.value()*constants.NANO_TO_SI)
+        self.microscope_settings.protocol["trench"]["hfw"] = 80e-6
+
         self.draw_patterns()
    
     def save_protocol(self):
@@ -996,8 +1016,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         from autolamella import waffle as wfl
 
-        self.microscope_settings.protocol["trench"] = {}
-        self.microscope_settings.protocol["trench"] = deepcopy(self.microscope_settings.protocol["lamella"]["protocol_stages"][0])
+        # self.microscope_settings.protocol["trench"] = {}
+        # self.microscope_settings.protocol["trench"] = deepcopy(self.microscope_settings.protocol["lamella"]["protocol_stages"][0])
 
         self.experiment = wfl.run_trench_milling(microscope, microscope_settings, experiment)
 

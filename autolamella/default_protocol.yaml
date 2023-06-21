@@ -11,6 +11,18 @@ fiducial:
   milling_current: 28.e-9
   preset: "30 keV; 20 nA" # TESCAN only
 
+trench:
+  lamella_width: 10.e-6
+  lamella_height: 5.0e-6
+  milling_current: 2.0e-9
+  trench_height: 10.e-6
+  depth: 1.e-6
+  offset: 0.0e-6
+  size_ratio: 1.0
+  preset: "30 keV; 2.5 nA" # TESCAN only
+  hfw: 80.0e-6
+
+
 lamella:
   beam_shift_attempts: 3.0
   alignment_current: "Imaging"
