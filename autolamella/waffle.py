@@ -1,21 +1,19 @@
-from fibsem import utils, acquire, patterning, milling
-from fibsem.structures import BeamType, FibsemStagePosition, Point
-from fibsem.patterning import FibsemMillingStage
-
-from pprint import pprint
-import numpy as np
-import matplotlib.pyplot as plt
-
-
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import MicroscopeSettings
-from autolamella.structures import Lamella, Experiment, AutoLamellaStage, AutoLamellaWaffleStage
-
-from copy import deepcopy
-import os
 import logging
-
+import os
+from copy import deepcopy
 from datetime import datetime
+from pprint import pprint
+
+import matplotlib.pyplot as plt
+import numpy as np
+from fibsem import acquire, milling, patterning, utils
+from fibsem.microscope import FibsemMicroscope
+from fibsem.patterning import FibsemMillingStage
+from fibsem.structures import (BeamType, FibsemStagePosition,
+                               MicroscopeSettings, Point)
+
+from autolamella.structures import (AutoLamellaStage, AutoLamellaWaffleStage,
+                                    Experiment, Lamella)
 
 
 def select_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment) -> Experiment:
