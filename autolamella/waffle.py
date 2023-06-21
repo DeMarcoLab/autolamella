@@ -52,17 +52,17 @@ def select_positions(microscope: FibsemMicroscope, settings: MicroscopeSettings,
     return experiment   
 
 
-def mill_trench(microscope: FibsemMicroscope, settings: MicroscopeSettings, lamella: Lamella) -> Lamella:
+def mill_trench(microscope: FibsemMicroscope, settings: MicroscopeSettings, lamella: Lamella, parent_ui = None) -> Lamella:
     
     settings.image.save_path = lamella.path 
 
 
     # define trench
-    # PROTOCOL_PATH = r"C:\Users\pcle0002\Documents\repos\autolamella\autolamella\protocol_waffle.yaml"
-    # protocol_wfl = utils.load_protocol(PROTOCOL_PATH)
     settings.protocol["trench"]["hfw"] = 80e-6
     settings.protocol["trench"]["cleaning_cross_section"] = False
     stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.lamella_centre)
+
+    # TODO: draw milling stages on UI
 
     # mill stages
     milling.mill_stages(microscope, settings, stages)
@@ -72,6 +72,10 @@ def mill_trench(microscope: FibsemMicroscope, settings: MicroscopeSettings, lame
     settings.image.hfw = 80e-6
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+
+    if parent_ui is not None:
+        parent_ui.image_widget.update_viewer(eb_image.data, BeamType.ELECTRON.name )
+        parent_ui.image_widget.update_viewer(ib_image.data, BeamType.ION.name )
 
     return lamella
     
@@ -118,14 +122,14 @@ def start_of_stage_update(
 
 
 
-def run_trench_milling(microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment) -> Experiment:
+def run_trench_milling(microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment, parent_ui = None) -> Experiment:
 
     for lamella in experiment.positions:
 
         if lamella.state.stage == AutoLamellaWaffleStage.Setup:
             lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.MillTrench)
         
-            lamella = mill_trench(microscope, settings, lamella)
+            lamella = mill_trench(microscope, settings, lamella, parent_ui)
 
             experiment = end_of_stage_update(microscope, experiment, lamella)
 

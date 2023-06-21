@@ -134,13 +134,14 @@ class Lamella:
         return self
 
 class Experiment: 
-    def __init__(self, path: Path = None, name: str = "default") -> None:
+    def __init__(self, path: Path, name: str = "AutoLamella") -> None:
 
         self.name: str = name
         self.path: Path = utils.make_logging_directory(path=path, name=name)
         self.log_path: Path = utils.configure_logging(
             path=self.path, log_filename="logfile"
         )
+        self._created_at: float = datetime.timestamp(datetime.now())
 
         self.positions: list[Lamella] = []
 
@@ -151,6 +152,7 @@ class Experiment:
             "path": self.path,
             "log_path": self.log_path,
             "positions": [lamella.__to_dict__() for lamella in self.positions],
+            "created_at": self._created_at,
         }
 
         return state_dict
@@ -183,8 +185,10 @@ class Experiment:
             lamella_dict = {
                 "experiment_name": self.name,
                 "experiment_path": self.path,
+                "experiment_created_at": self._created_at,
                 "number": lamella.lamella_number,
-                #"petname": lamella._petname,  # what?
+                "petname": lamella._petname,  # what?
+                "name": lamella._name,
                 "path": lamella.path,
                 "lamella.x": lamella.state.microscope_state.absolute_position.x,
                 "lamella.y": lamella.state.microscope_state.absolute_position.y,
@@ -219,6 +223,7 @@ class Experiment:
         path = os.path.dirname(sample_dict["path"])
         name = sample_dict["name"]
         experiment = Experiment(path=path, name=name)
+        experiment._created_at = sample_dict.get("created_at", None)
 
         # load lamella from dict
         for lamella_dict in sample_dict["positions"]:

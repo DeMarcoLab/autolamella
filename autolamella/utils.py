@@ -74,7 +74,7 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
             return error_check
         
 
-        lamella_exception = ["protocol_stages"]
+        lamella_exception = ["stages"]
 
         error_check = _check_helper(lamella_headers, microscope_protocol["lamella"], lamella_exception)
 
@@ -90,7 +90,7 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
 
             protocol_stage_exception = ["preset"] if (_THERMO and _DEMO) else []
 
-            error_check =_check_helper(stage,  microscope_protocol["lamella"]["protocol_stages"][idx], protocol_stage_exception)
+            error_check =_check_helper(stage,  microscope_protocol["lamella"]["stages"][idx], protocol_stage_exception)
 
             if error_check is not None:
                 return error_check
