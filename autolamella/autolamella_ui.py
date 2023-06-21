@@ -116,6 +116,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.currentIndexChanged.connect(self.update_ui)
         self.pushButton_run_waffle_trench.clicked.connect(self.run_waffle_trench)
+        self.pushButton_save_position.clicked.connect(self.save_current_position)
 
     def connect_protocol_signals(self):
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
@@ -1004,7 +1005,17 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         instruction_text = INSTRUCTION_MESSAGES["lamella_milled"].format(self.lamella_finished)
 
         self.instructions_textEdit.setPlainText(instruction_text)
-        
+
+    def save_current_position(self):
+
+        if self.experiment.positions == []:
+            return
+
+        index = self.lamella_index.currentIndex()
+        self.experiment.positions[index].state.microscope_state = deepcopy(self.microscope.get_current_microscope_state())
+
+        self.experiment.save()
+
     def run_waffle_trench(self):
 
         logging.info(f"Running waffle trench...")
