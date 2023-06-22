@@ -25,7 +25,7 @@ from fibsem.structures import (BeamType, FibsemImage, FibsemMillingSettings,
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
-from fibsem.ui.utils import (_draw_patterns_in_napari, _get_directory_ui,
+from fibsem.ui.utils import (_draw_patterns_in_napari, _get_directory_ui, _get_save_file_ui,
                              _get_file_ui, convert_pattern_to_napari_rect,
                              message_box_ui, validate_pattern_placement)
 from napari.utils.notifications import show_error, show_info
@@ -151,6 +151,17 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.doubleSpinBox_trench_offset.editingFinished.connect(self.get_protocol_from_ui)
         self.doubleSpinBox_trench_size_ratio.editingFinished.connect(self.get_protocol_from_ui)
         self.doubleSpinBox_trench_milling_current.editingFinished.connect(self.get_protocol_from_ui)
+
+        # notch
+        self.doubleSpinBox_notch_hheight.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_notch_hwidth.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_notch_vheight.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_notch_vwidth.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_notch_depth.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_notch_distance.editingFinished.connect(self.get_protocol_from_ui)
+        self.doubleSpinBox_notch_milling_current.editingFinished.connect(self.get_protocol_from_ui)
+        self.checkBox_notch_flip.stateChanged.connect(self.get_protocol_from_ui)
+
 
     def get_milling_settings(self, protocol):
         mill_settings = FibsemMillingSettings(
@@ -504,7 +515,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.protocol_loaded = False
             self.load_protocol()
 
-        #self.set_ui_from_protocol() 
         if isinstance(self.microscope, TescanMicroscope):
             presets = self.microscope.get('presets')
             self.presetComboBox.addItems(presets)
@@ -579,7 +589,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.doubleSpinBox_trench_size_ratio.setValue((self.microscope_settings.protocol["trench"]["size_ratio"]))
         self.doubleSpinBox_trench_milling_current.setValue((self.microscope_settings.protocol["trench"]["milling_current"]*constants.SI_TO_NANO))
 
-        logging.info("Protocol loaded")
+        # notch
+        self.doubleSpinBox_notch_hheight.setValue(self.microscope_settings.protocol["notch"]["hheight"] * constants.SI_TO_MICRO)
+        self.doubleSpinBox_notch_hwidth.setValue(self.microscope_settings.protocol["notch"]["hwidth"] * constants.SI_TO_MICRO)
+        self.doubleSpinBox_notch_vheight.setValue(self.microscope_settings.protocol["notch"]["vheight"] * constants.SI_TO_MICRO)
+        self.doubleSpinBox_notch_vwidth.setValue(self.microscope_settings.protocol["notch"]["vwidth"] * constants.SI_TO_MICRO)
+        self.doubleSpinBox_notch_depth.setValue(self.microscope_settings.protocol["notch"]["depth"] * constants.SI_TO_MICRO)
+        self.doubleSpinBox_notch_milling_current.setValue(self.microscope_settings.protocol["notch"]["milling_current"] * constants.SI_TO_NANO)
+        self.doubleSpinBox_notch_distance.setValue(self.microscope_settings.protocol["notch"]["distance"] * constants.SI_TO_MICRO)
+        self.checkBox_notch_flip.setChecked(bool(self.microscope_settings.protocol["notch"]["flip"]))
 
         self.draw_patterns()
 
@@ -636,14 +654,29 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["trench"]["milling_current"] = float(self.doubleSpinBox_trench_milling_current.value()*constants.NANO_TO_SI)
         self.microscope_settings.protocol["trench"]["hfw"] = self.image_widget.image_settings.hfw
 
+        # notch
+        self.microscope_settings.protocol["notch"]["hheight"] =  float(self.doubleSpinBox_notch_hheight.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["notch"]["hwidth"] =  float(self.doubleSpinBox_notch_hwidth.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["notch"]["vheight"] =  float(self.doubleSpinBox_notch_vheight.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["notch"]["vwidth"] =  float(self.doubleSpinBox_notch_vwidth.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["notch"]["depth"] =  float(self.doubleSpinBox_notch_depth.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["notch"]["distance"] = float(self.doubleSpinBox_notch_distance.value()*constants.MICRO_TO_SI)
+        self.microscope_settings.protocol["notch"]["milling_current"] = float(self.doubleSpinBox_notch_milling_current.value()*constants.NANO_TO_SI)
+        self.microscope_settings.protocol["notch"]["hfw"] = self.image_widget.image_settings.hfw
+        self.microscope_settings.protocol["notch"]["flip"] = self.checkBox_notch_flip.isChecked()
+
         self.draw_patterns()
    
     def save_protocol(self):
 
-        protocol_path = _get_file_ui(msg="Select protocol file")
-        if protocol_path == '':
+        fname = _get_save_file_ui(msg="Select protocol file", path=cfg.LOG_PATH)
+        if fname == '':
             return
-        with open(os.path.join(protocol_path), "w") as f:
+        
+        # give protocol path as suffix .yaml if not
+        fname = Path(fname).with_suffix(".yaml")
+
+        with open(os.path.join(fname), "w") as f:
             yaml.safe_dump(self.microscope_settings.protocol, f, indent=4)
 
         logging.info("Protocol saved to file")
