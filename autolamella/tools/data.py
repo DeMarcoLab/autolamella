@@ -18,7 +18,7 @@ from pathlib import Path
 def load_experiment(path):
     
     directory_name = os.path.basename(os.path.normpath(path))
-    full_path = os.path.join(path, directory_name)
+    full_path = os.path.join(path, "experiment.yaml")
     experiment = Experiment.load(full_path) 
 
     return experiment
@@ -73,7 +73,12 @@ def calculate_statistics_dataframe(path: Path):
                 ].strip()  # should just be the message # TODO: need to check the delimeter character...
                 func = line.split("—")[-2].strip()
 
+                if "STATUS" in msg:
+                    ts = line.split("—")[0].split(",")[0].strip()
+                    print(ts, msg)
+
                 if "log_status_message" in func:
+                    
                     current_lamella = msg.split("|")[1].strip()
                     current_stage = msg.split("|")[2].strip().split(".")[-1].strip()
                     if "Widget" in current_stage:
@@ -83,10 +88,10 @@ def calculate_statistics_dataframe(path: Path):
                     # datetime string to timestamp int
                     ts = line.split("—")[0].split(",")[0].strip()
                     tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
-                    print(msg)
+                    # print(msg)
                     step_d = {"lamella": current_lamella, "stage": current_stage, "step": current_step, "timestamp": tsd, "step_n": step_n}
                     step_n += 1
-                    print(step_d)
+                    # print(step_d)
                     steps_data.append(deepcopy(step_d))
 
                 if "beam_shift" in func:

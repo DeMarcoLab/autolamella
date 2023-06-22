@@ -79,7 +79,8 @@ class Lamella:
         if self._petname is None:
             self._petname = f"{petname.generate(2)}"
         self._name = f"{self.lamella_number:02d}-{self._petname}"
-        self.path = os.path.join(self.path, self._name)
+        if self._name not in self.path:
+            self.path = os.path.join(self.path, self._name)
         os.makedirs(self.path, exist_ok=True)
 
     def __to_dict__(self):

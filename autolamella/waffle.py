@@ -56,9 +56,7 @@ def mill_trench(microscope: FibsemMicroscope, settings: MicroscopeSettings, lame
     
     settings.image.save_path = lamella.path 
 
-
     # define trench
-    settings.protocol["trench"]["hfw"] = 80e-6
     settings.protocol["trench"]["cleaning_cross_section"] = False
     stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.lamella_centre)
 
@@ -66,10 +64,10 @@ def mill_trench(microscope: FibsemMicroscope, settings: MicroscopeSettings, lame
 
     # mill stages
     milling.mill_stages(microscope, settings, stages)
-    print("-"*80)
+    
     # take reference images
     settings.image.label = "ref_trench_high_res"
-    settings.image.hfw = 80e-6
+    settings.image.hfw = settings.protocol["trench"]["hfw"]
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
 
@@ -125,12 +123,12 @@ def start_of_stage_update(
 def run_trench_milling(microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment, parent_ui = None) -> Experiment:
 
     for lamella in experiment.positions:
-
+        logging.info(f"------------------------{lamella._name}----------------------------------------")
         if lamella.state.stage == AutoLamellaWaffleStage.Setup:
             lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.MillTrench)
         
             lamella = mill_trench(microscope, settings, lamella, parent_ui)
 
             experiment = end_of_stage_update(microscope, experiment, lamella)
-
+        logging.info('----------------------------------------------------------------------------------------')
     return experiment

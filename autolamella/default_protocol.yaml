@@ -12,15 +12,15 @@ fiducial:
   preset: "30 keV; 20 nA" # TESCAN only
 
 trench:
-  lamella_width: 10.e-6
-  lamella_height: 5.0e-6
-  milling_current: 2.0e-9
-  trench_height: 10.e-6
-  depth: 1.e-6
+  lamella_width: 22.e-6
+  lamella_height: 30.0e-6
+  milling_current: 16.0e-9
+  trench_height: 32.e-6
+  depth: 1.5e-6
   offset: 0.0e-6
-  size_ratio: 1.0
+  size_ratio: 0.5
   preset: "30 keV; 2.5 nA" # TESCAN only
-  hfw: 80.0e-6
+  hfw: 180.0e-6
 
 
 lamella:

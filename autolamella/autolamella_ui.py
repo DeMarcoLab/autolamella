@@ -652,7 +652,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["trench"]["offset"] = float(self.doubleSpinBox_trench_offset.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["trench"]["size_ratio"] = float(self.doubleSpinBox_trench_size_ratio.value())
         self.microscope_settings.protocol["trench"]["milling_current"] = float(self.doubleSpinBox_trench_milling_current.value()*constants.NANO_TO_SI)
-        self.microscope_settings.protocol["trench"]["hfw"] = 80e-6
+        self.microscope_settings.protocol["trench"]["hfw"] = self.image_widget.image_settings.hfw
 
         self.draw_patterns()
    
