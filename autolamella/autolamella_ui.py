@@ -760,10 +760,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         log_status_message(self.experiment.positions[index], "MOVING_TO_POSITION")
         position = self.experiment.positions[index].state.microscope_state.absolute_position
         self.microscope.move_stage_absolute(position)
-        logging.info(f"Moved to position of lamella {index+1}.")
+        logging.info(f"Moved to position of lamella {self.experiment.positions[index]._name}.")
         log_status_message(self.experiment.positions[index], "MOVE_SUCCESSFUL")
-        self.image_widget.take_reference_images()
-        self.movement_widget.update_ui()
+        self.movement_widget.update_ui_after_movement()
 
     def add_lamella_ui(self):
 
@@ -904,6 +903,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             moveable_lamella = [AutoLamellaWaffleStage.MillTrench, AutoLamellaWaffleStage.MillFeatures]
 
             position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=pixelsize)
+
+            # TODO: make sure there is at least one lamella before this, makes the checks much simpler
 
             if self.comboBox_moving_pattern.currentText() == "Fiducial":
                 self.microscope_settings.image = self.image_widget.image_settings
