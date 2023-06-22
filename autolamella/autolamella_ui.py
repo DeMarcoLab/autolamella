@@ -103,6 +103,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.show_lamella.setEnabled(False)
         self.checkBox_show_trench.stateChanged.connect(self.update_displays)
         self.checkBox_show_trench.setEnabled(False)
+        self.checkBox_show_notch.stateChanged.connect(self.update_displays)
         self.microexpansionCheckBox.stateChanged.connect(self.draw_patterns)
         self.add_button.clicked.connect(self.add_lamella_ui)
         self.add_button.setEnabled(False)
@@ -119,6 +120,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.currentIndexChanged.connect(self.update_ui)
         self.pushButton_run_waffle_trench.clicked.connect(self.run_waffle_trench)
+        self.pushButton_run_waffle_notch.clicked.connect(self.run_waffle_notch)
         self.pushButton_save_position.clicked.connect(self.save_current_position)
         self.comboBox_moving_pattern.clear()
         self.comboBox_moving_pattern.addItems(["Trench", "Notch", "Fiducial", "Lamella"])
@@ -257,6 +259,13 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             trench_centre = Point(0.0, 0.0)
         self.microscope_settings.protocol["trench"]["hfw"] = self.image_widget.image_settings.hfw
         self.trench_stages = patterning._get_milling_stages("trench", self.microscope_settings.protocol, point = trench_centre)
+
+        # NOTCH
+        if self.experiment is not None and len(self.experiment.positions) > 0:
+            notch_centre = self.experiment.positions[index].notch_centre
+        else:
+            notch_centre = Point(0.0, 0.0)
+        self.notch_stages = patterning._get_milling_stages("notch", self.microscope_settings.protocol, point = notch_centre)
 
         self.update_displays()
 
@@ -662,7 +671,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.microscope_settings.protocol["notch"]["depth"] =  float(self.doubleSpinBox_notch_depth.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["notch"]["distance"] = float(self.doubleSpinBox_notch_distance.value()*constants.MICRO_TO_SI)
         self.microscope_settings.protocol["notch"]["milling_current"] = float(self.doubleSpinBox_notch_milling_current.value()*constants.NANO_TO_SI)
-        self.microscope_settings.protocol["notch"]["hfw"] = self.image_widget.image_settings.hfw
+        self.microscope_settings.protocol["notch"]["hfw"] = float(self.image_widget.image_settings.hfw)
         self.microscope_settings.protocol["notch"]["flip"] = self.checkBox_notch_flip.isChecked()
 
         self.draw_patterns()
@@ -705,6 +714,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             _draw_patterns_in_napari(
                  self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, patterns
             )
+        elif self.checkBox_show_notch.isChecked():
+            patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in self.notch_stages if stage.pattern is not None]
+            _draw_patterns_in_napari(
+                 self.viewer, self.image_widget.ib_image, self.image_widget.eb_image, patterns
+            )
 
         else:
             if "Stage 1" in self.viewer.layers:
@@ -739,11 +753,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def update_ui(self):
         if self.image_widget is not None:
             if self.image_widget.ib_image is not None:
-                self.update_displays()
+                self.update_displays() # THIS is redundant?
                 self.show_lamella.setEnabled(True)
                 self.checkBox_show_trench.setEnabled(True)
 
-                if self.show_lamella.isChecked() or self.checkBox_show_trench.isChecked():
+                if self.show_lamella.isChecked() or self.checkBox_show_trench.isChecked() or self.checkBox_show_notch.isChecked():
                     self.draw_patterns()
 
             else:
@@ -755,7 +769,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.enable_buttons(add=True)
         else:
             current_lamella = self.experiment.positions[self.lamella_index.currentIndex()]
-            if current_lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.MillTrench]:
+            if current_lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, 
+                                               AutoLamellaWaffleStage.MillTrench, AutoLamellaWaffleStage.ReadyLamella]:
                 self.enable_buttons(add=True, remove=True, fiducial=False, go_to=True)
             elif current_lamella.state.stage is AutoLamellaWaffleStage.MillFeatures:
                 self.enable_buttons(add=True, go_to=True, remill=True)
@@ -764,16 +779,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 # add, remove, goto, fiducial = True, True, True, False
                 # # TODO: simplify this, remove 'remill fiducial' just allow milling of the fiducial generally 
 
-            if current_lamella.state.stage is AutoLamellaWaffleStage.Setup:          
+            if current_lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.MillTrench]:          
                 self.pushButton_save_position.setText(f"Save Position")
                 self.pushButton_save_position.setStyleSheet("color: white;")
                 self.pushButton_save_position.setEnabled(True)
-            elif current_lamella.state.stage is AutoLamellaWaffleStage.ReadyTrench:
+            elif current_lamella.state.stage in [AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
                 self.pushButton_save_position.setText(f"Position Ready")
                 self.pushButton_save_position.setStyleSheet("color: white; background-color: green")
                 self.pushButton_save_position.setEnabled(True)
             else: 
-                self.pushButton_save_position.setText(f"Trench Milled")
+                self.pushButton_save_position.setText(f"Unavailable Milled")
                 self.pushButton_save_position.setStyleSheet("color: white; background-color: gray")
                 self.pushButton_save_position.setEnabled(False)
 
@@ -934,6 +949,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             moveable_trench = [AutoLamellaWaffleStage.Setup]
             moveable_lamella = [AutoLamellaWaffleStage.MillTrench, AutoLamellaWaffleStage.MillFeatures]
+            moveable_notch = [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.MillTrench]
 
             position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=pixelsize)
 
@@ -973,6 +989,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
                 else:
                     self.trench_position = position
+
+            if self.comboBox_moving_pattern.currentText()== "Notch": 
+                logging.info("Moved lamella")
+                # if not validate_lamella_placement(self.microscope_settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+                #     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
+                #     return
+                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_notch:
+                    self.experiment.positions[int(self.lamella_index.currentIndex())].notch_centre = deepcopy(position)
 
             
             self.viewer.layers.selection.active = self.image_widget.eb_layer
@@ -1086,11 +1110,32 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         elif self.experiment.positions[index].state.stage is AutoLamellaWaffleStage.ReadyTrench:
             self.experiment.positions[index].state.stage = AutoLamellaWaffleStage.Setup
 
+
+        if self.experiment.positions[index].state.stage is AutoLamellaWaffleStage.MillTrench:
+            self.experiment.positions[index].state.microscope_state = deepcopy(self.microscope.get_current_microscope_state())
+            self.experiment.positions[index].state.stage = AutoLamellaWaffleStage.ReadyLamella
+
+            # get current ib image, save as reference
+            fname = os.path.join(self.experiment.positions[index].path, "ref_position_notch_ib")
+            self.image_widget.ib_image.save(fname)
+    
+        elif self.experiment.positions[index].state.stage is AutoLamellaWaffleStage.ReadyLamella:
+            self.experiment.positions[index].state.stage = AutoLamellaWaffleStage.MillTrench
+
         self.experiment.save()
 
         self.update_ui()
 
     def run_waffle_trench(self):
+
+        response = message_box_ui(
+            title="Start Waffle Trench milling?",
+            text=f"Begin trench milling for {len(self.experiment.positions)} lamellas?",
+            buttons=[QMessageBox.Ok, QMessageBox.Cancel],
+        )
+
+        if response is False:
+            return
 
         logging.info(f"Running waffle trench...")
 
@@ -1111,7 +1156,29 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 title="Waffle Trenching Complete",
                 text=f"{n_trenches} trenches complete. {n_lamella} selected in total. Please continue to undercuts.",
                 buttons=QMessageBox.Ok,)
-        
+    
+    def run_waffle_notch(self):
+
+        logging.info(f"Running waffle trench...")
+
+        microscope = self.microscope
+        experiment: Experiment = self.experiment
+        microscope_settings: MicroscopeSettings = self.microscope_settings
+
+        self.experiment = wfl.run_notch_milling(microscope, microscope_settings, experiment, parent_ui=self)
+
+        self.update_ui()
+
+        # stats and exit
+        stages = Counter([lamella.state.stage for lamella in self.experiment.positions])
+        n_notches = stages[AutoLamellaWaffleStage.MillFeatures] 
+        n_lamella = len(self.experiment.positions)
+
+        _ = message_box_ui(
+                title="Waffle Notch Complete",
+                text=f"{n_notches} notches complete. {n_lamella} selected in total. Please continue to lamella.",
+                buttons=QMessageBox.Ok,)
+
 
     def splutter_platinum(self):
         _ = message_box_ui(

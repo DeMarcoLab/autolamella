@@ -26,7 +26,7 @@ class AutoLamellaWaffleStage(Enum):
     Setup = auto()
     ReadyTrench = auto()
     MillTrench = auto()
-    MillUndercut = auto()
+    # MillUndercut = auto()
     ReadyLamella = auto()
     MillFeatures = auto()
     MillRoughCut = auto()
@@ -72,6 +72,7 @@ class Lamella:
     lamella_centre: Point = Point()
     lamella_number: int = 0
     trench_centre: Point = Point()
+    notch_centre: Point = Point()
     mill_microexpansion: bool = False
     history: list[LamellaState] = None
     _petname: str = None
@@ -97,6 +98,7 @@ class Lamella:
             "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
             "lamella_centre": self.lamella_centre.__to_dict__() if self.lamella_centre is not None else "Not defined",
             "trench_centre": self.trench_centre.__to_dict__() if self.trench_centre is not None else "Not defined",
+            "notch_centre": self.notch_centre.__to_dict__() if self.notch_centre is not None else "Not defined",
             "lamella_number": self.lamella_number if self.lamella_number is not None else "Not defined",
             "history": [state.__to_dict__() for state in self.history] if self.history is not False else "Not defined",
         }
@@ -108,6 +110,7 @@ class Lamella:
         fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
         lamella_centre = Point.__from_dict__(data["lamella_centre"])
         trench_centre = Point.__from_dict__(data["trench_centre"])
+        notch_centre = Point.__from_dict__(data["notch_centre"])
         return cls(
             _petname=data["petname"],
             state=state,
@@ -117,6 +120,7 @@ class Lamella:
             fiducial_area=fiducial_area,
             lamella_centre=lamella_centre,
             trench_centre = trench_centre,
+            notch_centre = notch_centre,
             lamella_number=data["lamella_number"],
             history=[LamellaState().__from_dict__(state) for state in data["history"]],
         )

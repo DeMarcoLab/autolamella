@@ -76,7 +76,34 @@ def mill_trench(microscope: FibsemMicroscope, settings: MicroscopeSettings, lame
         parent_ui.image_widget.update_viewer(ib_image.data, BeamType.ION.name )
 
     return lamella
+
+def mill_notch(microscope: FibsemMicroscope, settings: MicroscopeSettings, lamella: Lamella, parent_ui = None) -> Lamella:
     
+    settings.image.save_path = lamella.path 
+
+    # define notch
+    stages = patterning._get_milling_stages("notch", settings.protocol, point=lamella.notch_centre)
+
+    # TODO: draw milling stages on UI
+
+    # mill stages
+    milling.mill_stages(microscope, settings, stages)
+    
+    # take reference images
+    settings.image.label = "ref_notch_high_res"
+    settings.image.hfw = float(settings.protocol["notch"]["hfw"])
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+
+    if parent_ui is not None:
+        parent_ui.image_widget.update_viewer(eb_image.data, BeamType.ELECTRON.name )
+        parent_ui.image_widget.update_viewer(ib_image.data, BeamType.ION.name )
+
+    return lamella
+
+
+
+
 def end_of_stage_update(
     microscope: FibsemMicroscope, experiment: Experiment, lamella: Lamella
 ) -> Experiment:
@@ -128,6 +155,19 @@ def run_trench_milling(microscope: FibsemMicroscope, settings: MicroscopeSetting
             lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.MillTrench)
         
             lamella = mill_trench(microscope, settings, lamella, parent_ui)
+
+            experiment = end_of_stage_update(microscope, experiment, lamella)
+        logging.info('----------------------------------------------------------------------------------------')
+    return experiment
+
+def run_notch_milling(microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment, parent_ui = None) -> Experiment:
+
+    for lamella in experiment.positions:
+        logging.info(f"------------------------{lamella._name}----------------------------------------")
+        if lamella.state.stage == AutoLamellaWaffleStage.ReadyLamella:
+            lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.MillFeatures)
+        
+            lamella = mill_notch(microscope, settings, lamella, parent_ui)
 
             experiment = end_of_stage_update(microscope, experiment, lamella)
         logging.info('----------------------------------------------------------------------------------------')
