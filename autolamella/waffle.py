@@ -161,7 +161,7 @@ def end_of_stage_update(
     # # update and save experiment
     experiment.save()
 
-    logging.info(f"STATUS | {lamella._petname} | {lamella.state.stage} | FINISHED")
+    logging.info(f"STATUS | {lamella._name} | {lamella.state.stage} | FINISHED")
 
     return experiment
 
@@ -176,16 +176,28 @@ def start_of_stage_update(
     if last_completed_stage.value == next_stage.value - 1:
 
         logging.info(
-            f"{lamella._petname} restarting from end of stage: {last_completed_stage.name}"
+            f"{lamella._name} restarting from end of stage: {last_completed_stage.name}"
         )
         microscope.set_microscope_state(lamella.state.microscope_state)
         
     # set current state information
     lamella.state.stage = next_stage
     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
-    logging.info(f"STATUS | {lamella._petname} | {lamella.state.stage} | STARTED")
+    logging.info(f"STATUS | {lamella._name} | {lamella.state.stage} | STARTED")
 
     return lamella
+
+
+WORKFLOW_STAGES = {
+    AutoLamellaWaffleStage.MillTrench: mill_trench,
+    AutoLamellaWaffleStage.MillFeatures: mill_notch,
+    AutoLamellaWaffleStage.MillRoughCut: mill_lamella,
+    AutoLamellaWaffleStage.MillRegularCut: mill_lamella,
+    AutoLamellaWaffleStage.MillPolishingCut: mill_lamella,
+
+}
+
+
 
 
 
@@ -194,7 +206,7 @@ def run_trench_milling(microscope: FibsemMicroscope, settings: MicroscopeSetting
     for lamella in experiment.positions:
         logging.info(f"------------------------{lamella._name}----------------------------------------")
         if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench:
-            lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.MillTrench)
+            lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage(lamella.state.stage.value + 1))
         
             lamella = mill_trench(microscope, settings, lamella, parent_ui)
 
@@ -207,7 +219,7 @@ def run_notch_milling(microscope: FibsemMicroscope, settings: MicroscopeSettings
     for lamella in experiment.positions:
         logging.info(f"------------------------{lamella._name}----------------------------------------")
         if lamella.state.stage == AutoLamellaWaffleStage.ReadyLamella:
-            lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.MillFeatures)
+            lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage(lamella.state.stage.value + 1))
         
             lamella = mill_notch(microscope, settings, lamella, parent_ui)
 
@@ -223,7 +235,7 @@ def run_lamella_milling(microscope: FibsemMicroscope, settings: MicroscopeSettin
 
         for lamella in experiment.positions:
             logging.info(f"------------------------{lamella._name}----------------------------------------")
-            if lamella.state.stage.value == stage.value - 1:
+            if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1):
                 lamella = start_of_stage_update(microscope, lamella, stage)
             
                 lamella = mill_lamella(microscope, settings, lamella, parent_ui)
@@ -231,3 +243,5 @@ def run_lamella_milling(microscope: FibsemMicroscope, settings: MicroscopeSettin
                 experiment = end_of_stage_update(microscope, experiment, lamella)
             logging.info('----------------------------------------------------------------------------------------')
     return experiment
+
+

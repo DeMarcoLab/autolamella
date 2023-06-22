@@ -75,7 +75,7 @@ def calculate_statistics_dataframe(path: Path):
 
                 if "STATUS" in msg:
                     ts = line.split("—")[0].split(",")[0].strip()
-                    print(ts, msg)
+                    # print(ts, func, msg)
 
                 if "log_status_message" in func:
                     

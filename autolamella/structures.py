@@ -202,10 +202,15 @@ class Experiment:
                 "lamella.z": lamella.state.microscope_state.absolute_position.z,
                 "lamella.r": lamella.state.microscope_state.absolute_position.r,
                 "lamella.t": lamella.state.microscope_state.absolute_position.t,
-                "lamella.centre": lamella.lamella_centre,
-                "lamella.trench_centre": lamella.trench_centre,
+                "lamella.centre.x": lamella.lamella_centre.x,
+                "lamella.centre.y": lamella.lamella_centre.y,
+                "trench.centre.x": lamella.trench_centre.x,
+                "trench.centre.y": lamella.trench_centre.y,
+                "notch.centre.x": lamella.notch_centre.x,
+                "notch.centre.y": lamella.notch_centre.y,
                 "lamella.history": lamella.history,
-                "fiducial.centre": lamella.fiducial_centre,
+                "fiducial.centre.x": lamella.fiducial_centre.x,
+                "fiducial.centre.y": lamella.fiducial_centre.y,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
             }
 
