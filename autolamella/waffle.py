@@ -124,7 +124,7 @@ def run_trench_milling(microscope: FibsemMicroscope, settings: MicroscopeSetting
 
     for lamella in experiment.positions:
         logging.info(f"------------------------{lamella._name}----------------------------------------")
-        if lamella.state.stage == AutoLamellaWaffleStage.Setup:
+        if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench:
             lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.MillTrench)
         
             lamella = mill_trench(microscope, settings, lamella, parent_ui)

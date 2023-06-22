@@ -7,6 +7,7 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from time import sleep
+from collections import Counter
 
 import napari
 import numpy as np
@@ -175,7 +176,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.fiducial_stage = None
 
         ############### Lamella Pattern ################
-
+        # TODO: we shouldnt let the user do this until they add a lamella... it would resolve a lot of problems
         default_position_lamella = self.lamella_position if self.lamella_position is not None else Point(0.0, 0.0) # has the user defined a position manually? If not use 0,0
         self.lamella_position = default_position_lamella
         index = self.lamella_index.currentIndex()
@@ -205,6 +206,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 pattern = pattern,
             )
             self.lamella_stages.append(mill_stage)
+
+        ###### Lamella ######
 
         from fibsem import patterning
         self.microscope_settings.protocol["lamella"]["stages"][0]["hfw"] = self.image_widget.image_settings.hfw
@@ -650,6 +653,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     ###################################### Imaging ##########################################
 
     def update_displays(self):
+
+        if self.sender() == self.show_lamella:
+            self.checkBox_show_trench.setChecked(False)
+        elif self.sender() == self.checkBox_show_trench:
+            self.show_lamella.setChecked(False)
        
         if self.show_lamella.isChecked():
             if self.microscope_settings.protocol is None:
@@ -698,32 +706,49 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.remill_fiducial.setStyleSheet("color: white")
         self.run_button.setEnabled(self.can_run_milling())
         self.run_button.setText("Run Autolamella")
-        self.run_button.setStyleSheet("color: white, background-color: green")
+        self.run_button.setStyleSheet("color: white; background-color: green")
 
     def update_ui(self):
-        if self.image_widget.ib_image is not None:
-            self.update_displays()
-            self.show_lamella.setEnabled(True)
-            self.checkBox_show_trench.setEnabled(True)
+        if self.image_widget is not None:
+            if self.image_widget.ib_image is not None:
+                self.update_displays()
+                self.show_lamella.setEnabled(True)
+                self.checkBox_show_trench.setEnabled(True)
 
-            if self.show_lamella.isChecked() or self.checkBox_show_trench.isChecked():
-                self.draw_patterns()
+                if self.show_lamella.isChecked() or self.checkBox_show_trench.isChecked():
+                    self.draw_patterns()
 
-        else:
-            self.enable_buttons()
-            self.show_lamella.setEnabled(False)
-            self.checkBox_show_trench.setEnabled(False)
-            return
+            else:
+                self.enable_buttons()
+                self.show_lamella.setEnabled(False)
+                self.checkBox_show_trench.setEnabled(False)
+                return
         if self.experiment.positions == []:
             self.enable_buttons(add=True)
         else:
             current_lamella = self.experiment.positions[self.lamella_index.currentIndex()]
-            if current_lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.MillTrench]:
-                self.enable_buttons(add=True, remove=True, fiducial=True, go_to=True)
+            if current_lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.MillTrench]:
+                self.enable_buttons(add=True, remove=True, fiducial=False, go_to=True)
             elif current_lamella.state.stage is AutoLamellaWaffleStage.MillFeatures:
                 self.enable_buttons(add=True, go_to=True, remill=True)
             elif current_lamella.state.stage is AutoLamellaWaffleStage.Finished:
                 self.enable_buttons(add=True, remove=True, go_to=True)
+                # add, remove, goto, fiducial = True, True, True, False
+                # # TODO: simplify this, remove 'remill fiducial' just allow milling of the fiducial generally 
+
+            if current_lamella.state.stage is AutoLamellaWaffleStage.Setup:          
+                self.pushButton_save_position.setText(f"Save Position")
+                self.pushButton_save_position.setStyleSheet("color: white;")
+                self.pushButton_save_position.setEnabled(True)
+            elif current_lamella.state.stage is AutoLamellaWaffleStage.ReadyTrench:
+                self.pushButton_save_position.setText(f"Position Ready")
+                self.pushButton_save_position.setStyleSheet("color: white; background-color: green")
+                self.pushButton_save_position.setEnabled(True)
+            else: 
+                self.pushButton_save_position.setText(f"Trench Milled")
+                self.pushButton_save_position.setStyleSheet("color: white; background-color: gray")
+                self.pushButton_save_position.setEnabled(False)
+
 
         string_lamella = ""
         for lamella in self.experiment.positions:
@@ -880,7 +905,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             hfw = self.image_widget.image_settings.hfw
             pixelsize = hfw/self.image_widget.image_settings.resolution[0]
 
-            moveable_stages = [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.MillTrench]
+            moveable_trench = [AutoLamellaWaffleStage.Setup]
+            moveable_lamella = [AutoLamellaWaffleStage.MillTrench, AutoLamellaWaffleStage.MillFeatures]
 
             position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=pixelsize)
 
@@ -891,7 +917,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 if flag:
                     show_error("The fiducial area is out of the field of view. Please move fiducial closer to centre of image.")
                     return
-                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_stages:
+                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_lamella:
                     self.experiment.positions[int(self.lamella_index.currentIndex())].fiducial_centre = deepcopy(position)
                 else:
                     self.fiducial_position = position
@@ -903,7 +929,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 if not validate_lamella_placement(self.microscope_settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
-                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_stages:
+                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_lamella:
                     self.experiment.positions[int(self.lamella_index.currentIndex())].lamella_centre = deepcopy(position)
                 else:
                     self.lamella_position = position
@@ -913,16 +939,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 if not validate_lamella_placement(self.microscope_settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
-                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_stages:
+                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_trench:
                     self.experiment.positions[int(self.lamella_index.currentIndex())].trench_centre = deepcopy(position)
 
                 else:
-                    self.lamella_position = position
+                    self.trench_position = position
 
             
             self.viewer.layers.selection.active = self.image_widget.eb_layer
             self.draw_patterns()
-
+            
             self.experiment.save()
             
         return 
@@ -1036,11 +1062,23 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if self.experiment.positions == []:
             return
-
+        
         index = self.lamella_index.currentIndex()
-        self.experiment.positions[index].state.microscope_state = deepcopy(self.microscope.get_current_microscope_state())
+        # TOGGLE BETWEEN READY AND SETUP
+        if self.experiment.positions[index].state.stage is AutoLamellaWaffleStage.Setup:
+            self.experiment.positions[index].state.microscope_state = deepcopy(self.microscope.get_current_microscope_state())
+            self.experiment.positions[index].state.stage = AutoLamellaWaffleStage.ReadyTrench
+
+            # get current ib image, save as reference
+            fname = os.path.join(self.experiment.positions[index].path, "ref_position_ib")
+            self.image_widget.ib_image.save(fname)
+    
+        elif self.experiment.positions[index].state.stage is AutoLamellaWaffleStage.ReadyTrench:
+            self.experiment.positions[index].state.stage = AutoLamellaWaffleStage.Setup
 
         self.experiment.save()
+
+        self.update_ui()
 
     def run_waffle_trench(self):
 
@@ -1053,6 +1091,16 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment = wfl.run_trench_milling(microscope, microscope_settings, experiment, parent_ui=self)
 
         self.update_ui()
+
+        # stats and exit
+        stages = Counter([lamella.state.stage for lamella in self.experiment.positions])
+        n_trenches = stages[AutoLamellaWaffleStage.MillTrench] 
+        n_lamella = len(self.experiment.positions)
+
+        _ = message_box_ui(
+                title="Waffle Trenching Complete",
+                text=f"{n_trenches} trenches complete. {n_lamella} selected in total. Please continue to undercuts.",
+                buttons=QMessageBox.Ok,)
         
 
     def splutter_platinum(self):

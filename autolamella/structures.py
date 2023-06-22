@@ -2,7 +2,7 @@ import os
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 
 import fibsem.utils as utils
@@ -23,13 +23,15 @@ class AutoLamellaStage(Enum):
     Finished = 6
 
 class AutoLamellaWaffleStage(Enum):
-    Setup = 0
-    MillTrench = 1
-    MillUndercut = 2
-    MillFeatures = 3
-    MillRoughCut = 4
-    MillRegularCut = 5
-    MillPolishingCut = 6
+    Setup = auto()
+    ReadyTrench = auto()
+    MillTrench = auto()
+    MillUndercut = auto()
+    ReadyLamella = auto()
+    MillFeatures = auto()
+    MillRoughCut = auto()
+    MillRegularCut = auto()
+    MillPolishingCut = auto()
     Finished = 7
 
 
