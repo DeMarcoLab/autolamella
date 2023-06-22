@@ -32,7 +32,7 @@ class AutoLamellaWaffleStage(Enum):
     MillRoughCut = auto()
     MillRegularCut = auto()
     MillPolishingCut = auto()
-    Finished = 7
+    Finished = auto()
 
 
 

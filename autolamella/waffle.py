@@ -9,7 +9,7 @@ import numpy as np
 from fibsem import acquire, milling, patterning, utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.patterning import FibsemMillingStage
-from fibsem.structures import (BeamType, FibsemStagePosition,
+from fibsem.structures import (BeamType, FibsemStagePosition, FibsemImage,
                                MicroscopeSettings, Point)
 
 from autolamella.structures import (AutoLamellaStage, AutoLamellaWaffleStage,
@@ -56,6 +56,11 @@ def mill_trench(microscope: FibsemMicroscope, settings: MicroscopeSettings, lame
     
     settings.image.save_path = lamella.path 
 
+    # TODO: cross correlate the reference here
+    fname = os.path.join(lamella.path, "ref_position_ib.tif")
+    img = FibsemImage.load(fname)
+
+
     # define trench
     settings.protocol["trench"]["cleaning_cross_section"] = False
     stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.trench_centre)
@@ -81,6 +86,11 @@ def mill_notch(microscope: FibsemMicroscope, settings: MicroscopeSettings, lamel
     
     settings.image.save_path = lamella.path 
 
+    # TODO: cross correlate the reference here
+    fname = os.path.join(lamella.path, "ref_position_lamella_ib.tif")
+    img = FibsemImage.load(fname)
+
+
     # define notch
     stages = patterning._get_milling_stages("notch", settings.protocol, point=lamella.notch_centre)
 
@@ -92,6 +102,38 @@ def mill_notch(microscope: FibsemMicroscope, settings: MicroscopeSettings, lamel
     # take reference images
     settings.image.label = "ref_notch_high_res"
     settings.image.hfw = float(settings.protocol["notch"]["hfw"])
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+
+    if parent_ui is not None:
+        parent_ui.image_widget.update_viewer(eb_image.data, BeamType.ELECTRON.name )
+        parent_ui.image_widget.update_viewer(ib_image.data, BeamType.ION.name )
+
+    return lamella
+
+
+def mill_lamella(microscope: FibsemMicroscope, settings: MicroscopeSettings, lamella: Lamella, parent_ui = None) -> Lamella:
+    
+    settings.image.save_path = lamella.path 
+
+    # TODO: cross correlate the reference here
+
+    # define notch
+    stages = patterning._get_milling_stages("lamella", settings.protocol, point=lamella.lamella_centre)
+
+    # TODO: draw milling stages on UI
+
+    # filter stage based on the current stage
+    stage_map = {AutoLamellaWaffleStage.MillRoughCut: 0, AutoLamellaWaffleStage.MillRegularCut:1, AutoLamellaWaffleStage.MillPolishingCut:2}
+    idx = stage_map[lamella.state.stage]
+    stages = [stages[idx]]
+
+    # mill stages
+    milling.mill_stages(microscope, settings, stages)
+    
+    # take reference images
+    settings.image.label = f"ref_lamella_{lamella.state.stage.name}_high_res"
+    settings.image.hfw = float(settings.protocol["lamella"]["stages"][idx]["hfw"])
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
 
@@ -171,4 +213,21 @@ def run_notch_milling(microscope: FibsemMicroscope, settings: MicroscopeSettings
 
             experiment = end_of_stage_update(microscope, experiment, lamella)
         logging.info('----------------------------------------------------------------------------------------')
+    return experiment
+
+
+def run_lamella_milling(microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment, parent_ui = None) -> Experiment:
+
+    stages = [AutoLamellaWaffleStage.MillRoughCut, AutoLamellaWaffleStage.MillRegularCut, AutoLamellaWaffleStage.MillPolishingCut]
+    for stage in stages:
+
+        for lamella in experiment.positions:
+            logging.info(f"------------------------{lamella._name}----------------------------------------")
+            if lamella.state.stage.value == stage.value - 1:
+                lamella = start_of_stage_update(microscope, lamella, stage)
+            
+                lamella = mill_lamella(microscope, settings, lamella, parent_ui)
+
+                experiment = end_of_stage_update(microscope, experiment, lamella)
+            logging.info('----------------------------------------------------------------------------------------')
     return experiment

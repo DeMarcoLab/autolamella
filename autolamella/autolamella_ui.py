@@ -109,7 +109,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.add_button.setEnabled(False)
         self.remove_button.clicked.connect(self.remove_lamella_ui)
         self.remove_button.setEnabled(False)
-        self.run_button.clicked.connect(self.run_autolamella_ui)
+        self.run_button.clicked.connect(self.run_autolamella_v2)
         self.platinum.triggered.connect(self.splutter_platinum)
         self.create_exp.triggered.connect(self.create_experiment)
         self.load_exp.triggered.connect(self.load_experiment)
@@ -747,7 +747,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setStyleSheet("color: white")
         self.go_to_lamella.setEnabled(go_to)
         self.run_button.setEnabled(self.can_run_milling())
-        self.run_button.setText("Run Autolamella")
+        self.run_button.setText("Run AutoLamella")
         self.run_button.setStyleSheet("color: white; background-color: green")
 
     def update_ui(self):
@@ -1116,7 +1116,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment.positions[index].state.stage = AutoLamellaWaffleStage.ReadyLamella
 
             # get current ib image, save as reference
-            fname = os.path.join(self.experiment.positions[index].path, "ref_position_notch_ib")
+            fname = os.path.join(self.experiment.positions[index].path, "ref_position_lamella_ib")
             self.image_widget.ib_image.save(fname)
     
         elif self.experiment.positions[index].state.stage is AutoLamellaWaffleStage.ReadyLamella:
@@ -1177,6 +1177,39 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         _ = message_box_ui(
                 title="Waffle Notch Complete",
                 text=f"{n_notches} notches complete. {n_lamella} selected in total. Please continue to lamella.",
+                buttons=QMessageBox.Ok,)
+    
+    def run_autolamella_v2(self):
+        response = message_box_ui(
+            title="Start AutoLamella ?",
+            text=f"Begin milling for {len(self.experiment.positions)} lamellas?",
+            buttons=QMessageBox.Ok,
+        )
+
+        if response is False:
+            return
+
+        logging.info(f"Running autolamella...")
+
+        microscope = self.microscope
+        experiment: Experiment = self.experiment
+        microscope_settings: MicroscopeSettings = self.microscope_settings
+
+        self.experiment = wfl.run_lamella_milling(microscope, microscope_settings, experiment, parent_ui=self)
+
+        self.update_ui()
+
+        # stats and exit
+        stages = Counter([lamella.state.stage for lamella in self.experiment.positions])
+        n_trenches = stages[AutoLamellaWaffleStage.MillPolishingCut] 
+        n_lamella = len(self.experiment.positions)
+
+
+        # TODO: mark finished
+
+        _ = message_box_ui(
+                title="Waffle Trenching Complete",
+                text=f"{n_trenches} trenches complete. {n_lamella} selected in total. Please continue to undercuts.",
                 buttons=QMessageBox.Ok,)
 
 

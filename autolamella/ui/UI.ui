@@ -143,22 +143,6 @@
           </property>
          </widget>
         </item>
-        <item row="17" column="0" colspan="2">
-         <widget class="QPushButton" name="run_button">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">background-color: darkGreen</string>
-          </property>
-          <property name="text">
-           <string>Run Autolamella</string>
-          </property>
-         </widget>
-        </item>
         <item row="13" column="1">
          <widget class="QPushButton" name="go_to_lamella">
           <property name="text">
@@ -166,7 +150,7 @@
           </property>
          </widget>
         </item>
-        <item row="20" column="0" colspan="2">
+        <item row="21" column="0" colspan="2">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -333,6 +317,13 @@
           </property>
          </widget>
         </item>
+        <item row="19" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_waffle_notch">
+          <property name="text">
+           <string>Run Waffle Notch Milling</string>
+          </property>
+         </widget>
+        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_setup_header">
           <property name="font">
@@ -357,10 +348,19 @@
           </property>
          </widget>
         </item>
-        <item row="19" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_notch">
+        <item row="20" column="0" colspan="2">
+         <widget class="QPushButton" name="run_button">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: darkGreen</string>
+          </property>
           <property name="text">
-           <string>Run Waffle Notch Milling</string>
+           <string>Run AutoLamella</string>
           </property>
          </widget>
         </item>
