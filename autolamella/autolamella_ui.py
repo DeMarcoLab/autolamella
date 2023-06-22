@@ -115,8 +115,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.action_load_protocol.triggered.connect(self.load_protocol)
         self.save_button.clicked.connect(self.save_lamella_ui)
         self.save_button.setEnabled(False)
-        self.remill_fiducial.clicked.connect(self.remill_fiducial_ui)
-        self.remill_fiducial.setEnabled(False)
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.currentIndexChanged.connect(self.update_ui)
@@ -701,9 +699,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setText("Mill Fiducial for current lamella")
         self.save_button.setStyleSheet("color: white")
         self.go_to_lamella.setEnabled(go_to)
-        self.remill_fiducial.setEnabled(remill)
-        self.remill_fiducial.setText("Remill fiducial")
-        self.remill_fiducial.setStyleSheet("color: white")
         self.run_button.setEnabled(self.can_run_milling())
         self.run_button.setText("Run Autolamella")
         self.run_button.setStyleSheet("color: white; background-color: green")
@@ -979,25 +974,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.update_ui()
         self.lamella_saved += 1 
-
-
-    def remill_fiducial_ui(self):
-        self.remill_fiducial.setEnabled(False)
-        self.remill_fiducial.setText("Running...")
-        self.remill_fiducial.setStyleSheet("color: orange")
-        response = message_box_ui(
-            title="Redo Fiducial?",
-            text="If you want to remill this fiducial, press yes.",
-        )
-        
-        index = self.lamella_index.currentIndex()
-
-        if response:
-            log_status_message(self.experiment.positions[index], "REMILLING_FIDUCIAL")
-            self.experiment.positions[index].state.stage = AutoLamellaWaffleStage.Setup
-            self.microscope.move_stage_absolute(self.experiment.positions[index].state.microscope_state.absolute_position)
-            self.mill_fiducial_ui(index=index)
-        self.update_ui()
 
     def can_run_milling(self):
         ## First condition
