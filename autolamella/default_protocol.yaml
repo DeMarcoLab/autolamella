@@ -58,3 +58,15 @@ microexpansion:
   width: 0.5e-6
   height: 18.e-6
   distance: 10.e-6 # Does not include Lamella width. So centre of microexpansion is lamella_width/2 + distance.
+
+notch: 
+  vheight: 5.0e-6
+  vwidth: 1.0e-6
+  hwidth: 5.0e-6
+  hheight: 1.0e-6
+  depth: 5.0e-6
+  distance: 5.0e-6
+  flip: 1.0
+  milling_current: 2.e-9
+  preset: "30 keV; 2.5 nA" # TESCAN only
+  hfw: 80e-6

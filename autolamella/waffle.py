@@ -58,7 +58,7 @@ def mill_trench(microscope: FibsemMicroscope, settings: MicroscopeSettings, lame
 
     # define trench
     settings.protocol["trench"]["cleaning_cross_section"] = False
-    stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.lamella_centre)
+    stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.trench_centre)
 
     # TODO: draw milling stages on UI
 

@@ -197,6 +197,7 @@ class Experiment:
                 "lamella.r": lamella.state.microscope_state.absolute_position.r,
                 "lamella.t": lamella.state.microscope_state.absolute_position.t,
                 "lamella.centre": lamella.lamella_centre,
+                "lamella.trench_centre": lamella.trench_centre,
                 "lamella.history": lamella.history,
                 "fiducial.centre": lamella.fiducial_centre,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here

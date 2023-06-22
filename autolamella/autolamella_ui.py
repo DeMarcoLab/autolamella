@@ -121,6 +121,8 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.lamella_index.currentIndexChanged.connect(self.update_ui)
         self.pushButton_run_waffle_trench.clicked.connect(self.run_waffle_trench)
         self.pushButton_save_position.clicked.connect(self.save_current_position)
+        self.comboBox_moving_pattern.clear()
+        self.comboBox_moving_pattern.addItems(["Trench", "Notch", "Fiducial", "Lamella"])
 
     def connect_protocol_signals(self):
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
@@ -204,32 +206,6 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             )
             self.lamella_stages.append(mill_stage)
 
-        # for i, protocol in enumerate(
-        #     self.microscope_settings.protocol["lamella"]["stages"]
-        # ):
-        #     protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
-        #     protocol["lamella_height"] = self.microscope_settings.protocol["lamella"]["lamella_height"]
-            
-        #     # TODO: start here and test
-
-
-        #     pattern = TrenchPattern()
-        #     pattern.define(
-        #             protocol = protocol,
-        #             point = lamella_position
-        #         )
-        #     mill_settings = self.get_milling_settings(protocol)
-
-        #     names = ["RoughCut", "RegularCut", "PolishingCut"]
-
-        #     mill_stage = FibsemMillingStage(
-        #         name = names[i],
-        #         num = i + 1,
-        #         milling = mill_settings,
-        #         pattern = pattern,
-        #     )
-
-        #     self.lamella_stages.append(mill_stage)
         from fibsem import patterning
         self.microscope_settings.protocol["lamella"]["stages"][0]["hfw"] = self.image_widget.image_settings.hfw
         self.microscope_settings.protocol["lamella"]["stages"][1]["hfw"] = self.image_widget.image_settings.hfw
@@ -263,7 +239,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         # TRENCH
         from fibsem import patterning
-        self.trench_stages = patterning._get_milling_stages("trench", self.microscope_settings.protocol, point = lamella_position)
+        if self.experiment is not None and len(self.experiment.positions) > 0:
+            trench_centre = self.experiment.positions[index].trench_centre
+        else:
+            trench_centre = Point(0.0, 0.0)
+        self.microscope_settings.protocol["trench"]["hfw"] = self.image_widget.image_settings.hfw
+        self.trench_stages = patterning._get_milling_stages("trench", self.microscope_settings.protocol, point = trench_centre)
 
         self.update_displays()
 
@@ -901,31 +882,44 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             moveable_stages = [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.MillTrench]
 
+            position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=pixelsize)
+
             if self.comboBox_moving_pattern.currentText() == "Fiducial":
-                fiducial_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
                 self.microscope_settings.image = self.image_widget.image_settings
                 fiducial_length = self.microscope_settings.protocol["fiducial"]["height"]
-                area, flag = calculate_fiducial_area(self.microscope_settings, fiducial_position, fiducial_length, pixelsize)
+                area, flag = calculate_fiducial_area(self.microscope_settings, position, fiducial_length, pixelsize)
                 if flag:
                     show_error("The fiducial area is out of the field of view. Please move fiducial closer to centre of image.")
                     return
                 if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_stages:
-                    self.experiment.positions[int(self.lamella_index.currentIndex())].fiducial_centre = deepcopy(fiducial_position)
+                    self.experiment.positions[int(self.lamella_index.currentIndex())].fiducial_centre = deepcopy(position)
                 else:
-                    self.fiducial_position = fiducial_position
+                    self.fiducial_position = position
                 logging.info("Moved fiducial")
-            else: 
-                lamella_position = conversions.image_to_microscope_image_coordinates(coord = Point(coords[1], coords[0]), image=self.image_widget.ib_image.data, pixelsize=(self.image_widget.image_settings.hfw / self.image_widget.image_settings.resolution[0]))
+
+
+            if self.comboBox_moving_pattern.currentText()== "Lamella": 
                 logging.info("Moved lamella")
-                if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+                if not validate_lamella_placement(self.microscope_settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
                 if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_stages:
-                    self.experiment.positions[int(self.lamella_index.currentIndex())].lamella_centre = deepcopy(lamella_position)
-                    self.experiment.positions[int(self.lamella_index.currentIndex())].trench_centre = deepcopy(lamella_position)
+                    self.experiment.positions[int(self.lamella_index.currentIndex())].lamella_centre = deepcopy(position)
+                else:
+                    self.lamella_position = position
+            
+            if self.comboBox_moving_pattern.currentText()== "Trench": 
+                logging.info("Moved lamella")
+                if not validate_lamella_placement(self.microscope_settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+                    show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
+                    return
+                if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_stages:
+                    self.experiment.positions[int(self.lamella_index.currentIndex())].trench_centre = deepcopy(position)
 
                 else:
-                    self.lamella_position = lamella_position
+                    self.lamella_position = position
+
+            
             self.viewer.layers.selection.active = self.image_widget.eb_layer
             self.draw_patterns()
 
@@ -1197,34 +1191,36 @@ def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsiz
 
     return fiducial_area, flag 
 
-def validate_lamella_placement(protocol, lamella_centre, ib_image, micro_expansions):
+def validate_lamella_placement(protocol, lamella_centre, ib_image, micro_expansions, pattern="lamella"):
 
-    pattern = TrenchPattern()
-    protocol_trench = protocol["lamella"]["stages"][0]
-    # protocol_trench["lamella_height"] = protocol["lamella"]["lamella_height"]
-    # protocol_trench["lamella_width"] = protocol["lamella"]["stages"][0]["lamella_width"]
-    pattern.define(protocol_trench, lamella_centre)
+    stages = patterning._get_milling_stages(pattern, protocol, lamella_centre)
+
+    # pattern = TrenchPattern()
+    # protocol_trench = protocol["lamella"]["stages"][0]
+    # # protocol_trench["lamella_height"] = protocol["lamella"]["lamella_height"]
+    # # protocol_trench["lamella_width"] = protocol["lamella"]["stages"][0]["lamella_width"]
+    # pattern.define(protocol_trench, lamella_centre)
     
-    for pattern_settings in pattern.patterns:
+    for pattern_settings in stages[0].pattern.patterns:
         shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
         resolution = [ib_image.data.shape[1],ib_image.data.shape[0]]
         output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
         if not output:
             return False
     
-    if micro_expansions :
-        protocol_micro = protocol["microexpansion"]
-        protocol_micro["depth"] = protocol["lamella"]["stages"][0]["depth"]
-        protocol_micro["lamella_width"] = protocol["lamella"]["stages"][0]["lamella_width"]
-        pattern = MicroExpansionPattern()
-        pattern.define(protocol_micro, lamella_centre)
+    # if micro_expansions :
+    #     protocol_micro = protocol["microexpansion"]
+    #     protocol_micro["depth"] = protocol["lamella"]["stages"][0]["depth"]
+    #     protocol_micro["lamella_width"] = protocol["lamella"]["stages"][0]["lamella_width"]
+    #     pattern = MicroExpansionPattern()
+    #     pattern.define(protocol_micro, lamella_centre)
 
-        for pattern_settings in pattern.patterns:
-            shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
-            resolution = [ib_image.data.shape[1],ib_image.data.shape[0]]
-            output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
-            if not output:
-                return False
+    #     for pattern_settings in pattern.patterns:
+    #         shape = convert_pattern_to_napari_rect(pattern_settings=pattern_settings, image=ib_image)
+    #         resolution = [ib_image.data.shape[1],ib_image.data.shape[0]]
+    #         output = validate_pattern_placement(patterns=shape, resolution=resolution,shape=shape)
+    #         if not output:
+    #             return False
 
     return True
 

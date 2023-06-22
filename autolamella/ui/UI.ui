@@ -126,7 +126,7 @@
         <string>Experiment</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="14" column="0" colspan="2">
+        <item row="15" column="0" colspan="2">
          <widget class="QPushButton" name="remill_fiducial">
           <property name="text">
            <string>Remill fiducial</string>
@@ -140,7 +140,7 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="1">
+        <item row="6" column="1">
          <widget class="QPushButton" name="remove_button">
           <property name="styleSheet">
            <string notr="true"/>
@@ -150,7 +150,7 @@
           </property>
          </widget>
         </item>
-        <item row="15" column="0" colspan="2">
+        <item row="16" column="0" colspan="2">
          <widget class="QPushButton" name="run_button">
           <property name="font">
            <font>
@@ -166,14 +166,14 @@
           </property>
          </widget>
         </item>
-        <item row="10" column="1">
+        <item row="11" column="1">
          <widget class="QPushButton" name="go_to_lamella">
           <property name="text">
            <string>Go to position</string>
           </property>
          </widget>
         </item>
-        <item row="17" column="0" colspan="2">
+        <item row="18" column="0" colspan="2">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -186,14 +186,14 @@
           </property>
          </spacer>
         </item>
-        <item row="11" column="0" colspan="2">
+        <item row="12" column="0" colspan="2">
          <widget class="QPushButton" name="save_button">
           <property name="text">
            <string>Mill Fiducial for current lamella</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="0">
+        <item row="6" column="0">
          <widget class="QPushButton" name="add_button">
           <property name="text">
            <string>Add Lamella</string>
@@ -207,7 +207,7 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
+        <item row="7" column="0">
          <widget class="QLabel" name="label_current_lamella_header">
           <property name="font">
            <font>
@@ -220,7 +220,7 @@
           </property>
          </widget>
         </item>
-        <item row="8" column="0">
+        <item row="9" column="0">
          <widget class="QLabel" name="label_movement_instructions2">
           <property name="text">
            <string>Moving pattern :</string>
@@ -257,21 +257,21 @@
           </property>
          </widget>
         </item>
-        <item row="16" column="0" colspan="2">
+        <item row="17" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_waffle_trench">
           <property name="text">
            <string>Run Waffle Trench Milling</string>
           </property>
          </widget>
         </item>
-        <item row="9" column="0" colspan="2">
+        <item row="10" column="0" colspan="2">
          <widget class="QLabel" name="label_movement_instructions">
           <property name="text">
            <string>Right click where you want the pattern centre to be.</string>
           </property>
          </widget>
         </item>
-        <item row="8" column="1">
+        <item row="9" column="1">
          <widget class="QComboBox" name="comboBox_moving_pattern">
           <item>
            <property name="text">
@@ -292,7 +292,7 @@
           </property>
          </widget>
         </item>
-        <item row="10" column="0">
+        <item row="11" column="0">
          <widget class="QPushButton" name="pushButton_save_position">
           <property name="text">
            <string>Save Position</string>
@@ -306,7 +306,7 @@
           </property>
          </widget>
         </item>
-        <item row="13" column="0" colspan="2">
+        <item row="14" column="0" colspan="2">
          <widget class="QPlainTextEdit" name="lamella_count_txt">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
@@ -351,8 +351,15 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="1">
+        <item row="7" column="1">
          <widget class="QComboBox" name="lamella_index"/>
+        </item>
+        <item row="4" column="1">
+         <widget class="QCheckBox" name="checkBox_show_notch">
+          <property name="text">
+           <string>Show Notch Pattern</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -410,7 +417,7 @@
            <enum>QTabWidget::Rounded</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>5</number>
           </property>
           <widget class="QWidget" name="tab_8">
            <attribute name="title">
@@ -911,6 +918,110 @@
            <attribute name="title">
             <string>UnderCut</string>
            </attribute>
+          </widget>
+          <widget class="QWidget" name="tab_10">
+           <attribute name="title">
+            <string>Notch</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_6">
+            <item row="0" column="0" colspan="2">
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>Notch Parameters</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_7">
+              <property name="text">
+               <string>Vertical Width (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_notch_vwidth"/>
+            </item>
+            <item row="6" column="0">
+             <widget class="QLabel" name="label_13">
+              <property name="text">
+               <string>Distance (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="0">
+             <widget class="QLabel" name="label_14">
+              <property name="text">
+               <string>Milling Current (nA)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_8">
+              <property name="text">
+               <string>Horizontal Height (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="0">
+             <widget class="QLabel" name="label_12">
+              <property name="text">
+               <string>Milling Depth (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_notch_vheight"/>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_4">
+              <property name="text">
+               <string>Vertical Height (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_notch_hheight"/>
+            </item>
+            <item row="6" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_notch_distance"/>
+            </item>
+            <item row="7" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_notch_milling_current"/>
+            </item>
+            <item row="4" column="0">
+             <widget class="QLabel" name="label_11">
+              <property name="text">
+               <string>Horizontal Width (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_notch_depth"/>
+            </item>
+            <item row="8" column="1">
+             <widget class="QCheckBox" name="checkBox_notch_flip">
+              <property name="text">
+               <string>Flip Pattern</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_notch_hwidth"/>
+            </item>
+            <item row="9" column="0" colspan="2">
+             <spacer name="verticalSpacer_6">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
           </widget>
          </widget>
         </item>
