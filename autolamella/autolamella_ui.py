@@ -9,6 +9,11 @@ from pathlib import Path
 from time import sleep
 
 import napari
+from napari.utils.notifications import show_error, show_info
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QTextCursor
+from PyQt5.QtWidgets import QInputDialog, QMessageBox
+from qtpy import QtWidgets
 import numpy as np
 import yaml
 from fibsem import acquire, constants, conversions, gis, milling, utils
@@ -27,12 +32,8 @@ from fibsem.ui.utils import (_draw_patterns_in_napari, _get_directory_ui,
                              _get_file_ui, convert_pattern_to_napari_rect,
                               message_box_ui,
                              validate_pattern_placement)
-from napari.utils.notifications import show_error, show_info
-from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QTextCursor
-from PyQt5.QtWidgets import QInputDialog, QMessageBox
-from qtpy import QtWidgets
 
+from PyQt5.QtCore import pyqtSignal
 import autolamella.config as cfg
 from autolamella.structures import (AutoLamellaStage, Experiment, Lamella,
                                     LamellaState)
@@ -46,6 +47,7 @@ def log_status_message(lamella: Lamella, step: str):
     )
 
 class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
+    live_imaging_signal = pyqtSignal(dict)
     def __init__(self, viewer, *args, obj=None, **kwargs) -> None:
         super(UiInterface, self).__init__(*args, **kwargs)
         self.viewer = viewer
@@ -118,6 +120,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.go_to_lamella.setEnabled(False)
         self.lamella_index.currentIndexChanged.connect(self.update_ui)
+        self.live_imaging_signal.connect(self.live_update)
 
     def connect_protocol_signals(self):
         self.beamshift_attempts.editingFinished.connect(self.get_protocol_from_ui)
@@ -698,6 +701,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.update_image_message()
         return 
         
+    def live_update(self, dict):
+        images = dict["ref_images"]
+        self.image_widget.viewer.layers[BeamType.ELECTRON.name].data = images[0].data
+        self.image_widget.viewer.layers[BeamType.ION.name].data = images[1].data
+
+        self.image_widget.eb_image = images[0]
+        self.image_widget.ib_image = images[1]
+
     def go_to_lamella_ui(self):
         index = self.lamella_index.currentIndex() 
         log_status_message(self.experiment.positions[index], "MOVING_TO_POSITION")
@@ -967,6 +978,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 image_settings=deepcopy(self.image_widget.image_settings),
                 current_alignment=deepcopy(alignment_current),
                 lamella_stages=deepcopy(self.lamella_stages),
+                parent_ui=self,
             )
         
     
@@ -1226,7 +1238,6 @@ def run_fiducial_step(lamella: Lamella, fiducial_stage: FibsemMillingStage, micr
     finally:
         return lamella
 
-
   
 
 def run_autolamella(
@@ -1236,7 +1247,8 @@ def run_autolamella(
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
     current_alignment: bool,
-    lamella_stages = list[FibsemMillingStage]
+    lamella_stages = list[FibsemMillingStage],
+    parent_ui: UiInterface = None, 
 ):
     """
     Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
@@ -1256,7 +1268,8 @@ def run_autolamella(
     microscope_settings,
     image_settings,
     current_alignment,
-    lamella_stages)
+    lamella_stages, 
+    parent_ui)
 
     finished_callback = lambda: ui.autolamella_finished(experiment)
     worker.finished.connect(finished_callback)
@@ -1269,7 +1282,8 @@ def run_autolamella_step(microscope: FibsemMicroscope,
     microscope_settings: MicroscopeSettings,
     image_settings: ImageSettings,
     current_alignment: bool,
-    lamella_stages = list[FibsemMillingStage]):
+    lamella_stages: list[FibsemMillingStage],
+    parent_ui: UiInterface = None ):
 
     _microexpansion_used = any([stage for stage in lamella_stages if stage.name == AutoLamellaStage.MicroExpansion.name])
     success = True 
@@ -1365,9 +1379,10 @@ def run_autolamella_step(microscope: FibsemMicroscope,
                 image_settings.label = f"ref_mill_stage_{i}"
                 image_settings.reduced_area = None
                 yield "Taking reference images"
-                acquire.take_reference_images(microscope, image_settings)
+                ref_images = acquire.take_reference_images(microscope, image_settings)
                 #TODO fix this (live updating of ref images)
-                #ui.image_widget.take_reference_images()
+                if parent_ui is not None:
+                    parent_ui.live_imaging_signal.emit({'ref_images': ref_images})
                 image_settings.save = False
                 
                 experiment.save()
