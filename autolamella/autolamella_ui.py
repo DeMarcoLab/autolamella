@@ -67,7 +67,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         )
         # Initialise microscope object
         self.microscope = None
-        self.microscope_settings = None
+        self.settings = None
         self.viewer.grid.enabled = False
 
         # Initialise experiment object
@@ -79,7 +79,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         CONFIG_PATH = os.path.join(os.path.dirname(__file__))
         self.system_widget = FibsemSystemSetupWidget(
                 microscope=self.microscope,
-                settings=self.microscope_settings,
+                settings=self.settings,
                 viewer=self.viewer,
                 config_path = CONFIG_PATH,
             )
@@ -168,7 +168,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def get_milling_settings(self, protocol):
         mill_settings = FibsemMillingSettings(
                 patterning_mode="Serial",
-                application_file=self.microscope_settings.protocol["application_file"],
+                application_file=self.settings.protocol["application_file"],
                 milling_current=protocol["milling_current"],
                 hfw = self.image_widget.image_settings.hfw,
                 preset = protocol.get("preset", None),
@@ -177,7 +177,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
 
     def draw_patterns(self):
-        if self.microscope_settings.protocol is None:
+        if self.settings.protocol is None:
             logging.info("No protocol loaded")
             return
         # Initialise the Lamella and Fiducial Settings
@@ -199,11 +199,11 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         ##### MicroExpansion #####
         if self.microexpansionCheckBox.isChecked():
             pattern = MicroExpansionPattern()
-            protocol = self.microscope_settings.protocol["microexpansion"]
-            protocol["depth"] = self.microscope_settings.protocol["lamella"]["stages"][0]["depth"]
-            protocol["milling_current"] = self.microscope_settings.protocol["lamella"]["stages"][0]["milling_current"]
-            protocol["lamella_width"] = self.microscope_settings.protocol["lamella"]["lamella_width"]
-            protocol["application_file"] = self.microscope_settings.protocol["application_file"]
+            protocol = self.settings.protocol["microexpansion"]
+            protocol["depth"] = self.settings.protocol["lamella"]["stages"][0]["depth"]
+            protocol["milling_current"] = self.settings.protocol["lamella"]["stages"][0]["milling_current"]
+            protocol["lamella_width"] = self.settings.protocol["lamella"]["lamella_width"]
+            protocol["application_file"] = self.settings.protocol["application_file"]
             mill_settings = self.get_milling_settings(protocol)
 
             pattern.define(
@@ -221,14 +221,14 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         ###### Lamella ######
 
         from fibsem import patterning
-        self.microscope_settings.protocol["lamella"]["stages"][0]["hfw"] = self.image_widget.image_settings.hfw
-        self.microscope_settings.protocol["lamella"]["stages"][1]["hfw"] = self.image_widget.image_settings.hfw
-        self.microscope_settings.protocol["lamella"]["stages"][2]["hfw"] = self.image_widget.image_settings.hfw
-        self.lamella_stages =  patterning._get_milling_stages("lamella", self.microscope_settings.protocol, point=lamella_position)
+        self.settings.protocol["lamella"]["stages"][0]["hfw"] = self.image_widget.image_settings.hfw
+        self.settings.protocol["lamella"]["stages"][1]["hfw"] = self.image_widget.image_settings.hfw
+        self.settings.protocol["lamella"]["stages"][2]["hfw"] = self.image_widget.image_settings.hfw
+        self.lamella_stages =  patterning._get_milling_stages("lamella", self.settings.protocol, point=lamella_position)
 
         ############### Fiducial Pattern ################
 
-        protocol = self.microscope_settings.protocol["fiducial"]
+        protocol = self.settings.protocol["fiducial"]
 
         default_position_fiducial = self.fiducial_position if self.fiducial_position is not None else Point(-self.image_widget.image_settings.resolution[0]/3 * pixelsize, 0.0) # has the user defined a fiducial position?
         self.fiducial_position = default_position_fiducial
@@ -257,15 +257,15 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             trench_centre = self.experiment.positions[index].trench_centre
         else:
             trench_centre = Point(0.0, 0.0)
-        self.microscope_settings.protocol["trench"]["hfw"] = self.image_widget.image_settings.hfw
-        self.trench_stages = patterning._get_milling_stages("trench", self.microscope_settings.protocol, point = trench_centre)
+        self.settings.protocol["trench"]["hfw"] = self.image_widget.image_settings.hfw
+        self.trench_stages = patterning._get_milling_stages("trench", self.settings.protocol, point = trench_centre)
 
         # NOTCH
         if self.experiment is not None and len(self.experiment.positions) > 0:
             notch_centre = self.experiment.positions[index].notch_centre
         else:
             notch_centre = Point(0.0, 0.0)
-        self.notch_stages = patterning._get_milling_stages("notch", self.microscope_settings.protocol, point = notch_centre)
+        self.notch_stages = patterning._get_milling_stages("notch", self.settings.protocol, point = notch_centre)
 
         self.update_displays()
 
@@ -389,12 +389,10 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def connect_to_microscope(self):
 
         self.microscope = self.system_widget.microscope
-        self.microscope_settings = self.system_widget.settings
+        self.settings = self.system_widget.settings
         self.log_path = os.path.join(
-            self.microscope_settings.image.save_path, "logfile.log"
+            self.settings.image.save_path, "logfile.log"
         )
-        self.image_settings = self.microscope_settings.image
-        self.milling_settings = self.microscope_settings.milling
         self.lines = 0
         
         direction_list = self.microscope.get_scan_directions()
@@ -419,12 +417,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
     def experiment_created_and_microscope_connected(self):
         self.image_widget = FibsemImageSettingsWidget(
                 microscope=self.microscope,
-                image_settings=self.microscope_settings.image,
+                image_settings=self.settings.image,
                 viewer=self.viewer,
             )
         self.movement_widget = FibsemMovementWidget(
             microscope=self.microscope,
-            settings=self.microscope_settings,
+            settings=self.settings,
             viewer=self.viewer,
             image_widget=self.image_widget,
         )
@@ -475,7 +473,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         if self.microscope is not None:
             self.microscope = None
-            self.microscope_settings = None
+            self.settings = None
             self.protocol_loaded = False
             self.tabWidget.setTabVisible(4, False)
             self.tabWidget.setTabVisible(3, False)
@@ -488,7 +486,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.lamella_saved = 0
 
     def set_stage_parameters(self):
-        self.microscope_settings.system.stage = self.system_widget.settings.system.stage   
+        self.settings.system.stage = self.system_widget.settings.system.stage   
         logging.info("Stage parameters set")  
 
     def load_protocol(self): 
@@ -505,7 +503,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
              self.load_protocol()
             
         
-        self.microscope_settings.protocol = utils.load_protocol(
+        self.settings.protocol = utils.load_protocol(
             protocol_path=protocol_path
         ) 
 
@@ -513,7 +511,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         _TESCAN = isinstance(self.microscope, (TescanMicroscope))
         _DEMO = isinstance(self.microscope, (DemoMicroscope))
 
-        error_returned = check_loaded_protocol(self.microscope_settings.protocol, _THERMO, _TESCAN, _DEMO)
+        error_returned = check_loaded_protocol(self.settings.protocol, _THERMO, _TESCAN, _DEMO)
 
         if error_returned is not None:
             _ = message_box_ui(
@@ -555,32 +553,32 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
     def set_ui_from_protocol(self):
 
-        self.protocol_txt.setText(self.microscope_settings.protocol["name"])
+        self.protocol_txt.setText(self.settings.protocol["name"])
         self.protocol_loaded = True
 
         ## Loading protocol tab 
-        self.beamshift_attempts.setValue((self.microscope_settings.protocol["lamella"]["beam_shift_attempts"]))
-        self.fiducial_length.setValue((self.microscope_settings.protocol["fiducial"]["height"]*constants.SI_TO_MICRO))
-        self.width_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["width"]*constants.SI_TO_MICRO))
-        self.depth_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["depth"]*constants.SI_TO_MICRO))
-        self.current_fiducial.setValue((self.microscope_settings.protocol["fiducial"]["milling_current"]*constants.SI_TO_NANO))
-        self.presetComboBox_fiducial.setCurrentText(self.microscope_settings.protocol["fiducial"].get("preset", None))
+        self.beamshift_attempts.setValue((self.settings.protocol["lamella"]["beam_shift_attempts"]))
+        self.fiducial_length.setValue((self.settings.protocol["fiducial"]["height"]*constants.SI_TO_MICRO))
+        self.width_fiducial.setValue((self.settings.protocol["fiducial"]["width"]*constants.SI_TO_MICRO))
+        self.depth_fiducial.setValue((self.settings.protocol["fiducial"]["depth"]*constants.SI_TO_MICRO))
+        self.current_fiducial.setValue((self.settings.protocol["fiducial"]["milling_current"]*constants.SI_TO_NANO))
+        self.presetComboBox_fiducial.setCurrentText(self.settings.protocol["fiducial"].get("preset", None))
         self.stage_lamella.setCurrentText("1. Rough Cut")
         self.select_stage()
-        self.micro_exp_width.setValue((self.microscope_settings.protocol["microexpansion"]["width"]*constants.SI_TO_MICRO))
-        self.micro_exp_height.setValue((self.microscope_settings.protocol["microexpansion"]["height"]*constants.SI_TO_MICRO))
-        self.micro_exp_distance.setValue((self.microscope_settings.protocol["microexpansion"]["distance"]*constants.SI_TO_MICRO))
+        self.micro_exp_width.setValue((self.settings.protocol["microexpansion"]["width"]*constants.SI_TO_MICRO))
+        self.micro_exp_height.setValue((self.settings.protocol["microexpansion"]["height"]*constants.SI_TO_MICRO))
+        self.micro_exp_distance.setValue((self.settings.protocol["microexpansion"]["distance"]*constants.SI_TO_MICRO))
 
         if isinstance(self.microscope, ThermoMicroscope):
-            if self.comboBoxapplication_file.findText(self.microscope_settings.protocol["application_file"]) == -1:
+            if self.comboBoxapplication_file.findText(self.settings.protocol["application_file"]) == -1:
                 napari.utils.notifications.show_warning("Application file not available, setting to Si instead")
-                self.microscope_settings.protocol["application_file"] = "Si"
-            self.comboBoxapplication_file.setCurrentText(self.microscope_settings.protocol["application_file"])
+                self.settings.protocol["application_file"] = "Si"
+            self.comboBoxapplication_file.setCurrentText(self.settings.protocol["application_file"])
 
         if self.comboBox_current_alignment.count() == 0:
             self.comboBox_current_alignment.addItems(["Imaging Current","Milling Current"])
 
-        protocol_alignment_current = self.microscope_settings.protocol["lamella"]["alignment_current"]
+        protocol_alignment_current = self.settings.protocol["lamella"]["alignment_current"]
 
         if protocol_alignment_current.lower() in ["imaging","imaging current","imagingcurrent"]:
             self.comboBox_current_alignment.setCurrentText("Imaging Current")
@@ -590,89 +588,89 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.comboBox_current_alignment.setCurrentText("Imaging Current")
         
         # trench
-        self.doubleSpinBox_trench_lamella_height.setValue((self.microscope_settings.protocol["trench"]["lamella_height"]*constants.SI_TO_MICRO))
-        self.doubleSpinBox_trench_lamella_width.setValue((self.microscope_settings.protocol["trench"]["lamella_width"]*constants.SI_TO_MICRO))
-        self.doubleSpinBox_trench_milling_depth.setValue((self.microscope_settings.protocol["trench"]["depth"]*constants.SI_TO_MICRO))
-        self.doubleSpinBox_trench_trench_height.setValue((self.microscope_settings.protocol["trench"]["trench_height"]*constants.SI_TO_MICRO))
-        self.doubleSpinBox_trench_offset.setValue((self.microscope_settings.protocol["trench"]["offset"]*constants.SI_TO_MICRO))
-        self.doubleSpinBox_trench_size_ratio.setValue((self.microscope_settings.protocol["trench"]["size_ratio"]))
-        self.doubleSpinBox_trench_milling_current.setValue((self.microscope_settings.protocol["trench"]["milling_current"]*constants.SI_TO_NANO))
+        self.doubleSpinBox_trench_lamella_height.setValue((self.settings.protocol["trench"]["lamella_height"]*constants.SI_TO_MICRO))
+        self.doubleSpinBox_trench_lamella_width.setValue((self.settings.protocol["trench"]["lamella_width"]*constants.SI_TO_MICRO))
+        self.doubleSpinBox_trench_milling_depth.setValue((self.settings.protocol["trench"]["depth"]*constants.SI_TO_MICRO))
+        self.doubleSpinBox_trench_trench_height.setValue((self.settings.protocol["trench"]["trench_height"]*constants.SI_TO_MICRO))
+        self.doubleSpinBox_trench_offset.setValue((self.settings.protocol["trench"]["offset"]*constants.SI_TO_MICRO))
+        self.doubleSpinBox_trench_size_ratio.setValue((self.settings.protocol["trench"]["size_ratio"]))
+        self.doubleSpinBox_trench_milling_current.setValue((self.settings.protocol["trench"]["milling_current"]*constants.SI_TO_NANO))
 
         # notch
-        self.doubleSpinBox_notch_hheight.setValue(self.microscope_settings.protocol["notch"]["hheight"] * constants.SI_TO_MICRO)
-        self.doubleSpinBox_notch_hwidth.setValue(self.microscope_settings.protocol["notch"]["hwidth"] * constants.SI_TO_MICRO)
-        self.doubleSpinBox_notch_vheight.setValue(self.microscope_settings.protocol["notch"]["vheight"] * constants.SI_TO_MICRO)
-        self.doubleSpinBox_notch_vwidth.setValue(self.microscope_settings.protocol["notch"]["vwidth"] * constants.SI_TO_MICRO)
-        self.doubleSpinBox_notch_depth.setValue(self.microscope_settings.protocol["notch"]["depth"] * constants.SI_TO_MICRO)
-        self.doubleSpinBox_notch_milling_current.setValue(self.microscope_settings.protocol["notch"]["milling_current"] * constants.SI_TO_NANO)
-        self.doubleSpinBox_notch_distance.setValue(self.microscope_settings.protocol["notch"]["distance"] * constants.SI_TO_MICRO)
-        self.checkBox_notch_flip.setChecked(bool(self.microscope_settings.protocol["notch"]["flip"]))
+        self.doubleSpinBox_notch_hheight.setValue(self.settings.protocol["notch"]["hheight"] * constants.SI_TO_MICRO)
+        self.doubleSpinBox_notch_hwidth.setValue(self.settings.protocol["notch"]["hwidth"] * constants.SI_TO_MICRO)
+        self.doubleSpinBox_notch_vheight.setValue(self.settings.protocol["notch"]["vheight"] * constants.SI_TO_MICRO)
+        self.doubleSpinBox_notch_vwidth.setValue(self.settings.protocol["notch"]["vwidth"] * constants.SI_TO_MICRO)
+        self.doubleSpinBox_notch_depth.setValue(self.settings.protocol["notch"]["depth"] * constants.SI_TO_MICRO)
+        self.doubleSpinBox_notch_milling_current.setValue(self.settings.protocol["notch"]["milling_current"] * constants.SI_TO_NANO)
+        self.doubleSpinBox_notch_distance.setValue(self.settings.protocol["notch"]["distance"] * constants.SI_TO_MICRO)
+        self.checkBox_notch_flip.setChecked(bool(self.settings.protocol["notch"]["flip"]))
 
         self.draw_patterns()
 
     def select_stage(self):
         index = self.stage_lamella.currentIndex()
-        self.lamella_width.setValue((self.microscope_settings.protocol["lamella"]["stages"][index]["lamella_width"]*constants.SI_TO_MICRO))
-        self.lamella_height.setValue((self.microscope_settings.protocol["lamella"]["stages"][index]["lamella_height"]*constants.SI_TO_MICRO))
-        self.trench_height.setValue((self.microscope_settings.protocol["lamella"]["stages"][index]["trench_height"]*constants.SI_TO_MICRO))
-        self.depth_trench.setValue((self.microscope_settings.protocol["lamella"]["stages"][index]["depth"]*constants.SI_TO_MICRO))
-        self.offset.setValue((self.microscope_settings.protocol["lamella"]["stages"][index]["offset"]*constants.SI_TO_MICRO))
-        self.current_lamella.setValue((self.microscope_settings.protocol["lamella"]["stages"][index]["milling_current"]*constants.SI_TO_NANO))
-        self.size_ratio.setValue((self.microscope_settings.protocol["lamella"]["stages"][index]["size_ratio"]))
-        self.presetComboBox.setCurrentText(self.microscope_settings.protocol["lamella"]["stages"][index].get("preset", None))
+        self.lamella_width.setValue((self.settings.protocol["lamella"]["stages"][index]["lamella_width"]*constants.SI_TO_MICRO))
+        self.lamella_height.setValue((self.settings.protocol["lamella"]["stages"][index]["lamella_height"]*constants.SI_TO_MICRO))
+        self.trench_height.setValue((self.settings.protocol["lamella"]["stages"][index]["trench_height"]*constants.SI_TO_MICRO))
+        self.depth_trench.setValue((self.settings.protocol["lamella"]["stages"][index]["depth"]*constants.SI_TO_MICRO))
+        self.offset.setValue((self.settings.protocol["lamella"]["stages"][index]["offset"]*constants.SI_TO_MICRO))
+        self.current_lamella.setValue((self.settings.protocol["lamella"]["stages"][index]["milling_current"]*constants.SI_TO_NANO))
+        self.size_ratio.setValue((self.settings.protocol["lamella"]["stages"][index]["size_ratio"]))
+        self.presetComboBox.setCurrentText(self.settings.protocol["lamella"]["stages"][index].get("preset", None))
 
     def get_protocol_from_ui(self):
-        self.microscope_settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
-        self.microscope_settings.protocol["lamella"]["beam_shift_attempts"] = float(self.beamshift_attempts.value())
-        self.microscope_settings.protocol["fiducial"]["height"] = float(self.fiducial_length.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["fiducial"]["width"] = float(self.width_fiducial.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["fiducial"]["depth"] = float(self.depth_fiducial.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["fiducial"]["milling_current"] = float(self.current_fiducial.value()*constants.NANO_TO_SI)
-        self.microscope_settings.protocol["fiducial"]["preset"] = self.presetComboBox_fiducial.currentText()
-        self.microscope_settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
+        self.settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
+        self.settings.protocol["lamella"]["beam_shift_attempts"] = float(self.beamshift_attempts.value())
+        self.settings.protocol["fiducial"]["height"] = float(self.fiducial_length.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["fiducial"]["width"] = float(self.width_fiducial.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["fiducial"]["depth"] = float(self.depth_fiducial.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["fiducial"]["milling_current"] = float(self.current_fiducial.value()*constants.NANO_TO_SI)
+        self.settings.protocol["fiducial"]["preset"] = self.presetComboBox_fiducial.currentText()
+        self.settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
 
         # TODO: have a toggle to link the lamella width and height for each stages
 
-        self.microscope_settings.protocol["lamella"]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["lamella"]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["lamella"]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["lamella"]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
         
         index = self.stage_lamella.currentIndex()
         
-        self.microscope_settings.protocol["lamella"]["stages"][index]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["lamella"]["stages"][index]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["lamella"]["stages"][index]["trench_height"] = float(self.trench_height.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["lamella"]["stages"][index]["depth"] = float(self.depth_trench.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["lamella"]["stages"][index]["offset"] = float(self.offset.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["lamella"]["stages"][index]["milling_current"] = float(self.current_lamella.value()*constants.NANO_TO_SI)
-        self.microscope_settings.protocol["lamella"]["stages"][index]["size_ratio"] = float(self.size_ratio.value())
-        self.microscope_settings.protocol["lamella"]["stages"][index]["preset"] = self.presetComboBox.currentText()
-        self.microscope_settings.protocol["microexpansion"]["width"] = float(self.micro_exp_width.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["microexpansion"]["height"] = float(self.micro_exp_height.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["microexpansion"]["distance"] = float(self.micro_exp_distance.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["lamella"]["stages"][index]["lamella_width"] = float(self.lamella_width.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["lamella"]["stages"][index]["lamella_height"] = float(self.lamella_height.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["lamella"]["stages"][index]["trench_height"] = float(self.trench_height.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["lamella"]["stages"][index]["depth"] = float(self.depth_trench.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["lamella"]["stages"][index]["offset"] = float(self.offset.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["lamella"]["stages"][index]["milling_current"] = float(self.current_lamella.value()*constants.NANO_TO_SI)
+        self.settings.protocol["lamella"]["stages"][index]["size_ratio"] = float(self.size_ratio.value())
+        self.settings.protocol["lamella"]["stages"][index]["preset"] = self.presetComboBox.currentText()
+        self.settings.protocol["microexpansion"]["width"] = float(self.micro_exp_width.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["microexpansion"]["height"] = float(self.micro_exp_height.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["microexpansion"]["distance"] = float(self.micro_exp_distance.value()*constants.MICRO_TO_SI)
 
-        self.microscope_settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText().lower()
+        self.settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText().lower()
         
 
         # trench
-        self.microscope_settings.protocol["trench"]["lamella_width"] = float(self.doubleSpinBox_trench_lamella_width.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["trench"]["lamella_height"] = float(self.doubleSpinBox_trench_lamella_height.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["trench"]["trench_height"] = float(self.doubleSpinBox_trench_trench_height.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["trench"]["depth"] = float(self.doubleSpinBox_trench_milling_depth.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["trench"]["offset"] = float(self.doubleSpinBox_trench_offset.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["trench"]["size_ratio"] = float(self.doubleSpinBox_trench_size_ratio.value())
-        self.microscope_settings.protocol["trench"]["milling_current"] = float(self.doubleSpinBox_trench_milling_current.value()*constants.NANO_TO_SI)
-        self.microscope_settings.protocol["trench"]["hfw"] = self.image_widget.image_settings.hfw
+        self.settings.protocol["trench"]["lamella_width"] = float(self.doubleSpinBox_trench_lamella_width.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["trench"]["lamella_height"] = float(self.doubleSpinBox_trench_lamella_height.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["trench"]["trench_height"] = float(self.doubleSpinBox_trench_trench_height.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["trench"]["depth"] = float(self.doubleSpinBox_trench_milling_depth.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["trench"]["offset"] = float(self.doubleSpinBox_trench_offset.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["trench"]["size_ratio"] = float(self.doubleSpinBox_trench_size_ratio.value())
+        self.settings.protocol["trench"]["milling_current"] = float(self.doubleSpinBox_trench_milling_current.value()*constants.NANO_TO_SI)
+        self.settings.protocol["trench"]["hfw"] = self.image_widget.image_settings.hfw
 
         # notch
-        self.microscope_settings.protocol["notch"]["hheight"] =  float(self.doubleSpinBox_notch_hheight.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["notch"]["hwidth"] =  float(self.doubleSpinBox_notch_hwidth.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["notch"]["vheight"] =  float(self.doubleSpinBox_notch_vheight.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["notch"]["vwidth"] =  float(self.doubleSpinBox_notch_vwidth.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["notch"]["depth"] =  float(self.doubleSpinBox_notch_depth.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["notch"]["distance"] = float(self.doubleSpinBox_notch_distance.value()*constants.MICRO_TO_SI)
-        self.microscope_settings.protocol["notch"]["milling_current"] = float(self.doubleSpinBox_notch_milling_current.value()*constants.NANO_TO_SI)
-        self.microscope_settings.protocol["notch"]["hfw"] = float(self.image_widget.image_settings.hfw)
-        self.microscope_settings.protocol["notch"]["flip"] = self.checkBox_notch_flip.isChecked()
+        self.settings.protocol["notch"]["hheight"] =  float(self.doubleSpinBox_notch_hheight.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["notch"]["hwidth"] =  float(self.doubleSpinBox_notch_hwidth.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["notch"]["vheight"] =  float(self.doubleSpinBox_notch_vheight.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["notch"]["vwidth"] =  float(self.doubleSpinBox_notch_vwidth.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["notch"]["depth"] =  float(self.doubleSpinBox_notch_depth.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["notch"]["distance"] = float(self.doubleSpinBox_notch_distance.value()*constants.MICRO_TO_SI)
+        self.settings.protocol["notch"]["milling_current"] = float(self.doubleSpinBox_notch_milling_current.value()*constants.NANO_TO_SI)
+        self.settings.protocol["notch"]["hfw"] = float(self.image_widget.image_settings.hfw)
+        self.settings.protocol["notch"]["flip"] = self.checkBox_notch_flip.isChecked()
 
         self.draw_patterns()
    
@@ -686,7 +684,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         fname = Path(fname).with_suffix(".yaml")
 
         with open(os.path.join(fname), "w") as f:
-            yaml.safe_dump(self.microscope_settings.protocol, f, indent=4)
+            yaml.safe_dump(self.settings.protocol, f, indent=4)
 
         logging.info("Protocol saved to file")
 
@@ -700,7 +698,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.show_lamella.setChecked(False)
        
         if self.show_lamella.isChecked():
-            if self.microscope_settings.protocol is None:
+            if self.settings.protocol is None:
                 logging.info("No protocol loaded")
                 return
             patterns: list[list[FibsemPatternSettings]] = [stage.pattern.patterns for stage in self.lamella_stages if stage.pattern is not None]
@@ -869,7 +867,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.save_button.setText("Running...")
         self.save_button.setStyleSheet("color: orange")
 
-        if self.microscope_settings.protocol is None:
+        if self.settings.protocol is None:
             _ = message_box_ui(
                 title="No protocol.",
                 text="Before saving a lamella please load a protocol.",
@@ -898,7 +896,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             return
         
         hfw = self.image_widget.image_settings.hfw
-        trench_height = self.microscope_settings.protocol["lamella"]["stages"][2]["trench_height"]
+        trench_height = self.settings.protocol["lamella"]["stages"][2]["trench_height"]
         if trench_height/hfw < cfg.HFW_THRESHOLD:
 
             response = message_box_ui(
@@ -925,7 +923,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             fiducial_position.x = float(self.fiducial_position.x)
             fiducial_position.y = float(self.fiducial_position.y)
 
-            if not validate_lamella_placement(self.microscope_settings.protocol, lamella_position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+            if not validate_lamella_placement(self.settings.protocol, lamella_position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                 _ = message_box_ui(
                     title="Lamella placement invalid",
                     text="The lamella placement is invalid, please move the lamella so it is fully in the image.",
@@ -956,9 +954,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             # TODO: make sure there is at least one lamella before this, makes the checks much simpler
 
             if self.comboBox_moving_pattern.currentText() == "Fiducial":
-                self.microscope_settings.image = self.image_widget.image_settings
-                fiducial_length = self.microscope_settings.protocol["fiducial"]["height"]
-                area, flag = calculate_fiducial_area(self.microscope_settings, position, fiducial_length, pixelsize)
+                self.settings.image = self.image_widget.image_settings
+                fiducial_length = self.settings.protocol["fiducial"]["height"]
+                area, flag = calculate_fiducial_area(self.settings, position, fiducial_length, pixelsize)
                 if flag:
                     show_error("The fiducial area is out of the field of view. Please move fiducial closer to centre of image.")
                     return
@@ -971,7 +969,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             if self.comboBox_moving_pattern.currentText()== "Lamella": 
                 logging.info("Moved lamella")
-                if not validate_lamella_placement(self.microscope_settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+                if not validate_lamella_placement(self.settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
                 if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_lamella:
@@ -981,7 +979,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             
             if self.comboBox_moving_pattern.currentText()== "Trench": 
                 logging.info("Moved lamella")
-                if not validate_lamella_placement(self.microscope_settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+                if not validate_lamella_placement(self.settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked(), "trench"):
                     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                     return
                 if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_trench:
@@ -992,7 +990,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
             if self.comboBox_moving_pattern.currentText()== "Notch": 
                 logging.info("Moved lamella")
-                # if not validate_lamella_placement(self.microscope_settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
+                # if not validate_lamella_placement(self.settings.protocol, position, self.image_widget.ib_image, self.microexpansionCheckBox.isChecked()):
                 #     show_error("The lamella is out of the field of view. Please move lamella closer to centre of image.")
                 #     return
                 if len(self.experiment.positions) != 0 and self.experiment.positions[int(self.lamella_index.currentIndex())].state.stage in moveable_notch:
@@ -1011,7 +1009,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         self.experiment, flag = save_lamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
-                microscope_settings=self.microscope_settings,
+                microscope_settings=self.settings,
                 index=index,
                 ref_image=deepcopy(self.image_widget.ib_image),
                 microexpansion=self.microexpansionCheckBox.isChecked(),
@@ -1078,7 +1076,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
             self.experiment = run_autolamella(
                 microscope=self.microscope,
                 experiment=self.experiment,
-                microscope_settings=self.microscope_settings,
+                microscope_settings=self.settings,
                 image_settings=self.image_widget.image_settings,
                 current_alignment=alignment_current,
                 lamella_stages=self.lamella_stages,
@@ -1131,7 +1129,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         response = message_box_ui(
             title="Start Waffle Trench milling?",
             text=f"Begin trench milling for {len(self.experiment.positions)} lamellas?",
-            buttons=[QMessageBox.Ok, QMessageBox.Cancel],
+            buttons=QMessageBox.Ok,
         )
 
         if response is False:
@@ -1141,9 +1139,9 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         microscope = self.microscope
         experiment: Experiment = self.experiment
-        microscope_settings: MicroscopeSettings = self.microscope_settings
+        settings: MicroscopeSettings = self.settings
 
-        self.experiment = wfl.run_trench_milling(microscope, microscope_settings, experiment, parent_ui=self)
+        self.experiment = wfl.run_trench_milling(microscope, settings, experiment, parent_ui=self)
 
         self.update_ui()
 
@@ -1163,7 +1161,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         microscope = self.microscope
         experiment: Experiment = self.experiment
-        microscope_settings: MicroscopeSettings = self.microscope_settings
+        microscope_settings: MicroscopeSettings = self.settings
 
         self.experiment = wfl.run_notch_milling(microscope, microscope_settings, experiment, parent_ui=self)
 
@@ -1193,23 +1191,22 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         microscope = self.microscope
         experiment: Experiment = self.experiment
-        microscope_settings: MicroscopeSettings = self.microscope_settings
+        settings: MicroscopeSettings = self.settings
 
-        self.experiment = wfl.run_lamella_milling(microscope, microscope_settings, experiment, parent_ui=self)
+        self.experiment = wfl.run_lamella_milling(microscope, settings, experiment, parent_ui=self)
 
         self.update_ui()
 
         # stats and exit
         stages = Counter([lamella.state.stage for lamella in self.experiment.positions])
-        n_trenches = stages[AutoLamellaWaffleStage.MillPolishingCut] 
-        n_lamella = len(self.experiment.positions)
-
+        n_lamella = stages[AutoLamellaWaffleStage.MillPolishingCut] 
+        n_positions = len(self.experiment.positions)
 
         # TODO: mark finished
 
         _ = message_box_ui(
-                title="Waffle Trenching Complete",
-                text=f"{n_trenches} trenches complete. {n_lamella} selected in total. Please continue to undercuts.",
+                title="Lamella Milling Complete",
+                text=f"{n_lamella} lamella complete. {n_positions} selected in total.",
                 buttons=QMessageBox.Ok,)
 
 
@@ -1243,7 +1240,7 @@ def add_lamella(microscope: FibsemMicroscope, experiment: Experiment, ref_image:
         reference_image=ref_image,
     )
 
-    from autolamella.structures import AutoLamellaWaffleStage
+    
     lamella.state.stage = AutoLamellaWaffleStage.Setup
     lamella.state.microscope_state = (
         microscope.get_current_microscope_state()
