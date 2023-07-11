@@ -5,6 +5,7 @@
 - New features
     - refactor UI updates
     - Threaded milling for live updates
+    - Install and run UI .bat scripts 
 
 ### 24th - May - 2023
 
