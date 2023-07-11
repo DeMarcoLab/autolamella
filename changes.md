@@ -29,5 +29,3 @@
 - Fixed bugs
     - Fixed incorrect experiment loading
     - Updated docs and read me
-
-
