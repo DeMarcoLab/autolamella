@@ -16,6 +16,15 @@ from PyQt5.QtWidgets import QInputDialog, QMessageBox
 from qtpy import QtWidgets
 import numpy as np
 import yaml
+
+from napari.qt.threading import thread_worker
+
+from PyQt5.QtCore import pyqtSignal
+import autolamella.config as cfg
+from autolamella.structures import (AutoLamellaStage, Experiment, Lamella,
+                                    LamellaState)
+from autolamella.ui import UI as UI
+from autolamella.utils import INSTRUCTION_MESSAGES, check_loaded_protocol
 from fibsem import acquire, constants, conversions, gis, milling, utils
 from fibsem.alignment import beam_shift_alignment
 from fibsem.microscope import (DemoMicroscope, FibsemMicroscope,
@@ -33,14 +42,7 @@ from fibsem.ui.utils import (_draw_patterns_in_napari, _get_directory_ui,
                               message_box_ui,
                              validate_pattern_placement)
 
-from PyQt5.QtCore import pyqtSignal
-import autolamella.config as cfg
-from autolamella.structures import (AutoLamellaStage, Experiment, Lamella,
-                                    LamellaState)
-from autolamella.ui import UI as UI
-from autolamella.utils import INSTRUCTION_MESSAGES, check_loaded_protocol
-from napari.qt.threading import thread_worker
-
+                             
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(
         f"STATUS | {lamella.lamella_number:02d}-{lamella._petname} | {lamella.state.stage.name} | {step}"
