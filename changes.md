@@ -1,5 +1,11 @@
 ## Changes 
 
+### 11th - July - 2023
+
+- New features
+    - refactor UI updates
+    - Threaded milling for live updates
+
 ### 24th - May - 2023
 
 - Added new feature
@@ -22,3 +28,5 @@
 - Fixed bugs
     - Fixed incorrect experiment loading
     - Updated docs and read me
+
+
