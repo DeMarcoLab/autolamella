@@ -3,12 +3,12 @@
 ### 11th - July - 2023
 
 - New features
-    - refactor UI updates
     - Threaded milling for live updates
     - Install and run UI .bat scripts 
 - Fixed bugs
     - experiment saved consistently
-    
+    - refactor UI updates
+
 
 ### 24th - May - 2023
 
