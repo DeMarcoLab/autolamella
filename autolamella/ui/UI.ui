@@ -62,7 +62,6 @@
           <property name="verticalScrollBarPolicy">
            <enum>Qt::ScrollBarAsNeeded</enum>
           </property>
-
           <property name="horizontalScrollBarPolicy">
            <enum>Qt::ScrollBarAlwaysOff</enum>
           </property>
@@ -117,7 +116,7 @@
       </widget>
      </widget>
     </item>
-=    <item row="0" column="0" colspan="2">
+    <item row="0" column="0" colspan="2">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
        <number>0</number>
@@ -215,13 +214,6 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="1">
-         <widget class="QSpinBox" name="lamella_index">
-          <property name="minimum">
-           <number>0</number>
-          </property>
-         </widget>
-        </item>
         <item row="3" column="1">
          <widget class="QCheckBox" name="microexpansionCheckBox">
           <property name="text">
@@ -256,7 +248,7 @@
         <item row="10" column="0" colspan="2">
          <widget class="QPushButton" name="save_button">
           <property name="text">
-           <string>Save current lamella</string>
+           <string>Mill fiducila for current lamella</string>
           </property>
          </widget>
         </item>
@@ -364,6 +356,10 @@
           </property>
          </widget>
         </item>
+        <item row="6" column="1">
+         <widget class="QComboBox" name="lamella_index"/>
+        </item>
+
        </layout>
       </widget>
       <widget class="QWidget" name="tab_2">

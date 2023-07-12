@@ -1,5 +1,16 @@
 ## Changes 
 
+### 11th - July - 2023
+
+- New features
+    - Threaded milling for live updates
+    - Install and run UI .bat scripts
+    - Upgraded OpenFIBSEM Widgets
+- Fixed bugs
+    - experiment saved consistently
+    - refactor UI updates
+
+
 ### 24th - May - 2023
 
 - Added new feature

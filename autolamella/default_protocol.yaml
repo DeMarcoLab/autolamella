@@ -12,7 +12,7 @@ fiducial:
   preset: "30 keV; 20 nA" # TESCAN only
 
 lamella:
-  beam_shift_attempts: 3
+  beam_shift_attempts: 3.0
   alignment_current: "Imaging"
   lamella_width: 10.e-6
   lamella_height: 800.e-9
