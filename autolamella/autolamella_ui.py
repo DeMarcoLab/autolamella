@@ -48,12 +48,12 @@ def log_status_message(lamella: Lamella, step: str):
         f"STATUS | {lamella.lamella_number:02d}-{lamella._petname} | {lamella.state.stage.name} | {step}"
     )
 
-class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
+class UiInterface(UI.Ui_MainWindow, QtWidgets.QMainWindow):
     live_imaging_signal = pyqtSignal(dict)
-    def __init__(self, viewer, *args, obj=None, **kwargs) -> None:
-        super(UiInterface, self).__init__(*args, **kwargs)
-        self.viewer = viewer
+    def __init__(self, viewer: napari.Viewer) -> None:
+        super(UiInterface, self).__init__()
         self.setupUi(self)
+        self.viewer = viewer
         
         # setting up ui
         self.setup_connections()
