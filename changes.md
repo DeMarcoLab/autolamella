@@ -6,6 +6,9 @@
     - refactor UI updates
     - Threaded milling for live updates
     - Install and run UI .bat scripts 
+- Fixed bugs
+    - experiment saved consistently
+    
 
 ### 24th - May - 2023
 
