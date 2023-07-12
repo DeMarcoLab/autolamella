@@ -4,7 +4,8 @@
 
 - New features
     - Threaded milling for live updates
-    - Install and run UI .bat scripts 
+    - Install and run UI .bat scripts
+    - Upgraded OpenFIBSEM Widgets
 - Fixed bugs
     - experiment saved consistently
     - refactor UI updates
