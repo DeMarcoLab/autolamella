@@ -2,7 +2,10 @@ import os
 
 BASE_PATH = os.path.dirname(__file__)
 LOG_PATH = os.path.join(BASE_PATH, 'log')
+CONFIG_PATH = os.path.join(BASE_PATH)
+PROTOCOL_PATH = os.path.join(BASE_PATH, "protocol", "protocol.yaml")
 
+EXPERIMENT_NAME = "AutoLamella"
 HFW_THRESHOLD = 0.005 # 0.5% of the image height
 
 DEFAULT_PROTOCOL = {

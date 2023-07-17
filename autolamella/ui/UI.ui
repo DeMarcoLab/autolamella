@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>920</width>
-    <height>989</height>
+    <width>521</width>
+    <height>857</height>
    </rect>
   </property>
   <property name="baseSize">
@@ -33,89 +33,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QFormLayout" name="formLayout_3">
-    <item row="1" column="0" colspan="2">
-     <widget class="QTabWidget" name="tabWidget_2">
-      <property name="currentIndex">
-       <number>1</number>
-      </property>
-      <widget class="QWidget" name="tab_3">
-       <attribute name="title">
-        <string>Log</string>
-       </attribute>
-       <layout class="QFormLayout" name="formLayout">
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_3">
-          <property name="font">
-           <font>
-            <pointsize>12</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Console Log</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0" colspan="2">
-         <widget class="QPlainTextEdit" name="log_txt">
-          <property name="verticalScrollBarPolicy">
-           <enum>Qt::ScrollBarAsNeeded</enum>
-          </property>
-          <property name="horizontalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOff</enum>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tab_5">
-       <attribute name="title">
-        <string>Instructions</string>
-       </attribute>
-       <widget class="QWidget" name="verticalLayoutWidget">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>0</y>
-          <width>421</width>
-          <height>261</height>
-         </rect>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <item>
-          <widget class="QPlainTextEdit" name="instructions_textEdit">
-           <property name="font">
-            <font>
-             <pointsize>10</pointsize>
-            </font>
-           </property>
-           <property name="lineWidth">
-            <number>2</number>
-           </property>
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-           <property name="plainText">
-            <string>1. Create experiment (file menu) 
-2. Take images 
-3. Modify protocol if needed
-4. Add lamella
-5. Move to region of interest on the sample
-6. Adjust lamella and fiducial positions
-7. Save lamella
-8. Check fiducial milling
-9. Repeat 3-8 as needed
-10. Run autolamella
-</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </widget>
-     </widget>
-    </item>
     <item row="0" column="0" colspan="2">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
@@ -126,6 +43,55 @@
         <string>Experiment</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
+        <item row="1" column="1">
+         <widget class="QLabel" name="protocol_txt">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0">
+         <widget class="QPushButton" name="pushButton_save_position">
+          <property name="text">
+           <string>Save Position</string>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="0" colspan="2">
+         <widget class="QLabel" name="label_instructions">
+          <property name="text">
+           <string>Instructions</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="1">
+         <widget class="QPushButton" name="go_to_lamella">
+          <property name="text">
+           <string>Go to position</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="0">
+         <widget class="QPushButton" name="pushButton_yes">
+          <property name="text">
+           <string>Yes</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_setup_header">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Setup</string>
+          </property>
+         </widget>
+        </item>
         <item row="6" column="1">
          <widget class="QPushButton" name="remove_button">
           <property name="styleSheet">
@@ -136,54 +102,6 @@
           </property>
          </widget>
         </item>
-        <item row="8" column="1">
-         <widget class="QCheckBox" name="microexpansionCheckBox">
-          <property name="text">
-           <string>Microexpansion Joints</string>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="1">
-         <widget class="QPushButton" name="go_to_lamella">
-          <property name="text">
-           <string>Go to position</string>
-          </property>
-         </widget>
-        </item>
-        <item row="21" column="0" colspan="2">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="14" column="0" colspan="2">
-         <widget class="QPushButton" name="save_button">
-          <property name="text">
-           <string>Mill Fiducial for current lamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QPushButton" name="add_button">
-          <property name="text">
-           <string>Add Lamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="0">
-         <widget class="QCheckBox" name="checkBox_show_trench">
-          <property name="text">
-           <string>Show Trench Pattern</string>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="0">
          <widget class="QLabel" name="label_protocol_name">
           <property name="text">
@@ -191,51 +109,7 @@
           </property>
          </widget>
         </item>
-        <item row="7" column="0">
-         <widget class="QLabel" name="label_current_lamella_header">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Current Lamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="0">
-         <widget class="QLabel" name="label_movement_instructions2">
-          <property name="text">
-           <string>Moving pattern :</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_title">
-          <property name="font">
-           <font>
-            <pointsize>12</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Autolamella</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="18" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_trench">
-          <property name="text">
-           <string>Run Waffle Trench Milling</string>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="0" colspan="2">
+        <item row="11" column="0" colspan="2">
          <widget class="QPlainTextEdit" name="lamella_count_txt">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
@@ -266,66 +140,8 @@
           </property>
          </widget>
         </item>
-        <item row="12" column="0" colspan="2">
-         <widget class="QLabel" name="label_movement_instructions">
-          <property name="text">
-           <string>Right click where you want the pattern centre to be.</string>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="1">
-         <widget class="QComboBox" name="comboBox_moving_pattern">
-          <property name="editable">
-           <bool>false</bool>
-          </property>
-          <item>
-           <property name="text">
-            <string>Fiducial</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Lamella</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLabel" name="protocol_txt">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="0">
-         <widget class="QCheckBox" name="show_lamella">
-          <property name="text">
-           <string>Show Lamella Pattern</string>
-          </property>
-          <property name="checked">
-           <bool>false</bool>
-          </property>
-          <property name="tristate">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="0">
-         <widget class="QPushButton" name="pushButton_save_position">
-          <property name="text">
-           <string>Save Position</string>
-          </property>
-         </widget>
-        </item>
-        <item row="19" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_notch">
-          <property name="text">
-           <string>Run Waffle Notch Milling</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0">
-         <widget class="QLabel" name="label_setup_header">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_title">
           <property name="font">
            <font>
             <pointsize>12</pointsize>
@@ -334,21 +150,64 @@
            </font>
           </property>
           <property name="text">
-           <string>Setup</string>
+           <string>Autolamella</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
           </property>
          </widget>
         </item>
         <item row="7" column="1">
          <widget class="QComboBox" name="lamella_index"/>
         </item>
-        <item row="9" column="1">
-         <widget class="QCheckBox" name="checkBox_show_notch">
+        <item row="13" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_waffle_trench">
           <property name="text">
-           <string>Show Notch Pattern</string>
+           <string>Run Waffle Trench Milling</string>
           </property>
          </widget>
         </item>
-        <item row="20" column="0" colspan="2">
+        <item row="14" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_waffle_notch">
+          <property name="text">
+           <string>Run Waffle Notch Milling</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="1">
+         <widget class="QPushButton" name="pushButton_no">
+          <property name="text">
+           <string>No</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="label_current_lamella_header">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Current Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="16" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="15" column="0" colspan="2">
          <widget class="QPushButton" name="run_button">
           <property name="font">
            <font>
@@ -361,6 +220,13 @@
           </property>
           <property name="text">
            <string>Run AutoLamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QPushButton" name="add_button">
+          <property name="text">
+           <string>Add Lamella</string>
           </property>
          </widget>
         </item>
@@ -420,7 +286,7 @@
            <enum>QTabWidget::Rounded</enum>
           </property>
           <property name="currentIndex">
-           <number>5</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tab_8">
            <attribute name="title">
@@ -1046,8 +912,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>920</width>
-     <height>21</height>
+     <width>521</width>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAutoLamella">

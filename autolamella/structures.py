@@ -26,8 +26,8 @@ class AutoLamellaWaffleStage(Enum):
     Setup = auto()
     ReadyTrench = auto()
     MillTrench = auto()
-    # MillUndercut = auto()
-    ReadyLamella = auto()
+    MillUndercut = auto()
+    # ReadyLamella = auto()
     MillFeatures = auto()
     MillRoughCut = auto()
     MillRegularCut = auto()
@@ -65,25 +65,23 @@ class LamellaState:
 @dataclass
 class Lamella:
     state: LamellaState = LamellaState()
-    reference_image: FibsemImage = None
     path: Path = Path()
     fiducial_centre: Point = Point()
     fiducial_area: FibsemRectangle = FibsemRectangle()
     lamella_centre: Point = Point()
-    lamella_number: int = 0
+    _number: int = 0
     trench_centre: Point = Point()
     notch_centre: Point = Point()
     mill_microexpansion: bool = False
     history: list[LamellaState] = None
     _petname: str = None
-    _name: str = None
+
     
     def __post_init__(self):
         if self._petname is None:
-            self._petname = f"{petname.generate(2)}"
-        self._name = f"{self.lamella_number:02d}-{self._petname}"
-        if self._name not in self.path:
-            self.path = os.path.join(self.path, self._name)
+            self._petname = f"{self._number:02d}-{petname.generate(2)}"
+        if self._petname not in self.path:
+            self.path = os.path.join(self.path, self._petname)
         os.makedirs(self.path, exist_ok=True)
 
     def __to_dict__(self):
@@ -92,16 +90,19 @@ class Lamella:
         return {
             "petname": self._petname,
             "state": self.state.__to_dict__() if self.state is not None else "Not defined",
-            "reference_image": str(os.path.join(self.path, f"{self.reference_image.metadata.image_settings.label}.tif")) if self.reference_image is not None else "Not defined",
             "path": str(self.path) if self.path is not None else "Not defined",
             "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else "Not defined",
             "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
             "lamella_centre": self.lamella_centre.__to_dict__() if self.lamella_centre is not None else "Not defined",
             "trench_centre": self.trench_centre.__to_dict__() if self.trench_centre is not None else "Not defined",
             "notch_centre": self.notch_centre.__to_dict__() if self.notch_centre is not None else "Not defined",
-            "lamella_number": self.lamella_number if self.lamella_number is not None else "Not defined",
+            "_number": self._number if self._number is not None else "Not defined",
             "history": [state.__to_dict__() for state in self.history] if self.history is not False else "Not defined",
         }
+
+    @property
+    def info(self):
+        return f"Lamella {self._petname} [{self.state.stage.name}]"
 
     @classmethod
     def __from_dict__(cls, data):
@@ -114,14 +115,13 @@ class Lamella:
         return cls(
             _petname=data["petname"],
             state=state,
-            reference_image=None,
             path=data["path"],
             fiducial_centre=fiducial_centre,
             fiducial_area=fiducial_area,
             lamella_centre=lamella_centre,
             trench_centre = trench_centre,
             notch_centre = notch_centre,
-            lamella_number=data["lamella_number"],
+            _number=data["_number"],
             history=[LamellaState().__from_dict__(state) for state in data["history"]],
         )
     
@@ -170,11 +170,6 @@ class Experiment:
         with open(os.path.join(self.path, f"experiment.yaml"), "w") as f:
             yaml.safe_dump(self.__to_dict__(), f, indent=4)
 
-        # for lamella in self.positions:
-        #     path_image = os.path.join(self.path, f"{str(lamella.lamella_number).rjust(2, '0')}-{lamella._petname}", lamella.reference_image.metadata.image_settings.label)
-        #     if lamella.reference_image is not None:
-        #         lamella.reference_image.save(path_image)
-
     def __repr__(self) -> str:
 
         return f"""Experiment: 
@@ -193,9 +188,8 @@ class Experiment:
                 "experiment_name": self.name,
                 "experiment_path": self.path,
                 "experiment_created_at": self._created_at,
-                "number": lamella.lamella_number,
+                "number": lamella._number,
                 "petname": lamella._petname,  # what?
-                "name": lamella._name,
                 "path": lamella.path,
                 "lamella.x": lamella.state.microscope_state.absolute_position.x,
                 "lamella.y": lamella.state.microscope_state.absolute_position.y,
