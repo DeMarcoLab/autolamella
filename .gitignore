@@ -19,6 +19,5 @@ autolamella/*protocol*.y*ml
 autolamella/_version.py
 *.code-workspace
 .vscode/*
-protocol*
 autolamella/waffle/*
 waffle/*
