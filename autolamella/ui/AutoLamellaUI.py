@@ -77,8 +77,8 @@ from napari.qt.threading import thread_worker
 
 
 _DEV_MODE = True
-DEV_EXP_PATH = r"C:\Users\lnae0002\Desktop\autolamella\autolamella\log\AutoLamella-2023-07-18-16-49\experiment.yaml"
-DEV_PROTOCOL_PATH = r"C:\Users\lnae0002\Desktop\autolamella\autolamella\protocol\protocol.yaml"
+DEV_EXP_PATH = r"C:/Users/Admin/Github/autolamella/autolamella/log\PAT_TEST_01/experiment.yaml"
+DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | {step}")
@@ -378,7 +378,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # TODO: more        
         from fibsem import patterning
         if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench]:
-            stages = patterning._get_milling_stages("trench", self.settings.protocol, lamella.trench_centre)
+            stages = patterning._get_milling_stages("trench", self.settings.protocol, lamella.trench_position)
             self.milling_widget.set_milling_stages(stages)
 
     def _update_milling_position(self):
@@ -395,7 +395,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info(f"Updating Lamella Pattern for {lamella.info}")
 
         # update the trench point
-        lamella.trench_centre = self.milling_widget.get_point_from_ui()
+        lamella.trench_position = self.milling_widget.get_point_from_ui()
 
         self.experiment.save() 
 
@@ -814,158 +814,158 @@ def mill_fiducial(
         return lamella
 
 
-def run_autolamella(
-    microscope: FibsemMicroscope,
-    experiment: Experiment,
-    microscope_settings: MicroscopeSettings,
-    image_settings: ImageSettings,
-    current_alignment: bool,
-    lamella_stages=list[FibsemMillingStage],
-):
-    """
-    Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
+# def run_autolamella(
+#     microscope: FibsemMicroscope,
+#     experiment: Experiment,
+#     microscope_settings: MicroscopeSettings,
+#     image_settings: ImageSettings,
+#     current_alignment: bool,
+#     lamella_stages=list[FibsemMillingStage],
+# ):
+#     """
+#     Runs the AutoLamella protocol. This function iterates over the specified stages and Lamella positions in the `microscope_settings` protocol to mill a lamella for each position.
 
-    Args:
-        microscope (FibsemMicroscope): The FibsemMicroscope object representing the microscope to be used for milling.
-        experiment (Experiment): The Experiment object representing the experiment where the lamella milling is taking place.
-        microscope_settings (MicroscopeSettings): The MicroscopeSettings object containing the parameters for the microscope operation.
-        image_settings (ImageSettings): The ImageSettings object containing the parameters for image acquisition.
+#     Args:
+#         microscope (FibsemMicroscope): The FibsemMicroscope object representing the microscope to be used for milling.
+#         experiment (Experiment): The Experiment object representing the experiment where the lamella milling is taking place.
+#         microscope_settings (MicroscopeSettings): The MicroscopeSettings object containing the parameters for the microscope operation.
+#         image_settings (ImageSettings): The ImageSettings object containing the parameters for image acquisition.
 
-    Returns:
-        Experiment: The updated Experiment object after the successful milling of all the lamella positions specified in the `microscope_settings` protocol.
-    """
+#     Returns:
+#         Experiment: The updated Experiment object after the successful milling of all the lamella positions specified in the `microscope_settings` protocol.
+#     """
 
-    _microexpansion_used = any(
-        [
-            stage
-            for stage in lamella_stages
-            if stage.name == AutoLamellaWaffleStage.MicroExpansion.name
-        ]
-    )
-    success = True
-    lamella: Lamella
-    for i, stage in enumerate(lamella_stages):
-        curr_stage = AutoLamellaWaffleStage[stage.name]
+#     _microexpansion_used = any(
+#         [
+#             stage
+#             for stage in lamella_stages
+#             if stage.name == AutoLamellaWaffleStage.MicroExpansion.name
+#         ]
+#     )
+#     success = True
+#     lamella: Lamella
+#     for i, stage in enumerate(lamella_stages):
+#         curr_stage = AutoLamellaWaffleStage[stage.name]
 
-        lamella: Lamella
-        for j, lamella in enumerate(experiment.positions):
-            _COMPLETE_STAGE = False
-            if curr_stage is AutoLamellaWaffleStage.RoughCut:
-                if (
-                    not _microexpansion_used
-                ):  # , check if last stage was fiducial milled
-                    if lamella.state.stage is AutoLamellaWaffleStage.MillFeatures:
-                        _COMPLETE_STAGE = True
-                elif lamella.state.stage is AutoLamellaWaffleStage.MicroExpansion:
-                    _COMPLETE_STAGE = True
-            elif lamella.state.stage.value == curr_stage.value - 1:
-                _COMPLETE_STAGE = True
+#         lamella: Lamella
+#         for j, lamella in enumerate(experiment.positions):
+#             _COMPLETE_STAGE = False
+#             if curr_stage is AutoLamellaWaffleStage.RoughCut:
+#                 if (
+#                     not _microexpansion_used
+#                 ):  # , check if last stage was fiducial milled
+#                     if lamella.state.stage is AutoLamellaWaffleStage.MillFeatures:
+#                         _COMPLETE_STAGE = True
+#                 elif lamella.state.stage is AutoLamellaWaffleStage.MicroExpansion:
+#                     _COMPLETE_STAGE = True
+#             elif lamella.state.stage.value == curr_stage.value - 1:
+#                 _COMPLETE_STAGE = True
 
-            if not _COMPLETE_STAGE:
-                continue
+#             if not _COMPLETE_STAGE:
+#                 continue
 
-            lamella.state.start_timestamp = datetime.timestamp(datetime.now())
-            log_status_message(lamella, "MOVING_TO_POSITION")
-            microscope.move_stage_absolute(
-                lamella.state.microscope_state.absolute_position
-            )
-            log_status_message(lamella, "MOVE_TO_POSITION_SUCCESSFUL")
+#             lamella.state.start_timestamp = datetime.timestamp(datetime.now())
+#             log_status_message(lamella, "MOVING_TO_POSITION")
+#             microscope.move_stage_absolute(
+#                 lamella.state.microscope_state.absolute_position
+#             )
+#             log_status_message(lamella, "MOVE_TO_POSITION_SUCCESSFUL")
 
-            image_settings.save_path = lamella.path
-            image_settings.save = True
-            image_settings.label = f"start_mill_stage_{i}"
-            image_settings.reduced_area = None
-            acquire.take_reference_images(microscope, image_settings)
-            image_settings.save = False
+#             image_settings.save_path = lamella.path
+#             image_settings.save = True
+#             image_settings.label = f"start_mill_stage_{i}"
+#             image_settings.reduced_area = None
+#             acquire.take_reference_images(microscope, image_settings)
+#             image_settings.save = False
 
-            # alignment
-            for _ in range(
-                int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
-            ):
-                log_status_message(lamella, "BEAM_ALIGNMENT")
-                if current_alignment:
-                    if isinstance(microscope, ThermoMicroscope) or isinstance(
-                        microscope, DemoMicroscope
-                    ):
-                        microscope.set(
-                            "current", stage.milling.milling_current, BeamType.ION
-                        )
-                    elif isinstance(microscope, TescanMicroscope):
-                        microscope.set("preset", stage.milling.preset, BeamType.ION)
-                image_settings.beam_type = BeamType.ION
-                image_settings.reduced_area = lamella.fiducial_area
-                beam_shift_alignment(
-                    microscope=microscope,
-                    image_settings=image_settings,
-                    ref_image=lamella.reference_image,
-                    reduced_area=lamella.fiducial_area,
-                )
+#             # alignment
+#             for _ in range(
+#                 int(microscope_settings.protocol["lamella"]["beam_shift_attempts"])
+#             ):
+#                 log_status_message(lamella, "BEAM_ALIGNMENT")
+#                 if current_alignment:
+#                     if isinstance(microscope, ThermoMicroscope) or isinstance(
+#                         microscope, DemoMicroscope
+#                     ):
+#                         microscope.set(
+#                             "current", stage.milling.milling_current, BeamType.ION
+#                         )
+#                     elif isinstance(microscope, TescanMicroscope):
+#                         microscope.set("preset", stage.milling.preset, BeamType.ION)
+#                 image_settings.beam_type = BeamType.ION
+#                 image_settings.reduced_area = lamella.fiducial_area
+#                 beam_shift_alignment(
+#                     microscope=microscope,
+#                     image_settings=image_settings,
+#                     ref_image=lamella.reference_image,
+#                     reduced_area=lamella.fiducial_area,
+#                 )
 
-            try:
-                stage.milling.hfw = lamella.state.microscope_state.ib_settings.hfw
-                log_status_message(lamella, f"MILLING_TRENCH")
+#             try:
+#                 stage.milling.hfw = lamella.state.microscope_state.ib_settings.hfw
+#                 log_status_message(lamella, f"MILLING_TRENCH")
 
-                milling.setup_milling(
-                    microscope,
-                    mill_settings=stage.milling,
-                )
+#                 milling.setup_milling(
+#                     microscope,
+#                     mill_settings=stage.milling,
+#                 )
 
-                # redefine pattern for each lamella
-                stage.pattern.define(stage.pattern.protocol, lamella.lamella_centre)
+#                 # redefine pattern for each lamella
+#                 stage.pattern.define(stage.pattern.protocol, lamella.lamella_centre)
 
-                milling.draw_patterns(
-                    microscope=microscope,
-                    patterns=stage.pattern.patterns,
-                )
+#                 milling.draw_patterns(
+#                     microscope=microscope,
+#                     patterns=stage.pattern.patterns,
+#                 )
 
-                milling.run_milling(
-                    microscope, milling_current=stage.milling.milling_current
-                )
-                milling.finish_milling(microscope)
-                lamella.state.end_timestamp = datetime.timestamp(datetime.now())
-                image_settings.save_path = lamella.path
-                image_settings.reduced_area = None
-                log_status_message(lamella, f"MILLING_COMPLETED_SUCCESSFULLY")
+#                 milling.run_milling(
+#                     microscope, milling_current=stage.milling.milling_current
+#                 )
+#                 milling.finish_milling(microscope)
+#                 lamella.state.end_timestamp = datetime.timestamp(datetime.now())
+#                 image_settings.save_path = lamella.path
+#                 image_settings.reduced_area = None
+#                 log_status_message(lamella, f"MILLING_COMPLETED_SUCCESSFULLY")
 
-                # Update Lamella Stage and Experiment
-                lamella = lamella.update(stage=curr_stage)
+#                 # Update Lamella Stage and Experiment
+#                 lamella = lamella.update(stage=curr_stage)
 
-                # save reference images
-                image_settings.save = True
-                image_settings.label = f"ref_mill_stage_{i}"
-                image_settings.reduced_area = None
-                acquire.take_reference_images(microscope, image_settings)
+#                 # save reference images
+#                 image_settings.save = True
+#                 image_settings.label = f"ref_mill_stage_{i}"
+#                 image_settings.reduced_area = None
+#                 acquire.take_reference_images(microscope, image_settings)
 
-                image_settings.save = False
+#                 image_settings.save = False
 
-                experiment.save()
+#                 experiment.save()
 
-                l_stage = stage.name
+#                 l_stage = stage.name
 
-                logging.info(f"Lamella {j+1}, stage: '{l_stage}' milled successfully.")
-                log_status_message(lamella, f"STAGE_COMPLETE")
+#                 logging.info(f"Lamella {j+1}, stage: '{l_stage}' milled successfully.")
+#                 log_status_message(lamella, f"STAGE_COMPLETE")
 
-                success = True
-            except Exception as e:
-                logging.error(
-                    f"Unable to draw/mill the lamella: {traceback.format_exc()}"
-                )
-                lamella.state.stage = AutoLamellaWaffleStage.MillFeatures
-                success = False
-            finally:
-                milling.finish_milling(microscope)
+#                 success = True
+#             except Exception as e:
+#                 logging.error(
+#                     f"Unable to draw/mill the lamella: {traceback.format_exc()}"
+#                 )
+#                 lamella.state.stage = AutoLamellaWaffleStage.MillFeatures
+#                 success = False
+#             finally:
+#                 milling.finish_milling(microscope)
 
-    if success:
-        logging.info("All Lamella milled successfully.")
-    else:
-        logging.info("Lamellas were not milled successfully.")
-    for lamella in experiment.positions:
-        if lamella.state.stage == AutoLamellaWaffleStage.PolishingCut:
-            lamella = lamella.update(stage=AutoLamellaWaffleStage.Finished)
+#     if success:
+#         logging.info("All Lamella milled successfully.")
+#     else:
+#         logging.info("Lamellas were not milled successfully.")
+#     for lamella in experiment.positions:
+#         if lamella.state.stage == AutoLamellaWaffleStage.PolishingCut:
+#             lamella = lamella.update(stage=AutoLamellaWaffleStage.Finished)
 
-    experiment.save()
+#     experiment.save()
 
-    return experiment
+#     return experiment
 
 
 def splutter_platinum(microscope: FibsemMicroscope):

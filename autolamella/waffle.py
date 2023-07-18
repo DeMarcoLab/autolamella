@@ -60,7 +60,7 @@ def mill_trench(
 
     # define trench
     settings.protocol["trench"]["cleaning_cross_section"] = False
-    stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.trench_centre)
+    stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.trench_position)
     _validate_mill_ui(microscope, settings, stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
@@ -104,11 +104,16 @@ def mill_undercut(
     _update_status_ui(parent_ui, f"{lamella.info} Tilting to Undercut Position...")
     microscope.move_stage_relative(FibsemStagePosition(t=np.deg2rad(10)))
 
+
     # detect
     settings.image.beam_type = BeamType.ION
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
     settings.image.label = f"ref_trench_align_ml_01"
     settings.image.save = True
+    # TODO image and update viwewer
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
+
     features = [LamellaCentre()] # TODO: add LamellaBottom / Top Edge
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
@@ -129,6 +134,8 @@ def mill_undercut(
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
     settings.image.label = f"ref_trench_align_ml_02"
     settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
 
     features = [LamellaCentre()] # TODO: add LamellaBottom / Top Edge
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
@@ -170,7 +177,7 @@ def mill_notch(
 
     # define notch
     stages = patterning._get_milling_stages(
-        "notch", settings.protocol, point=lamella.notch_centre
+        "notch", settings.protocol, point=lamella.notch_position
     )
     _validate_mill_ui(microscope, settings, stages, parent_ui,
         msg=f"Press Run Milling to mill the Notch for {lamella._petname}. Press Continue when done.",
@@ -202,7 +209,7 @@ def mill_lamella(
 
     # define notch
     stages = patterning._get_milling_stages(
-        "lamella", settings.protocol, point=lamella.lamella_centre
+        "lamella", lamella.protocol, point=lamella.lamella_position
     )
 
     # filter stage based on the current stage
@@ -212,7 +219,7 @@ def mill_lamella(
         AutoLamellaWaffleStage.MillPolishingCut: 2,
     }
     idx = stage_map[lamella.state.stage]
-    stages = [stages[idx]]
+    stages = [stages[idx]]# TODO: make this so user can define a number of stages to run
 
     _validate_mill_ui(microscope, settings, stages, parent_ui,
         msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
@@ -232,8 +239,64 @@ def mill_lamella(
     return lamella
 
 
+def setup_lamella(
+    microscope: FibsemMicroscope,
+    settings: MicroscopeSettings,
+    lamella: Lamella,
+    parent_ui=None,
+) -> Lamella:
+
+    validate = settings.protocol["options"]["supervise"].get("setup_lamella", True)
+    settings.image.save_path = lamella.path
+
+
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.label = f"ref_setup_lamella"
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
+
+    # select positions and protocol for notch, lamella
+    notch_stages = patterning._get_milling_stages("notch", settings.protocol)
+    lamella_stages = patterning._get_milling_stages("lamella", settings.protocol)
+    stages = lamella_stages + notch_stages
+
+    # TODO: this is where we could add a fiducial
+
+    _validate_mill_ui(microscope, settings, stages, parent_ui, 
+        msg=f"Confirm the positions for the {lamella._petname} milling. Don't run milling yet, this is just setup.", 
+        validate=validate)
+    
+    # lamella
+    n_lamella = len(lamella_stages)
+    lamella.lamella_position = stages[0].pattern.point
+    lamella.protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
+    
+    # notch
+    n_notch = len(notch_stages)
+    lamella.notch_position = stages[-n_notch].pattern.point
+    lamella.protocol["notch"] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella:]))
+    
+    logging.info(f"Notch position: {lamella.notch_position}")
+    logging.info(f"Lamella position: {lamella.lamella_position}")
+
+
+    log_status_message(lamella, "LAMELLA_SETUP_REF")
+    _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
+
+    # # take reference images
+    reference_images = acquire.take_set_of_reference_images(
+        microscope,
+        settings.image,
+        hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
+        label="ref_setup_lamella",
+    )
+
+    return lamella
+
+
 def end_of_stage_update(
-    microscope: FibsemMicroscope, experiment: Experiment, lamella: Lamella
+    microscope: FibsemMicroscope, experiment: Experiment, lamella: Lamella, parent_ui: AutoLamellaUI
 ) -> Experiment:
     """Save the current microscope state configuration to disk, and log that the stage has been completed."""
 
@@ -248,6 +311,7 @@ def end_of_stage_update(
     experiment.save()
 
     logging.info(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | FINISHED")
+    _update_status_ui(parent_ui, f"{lamella.info} Finished")
 
     return experiment
 
@@ -256,6 +320,7 @@ def start_of_stage_update(
     microscope: FibsemMicroscope,
     lamella: Lamella,
     next_stage: AutoLamellaStage,
+    parent_ui: AutoLamellaUI
 ) -> Lamella:
     """Check the last completed stage and reload the microscope state if required. Log that the stage has started."""
     last_completed_stage = lamella.state.stage
@@ -265,12 +330,14 @@ def start_of_stage_update(
         logging.info(
             f"{lamella._petname} restarting from end of stage: {last_completed_stage.name}"
         )
+        _update_status_ui(parent_ui, f"{lamella.info} Restoring Last State...")
         microscope.set_microscope_state(lamella.state.microscope_state)
 
     # set current state information
     lamella.state.stage = next_stage
     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
     logging.info(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | STARTED")
+    _update_status_ui(parent_ui, f"{lamella.info} Starting...")
 
     return lamella
 
@@ -278,6 +345,7 @@ def start_of_stage_update(
 WORKFLOW_STAGES = {
     AutoLamellaWaffleStage.MillTrench: mill_trench,
     AutoLamellaWaffleStage.MillUndercut: mill_undercut,
+    AutoLamellaWaffleStage.SetupLamella: setup_lamella,
     AutoLamellaWaffleStage.MillFeatures: mill_notch,
     AutoLamellaWaffleStage.MillRoughCut: mill_lamella,
     AutoLamellaWaffleStage.MillRegularCut: mill_lamella,
@@ -299,12 +367,13 @@ def run_trench_milling(
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
-                AutoLamellaWaffleStage(lamella.state.stage.value + 1),
+                AutoLamellaWaffleStage(lamella.state.stage.value + 1), 
+                parent_ui=parent_ui
             )
 
             lamella = mill_trench(microscope, settings, lamella, parent_ui)
 
-            experiment = end_of_stage_update(microscope, experiment, lamella)
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
             parent_ui.update_experiment_signal.emit(experiment)
 
@@ -329,11 +398,12 @@ def run_undercut_milling(
                 microscope,
                 lamella,
                 AutoLamellaWaffleStage(lamella.state.stage.value + 1),
+                parent_ui=parent_ui
             )
 
             lamella = mill_undercut(microscope, settings, lamella, parent_ui)
 
-            experiment = end_of_stage_update(microscope, experiment, lamella)
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
             parent_ui.update_experiment_signal.emit(experiment)
 
@@ -358,11 +428,12 @@ def run_notch_milling(
                 microscope,
                 lamella,
                 AutoLamellaWaffleStage(lamella.state.stage.value + 1),
+                parent_ui=parent_ui
             )
 
             lamella = mill_notch(microscope, settings, lamella, parent_ui)
 
-            experiment = end_of_stage_update(microscope, experiment, lamella)
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
             parent_ui.update_experiment_signal.emit(experiment)
 
@@ -379,6 +450,8 @@ def run_lamella_milling(
     parent_ui=None,
 ) -> Experiment:
     stages = [
+        AutoLamellaWaffleStage.SetupLamella,
+        AutoLamellaWaffleStage.MillFeatures,
         AutoLamellaWaffleStage.MillRoughCut,
         AutoLamellaWaffleStage.MillRegularCut,
         AutoLamellaWaffleStage.MillPolishingCut,
@@ -389,17 +462,25 @@ def run_lamella_milling(
                 f"------------------------{lamella._petname}----------------------------------------"
             )
             if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1):
-                lamella = start_of_stage_update(microscope, lamella, stage)
+                lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
 
-                lamella = mill_lamella(microscope, settings, lamella, parent_ui)
+                lamella = WORKFLOW_STAGES[lamella.state.stage](microscope, settings, lamella, parent_ui)
 
-                experiment = end_of_stage_update(microscope, experiment, lamella)
+                experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
                 parent_ui.update_experiment_signal.emit(experiment)
 
             logging.info(
                 "----------------------------------------------------------------------------------------"
             )
+
+    # finish
+    for lamella in experiment.positions:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut:
+            lamella.state.stage = AutoLamellaWaffleStage.Finished
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
+            parent_ui.update_experiment_signal.emit(experiment)
+
     return experiment
 
 

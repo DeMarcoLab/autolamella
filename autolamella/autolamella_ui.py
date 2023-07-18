@@ -335,12 +335,12 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
         from fibsem import patterning
 
         if self.experiment is not None and len(self.experiment.positions) > 0:
-            trench_centre = self.experiment.positions[index].trench_centre
+            trench_position = self.experiment.positions[index].trench_position
         else:
-            trench_centre = Point(0.0, 0.0)
+            trench_position = Point(0.0, 0.0)
         self.settings.protocol["trench"]["hfw"] = self.image_widget.image_settings.hfw
         self.trench_stages = patterning._get_milling_stages(
-            "trench", self.settings.protocol, point=trench_centre
+            "trench", self.settings.protocol, point=trench_position
         )
 
         # NOTCH
@@ -1180,7 +1180,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
 
         self.experiment.positions[-1].lamella_centre = lamella_position
         self.experiment.positions[-1].fiducial_centre = fiducial_position
-        self.experiment.positions[-1].trench_centre = lamella_position
+        self.experiment.positions[-1].trench_position = lamella_position
         # self.experiment.positions[-1].state.microscope_state = self.microscope.get_current_microscope_state()
         self.experiment.save()
         log_status_message(self.experiment.positions[-1], "LAMELLA_ADDED")
@@ -1394,7 +1394,7 @@ class UiInterface(QtWidgets.QMainWindow, UI.Ui_MainWindow):
                 ):
                     self.experiment.positions[
                         int(self.lamella_index.currentIndex())
-                    ].trench_centre = deepcopy(position)
+                    ].trench_position = deepcopy(position)
 
                 else:
                     self.trench_position = position

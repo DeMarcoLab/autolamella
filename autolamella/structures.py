@@ -27,7 +27,7 @@ class AutoLamellaWaffleStage(Enum):
     ReadyTrench = auto()
     MillTrench = auto()
     MillUndercut = auto()
-    # ReadyLamella = auto()
+    SetupLamella = auto()
     MillFeatures = auto()
     MillRoughCut = auto()
     MillRegularCut = auto()
@@ -68,13 +68,14 @@ class Lamella:
     path: Path = Path()
     fiducial_centre: Point = Point()
     fiducial_area: FibsemRectangle = FibsemRectangle()
-    lamella_centre: Point = Point()
     _number: int = 0
-    trench_centre: Point = Point()
-    notch_centre: Point = Point()
+    lamella_position: Point = Point()
+    trench_position: Point = Point()
+    notch_position: Point = Point()
     mill_microexpansion: bool = False
     history: list[LamellaState] = None
     _petname: str = None
+    protocol: dict = None    
 
     
     def __post_init__(self):
@@ -93,10 +94,11 @@ class Lamella:
             "path": str(self.path) if self.path is not None else "Not defined",
             "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else "Not defined",
             "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
-            "lamella_centre": self.lamella_centre.__to_dict__() if self.lamella_centre is not None else "Not defined",
-            "trench_centre": self.trench_centre.__to_dict__() if self.trench_centre is not None else "Not defined",
-            "notch_centre": self.notch_centre.__to_dict__() if self.notch_centre is not None else "Not defined",
-            "_number": self._number if self._number is not None else "Not defined",
+            "lamella_position": self.lamella_position.__to_dict__(),
+            "trench_position": self.trench_position.__to_dict__(),
+            "notch_position": self.notch_position.__to_dict__(),
+            "protocol": self.protocol,
+            "_number": self._number,
             "history": [state.__to_dict__() for state in self.history] if self.history is not False else "Not defined",
         }
 
@@ -109,18 +111,19 @@ class Lamella:
         state = LamellaState().__from_dict__(data["state"])
         fiducial_centre = Point.__from_dict__(data["fiducial_centre"])
         fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
-        lamella_centre = Point.__from_dict__(data["lamella_centre"])
-        trench_centre = Point.__from_dict__(data["trench_centre"])
-        notch_centre = Point.__from_dict__(data["notch_centre"])
+        lamella_position = Point.__from_dict__(data.get("lamella_position", {"x": 0, "y": 0}))
+        trench_position = Point.__from_dict__(data.get("trench_position", {"x": 0, "y": 0}))
+        notch_position = Point.__from_dict__(data.get("notch_position", {"x": 0, "y": 0}))
         return cls(
             _petname=data["petname"],
             state=state,
             path=data["path"],
             fiducial_centre=fiducial_centre,
             fiducial_area=fiducial_area,
-            lamella_centre=lamella_centre,
-            trench_centre = trench_centre,
-            notch_centre = notch_centre,
+            lamella_position=lamella_position,
+            trench_position = trench_position,
+            notch_position = notch_position,
+            protocol=data.get("protocol", {}),
             _number=data["_number"],
             history=[LamellaState().__from_dict__(state) for state in data["history"]],
         )
@@ -196,12 +199,12 @@ class Experiment:
                 "lamella.z": lamella.state.microscope_state.absolute_position.z,
                 "lamella.r": lamella.state.microscope_state.absolute_position.r,
                 "lamella.t": lamella.state.microscope_state.absolute_position.t,
-                "lamella.centre.x": lamella.lamella_centre.x,
-                "lamella.centre.y": lamella.lamella_centre.y,
-                "trench.centre.x": lamella.trench_centre.x,
-                "trench.centre.y": lamella.trench_centre.y,
-                "notch.centre.x": lamella.notch_centre.x,
-                "notch.centre.y": lamella.notch_centre.y,
+                "lamella.position.x": lamella.lamella_position.x,
+                "lamella.position.y": lamella.lamella_position.y,
+                "trench.position.x": lamella.trench_position.x,
+                "trench.position.y": lamella.trench_position.y,
+                "notch.position.x": lamella.notch_position.x,
+                "notch.position.y": lamella.notch_position.y,
                 "lamella.history": lamella.history,
                 "fiducial.centre.x": lamella.fiducial_centre.x,
                 "fiducial.centre.y": lamella.fiducial_centre.y,

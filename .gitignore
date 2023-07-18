@@ -21,3 +21,5 @@ autolamella/_version.py
 .vscode/*
 autolamella/waffle/*
 waffle/*
+old_protocol/*.y*ml
+old_protocol/*
