@@ -76,7 +76,7 @@ from PyQt5.QtCore import pyqtSignal
 from napari.qt.threading import thread_worker
 
 
-_DEV_MODE = True
+_DEV_MODE = False
 DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2023-07-17-19-41/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
@@ -138,13 +138,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_add_lamella.setEnabled(False)
         self.pushButton_remove_lamella.clicked.connect(self.remove_lamella_ui)
         self.pushButton_remove_lamella.setEnabled(False)
-        self.pushButton_run_autolamella.clicked.connect(self._run_workflow)
         self.pushButton_go_to_lamella.clicked.connect(self.go_to_lamella_ui)
         self.pushButton_go_to_lamella.setEnabled(False)
         self.comboBox_current_lamella.currentIndexChanged.connect(self.update_lamella_ui)
         self.pushButton_save_position.clicked.connect(self.save_lamella_ui)
 
-        self.pushButton_run_lamella.clicked.connect(self._run_lamella_workflow)
+        self.pushButton_run_waffle_trench.clicked.connect(self._run_trench_workflow)
+        self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
         self.pushButton_run_waffle_undercut.clicked.connect(self._run_undercut_workflow)
         self.pushButton_run_waffle_notch.clicked.connect(self._run_notch_workflow)
   
@@ -592,7 +592,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self.det_widget is not None:
             self.det_widget.confirm_button_clicked()
 
-    def _run_workflow(self):
+    def _run_trench_workflow(self):
         self.worker = self._threaded_worker(
             microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="trench",
         )
