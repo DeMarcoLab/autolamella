@@ -76,9 +76,9 @@ from PyQt5.QtCore import pyqtSignal
 from napari.qt.threading import thread_worker
 
 
-_DEV_MODE = False
-DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2023-07-17-19-41/experiment.yaml"
-DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
+_DEV_MODE = True
+DEV_EXP_PATH = r"C:\Users\lnae0002\Desktop\autolamella\autolamella\log\AutoLamella-2023-07-18-16-49\experiment.yaml"
+DEV_PROTOCOL_PATH = r"C:\Users\lnae0002\Desktop\autolamella\autolamella\protocol\protocol.yaml"
 
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | {step}")
@@ -586,6 +586,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     #             index
     #         ].state.stage = AutoLamellaWaffleStage.MillTrench
 
+        self._update_lamella_combobox()
+        self.update_ui()
         self.experiment.save()
 
     def _confirm_det(self):

@@ -6,7 +6,7 @@ from pprint import pprint
 
 import matplotlib.pyplot as plt
 import numpy as np
-from fibsem import acquire, milling, patterning, utils
+from fibsem import acquire, milling, patterning, utils, calibration
 from fibsem.microscope import FibsemMicroscope
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
