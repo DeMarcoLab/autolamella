@@ -161,6 +161,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # self.actionSave_Protocol.triggered.connect(self.save_protocol)
         # self.actionEdit_Protocol.triggered.connect(self.edit_protocol)
         self.actionCryo_Sputter.triggered.connect(self._cryo_sputter)
+        self.actionLoad_Positions.triggered.connect(self._load_positions)
 
 
         self.pushButton_yes.clicked.connect(self.push_interaction_button)
@@ -285,7 +286,25 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             return
 
         self.add_lamella_ui(position)
+
+    def _load_positions(self):
         
+        
+        path = _get_file_ui( msg="Select a position file to load", 
+            path=self.experiment.path, 
+            _filter= "*yaml", 
+            parent=self)
+
+        if path == "":
+            napari.utils.notifications.show_info(f"No file selected..")
+            return
+
+        pdict = utils.load_yaml(path)
+        
+        positions = [FibsemStagePosition.__from_dict__(p) for p in pdict]
+
+        for pos in positions:
+            self.add_lamella_ui(pos)
 
     def update_ui(self):
         """Update the ui based on the current state of the application."""
@@ -301,6 +320,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
         # self.actionSave_Protocol.setVisible(_protocol_loaded)
         self.actionCryo_Sputter.setVisible(_protocol_loaded)
+
+        self.actionLoad_Positions.setVisible(_experiment_loaded and _microscope_connected)
 
         # workflow buttons
         # self.pushButton_setup_autoliftout.setEnabled(_microscope_connected and _protocol_loaded)
