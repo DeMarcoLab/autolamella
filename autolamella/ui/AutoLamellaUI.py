@@ -83,6 +83,8 @@ _DEV_MODE = True
 DEV_EXP_PATH = r"C:/Users/Admin/Github/autolamella/autolamella/log\PAT_TEST_TILE/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
+_AUTO_SYNC_MINIMAP = True
+
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | {step}")
 
@@ -294,7 +296,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
         )
         self.minimap_widget._stage_position_moved.connect(self.movement_widget._stage_position_moved)
-        self.minimap_widget._stage_position_added.connect(self._update_stage_positions)
+        if _AUTO_SYNC_MINIMAP:
+            self.minimap_widget._stage_position_added.connect(self._update_stage_positions)
         napari.run(max_loop_level=2)
 
 
