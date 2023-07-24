@@ -23,6 +23,7 @@ manipulator:
             z: 0.00585
     rotation: false
     tilt: false
+
 stage:
     enabled: true
     rotation: true
