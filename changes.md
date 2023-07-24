@@ -1,18 +1,5 @@
 ## Changes 
 
-### 31/07/2023
-
-#### Highlights
-
-- Waffle Method: 
-- Minimap Integration:
-- New UI:
-
-#### Features
-
-#### Fixes / Updates
-
-
 ### 24th - May - 2023
 
 - Added new feature

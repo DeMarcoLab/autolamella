@@ -2,8 +2,8 @@
 requires = ["wheel", "setuptools>=45", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools_scm]
-write_to = "autolamella/_version.py"
+# [tool.setuptools_scm]
+# write_to = "autolamella/_version.py"
 
 [project]
 name = "autolamella"
@@ -17,7 +17,13 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
     ]
-dynamic = ["version", "description"]
+dynamic = ["version", "description", "urls", "entry-points"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["autolamella*"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"

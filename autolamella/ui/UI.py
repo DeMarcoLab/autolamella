@@ -62,6 +62,7 @@ class Ui_MainWindow(object):
         self.verticalLayout.addWidget(self.instructions_textEdit)
         self.tabWidget_2.addTab(self.tab_5, "")
         self.formLayout_3.setWidget(1, QtWidgets.QFormLayout.SpanningRole, self.tabWidget_2)
+
         self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName("tabWidget")
         self.tab = QtWidgets.QWidget()
@@ -80,6 +81,7 @@ class Ui_MainWindow(object):
         self.gridLayout_3.addWidget(self.go_to_lamella, 13, 1, 1, 1)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.gridLayout_3.addItem(spacerItem, 21, 0, 1, 2)
+
         self.save_button = QtWidgets.QPushButton(self.tab)
         self.save_button.setObjectName("save_button")
         self.gridLayout_3.addWidget(self.save_button, 14, 0, 1, 2)
@@ -105,6 +107,7 @@ class Ui_MainWindow(object):
         self.label_title = QtWidgets.QLabel(self.tab)
         font = QtGui.QFont()
         font.setPointSize(12)
+
         font.setBold(True)
         font.setWeight(75)
         self.label_title.setFont(font)
@@ -175,6 +178,7 @@ class Ui_MainWindow(object):
         self.run_button.setStyleSheet("background-color: darkGreen")
         self.run_button.setObjectName("run_button")
         self.gridLayout_3.addWidget(self.run_button, 20, 0, 1, 2)
+
         self.tabWidget.addTab(self.tab, "")
         self.tab_2 = QtWidgets.QWidget()
         self.tab_2.setObjectName("tab_2")
@@ -538,6 +542,7 @@ class Ui_MainWindow(object):
         self.tabWidget_2.setCurrentIndex(1)
         self.tabWidget.setCurrentIndex(0)
         self.tabWidget_3.setCurrentIndex(5)
+
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

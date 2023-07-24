@@ -1,0 +1,13 @@
+name: autolamella
+display_name: AutoLamella
+contributions:
+  commands:
+
+      # Widgets
+    - id: autolamella.viewer
+      python_name: autolamella.autolamella_ui:UiInterface
+      title: AutoLamella UI
+
+  widgets:
+    - command: autolamella.viewer
+      display_name: AutoLamella UI
