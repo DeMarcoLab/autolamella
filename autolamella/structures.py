@@ -84,6 +84,8 @@ class Lamella:
         if self._petname not in self.path:
             self.path = os.path.join(self.path, self._petname)
         os.makedirs(self.path, exist_ok=True)
+        if self.protocol is None:
+            self.protocol = {}
 
     def __to_dict__(self):
         if self.history is None:

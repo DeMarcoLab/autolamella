@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'AutoLamellaUI.ui'
+# Form implementation generated from reading ui file 'AutolamellaUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -134,6 +134,14 @@ class Ui_MainWindow(object):
         self.export_protocol = QtWidgets.QPushButton(self.tab_2)
         self.export_protocol.setObjectName("export_protocol")
         self.formLayout_2.setWidget(23, QtWidgets.QFormLayout.SpanningRole, self.export_protocol)
+        self.label = QtWidgets.QLabel(self.tab_2)
+        self.label.setObjectName("label")
+        self.formLayout_2.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.label)
+        self.doubleSpinBox_undercut_tilt = QtWidgets.QDoubleSpinBox(self.tab_2)
+        self.doubleSpinBox_undercut_tilt.setMinimum(-180.0)
+        self.doubleSpinBox_undercut_tilt.setMaximum(180.0)
+        self.doubleSpinBox_undercut_tilt.setObjectName("doubleSpinBox_undercut_tilt")
+        self.formLayout_2.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.doubleSpinBox_undercut_tilt)
         self.tabWidget.addTab(self.tab_2, "")
         self.gridLayout.addWidget(self.tabWidget, 0, 0, 1, 2)
         self.pushButton_yes = QtWidgets.QPushButton(self.centralwidget)
@@ -175,7 +183,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuTools.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -201,6 +209,7 @@ class Ui_MainWindow(object):
         self.label_6.setText(_translate("MainWindow", "Align at:"))
         self.scanDirectionLabel.setText(_translate("MainWindow", "Scan Direction"))
         self.export_protocol.setText(_translate("MainWindow", "Save protocol to file"))
+        self.label.setText(_translate("MainWindow", "Undercut Tilt Angle"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Protocol"))
         self.pushButton_yes.setText(_translate("MainWindow", "Yes"))
         self.label_instructions.setText(_translate("MainWindow", "Instructions"))

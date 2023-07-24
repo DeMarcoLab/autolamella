@@ -102,7 +102,9 @@ def mill_undercut(
 
     # tilt down, align to trench
     _update_status_ui(parent_ui, f"{lamella.info} Tilting to Undercut Position...")
-    microscope.move_stage_relative(FibsemStagePosition(t=np.deg2rad(10)))
+    tilt_angle = settings.protocol["autolamella_undercut"].get("tilt_angle", 10)
+    print(f'------------- tilt angle {tilt_angle} --------------------')
+    microscope.move_stage_relative(FibsemStagePosition(t=np.deg2rad(tilt_angle)))
 
 
     # detect
@@ -127,7 +129,8 @@ def mill_undercut(
 
     # tilt down, align to trench
     _update_status_ui(parent_ui, f"{lamella.info} Tilting to Undercut Position...")
-    microscope.move_stage_relative(FibsemStagePosition(t=np.deg2rad(10)))
+    tilt_angle_step = settings.protocol["autolamella_undercut"].get("tilt_angle_step", 10)
+    microscope.move_stage_relative(FibsemStagePosition(t=np.deg2rad(tilt_angle_step)))
     
     # detect
     settings.image.beam_type = BeamType.ION
@@ -193,6 +196,42 @@ def mill_notch(
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
     return lamella
+
+def mill_microexpansion(
+    microscope: FibsemMicroscope,
+    settings: MicroscopeSettings,
+    lamella: Lamella,
+    parent_ui=None,
+) -> Lamella:
+
+    validate = settings.protocol["options"]["supervise"].get("microexpansion", True)
+    settings.image.save_path = lamella.path
+
+    # TODO: cross correlate the reference here
+    # fname = os.path.join(lamella.path, "ref_position_lamella_ib.tif")
+    # img = FibsemImage.load(fname)
+
+    _update_status_ui(parent_ui, f"{lamella.info} Preparing microexpansion...")
+
+    # define notch
+    stages = patterning._get_milling_stages(
+        "microexpansion", settings.protocol, point=lamella.lamella_position
+    )
+    _validate_mill_ui(microscope, settings, stages, parent_ui,
+        msg=f"Press Run Milling to mill the Notch for {lamella._petname}. Press Continue when done.",
+        validate=validate,
+    )
+    # take reference images
+    reference_images = acquire.take_set_of_reference_images(
+        microscope=microscope,
+        image_settings=settings.image,
+        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
+        label="ref_microexpansion",
+    )
+    _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
+
+    return lamella
+
 
 
 def mill_lamella(
@@ -431,7 +470,8 @@ def run_notch_milling(
                 parent_ui=parent_ui
             )
 
-            lamella = mill_notch(microscope, settings, lamella, parent_ui)
+            # lamella = mill_notch(microscope, settings, lamella, parent_ui)
+            lamella = mill_microexpansion(microscope, settings, lamella, parent_ui)
 
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 

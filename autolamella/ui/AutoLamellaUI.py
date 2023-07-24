@@ -76,7 +76,7 @@ from PyQt5.QtCore import pyqtSignal
 from napari.qt.threading import thread_worker
 
 
-_DEV_MODE = True
+_DEV_MODE = False
 DEV_EXP_PATH = r"C:/Users/Admin/Github/autolamella/autolamella/log\PAT_TEST_01/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 

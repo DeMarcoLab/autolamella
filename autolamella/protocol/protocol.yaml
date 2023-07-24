@@ -7,6 +7,7 @@ options:
     trench: true
     undercut: true
     notch: true
+    microexpansion: true
     features: true
     lamella: true
     setup_lamella: true
@@ -72,13 +73,16 @@ lamella:
 
 
 microexpansion:
+  enabled: true
   width: 0.5e-6
   height: 18.e-6
+  depth: 1.0e-6
   distance: 10.e-6 # Does not include Lamella width. So centre of microexpansion is lamella_width/2 + distance.
   application_file: autolamella
 
 
-notch: 
+notch:
+  enabled: false
   vheight: 2.0e-6
   vwidth: 0.2e-6
   hwidth: .0e-6
@@ -100,6 +104,8 @@ autolamella_undercut:
   preset: "30 keV; 2.5 nA" # TESCAN only
   hfw: 80.0e-6
   application_file: autolamella
+  tilt_angle: 17.0
+  tilt_angle_step: 10
 
 ml:
     encoder: resnet34
