@@ -334,6 +334,8 @@
      <string>Tools</string>
     </property>
     <addaction name="actionCryo_Sputter"/>
+    <addaction name="actionLoad_Positions"/>
+    <addaction name="actionOpen_Minimap"/>
    </widget>
    <addaction name="menuAutoLamella"/>
    <addaction name="menuTools"/>
@@ -357,6 +359,16 @@
   <action name="actionLoad_Protocol">
    <property name="text">
     <string>Load Protocol</string>
+   </property>
+  </action>
+  <action name="actionLoad_Positions">
+   <property name="text">
+    <string>Load Positions</string>
+   </property>
+  </action>
+  <action name="actionOpen_Minimap">
+   <property name="text">
+    <string>Open Minimap</string>
    </property>
   </action>
  </widget>
