@@ -75,6 +75,8 @@ from autolamella.utils import INSTRUCTION_MESSAGES, check_loaded_protocol
 from PyQt5.QtCore import pyqtSignal
 
 from napari.qt.threading import thread_worker
+from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
+
 
 
 _DEV_MODE = True
@@ -162,6 +164,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # self.actionEdit_Protocol.triggered.connect(self.edit_protocol)
         self.actionCryo_Sputter.triggered.connect(self._cryo_sputter)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
+        self.actionOpen_Minimap.triggered.connect(self._open_minimap)
 
 
         self.pushButton_yes.clicked.connect(self.push_interaction_button)
@@ -254,7 +257,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             self._microscope_ui_loaded = True
             self.milling_widget.milling_position_changed.connect(self._update_milling_position)
-            self.movement_widget.minimap_opened.connect(self._update_tile_manager)
 
         else:
             if self.image_widget is None:
@@ -275,9 +277,26 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             self._microscope_ui_loaded = False
 
-    def _update_tile_manager(self):
-        if self.microscope:
-            self.movement_widget.minimap_widget._stage_position_added.connect(self._update_stage_positions)
+    def _open_minimap(self):
+        if self.microscope is None:
+            napari.utils.notifications.show_warning(f"Please connect to a microscope first... [No Microscope Connected]")
+            return
+
+        if self.movement_widget is None:
+            napari.utils.notifications.show_warning(f"Please connect to a microscope first... [No Movement Widget]")
+            return
+
+
+        # TODO: should make this more generic i guess, but this is fine for now
+        self.viewer2 = napari.Viewer(ndisplay=2)
+        self.minimap_widget = FibsemMinimapWidget(self.microscope, self.settings, viewer=self.viewer2, parent=self)
+        self.viewer2.window.add_dock_widget(
+            self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
+        )
+        self.minimap_widget._stage_position_moved.connect(self.movement_widget._stage_position_moved)
+        self.minimap_widget._stage_position_added.connect(self._update_stage_positions)
+        napari.run(max_loop_level=2)
+
 
     def _update_stage_positions(self, position: FibsemStagePosition):
         # add lamella to experiment from tile manager
