@@ -254,7 +254,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             self._microscope_ui_loaded = True
             self.milling_widget.milling_position_changed.connect(self._update_milling_position)
-            self.movement_widget.tile_manager_opened.connect(self._update_tile_manager)
+            self.movement_widget.minimap_opened.connect(self._update_tile_manager)
 
         else:
             if self.image_widget is None:
@@ -277,7 +277,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def _update_tile_manager(self):
         if self.microscope:
-            self.movement_widget.tile_widget._stage_position_added.connect(self._update_stage_positions)
+            self.movement_widget.minimap_widget._stage_position_added.connect(self._update_stage_positions)
 
     def _update_stage_positions(self, position: FibsemStagePosition):
         # add lamella to experiment from tile manager
