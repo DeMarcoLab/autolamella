@@ -146,7 +146,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_trench.clicked.connect(self._run_trench_workflow)
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
         self.pushButton_run_waffle_undercut.clicked.connect(self._run_undercut_workflow)
-        self.pushButton_run_waffle_notch.clicked.connect(self._run_notch_workflow)
   
         # system widget
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)

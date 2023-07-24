@@ -169,21 +169,34 @@ def mill_notch(
     parent_ui=None,
 ) -> Lamella:
 
-    validate = settings.protocol["options"]["supervise"].get("notch", True)
+    # check if using notch or microexpansion
+
+    use_notch = settings.protocol["notch"]["enabled"]
+    
+    if use_notch:
+        name = "notch"
+        milling_position_point = lamella.notch_position
+    else:
+        name = "microexpansion"
+        milling_position_point = lamella.lamella_position
+        print(f'-----------------lamella protocol: {lamella.protocol}----------------')
+        settings.protocol["microexpansion"]["lamella_width"] = settings.protocol["lamella"]["lamella_width"]
+
+    validate = settings.protocol["options"]["supervise"].get(name, True)
     settings.image.save_path = lamella.path
 
     # TODO: cross correlate the reference here
     # fname = os.path.join(lamella.path, "ref_position_lamella_ib.tif")
     # img = FibsemImage.load(fname)
 
-    _update_status_ui(parent_ui, f"{lamella.info} Preparing Notch...")
+    _update_status_ui(parent_ui, f"{lamella.info} Preparing {name}...")
 
-    # define notch
+    # define notch/microexpansion
     stages = patterning._get_milling_stages(
-        "notch", settings.protocol, point=lamella.notch_position
+        name, settings.protocol, point=milling_position_point
     )
     _validate_mill_ui(microscope, settings, stages, parent_ui,
-        msg=f"Press Run Milling to mill the Notch for {lamella._petname}. Press Continue when done.",
+        msg=f"Press Run Milling to mill the {name} for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
     # take reference images
@@ -191,42 +204,7 @@ def mill_notch(
         microscope=microscope,
         image_settings=settings.image,
         hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
-        label="ref_notch",
-    )
-    _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
-
-    return lamella
-
-def mill_microexpansion(
-    microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
-    lamella: Lamella,
-    parent_ui=None,
-) -> Lamella:
-
-    validate = settings.protocol["options"]["supervise"].get("microexpansion", True)
-    settings.image.save_path = lamella.path
-
-    # TODO: cross correlate the reference here
-    # fname = os.path.join(lamella.path, "ref_position_lamella_ib.tif")
-    # img = FibsemImage.load(fname)
-
-    _update_status_ui(parent_ui, f"{lamella.info} Preparing microexpansion...")
-
-    # define notch
-    stages = patterning._get_milling_stages(
-        "microexpansion", settings.protocol, point=lamella.lamella_position
-    )
-    _validate_mill_ui(microscope, settings, stages, parent_ui,
-        msg=f"Press Run Milling to mill the Notch for {lamella._petname}. Press Continue when done.",
-        validate=validate,
-    )
-    # take reference images
-    reference_images = acquire.take_set_of_reference_images(
-        microscope=microscope,
-        image_settings=settings.image,
-        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
-        label="ref_microexpansion",
+        label=f"ref_{name}",
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -470,10 +448,11 @@ def run_notch_milling(
                 parent_ui=parent_ui
             )
 
-            # lamella = mill_notch(microscope, settings, lamella, parent_ui)
-            lamella = mill_microexpansion(microscope, settings, lamella, parent_ui)
+            lamella = mill_notch(microscope, settings, lamella, parent_ui)
 
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
+
+            print(f"lamella stage == {experiment.positions[0].state.stage.name}")
 
             parent_ui.update_experiment_signal.emit(experiment)
 
@@ -489,6 +468,10 @@ def run_lamella_milling(
     experiment: Experiment,
     parent_ui=None,
 ) -> Experiment:
+
+    # prepare and do notch/microexpansion milling
+    experiment = run_notch_milling(microscope, settings, experiment, parent_ui)
+
     stages = [
         AutoLamellaWaffleStage.SetupLamella,
         AutoLamellaWaffleStage.MillFeatures,
@@ -503,9 +486,9 @@ def run_lamella_milling(
             )
             if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1):
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
-
+                print(f"---------------------stage: {stage.name}----------------------")
                 lamella = WORKFLOW_STAGES[lamella.state.stage](microscope, settings, lamella, parent_ui)
-
+                print(f'-------------------lamella protocol after stage  {lamella.protocol}')
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
                 parent_ui.update_experiment_signal.emit(experiment)
