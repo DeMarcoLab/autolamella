@@ -179,7 +179,6 @@ def mill_notch(
     else:
         name = "microexpansion"
         milling_position_point = lamella.lamella_position
-        print(f'-----------------lamella protocol: {lamella.protocol}----------------')
         settings.protocol["microexpansion"]["lamella_width"] = settings.protocol["lamella"]["lamella_width"]
 
     validate = settings.protocol["options"]["supervise"].get(name, True)
@@ -469,8 +468,6 @@ def run_lamella_milling(
     parent_ui=None,
 ) -> Experiment:
 
-    # prepare and do notch/microexpansion milling
-    experiment = run_notch_milling(microscope, settings, experiment, parent_ui)
 
     stages = [
         AutoLamellaWaffleStage.SetupLamella,
