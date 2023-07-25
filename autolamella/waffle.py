@@ -274,10 +274,17 @@ def setup_lamella(
 
     # select positions and protocol for notch, lamella
     notch_stages = patterning._get_milling_stages("notch", settings.protocol)
-    lamella_stages = patterning._get_milling_stages("lamella", settings.protocol)
+    # lamella_stages = patterning._get_milling_stages("lamella", settings.protocol)
     stages = lamella_stages + notch_stages
 
     # TODO: this is where we could add a fiducial
+
+    # use_fiducial = settings.protocol["fiducial"]["enabled"]
+    # fiducial_stage = patterning._get_milling_stages("fiducial", settings.protocol)
+    # if use_fiducial:
+    #     stages += fiducial_stage
+
+
 
     _validate_mill_ui(microscope, settings, stages, parent_ui, 
         msg=f"Confirm the positions for the {lamella._petname} milling. Don't run milling yet, this is just setup.", 

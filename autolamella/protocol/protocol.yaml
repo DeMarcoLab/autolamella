@@ -13,11 +13,13 @@ options:
     setup_lamella: true
 
 fiducial:
+  enabled: false
   height: 10.e-6
   width: 1.e-6
   depth: 1.0e-6
   rotation: 0.7853
   milling_current: 28.e-9
+  passes: None
   preset: "30 keV; 20 nA" # TESCAN only
   application_file: autolamella
 
