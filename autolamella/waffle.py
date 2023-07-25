@@ -14,7 +14,7 @@ from fibsem.structures import (
     FibsemStagePosition,
     FibsemImage,
     MicroscopeSettings,
-    Point,
+    Point, FibsemRectangle
 )
 import time
 from autolamella.structures import (
@@ -56,6 +56,11 @@ def mill_trench(
     fname = os.path.join(lamella.path, "ref_position_ib.tif")
     img = FibsemImage.load(fname)
 
+    settings.image.hfw = settings.protocol["trench"]["hfw"]
+    settings.image.label = f"ref_trench_start"
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
     _update_status_ui(parent_ui, f"{lamella.info} Preparing Trench...")
 
     # define trench
@@ -112,7 +117,6 @@ def mill_undercut(
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
     settings.image.label = f"ref_trench_align_ml_01"
     settings.image.save = True
-    # TODO image and update viwewer
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
@@ -162,7 +166,7 @@ def mill_undercut(
 
     return lamella
 
-def mill_notch(
+def mill_feature(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     lamella: Lamella,
@@ -171,31 +175,23 @@ def mill_notch(
 
     # check if using notch or microexpansion
 
-    use_notch = settings.protocol["notch"]["enabled"]
-    
-    if use_notch:
-        name = "notch"
-        milling_position_point = lamella.notch_position
-    else:
-        name = "microexpansion"
-        milling_position_point = lamella.lamella_position
-        settings.protocol["microexpansion"]["lamella_width"] = settings.protocol["lamella"]["lamella_width"]
+    _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
 
-    validate = settings.protocol["options"]["supervise"].get(name, True)
+    validate = settings.protocol["options"]["supervise"].get(_feature_name, True)
     settings.image.save_path = lamella.path
 
     # TODO: cross correlate the reference here
     # fname = os.path.join(lamella.path, "ref_position_lamella_ib.tif")
     # img = FibsemImage.load(fname)
 
-    _update_status_ui(parent_ui, f"{lamella.info} Preparing {name}...")
+    _update_status_ui(parent_ui, f"{lamella.info} Preparing {_feature_name}...")
 
     # define notch/microexpansion
     stages = patterning._get_milling_stages(
-        name, settings.protocol, point=milling_position_point
+        _feature_name, lamella.protocol, point=lamella.feature_position
     )
     _validate_mill_ui(microscope, settings, stages, parent_ui,
-        msg=f"Press Run Milling to mill the {name} for {lamella._petname}. Press Continue when done.",
+        msg=f"Press Run Milling to mill the {_feature_name} for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
     # take reference images
@@ -203,7 +199,7 @@ def mill_notch(
         microscope=microscope,
         image_settings=settings.image,
         hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
-        label=f"ref_{name}",
+        label=f"ref_{_feature_name}",
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -223,7 +219,7 @@ def mill_lamella(
     # TODO: cross correlate the reference here
     _update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
 
-    # define notch
+    # define feature
     stages = patterning._get_milling_stages(
         "lamella", lamella.protocol, point=lamella.lamella_position
     )
@@ -272,36 +268,44 @@ def setup_lamella(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    # select positions and protocol for notch, lamella
-    notch_stages = patterning._get_milling_stages("notch", settings.protocol)
-    # lamella_stages = patterning._get_milling_stages("lamella", settings.protocol)
-    stages = lamella_stages + notch_stages
+    # select positions and protocol for feature (notch or microexpansion), lamella
+    _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
+    feature_stages = patterning._get_milling_stages(_feature_name, settings.protocol)
+    
+    lamella_stages = patterning._get_milling_stages("lamella", settings.protocol)
+    stages = lamella_stages + feature_stages
 
-    # TODO: this is where we could add a fiducial
+    # optional fiducial
+    use_fiducial = settings.protocol["fiducial"]["enabled"]
+    if use_fiducial:
+        fiducial_stage = patterning._get_milling_stages("fiducial", settings.protocol)
+        stages += fiducial_stage
 
-    # use_fiducial = settings.protocol["fiducial"]["enabled"]
-    # fiducial_stage = patterning._get_milling_stages("fiducial", settings.protocol)
-    # if use_fiducial:
-    #     stages += fiducial_stage
-
-
-
-    _validate_mill_ui(microscope, settings, stages, parent_ui, 
+    stages =_validate_mill_ui(microscope, settings, stages, parent_ui, 
         msg=f"Confirm the positions for the {lamella._petname} milling. Don't run milling yet, this is just setup.", 
         validate=validate)
-    
+    from pprint import pprint 
+    pprint(stages)
     # lamella
     n_lamella = len(lamella_stages)
     lamella.lamella_position = stages[0].pattern.point
     lamella.protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
     
-    # notch
-    n_notch = len(notch_stages)
-    lamella.notch_position = stages[-n_notch].pattern.point
-    lamella.protocol["notch"] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella:]))
-    
-    logging.info(f"Notch position: {lamella.notch_position}")
+    # feature
+    n_features = len(feature_stages)
+    lamella.feature_position = stages[-n_features].pattern.point
+    lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella:n_lamella+n_features]))
+
+    logging.info(f"Feature position: {lamella.feature_position}")
     logging.info(f"Lamella position: {lamella.lamella_position}")
+
+    # fiducial
+    if use_fiducial:
+        n_fiducial = len(fiducial_stage)
+        lamella.fiducial_centre = stages[-n_fiducial].pattern.point
+        lamella.protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-n_fiducial:]))
+        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, lamella.fiducial_centre, lamella.protocol["fiducial"]["height"])
+        logging.info(f"Fiducial centre: {lamella.fiducial_centre}")
 
 
     log_status_message(lamella, "LAMELLA_SETUP_REF")
@@ -314,6 +318,8 @@ def setup_lamella(
         hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
         label="ref_setup_lamella",
     )
+    _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
+
 
     return lamella
 
@@ -369,7 +375,7 @@ WORKFLOW_STAGES = {
     AutoLamellaWaffleStage.MillTrench: mill_trench,
     AutoLamellaWaffleStage.MillUndercut: mill_undercut,
     AutoLamellaWaffleStage.SetupLamella: setup_lamella,
-    AutoLamellaWaffleStage.MillFeatures: mill_notch,
+    AutoLamellaWaffleStage.MillFeatures: mill_feature,
     AutoLamellaWaffleStage.MillRoughCut: mill_lamella,
     AutoLamellaWaffleStage.MillRegularCut: mill_lamella,
     AutoLamellaWaffleStage.MillPolishingCut: mill_lamella,
@@ -435,39 +441,6 @@ def run_undercut_milling(
         )
     return experiment
 
-
-def run_notch_milling(
-    microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
-    experiment: Experiment,
-    parent_ui=None,
-) -> Experiment:
-    for lamella in experiment.positions:
-        logging.info(
-            f"------------------------{lamella._petname}----------------------------------------"
-        )
-        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut:
-            lamella = start_of_stage_update(
-                microscope,
-                lamella,
-                AutoLamellaWaffleStage(lamella.state.stage.value + 1),
-                parent_ui=parent_ui
-            )
-
-            lamella = mill_notch(microscope, settings, lamella, parent_ui)
-
-            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
-
-            print(f"lamella stage == {experiment.positions[0].state.stage.name}")
-
-            parent_ui.update_experiment_signal.emit(experiment)
-
-        logging.info(
-            "----------------------------------------------------------------------------------------"
-        )
-    return experiment
-
-
 def run_lamella_milling(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
@@ -527,6 +500,8 @@ def _validate_mill_ui(microscope, settings, stages, parent_ui, msg, validate: bo
         )
 
     _update_mill_stages_ui(parent_ui, stages="clear")
+
+    return stages
 
 
 # TODO: think this can be consolidated into mill arg for ask_user?
@@ -649,3 +624,36 @@ def ask_user(
     parent_ui.ui_signal.emit(INFO)
 
     return parent_ui.USER_RESPONSE
+
+
+
+def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->tuple[FibsemRectangle, bool]:
+    pixelsize = image.metadata.pixel_size.x
+    
+    fiducial_centre_area.y = fiducial_centre_area.y * -1
+    fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
+        fiducial_centre_area, pixelsize
+    )
+
+    rcx = fiducial_centre_px.x / image.metadata.image_settings.resolution[0] + 0.5
+    rcy = fiducial_centre_px.y / image.metadata.image_settings.resolution[1] + 0.5
+
+    fiducial_length_px = (
+        conversions.convert_metres_to_pixels(fiducial_length, pixelsize) * 1.5 # SCALE_FACTOR
+    )
+    h_offset = fiducial_length_px / image.metadata.image_settings.resolution[0] / 2
+    v_offset = fiducial_length_px / image.metadata.image_settings.resolution[1] / 2
+
+    left = rcx - h_offset
+    top = rcy - v_offset
+    width = 2 * h_offset
+    height = 2 * v_offset
+
+    if left < 0 or (left + width) > 1 or top < 0 or (top + height) > 1:
+        flag = True
+    else:
+        flag = False
+
+    fiducial_area = FibsemRectangle(left, top, width, height)
+
+    return fiducial_area, flag

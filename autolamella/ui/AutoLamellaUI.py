@@ -7,35 +7,18 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from time import sleep
-from collections import Counter
 
 import napari
 import numpy as np
 import yaml
 from fibsem import acquire, constants, conversions, gis, milling, utils
 from fibsem import patterning
-from fibsem.alignment import beam_shift_alignment
-from fibsem.microscope import (
-    DemoMicroscope,
-    FibsemMicroscope,
-    TescanMicroscope,
-    ThermoMicroscope,
-)
-from fibsem.patterning import (
-    FibsemMillingStage,
-    FiducialPattern,
-    MicroExpansionPattern,
-    TrenchPattern,
-)
+from fibsem.microscope import FibsemMicroscope
+from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
-    BeamType,
-    FibsemImage,
-    FibsemMillingSettings,
-    FibsemPatternSettings,
     FibsemRectangle,
     ImageSettings,
     MicroscopeSettings,
-    Point,
 )
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
@@ -53,17 +36,12 @@ from fibsem.ui.utils import (
     validate_pattern_placement,
 )
 from fibsem.ui import utils as fui
-from napari.utils.notifications import show_error, show_info
-from PyQt5.QtCore import QTimer
-from PyQt5.QtGui import QTextCursor
-from PyQt5.QtWidgets import QInputDialog, QMessageBox
 from qtpy import QtWidgets
 
 from autolamella.ui import utils as aui_utils
 import autolamella.config as cfg
 from autolamella import waffle as wfl
 from autolamella.structures import (
-    AutoLamellaStage,
     AutoLamellaWaffleStage,
     Experiment,
     Lamella,
@@ -76,8 +54,8 @@ from PyQt5.QtCore import pyqtSignal
 from napari.qt.threading import thread_worker
 
 
-_DEV_MODE = False
-DEV_EXP_PATH = r"C:/Users/Admin/Github/autolamella/autolamella/log\PAT_TEST_01/experiment.yaml"
+_DEV_MODE = True
+DEV_EXP_PATH = r"C:/Users/Admin/Github/autolamella/autolamella/log\ROHIT_TEST/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
 def log_status_message(lamella: Lamella, step: str):
@@ -111,7 +89,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             microscope=self.microscope,
             settings=self.settings,
             viewer=self.viewer,
-            config_path=cfg.CONFIG_PATH,
+            config_path=cfg.SYSTEM_PATH,
         )
         self.tabWidget.addTab(self.system_widget, "System")
 
@@ -670,8 +648,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if workflow == "undercut":
             wfl.run_undercut_milling(microscope, settings, experiment, parent_ui=self )
 
-        if workflow == "notch":
-            wfl.run_notch_milling(microscope, settings, experiment, parent_ui=self )
+        # if workflow == "notch":
+        #     wfl.run_notch_milling(microscope, settings, experiment, parent_ui=self )
 
         if workflow == "lamella":
             wfl.run_lamella_milling(microscope, settings, experiment, parent_ui=self )
@@ -683,35 +661,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
 
-def calculate_fiducial_area(settings, fiducial_centre, fiducial_length, pixelsize):
-    fiducial_centre_area = deepcopy(fiducial_centre)
-    fiducial_centre_area.y = fiducial_centre_area.y * -1
-    fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
-        fiducial_centre_area, pixelsize
-    )
-
-    rcx = fiducial_centre_px.x / settings.image.resolution[0] + 0.5
-    rcy = fiducial_centre_px.y / settings.image.resolution[1] + 0.5
-
-    fiducial_length_px = (
-        conversions.convert_metres_to_pixels(fiducial_length, pixelsize) * 1.5
-    )
-    h_offset = fiducial_length_px / settings.image.resolution[0] / 2
-    v_offset = fiducial_length_px / settings.image.resolution[1] / 2
-
-    left = rcx - h_offset
-    top = rcy - v_offset
-    width = 2 * h_offset
-    height = 2 * v_offset
-
-    if left < 0 or (left + width) > 1 or top < 0 or (top + height) > 1:
-        flag = True
-    else:
-        flag = False
-
-    fiducial_area = FibsemRectangle(left, top, width, height)
-
-    return fiducial_area, flag
 
 
 def validate_lamella_placement(

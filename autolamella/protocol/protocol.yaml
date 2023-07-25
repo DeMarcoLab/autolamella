@@ -17,11 +17,13 @@ fiducial:
   height: 10.e-6
   width: 1.e-6
   depth: 1.0e-6
-  rotation: 0.7853
+  rotation: 45
   milling_current: 28.e-9
-  passes: None
   preset: "30 keV; 20 nA" # TESCAN only
   application_file: autolamella
+  cleaning_cross_section: false
+  passes: null
+  hfw: 80.e-6
 
 
 trench:
@@ -35,6 +37,7 @@ trench:
   preset: "30 keV; 2.5 nA" # TESCAN only
   hfw: 180.0e-6
   application_file: autolamella
+  cleaning_cross_section: false
 
 lamella:
   beam_shift_attempts: 3.0
@@ -52,6 +55,7 @@ lamella:
     preset: "30 keV; 2.5 nA" # TESCAN only
     hfw: 80.0e-6
     application_file: autolamella
+    cleaning_cross_section: true
   - trench_height: 2.e-6
     lamella_width: 10.e-6
     lamella_height: 800.e-9
@@ -62,6 +66,7 @@ lamella:
     preset: "30 keV; 1 nA" # TESCAN only
     hfw: 80.0e-6
     application_file: autolamella
+    cleaning_cross_section: true
   - trench_height: 0.5e-6
     lamella_width: 10.e-6
     lamella_height: 800.e-9
@@ -72,6 +77,8 @@ lamella:
     preset: "30 keV; 50 pA" # TESCAN only
     hfw: 80.0e-6
     application_file: autolamella
+    cleaning_cross_section: true
+
 
 
 microexpansion:
@@ -83,6 +90,9 @@ microexpansion:
   preset: "30 keV; 2.5 nA" # TESCAN only
   hfw: 200e-6
   application_file: autolamella
+  cleaning_cross_section: false
+  lamella_width: 10.e-6
+
 
 
 notch:
@@ -108,8 +118,8 @@ autolamella_undercut:
   preset: "30 keV; 2.5 nA" # TESCAN only
   hfw: 80.0e-6
   application_file: autolamella
-  tilt_angle: 17.0
-  tilt_angle_step: 10
+  tilt_angle: -11
+  tilt_angle_step: -10
 
 ml:
     encoder: resnet34
