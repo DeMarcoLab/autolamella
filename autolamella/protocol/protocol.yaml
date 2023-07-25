@@ -11,7 +11,7 @@ options:
     setup_lamella: true
 
 fiducial:
-  enabled: true
+  enabled: false
   height: 10.e-6
   width: 1.e-6
   depth: 1.0e-6

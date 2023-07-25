@@ -6,7 +6,7 @@ from pprint import pprint
 
 import matplotlib.pyplot as plt
 import numpy as np
-from fibsem import acquire, milling, patterning, utils, calibration
+from fibsem import acquire, milling, patterning, utils, calibration, alignment
 from fibsem.microscope import FibsemMicroscope
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
@@ -205,6 +205,18 @@ def mill_feature(
         msg=f"Press Run Milling to mill the {_feature_name} for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
+
+    if use_fiducial:
+        settings.image.reduced_area = lamella.fiducial_area
+
+    # for alignment
+    settings.image.beam_type = BeamType.ION
+    settings.image.save = True
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.label = f"ref_alignment"
+    ib_image = acquire.new_image(microscope, settings.image)
+    settings.image.reduced_area = None
+
     # take reference images
     reference_images = acquire.take_set_of_reference_images(
         microscope=microscope,
@@ -227,8 +239,29 @@ def mill_lamella(
     validate = settings.protocol["options"]["supervise"].get("lamella", True)
     settings.image.save_path = lamella.path
 
-    # TODO: cross correlate the reference here
     _update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
+
+    # take reference image after milling fiducial
+    use_fiducial = settings.protocol["fiducial"]["enabled"]
+    if use_fiducial is False:
+        lamella.fiducial_area = None # TODO: make this better
+
+    # TODO: CHANGE_CURRENT_HERE
+
+
+    # beam_shift alignment
+    settings.image.save = True
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.label = f"alignment_target_{lamella.state.stage.name}"
+    ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
+    alignment.beam_shift_alignment(microscope, settings.image, 
+                                    ref_image=ref_image,
+                                    reduced_area=lamella.fiducial_area)
+    settings.image.reduced_area = None
+
+    # TODO: CHANGE_CURRENT_BACK
+
+    # TODO: DISPLAY IMAGES
 
     # define feature
     stages = patterning._get_milling_stages(
@@ -317,10 +350,7 @@ def setup_lamella(
         n_fiducial = len(fiducial_stage)
         lamella.fiducial_centre = stages[-n_fiducial].pattern.point
         lamella.protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-n_fiducial:]))
-        print("FIDUCIAL: ", lamella.protocol["fiducial"])
         lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, lamella.fiducial_centre, lamella.protocol["fiducial"]["stages"][0]["height"])
-        # lamella.fiducial_area = FibsemRectangle(0, 1.0, 0, 1.0)
-        print("FIDUCIAL AREA: ", lamella.fiducial_area)
         logging.info(f"Fiducial centre: {lamella.fiducial_centre}")
 
 
@@ -402,7 +432,7 @@ def run_trench_milling(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     experiment: Experiment,
-    parent_ui=None,
+    parent_ui: AutoLamellaUI=None,
 ) -> Experiment:
     for lamella in experiment.positions:
         logging.info(
