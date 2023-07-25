@@ -173,23 +173,34 @@ def mill_feature(
     parent_ui=None,
 ) -> Lamella:
 
-    # check if using notch or microexpansion
-
-    _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
-
-    validate = settings.protocol["options"]["supervise"].get(_feature_name, True)
+    validate = settings.protocol["options"]["supervise"].get("features", True)
     settings.image.save_path = lamella.path
 
+    # check if using notch or microexpansion
+    _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
     # TODO: cross correlate the reference here
     # fname = os.path.join(lamella.path, "ref_position_lamella_ib.tif")
     # img = FibsemImage.load(fname)
 
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.label = f"ref_{_feature_name}_start"
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
     _update_status_ui(parent_ui, f"{lamella.info} Preparing {_feature_name}...")
 
     # define notch/microexpansion
     stages = patterning._get_milling_stages(
         _feature_name, lamella.protocol, point=lamella.feature_position
     )
+
+    # optional fiducial
+    use_fiducial = settings.protocol["fiducial"]["enabled"]
+    if use_fiducial:
+        fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, lamella.fiducial_centre)
+        stages += fiducial_stage
+
+
     _validate_mill_ui(microscope, settings, stages, parent_ui,
         msg=f"Press Run Milling to mill the {_feature_name} for {lamella._petname}. Press Continue when done.",
         validate=validate,
@@ -284,8 +295,10 @@ def setup_lamella(
     stages =_validate_mill_ui(microscope, settings, stages, parent_ui, 
         msg=f"Confirm the positions for the {lamella._petname} milling. Don't run milling yet, this is just setup.", 
         validate=validate)
+    
     from pprint import pprint 
     pprint(stages)
+
     # lamella
     n_lamella = len(lamella_stages)
     lamella.lamella_position = stages[0].pattern.point
@@ -293,7 +306,7 @@ def setup_lamella(
     
     # feature
     n_features = len(feature_stages)
-    lamella.feature_position = stages[-n_features].pattern.point
+    lamella.feature_position = stages[n_lamella].pattern.point
     lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella:n_lamella+n_features]))
 
     logging.info(f"Feature position: {lamella.feature_position}")
@@ -304,7 +317,10 @@ def setup_lamella(
         n_fiducial = len(fiducial_stage)
         lamella.fiducial_centre = stages[-n_fiducial].pattern.point
         lamella.protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-n_fiducial:]))
-        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, lamella.fiducial_centre, lamella.protocol["fiducial"]["height"])
+        print("FIDUCIAL: ", lamella.protocol["fiducial"])
+        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, lamella.fiducial_centre, lamella.protocol["fiducial"]["stages"][0]["height"])
+        # lamella.fiducial_area = FibsemRectangle(0, 1.0, 0, 1.0)
+        print("FIDUCIAL AREA: ", lamella.fiducial_area)
         logging.info(f"Fiducial centre: {lamella.fiducial_centre}")
 
 
@@ -484,7 +500,7 @@ def run_lamella_milling(
     return experiment
 
 
-def _validate_mill_ui(microscope, settings, stages, parent_ui, msg, validate: bool):
+def _validate_mill_ui(microscope, settings, stages, parent_ui: AutoLamellaUI, msg, validate: bool):
     _update_mill_stages_ui(parent_ui, stages=stages)
 
     if validate:
@@ -499,7 +515,13 @@ def _validate_mill_ui(microscope, settings, stages, parent_ui, msg, validate: bo
             parent_ui, f"Milling Complete: {len(stages)} stages completed."
         )
 
+    parent_ui.WAITING_FOR_UI_UPDATE = True
+
     _update_mill_stages_ui(parent_ui, stages="clear")
+
+    logging.info(f"WAITING FOR UI UPDATE... ")
+    while parent_ui.WAITING_FOR_UI_UPDATE:
+        time.sleep(0.5)
 
     return stages
 
@@ -625,14 +647,14 @@ def ask_user(
 
     return parent_ui.USER_RESPONSE
 
-
+from fibsem import conversions
 
 def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->tuple[FibsemRectangle, bool]:
     pixelsize = image.metadata.pixel_size.x
     
-    fiducial_centre_area.y = fiducial_centre_area.y * -1
+    fiducial_centre.y = fiducial_centre.y * -1
     fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
-        fiducial_centre_area, pixelsize
+        fiducial_centre, pixelsize
     )
 
     rcx = fiducial_centre_px.x / image.metadata.image_settings.resolution[0] + 0.5

@@ -6,14 +6,12 @@ options:
   supervise:
     trench: true
     undercut: true
-    notch: true
-    microexpansion: true
     features: true
     lamella: true
     setup_lamella: true
 
 fiducial:
-  enabled: false
+  enabled: true
   height: 10.e-6
   width: 1.e-6
   depth: 1.0e-6
@@ -96,11 +94,11 @@ microexpansion:
 
 
 notch:
-  enabled: false
+  enabled: true
   vheight: 2.0e-6
   vwidth: 0.2e-6
-  hwidth: .0e-6
-  hheight: 1.0e-6
+  hwidth: 2.0e-6
+  hheight: 0.2e-6
   depth: 5.0e-6
   distance: 5.0e-6
   flip: 0

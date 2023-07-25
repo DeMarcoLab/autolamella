@@ -99,6 +99,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.WAITING_FOR_USER_INTERACTION: bool = False
         self.USER_RESPONSE: bool = False
+        self.WAITING_FOR_UI_UPDATE: bool = False
+
 
         # setup connections
         self.setup_connections()
@@ -369,6 +371,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         idx = self.comboBox_current_lamella.currentIndex()
         lamella = self.experiment.positions[idx]
 
+        if lamella.state.stage != AutoLamellaWaffleStage.Setup:
+            return
+
         logging.info(f"Updating Lamella Pattern for {lamella.info}")
 
         # update the trench point
@@ -572,28 +577,37 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.det_widget.confirm_button_clicked()
 
     def _run_trench_workflow(self):
+        self.milling_widget.milling_position_changed.disconnect()
+
         self.worker = self._threaded_worker(
             microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="trench",
         )
-        self.worker.start()
-
-    def _run_notch_workflow(self):
-        self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="notch",
-        )
+        self.worker.finished.connect(self._workflow_finished)
         self.worker.start()
 
     def _run_undercut_workflow(self):
+        self.milling_widget.milling_position_changed.disconnect()
+
         self.worker = self._threaded_worker(
             microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="undercut",
         )
+        self.worker.finished.connect(self._workflow_finished)
         self.worker.start()
 
     def _run_lamella_workflow(self):
+        self.milling_widget.milling_position_changed.disconnect()
+
         self.worker = self._threaded_worker(
             microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="lamella",
         )
+        self.worker.finished.connect(self._workflow_finished)
         self.worker.start()
+
+
+    def _workflow_finished(self):
+        logging.info(f'Workflow finished.')
+        self.milling_widget.milling_position_changed.connect(self._update_milling_position)
+
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
         
@@ -629,6 +643,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # instruction message
         self._set_instructions(info["msg"], info["pos"], info["neg"])
+
+        self.WAITING_FOR_UI_UPDATE = False
 
     def _update_experiment(self, experiment: Experiment):
         self.experiment = experiment
