@@ -58,6 +58,7 @@ system:
         tilt_flat_to_electron: 0.0
         tilt_flat_to_ion: 52.0
     version: 0.2.1a1
+
 user:
     imaging:
         autocontrast: true
