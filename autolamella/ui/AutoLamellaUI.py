@@ -175,6 +175,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         napari.utils.notifications.show_info(
             f"Experiment {self.experiment.name} loaded."
         )
+        if self.settings is not None:
+            self.settings.image.save_path = self.experiment.path
+
         self._update_lamella_combobox()
         self.update_ui()
 
@@ -185,6 +188,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def connect_to_microscope(self):
         self.microscope = self.system_widget.microscope
         self.settings = self.system_widget.settings
+        if self.experiment is not None:
+            self.settings.image.save_path = self.experiment.path
         self.update_microscope_ui()
         self.update_ui()
 
@@ -514,6 +519,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # load experiment
         self.experiment = Experiment.load(DEV_EXP_PATH)
+        self.settings.image.save_path = self.experiment.path
         self._update_lamella_combobox()
 
         # load protocol

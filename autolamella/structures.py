@@ -92,16 +92,16 @@ class Lamella:
             self.history = []
         return {
             "petname": self._petname,
-            "state": self.state.__to_dict__() if self.state is not None else "Not defined",
-            "path": str(self.path) if self.path is not None else "Not defined",
-            "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else "Not defined",
-            "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else "Not defined",
+            "state": self.state.__to_dict__() if self.state is not None else None,
+            "path": str(self.path) if self.path is not None else None,
+            "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else None,
+            "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else None,
             "lamella_position": self.lamella_position.__to_dict__(),
             "trench_position": self.trench_position.__to_dict__(),
             "feature_position": self.feature_position.__to_dict__(),
             "protocol": self.protocol,
             "_number": self._number,
-            "history": [state.__to_dict__() for state in self.history] if self.history is not False else "Not defined",
+            "history": [state.__to_dict__() for state in self.history] if self.history is not False else [],
         }
 
     @property
