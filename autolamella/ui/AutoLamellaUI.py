@@ -116,7 +116,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             microscope=self.microscope,
             settings=self.settings,
             viewer=self.viewer,
-            config_path=cfg.CONFIG_PATH,
+            config_path=os.path.join(cfg.CONFIG_PATH, "system.yaml"),
         )
         self.tabWidget.addTab(self.system_widget, "System")
 
