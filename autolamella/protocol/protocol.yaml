@@ -4,14 +4,14 @@ application_file: autolamella # Thermo only
 
 options:
   supervise:
-    trench: true
+    trench: false
     undercut: true
     features: true
     lamella: true
     setup_lamella: true
 
 fiducial:
-  enabled: false
+  enabled: true
   height: 10.e-6
   width: 1.e-6
   depth: 1.0e-6
@@ -27,11 +27,11 @@ fiducial:
 trench:
   lamella_width: 22.e-6
   lamella_height: 30.0e-6
-  milling_current: 7.6e-9
+  milling_current: 28.0e-9
   trench_height: 32.e-6
-  depth: 1.5e-6
+  depth: 2.5e-6
   offset: 0.0e-6
-  size_ratio: 0.5
+  size_ratio: 2.0
   preset: "30 keV; 2.5 nA" # TESCAN only
   hfw: 180.0e-6
   application_file: autolamella
@@ -110,14 +110,15 @@ notch:
 
 autolamella_undercut:
   width: 10.e-6
-  height: 10.e-6
-  depth: 1.0e-6
-  milling_current: 2.e-9
+  height: 4.e-6
+  depth: 2.0e-6
+  milling_current: 7.6e-9
   preset: "30 keV; 2.5 nA" # TESCAN only
   hfw: 80.0e-6
   application_file: autolamella
-  tilt_angle: -11
-  tilt_angle_step: -10
+  tilt_angle: -10
+  tilt_angle_step: 2
+  cleaning_cross_section: false
 
 ml:
     encoder: resnet34

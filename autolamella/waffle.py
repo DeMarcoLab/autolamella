@@ -55,6 +55,8 @@ def mill_trench(
     # TODO: cross correlate the reference here
     fname = os.path.join(lamella.path, "ref_position_ib.tif")
     img = FibsemImage.load(fname)
+    
+    log_status_message(lamella, "MILL_TRENCH")
 
     settings.image.hfw = settings.protocol["trench"]["hfw"]
     settings.image.label = f"ref_trench_start"
@@ -63,24 +65,25 @@ def mill_trench(
     _set_images_ui(parent_ui, eb_image, ib_image)
     _update_status_ui(parent_ui, f"{lamella.info} Preparing Trench...")
 
-    # define trench
-    settings.protocol["trench"]["cleaning_cross_section"] = False
+    # define trench #TODO: update to lamella.protocol
+    settings.image.beam_type = BeamType.ION
     stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.trench_position)
     _validate_mill_ui(microscope, settings, stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
-
     # charge neutralisation
+    log_status_message(lamella, "CHARGE_NEUTRALISATION")
     _update_status_ui(parent_ui, f"{lamella.info} Neutralising Sample Charge...")
     settings.image.beam_type = BeamType.ELECTRON
     calibration.auto_charge_neutralisation(microscope, settings.image)
 
     # refernce images
+    log_status_message(lamella, "REFERENCE_IMAGES")
     reference_images = acquire.take_set_of_reference_images(
         microscope=microscope,
         image_settings=settings.image,
-        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
+        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH],
         label="ref_trench",
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
@@ -97,65 +100,65 @@ def mill_undercut(
     validate = settings.protocol["options"]["supervise"].get("undercut", True)
     settings.image.save_path = lamella.path
 
-    # TODO: cross correlate the reference here
-    fname = os.path.join(lamella.path, "ref_trench_high_res_ib.tif")
-    img = FibsemImage.load(fname)
-
     # rotate flat to eb
+    log_status_message(lamella, "MOVE_TO_UNDERCUT")
     _update_status_ui(parent_ui, f"{lamella.info} Moving to Undercut Position...")
     microscope.move_flat_to_beam(settings, BeamType.ELECTRON)
 
-    # tilt down, align to trench
-    _update_status_ui(parent_ui, f"{lamella.info} Tilting to Undercut Position...")
-    tilt_angle = settings.protocol["autolamella_undercut"].get("tilt_angle", 10)
-    print(f'------------- tilt angle {tilt_angle} --------------------')
-    microscope.move_stage_relative(FibsemStagePosition(t=np.deg2rad(tilt_angle)))
-
-
-    # detect
+    # TODO: do detection here to make sure we are cented on the lamella / coincident before we start milling
+        # detect
+    log_status_message(lamella, f"ALIGN_TRENCH")
     settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
-    settings.image.label = f"ref_trench_align_ml_01"
+    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+    settings.image.label = f"ref_trench_align_ml"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    features = [LamellaCentre()] # TODO: add LamellaBottom / Top Edge
+    features = [LamellaCentre()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
-    # mill undercut 1
-    settings.protocol["autolamella_undercut"]["cleaning_cross_section"] = False
-    stages = patterning._get_milling_stages("autolamella_undercut", settings.protocol, point=det.features[0].feature_m)
-    _validate_mill_ui(microscope, settings, stages, parent_ui,
-        msg=f"Press Run Milling to mill the First Undercut for {lamella._petname}. Press Continue when done.",
-        validate=validate,
+    # mvoe lamella to centre
+    detection.move_based_on_detection(
+        microscope,
+        settings,
+        det,
+        beam_type=settings.image.beam_type,
     )
 
-    # tilt down, align to trench
-    _update_status_ui(parent_ui, f"{lamella.info} Tilting to Undercut Position...")
-    tilt_angle_step = settings.protocol["autolamella_undercut"].get("tilt_angle_step", 10)
-    microscope.move_stage_relative(FibsemStagePosition(t=np.deg2rad(tilt_angle_step)))
-    
-    # detect
-    settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
-    settings.image.label = f"ref_trench_align_ml_02"
-    settings.image.save = True
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    _set_images_ui(parent_ui, eb_image, ib_image)
+    N_UNDERCUTS = settings.protocol["autolamella_undercut"].get("tilt_angle_step", 2)
+    UNDERCUT_ANGLE_DEG = settings.protocol["autolamella_undercut"].get("tilt_angle", -10)
+    for i in range(N_UNDERCUTS):
 
-    features = [LamellaCentre()] # TODO: add LamellaBottom / Top Edge
-    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+        _n = f"{i+1:02d}" # helper
 
-    # mill undercut 2
-    settings.protocol["autolamella_undercut"]["cleaning_cross_section"] = False
-    stages = patterning._get_milling_stages("autolamella_undercut", settings.protocol, point=det.features[0].feature_m)
-    _validate_mill_ui(microscope, settings, stages, parent_ui,
-        msg=f"Press Run Milling to mill the Second Undercut for {lamella._petname}. Press Continue when done.",
-        validate=validate,
-    )
+        # tilt down, align to trench
+        log_status_message(lamella, f"TILT_UNDERCUT_{_n}")
+        _update_status_ui(parent_ui, f"{lamella.info} Tilting to Undercut Position...")
+        microscope.move_stage_relative(FibsemStagePosition(t=np.deg2rad(UNDERCUT_ANGLE_DEG)))
+
+        # detect
+        log_status_message(lamella, f"ALIGN_UNDERCUT_{_n}")
+        settings.image.beam_type = BeamType.ION
+        settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM if i == 0 else fcfg.REFERENCE_HFW_HIGH
+        settings.image.label = f"ref_undercut_align_ml_{_n}"
+        settings.image.save = True
+        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+        _set_images_ui(parent_ui, eb_image, ib_image)
+
+        features = [LamellaCentre()] # TODO: add LamellaBottom / Top Edge
+        det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+
+        # mill undercut 1
+        log_status_message(lamella, f"MILL_UNDERCUT_{_n}")
+        stages = patterning._get_milling_stages("autolamella_undercut", settings.protocol, point=det.features[0].feature_m)
+        _validate_mill_ui(microscope, settings, stages, parent_ui,
+            msg=f"Press Run Milling to mill the Undercut {_n} for {lamella._petname}. Press Continue when done.",
+            validate=validate,
+        )
 
     # take reference images
+    log_status_message(lamella, "REFERENCE_IMAGES")
     reference_images = acquire.take_set_of_reference_images(
         microscope=microscope,
         image_settings=settings.image,
@@ -190,6 +193,7 @@ def mill_feature(
     _update_status_ui(parent_ui, f"{lamella.info} Preparing {_feature_name}...")
 
     # define notch/microexpansion
+    log_status_message(lamella, "MILL_FEATURES")
     stages = patterning._get_milling_stages(
         _feature_name, lamella.protocol, point=lamella.feature_position
     )
@@ -218,6 +222,7 @@ def mill_feature(
     settings.image.reduced_area = None
 
     # take reference images
+    log_status_message(lamella, "REFERENCE_IMAGES")
     reference_images = acquire.take_set_of_reference_images(
         microscope=microscope,
         image_settings=settings.image,
@@ -250,6 +255,7 @@ def mill_lamella(
 
 
     # beam_shift alignment
+    log_status_message(lamella, "ALIGN_LAMELLA")
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
     settings.image.label = f"alignment_target_{lamella.state.stage.name}"
@@ -262,6 +268,8 @@ def mill_lamella(
     # TODO: CHANGE_CURRENT_BACK
 
     # TODO: DISPLAY IMAGES
+
+    log_status_message(lamella, "MILL_LAMELLA")
 
     # define feature
     stages = patterning._get_milling_stages(
@@ -284,6 +292,7 @@ def mill_lamella(
 
 
     # take reference images
+    log_status_message(lamella, "REFERENCE_IMAGES")
     reference_images = acquire.take_set_of_reference_images(
         microscope=microscope,
         image_settings=settings.image,
@@ -311,6 +320,8 @@ def setup_lamella(
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
+
+    log_status_message(lamella, "SETUP_PATTERNS")
 
     # select positions and protocol for feature (notch or microexpansion), lamella
     _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
@@ -354,7 +365,7 @@ def setup_lamella(
         logging.info(f"Fiducial centre: {lamella.fiducial_centre}")
 
 
-    log_status_message(lamella, "LAMELLA_SETUP_REF")
+    log_status_message(lamella, "REFERENCE_IMAGES")
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
 
     # # take reference images
@@ -385,7 +396,7 @@ def end_of_stage_update(
     # # update and save experiment
     experiment.save()
 
-    logging.info(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | FINISHED")
+    log_status_message(lamella, "FINISHED")
     _update_status_ui(parent_ui, f"{lamella.info} Finished")
 
     return experiment
@@ -411,7 +422,7 @@ def start_of_stage_update(
     # set current state information
     lamella.state.stage = next_stage
     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
-    logging.info(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | STARTED")
+    log_status_message(lamella, "STARTED")
     _update_status_ui(parent_ui, f"{lamella.info} Starting...")
 
     return lamella
@@ -435,9 +446,7 @@ def run_trench_milling(
     parent_ui: AutoLamellaUI=None,
 ) -> Experiment:
     for lamella in experiment.positions:
-        logging.info(
-            f"------------------------{lamella._petname}----------------------------------------"
-        )
+
         if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench:
             lamella = start_of_stage_update(
                 microscope,
@@ -452,9 +461,7 @@ def run_trench_milling(
 
             parent_ui.update_experiment_signal.emit(experiment)
 
-        logging.info(
-            "----------------------------------------------------------------------------------------"
-        )
+
     return experiment
 
 
@@ -465,9 +472,7 @@ def run_undercut_milling(
     parent_ui=None,
 ) -> Experiment:
     for lamella in experiment.positions:
-        logging.info(
-            f"------------------------{lamella._petname}----------------------------------------"
-        )
+
         if lamella.state.stage == AutoLamellaWaffleStage.MillTrench:
             lamella = start_of_stage_update(
                 microscope,
@@ -482,9 +487,6 @@ def run_undercut_milling(
 
             parent_ui.update_experiment_signal.emit(experiment)
 
-        logging.info(
-            "----------------------------------------------------------------------------------------"
-        )
     return experiment
 
 def run_lamella_milling(
@@ -504,21 +506,13 @@ def run_lamella_milling(
     ]
     for stage in stages:
         for lamella in experiment.positions:
-            logging.info(
-                f"------------------------{lamella._petname}----------------------------------------"
-            )
             if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1):
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
-                print(f"---------------------stage: {stage.name}----------------------")
                 lamella = WORKFLOW_STAGES[lamella.state.stage](microscope, settings, lamella, parent_ui)
-                print(f'-------------------lamella protocol after stage  {lamella.protocol}')
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
                 parent_ui.update_experiment_signal.emit(experiment)
 
-            logging.info(
-                "----------------------------------------------------------------------------------------"
-            )
 
     # finish
     for lamella in experiment.positions:
@@ -538,20 +532,18 @@ def _validate_mill_ui(microscope, settings, stages, parent_ui: AutoLamellaUI, ms
         stages = deepcopy(parent_ui.milling_widget.get_milling_stages())
     else:
         _update_status_ui(parent_ui, f"Milling {len(stages)} stages...")
-        milling.mill_stages(
-            microscope, settings, stages
-        )  # TODO: make a ui version of this?
+        parent_ui._MILLING_RUNNING = True
+        parent_ui._run_milling_signal.emit()
+        
+        logging.info(f"WAITING FOR MILLING TO FINISH... ")
+        while parent_ui._MILLING_RUNNING:
+            time.sleep(1)
+        
         _update_status_ui(
             parent_ui, f"Milling Complete: {len(stages)} stages completed."
         )
 
-    parent_ui.WAITING_FOR_UI_UPDATE = True
-
     _update_mill_stages_ui(parent_ui, stages="clear")
-
-    logging.info(f"WAITING FOR UI UPDATE... ")
-    while parent_ui.WAITING_FOR_UI_UPDATE:
-        time.sleep(0.5)
 
     return stages
 
@@ -572,8 +564,11 @@ def _update_mill_stages_ui(
         "stages": stages,
     }
 
+    parent_ui.WAITING_FOR_UI_UPDATE = True
     parent_ui.ui_signal.emit(INFO)
-
+    logging.info(f"WAITING FOR UI UPDATE... ")
+    while parent_ui.WAITING_FOR_UI_UPDATE:
+        time.sleep(0.5)
 
 def _validate_det_ui_v2(
     microscope, settings, features, parent_ui, validate: bool, msg: str = "Lamella"
