@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'AutolamellaUI.ui'
+# Form implementation generated from reading ui file 'AutoLamellaUI.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -150,9 +150,11 @@ class Ui_MainWindow(object):
         self.label_2 = QtWidgets.QLabel(self.tab_2)
         self.label_2.setObjectName("label_2")
         self.formLayout_2.setWidget(5, QtWidgets.QFormLayout.LabelRole, self.label_2)
-        self.doubleSpinBox = QtWidgets.QDoubleSpinBox(self.tab_2)
-        self.doubleSpinBox.setObjectName("doubleSpinBox")
-        self.formLayout_2.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.doubleSpinBox)
+        self.doubleSpinBox_undercut_step = QtWidgets.QDoubleSpinBox(self.tab_2)
+        self.doubleSpinBox_undercut_step.setMinimum(-180.0)
+        self.doubleSpinBox_undercut_step.setMaximum(180.0)
+        self.doubleSpinBox_undercut_step.setObjectName("doubleSpinBox_undercut_step")
+        self.formLayout_2.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.doubleSpinBox_undercut_step)
         self.label_3 = QtWidgets.QLabel(self.tab_2)
         self.label_3.setObjectName("label_3")
         self.formLayout_2.setWidget(6, QtWidgets.QFormLayout.LabelRole, self.label_3)

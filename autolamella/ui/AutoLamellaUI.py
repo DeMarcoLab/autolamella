@@ -95,7 +95,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             microscope=self.microscope,
             settings=self.settings,
             viewer=self.viewer,
-            config_path=os.path.join(cfg.CONFIG_PATH, "system.yaml"),
+            config_path=os.path.join(cfg.CONFIG_PATH),
         )
         self.tabWidget.addTab(self.system_widget, "System")
 
@@ -160,6 +160,31 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_add_lamella.setStyleSheet("background-color: green")
         self.pushButton_remove_lamella.setStyleSheet("background-color: red")
 
+
+    def update_protocol_ui(self):
+
+        if self._PROTOCOL_LOADED is False:
+            return
+        
+        self.beamshift_attempts.setValue(self.settings.protocol["lamella"]["beam_shift_attempts"])
+
+        alignment_currents = ["Imaging Current","Milling Current"]
+
+        self.comboBox_current_alignment.addItems(alignment_currents)
+        if self.settings.protocol["lamella"]["alignment_current"] in ["Imaging Current","Imaging"]:
+            self.comboBox_current_alignment.setCurrentIndex(0)
+        elif self.settings.protocol["lamella"]["alignment_current"] in ["Milling Current","Milling"]:
+            self.comboBox_current_alignment.setCurrentIndex(1)
+
+        self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["autolamella_undercut"]["tilt_angle"])
+        self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["autolamella_undercut"]["tilt_angle_step"])
+
+        self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
+
+        # if isinstance(self.microscope,(ThermoMicroscope,DemoMicroscope)):
+        #     application_files = self.microscope.get_available_values("application_files")
+        #     self.comboBoxapplication_file.addItems(application_files)
+        #     self.comboBoxapplication_file.set
 
     def setup_experiment(self):
         new_experiment = bool(self.sender() is self.actionNew_Experiment)
@@ -466,6 +491,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.settings.protocol = utils.load_protocol(protocol_path=PATH)
         self._PROTOCOL_LOADED = True
+        self.update_protocol_ui()
         napari.utils.notifications.show_info(
             f"Loaded Protocol from {os.path.basename(PATH)}"
         )
