@@ -1,17 +1,17 @@
 
-name: autolamella_demo
+name: autolamella-waffle-scan-rotation-0deg
 application_file: autolamella # Thermo only
 
 options:
   supervise:
     trench: false
     undercut: true
-    features: true
-    lamella: true
+    features: false
+    lamella: false
     setup_lamella: true
 
 fiducial:
-  enabled: true
+  enabled: false
   height: 10.e-6
   width: 1.e-6
   depth: 1.0e-6
@@ -40,13 +40,13 @@ trench:
 lamella:
   beam_shift_attempts: 3.0
   alignment_current: "Imaging"
-  lamella_width: 10.e-6
+  lamella_width: 20.e-6
   lamella_height: 800.e-9
   stages:
   - trench_height: 10.e-6
-    lamella_width: 10.e-6
+    lamella_width: 20.e-6
     lamella_height: 800.e-9
-    depth: 1.e-6
+    depth: 2.e-6
     offset: 2.e-6
     size_ratio: 1.0
     milling_current: 2.e-9
@@ -55,7 +55,7 @@ lamella:
     application_file: autolamella
     cleaning_cross_section: true
   - trench_height: 2.e-6
-    lamella_width: 10.e-6
+    lamella_width: 12.e-6
     lamella_height: 800.e-9
     depth: 1.e-6
     offset: 0.5e-6
@@ -66,7 +66,7 @@ lamella:
     application_file: autolamella
     cleaning_cross_section: true
   - trench_height: 0.5e-6
-    lamella_width: 10.e-6
+    lamella_width: 12.e-6
     lamella_height: 800.e-9
     depth: 0.4e-6
     offset: 0.0e-6

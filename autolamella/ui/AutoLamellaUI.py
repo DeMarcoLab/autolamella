@@ -135,6 +135,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_trench.clicked.connect(self._run_trench_workflow)
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
         self.pushButton_run_waffle_undercut.clicked.connect(self._run_undercut_workflow)
+        self.pushButton_run_setup_autolamella.clicked.connect(self._run_setup_lamella_workflow)
   
         # system widget
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
@@ -651,6 +652,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
         self.worker.finished.connect(self._workflow_finished)
         self.worker.start()
+    
+    def _run_setup_lamella_workflow(self):
+        self.milling_widget.milling_position_changed.disconnect()
+
+        self.worker = self._threaded_worker(
+            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="setup-lamella",
+        )
+        self.worker.finished.connect(self._workflow_finished)
+        self.worker.start()
 
     def _run_lamella_workflow(self):
         self.milling_widget.milling_position_changed.disconnect()
@@ -722,8 +732,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if workflow == "undercut":
             wfl.run_undercut_milling(microscope, settings, experiment, parent_ui=self )
 
-        # if workflow == "notch":
-        #     wfl.run_notch_milling(microscope, settings, experiment, parent_ui=self )
+        if workflow == "setup-lamella":
+            wfl.run_setup_lamella(microscope, settings, experiment, parent_ui=self )
 
         if workflow == "lamella":
             wfl.run_lamella_milling(microscope, settings, experiment, parent_ui=self )
