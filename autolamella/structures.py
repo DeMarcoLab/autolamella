@@ -27,6 +27,7 @@ class AutoLamellaWaffleStage(Enum):
     ReadyTrench = auto()
     MillTrench = auto()
     MillUndercut = auto()
+    ReadyLamella = auto()
     SetupLamella = auto()
     MillFeatures = auto()
     MillRoughCut = auto()
@@ -72,7 +73,6 @@ class Lamella:
     lamella_position: Point = Point()
     trench_position: Point = Point()
     feature_position: Point = Point()
-    mill_microexpansion: bool = False
     history: list[LamellaState] = None
     _petname: str = None
     protocol: dict = None    

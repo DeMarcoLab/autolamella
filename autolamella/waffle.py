@@ -37,6 +37,8 @@ from fibsem.detection.detection import (
 )
 from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 from fibsem import config as fcfg
+from fibsem import conversions
+
 
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | {step}")
@@ -46,7 +48,7 @@ def mill_trench(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     lamella: Lamella,
-    parent_ui=None,
+    parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
 
     validate = settings.protocol["options"]["supervise"].get("trench", True)
@@ -68,7 +70,7 @@ def mill_trench(
     # define trench #TODO: update to lamella.protocol
     settings.image.beam_type = BeamType.ION
     stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.trench_position)
-    _validate_mill_ui(microscope, settings, stages, parent_ui,
+    _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
@@ -95,7 +97,7 @@ def mill_undercut(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     lamella: Lamella,
-    parent_ui=None,
+    parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
     validate = settings.protocol["options"]["supervise"].get("undercut", True)
     settings.image.save_path = lamella.path
@@ -118,12 +120,11 @@ def mill_undercut(
     features = [LamellaCentre(),ImageCentre()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
-    # mvoe lamella to centre
-    detection.move_based_on_detection(
-        microscope,
-        settings,
-        det,
-        beam_type=settings.image.beam_type,
+    microscope.stable_move(
+        settings, 
+        dx=det.features[0].feature_m.x,
+        dy=det.features[0].feature_m.y,
+        beam_type=settings.image.beam_type
     )
 
     N_UNDERCUTS = int(settings.protocol["autolamella_undercut"].get("tilt_angle_step", 2))
@@ -140,7 +141,7 @@ def mill_undercut(
         # detect
         log_status_message(lamella, f"ALIGN_UNDERCUT_{_n}")
         settings.image.beam_type = BeamType.ION
-        settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM if i == 0 else fcfg.REFERENCE_HFW_HIGH
+        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
         settings.image.label = f"ref_undercut_align_ml_{_n}"
         settings.image.save = True
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
@@ -152,7 +153,7 @@ def mill_undercut(
         # mill undercut 1
         log_status_message(lamella, f"MILL_UNDERCUT_{_n}")
         stages = patterning._get_milling_stages("autolamella_undercut", settings.protocol, point=det.features[0].feature_m)
-        _validate_mill_ui(microscope, settings, stages, parent_ui,
+        _validate_mill_ui(stages, parent_ui,
             msg=f"Press Run Milling to mill the Undercut {_n} for {lamella._petname}. Press Continue when done.",
             validate=validate,
         )
@@ -173,7 +174,7 @@ def mill_feature(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     lamella: Lamella,
-    parent_ui=None,
+    parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
 
     validate = settings.protocol["options"]["supervise"].get("features", True)
@@ -209,14 +210,7 @@ def mill_feature(
         _feature_name, lamella.protocol, point=lamella.feature_position
     )
 
-    # optional fiducial
-    use_fiducial = settings.protocol["fiducial"]["enabled"]
-    if use_fiducial:
-        fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, lamella.fiducial_centre)
-        stages += fiducial_stage
-
-
-    _validate_mill_ui(microscope, settings, stages, parent_ui,
+    _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the {_feature_name} for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
@@ -240,7 +234,7 @@ def mill_lamella(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     lamella: Lamella,
-    parent_ui=None,
+    parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
     validate = settings.protocol["options"]["supervise"].get("lamella", True)
     settings.image.save_path = lamella.path
@@ -325,8 +319,21 @@ def mill_lamella(
         "lamella", lamella.protocol, point=lamella.lamella_position
     )
 
-
-    _validate_mill_ui(microscope, settings, stages, parent_ui,
+    # filter stage based on the current stage
+    stage_map = {
+        AutoLamellaWaffleStage.MillRoughCut: 0,
+        AutoLamellaWaffleStage.MillRegularCut: 1,
+        AutoLamellaWaffleStage.MillPolishingCut: 2,
+    }
+    idx = stage_map[lamella.state.stage]
+    if idx in [0, 1]:
+        stages = [stages[idx]]
+    else:
+        stages = stages[idx:]
+        if not isinstance(stages, list):
+            stages = [stages]
+    
+    _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
@@ -350,7 +357,7 @@ def setup_lamella(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     lamella: Lamella,
-    parent_ui=None,
+    parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
 
     validate = settings.protocol["options"]["supervise"].get("setup_lamella", True)
@@ -363,35 +370,26 @@ def setup_lamella(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    # select positions and protocol for feature (notch or microexpansion), lamella
-    lamella_stages = patterning._get_milling_stages("lamella", settings.protocol)
-    print(f'----------------lamella stage 0 {lamella_stages[0]}------------------')
-    print(f'----------------lamella stage 1 {lamella_stages[1]}------------------')
-    print(f'----------------lamella stage 2 {lamella_stages[2]}------------------')
 
+    # load the default protocol unless in lamella protocol
+    protocol = lamella.protocol if "lamella" in lamella.protocol else settings.protocol
+    lamella_stages = patterning._get_milling_stages("lamella", protocol, lamella.lamella_position)
+    stages = deepcopy(lamella_stages)
 
+    # feature 
+    _feature_name = "notch" if settings.protocol["notch"]["enabled"]  else "microexpansion"
+    protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol
+    feature_stage = patterning._get_milling_stages(_feature_name, protocol, lamella.feature_position)
+    stages += feature_stage
 
-    # calculate feature position
-    _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
-    
-    # notch
-    if _feature_name == "notch":
-        dx = lamella_stages[0].pattern.protocol["lamella_width"] / 2
-        feature_position = Point(dx, 0.0)
-    else:
-        feature_position = Point(0, 0)
-
-    feature_stages = patterning._get_milling_stages(_feature_name, settings.protocol, feature_position)
-    stages = lamella_stages + feature_stages
-
-    # optional fiducial
-    use_fiducial = settings.protocol["fiducial"]["enabled"]
-    if use_fiducial:
-        fiducial_stage = patterning._get_milling_stages("fiducial", settings.protocol)
+    # fiducial
+    if use_fiducial := settings.protocol["fiducial"]["enabled"]:
+        protocol = lamella.protocol if "fiducial" in lamella.protocol else settings.protocol
+        fiducial_stage = patterning._get_milling_stages("fiducial", protocol, lamella.fiducial_centre)
         stages += fiducial_stage
 
-    stages =_validate_mill_ui(microscope, settings, stages, parent_ui, 
-        msg=f"Confirm the positions for the {lamella._petname} milling. Don't run milling yet, this is just setup.", 
+    stages =_validate_mill_ui(stages, parent_ui, 
+        msg=f"Confirm the positions for the {lamella._petname} milling. Don't run milling yet, this is just setup.", # TODO: disable milling button here
         validate=validate)
     
     from pprint import pprint 
@@ -407,7 +405,7 @@ def setup_lamella(
 
     
     # feature
-    n_features = len(feature_stages)
+    n_features = len(feature_stage)
     lamella.feature_position = stages[n_lamella].pattern.point
     lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella:n_lamella+n_features]))
 
@@ -425,7 +423,7 @@ def setup_lamella(
 
         # mill the fiducial
         fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, lamella.fiducial_centre)
-        stages =_validate_mill_ui(microscope, settings, stages, parent_ui, 
+        stages =_validate_mill_ui(fiducial_stage, parent_ui, 
             msg=f"Milling Fiducial for {lamella._petname}.", 
             validate=False)
     
@@ -457,12 +455,13 @@ def setup_lamella(
 
 
 def end_of_stage_update(
-    microscope: FibsemMicroscope, experiment: Experiment, lamella: Lamella, parent_ui: AutoLamellaUI
+    microscope: FibsemMicroscope, experiment: Experiment, lamella: Lamella, parent_ui: AutoLamellaUI, _save_state: bool = True,
 ) -> Experiment:
     """Save the current microscope state configuration to disk, and log that the stage has been completed."""
 
     # save state information
-    lamella.state.microscope_state = microscope.get_current_microscope_state()
+    if _save_state:
+        lamella.state.microscope_state = microscope.get_current_microscope_state()
     lamella.state.end_timestamp = datetime.timestamp(datetime.now())
 
     # write history
@@ -495,7 +494,7 @@ def start_of_stage_update(
         microscope.set_microscope_state(lamella.state.microscope_state)
 
     # set current state information
-    lamella.state.stage = next_stage
+    lamella.state.stage = deepcopy(next_stage)
     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
     log_status_message(lamella, "STARTED")
     _update_status_ui(parent_ui, f"{lamella.info} Starting...")
@@ -544,7 +543,7 @@ def run_undercut_milling(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     experiment: Experiment,
-    parent_ui=None,
+    parent_ui: AutoLamellaUI = None,
 ) -> Experiment:
     for lamella in experiment.positions:
 
@@ -562,17 +561,25 @@ def run_undercut_milling(
 
             parent_ui.update_experiment_signal.emit(experiment)
 
+    # ready lamella
+    for lamella in experiment.positions:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut:
+            lamella.state.stage = AutoLamellaWaffleStage.ReadyLamella
+            log_status_message(lamella, "STARTED")
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
+            parent_ui.update_experiment_signal.emit(experiment)
+
     return experiment
 
 def run_setup_lamella(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     experiment: Experiment,
-    parent_ui=None,
+    parent_ui: AutoLamellaUI = None,
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut:
+        if lamella.state.stage == AutoLamellaWaffleStage.ReadyLamella:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -592,7 +599,7 @@ def run_lamella_milling(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     experiment: Experiment,
-    parent_ui=None,
+    parent_ui: AutoLamellaUI = None,
 ) -> Experiment:
 
 
@@ -617,13 +624,14 @@ def run_lamella_milling(
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut:
             lamella.state.stage = AutoLamellaWaffleStage.Finished
-            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
+            log_status_message(lamella, "STARTED")
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
             parent_ui.update_experiment_signal.emit(experiment)
 
     return experiment
 
 
-def _validate_mill_ui(microscope: FibsemMicroscope, settings: MicroscopeSettings, stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg, validate: bool):
+def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg, validate: bool):
     _update_mill_stages_ui(parent_ui, stages=stages)
 
     if validate:
@@ -755,7 +763,6 @@ def ask_user(
     logging.info("WAITING_FOR_USER_INTERACTION...")
     while parent_ui.WAITING_FOR_USER_INTERACTION:
         time.sleep(1)
-        # print("waiting for user interaction")
 
     INFO = {
         "msg": "",
@@ -771,12 +778,11 @@ def ask_user(
 
     return parent_ui.USER_RESPONSE
 
-from fibsem import conversions
 
 def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->tuple[FibsemRectangle, bool]:
     pixelsize = image.metadata.pixel_size.x
     
-    fiducial_centre.y = fiducial_centre.y * -1
+    fiducial_centre.y = fiducial_centre.y
     fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
         fiducial_centre, pixelsize
     )
