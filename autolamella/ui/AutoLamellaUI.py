@@ -71,6 +71,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     ui_signal = pyqtSignal(dict)
     det_confirm_signal = pyqtSignal(bool)
     update_experiment_signal = pyqtSignal(Experiment)
+    _run_milling_signal = pyqtSignal()
     
     def __init__(self, viewer: napari.Viewer) -> None:
         super(AutoLamellaUI, self).__init__()
@@ -95,7 +96,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             microscope=self.microscope,
             settings=self.settings,
             viewer=self.viewer,
-            config_path=os.path.join(cfg.CONFIG_PATH),
+            config_path=cfg.SYSTEM_PATH,
         )
         self.tabWidget.addTab(self.system_widget, "System")
 
@@ -106,6 +107,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.WAITING_FOR_USER_INTERACTION: bool = False
         self.USER_RESPONSE: bool = False
         self.WAITING_FOR_UI_UPDATE: bool = False
+        self._MILLING_RUNNING: bool = False
+
 
 
         # setup connections
@@ -132,6 +135,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_trench.clicked.connect(self._run_trench_workflow)
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
         self.pushButton_run_waffle_undercut.clicked.connect(self._run_undercut_workflow)
+        self.pushButton_run_setup_autolamella.clicked.connect(self._run_setup_lamella_workflow)
   
         # system widget
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
@@ -156,6 +160,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.det_confirm_signal.connect(self._confirm_det)
         self.update_experiment_signal.connect(self._update_experiment)
         self.ui_signal.connect(self._ui_signal)
+        self._run_milling_signal.connect(self._run_milling)
 
         self.pushButton_add_lamella.setStyleSheet("background-color: green")
         self.pushButton_remove_lamella.setStyleSheet("background-color: red")
@@ -269,6 +274,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             self._microscope_ui_loaded = True
             self.milling_widget.milling_position_changed.connect(self._update_milling_position)
+            self.milling_widget._milling_finished.connect(self._milling_finished)
 
         else:
             if self.image_widget is None:
@@ -409,9 +415,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def _update_lamella_combobox(self):
         # detail combobox
+        idx = self.comboBox_current_lamella.currentIndex()
         self.comboBox_current_lamella.currentIndexChanged.disconnect()
         self.comboBox_current_lamella.clear()
         self.comboBox_current_lamella.addItems([lamella.info for lamella in self.experiment.positions])
+        if idx != -1 and self.experiment.positions:
+            self.comboBox_current_lamella.setCurrentIndex(idx)
         self.comboBox_current_lamella.currentIndexChanged.connect(self.update_lamella_ui)
 
     def update_lamella_ui(self):
@@ -637,34 +646,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         elif (self.experiment.positions[idx].state.stage is AutoLamellaWaffleStage.ReadyTrench):
             self.experiment.positions[idx].state.stage = AutoLamellaWaffleStage.Setup
 
-    #     if (
-    #         self.experiment.positions[index].state.stage
-    #         is AutoLamellaWaffleStage.MillTrench
-    #     ):
-    #         self.experiment.positions[index].state.microscope_state = deepcopy(
-    #             self.microscope.get_current_microscope_state()
-    #         )
-    #         self.experiment.positions[
-    #             index
-    #         ].state.stage = AutoLamellaWaffleStage.ReadyLamella
-
-    #         # get current ib image, save as reference
-    #         fname = os.path.join(
-    #             self.experiment.positions[index].path, "ref_position_lamella_ib"
-    #         )
-    #         self.image_widget.ib_image.save(fname)
-
-    #     elif (
-    #         self.experiment.positions[index].state.stage
-    #         is AutoLamellaWaffleStage.ReadyLamella
-    #     ):
-    #         self.experiment.positions[
-    #             index
-    #         ].state.stage = AutoLamellaWaffleStage.MillTrench
-
         self._update_lamella_combobox()
         self.update_ui()
         self.experiment.save()
+
+    def _run_milling(self):
+        self._MILLING_RUNNING = True
+        self.milling_widget.run_milling()
+
+    def _milling_finished(self):
+        self._MILLING_RUNNING = False
 
     def _confirm_det(self):
         if self.det_widget is not None:
@@ -684,6 +675,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.worker = self._threaded_worker(
             microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="undercut",
+        )
+        self.worker.finished.connect(self._workflow_finished)
+        self.worker.start()
+    
+    def _run_setup_lamella_workflow(self):
+        self.milling_widget.milling_position_changed.disconnect()
+
+        self.worker = self._threaded_worker(
+            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="setup-lamella",
         )
         self.worker.finished.connect(self._workflow_finished)
         self.worker.start()
@@ -758,8 +758,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if workflow == "undercut":
             wfl.run_undercut_milling(microscope, settings, experiment, parent_ui=self )
 
-        # if workflow == "notch":
-        #     wfl.run_notch_milling(microscope, settings, experiment, parent_ui=self )
+        if workflow == "setup-lamella":
+            wfl.run_setup_lamella(microscope, settings, experiment, parent_ui=self )
 
         if workflow == "lamella":
             wfl.run_lamella_milling(microscope, settings, experiment, parent_ui=self )
