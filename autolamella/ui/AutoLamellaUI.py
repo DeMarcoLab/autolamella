@@ -136,6 +136,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
         self.pushButton_run_waffle_undercut.clicked.connect(self._run_undercut_workflow)
         self.pushButton_run_setup_autolamella.clicked.connect(self._run_setup_lamella_workflow)
+
+        self.export_protocol.clicked.connect(self.export_protocol_ui)
   
         # system widget
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
@@ -200,6 +202,19 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.comboBoxapplication_file.setVisible(False)
             self.application_file_label.setVisible(False)
 
+    def export_protocol_ui(self):
+
+        if self._PROTOCOL_LOADED is False:
+            return
+
+        self.settings.protocol["lamella"]["beam_shift_attempts"] = self.beamshift_attempts.value()
+        self.settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText()
+        self.settings.protocol["autolamella_undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
+        self.settings.protocol["autolamella_undercut"]["tilt_angle_step"] = self.doubleSpinBox_undercut_step.value()
+        self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
+        self.settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
+
+        utils.save_yaml(cfg.PROTOCOL_PATH, self.settings.protocol)
 
 
     def setup_experiment(self):
