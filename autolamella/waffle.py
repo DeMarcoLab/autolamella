@@ -115,7 +115,7 @@ def mill_undercut(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    features = [LamellaCentre()] 
+    features = [LamellaCentre(),ImageCentre()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
     # mvoe lamella to centre
@@ -126,7 +126,7 @@ def mill_undercut(
         beam_type=settings.image.beam_type,
     )
 
-    N_UNDERCUTS = settings.protocol["autolamella_undercut"].get("tilt_angle_step", 2)
+    N_UNDERCUTS = int(settings.protocol["autolamella_undercut"].get("tilt_angle_step", 2))
     UNDERCUT_ANGLE_DEG = settings.protocol["autolamella_undercut"].get("tilt_angle", -10)
     for i in range(N_UNDERCUTS):
 
@@ -146,7 +146,7 @@ def mill_undercut(
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         _set_images_ui(parent_ui, eb_image, ib_image)
 
-        features = [LamellaCentre()] # TODO: add LamellaBottom / Top Edge
+        features = [LamellaCentre(),ImageCentre()] # TODO: add LamellaBottom / Top Edge
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
         # mill undercut 1
@@ -275,23 +275,27 @@ def mill_lamella(
     # prev current
 
     existing_current = microscope.get("current", BeamType.ION)
-    existing_preset = microscope.get("preset", BeamType.ION) if isinstance(microscope,TescanMicroscope) else None
 
+    existing_preset = "30 keV; UHR imaging"
     print(f"------------------ existing current {existing_current} ------------------")
+    print(f'------------------ existing preset {existing_preset} ------------------')
 
     if settings.protocol["lamella"]["alignment_current"] in ["Milling", "milling","Milling Current"]:
         alignment_current = stages[0].milling.milling_current
-        alignment_preset = stages[0].milling.milling_preset
+        alignment_preset = stages[0].milling.preset
         print(f'---------------using milling current--------------------')
     else:
         print(f'---------------using imaging current--------------------')
+        alignment_current = existing_current
+        alignment_preset = existing_preset
         
     print(f'------------------ alignment current {alignment_current} ------------------')
+    print(f'------------------ alignment preset {alignment_preset} ------------------')
     
     if isinstance(microscope,(ThermoMicroscope)):
-        microscope.set("current",BeamType.ION,alignment_current)
+        microscope.set(key="current",value=alignment_current,beam_type=BeamType.ION)
     elif isinstance(microscope,TescanMicroscope):
-        microscope.set("preset",BeamType.ION,alignment_preset)
+        microscope.set(key="preset",value=alignment_preset,beam_type=BeamType.ION)
 
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
@@ -304,9 +308,9 @@ def mill_lamella(
 
     # TODO: CHANGE_CURRENT_BACK
     if isinstance(microscope,(ThermoMicroscope)):
-        microscope.set("current",BeamType.ION,existing_current)
+        microscope.set(key="current",value=existing_current,beam_type=BeamType.ION)
     elif isinstance(microscope,TescanMicroscope):
-        microscope.set("preset",BeamType.ION,existing_preset)
+        microscope.set(key="preset",value=existing_preset, beam_type=BeamType.ION)
 
     # take reference images
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
@@ -361,6 +365,11 @@ def setup_lamella(
 
     # select positions and protocol for feature (notch or microexpansion), lamella
     lamella_stages = patterning._get_milling_stages("lamella", settings.protocol)
+    print(f'----------------lamella stage 0 {lamella_stages[0]}------------------')
+    print(f'----------------lamella stage 1 {lamella_stages[1]}------------------')
+    print(f'----------------lamella stage 2 {lamella_stages[2]}------------------')
+
+
 
     # calculate feature position
     _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
@@ -392,6 +401,10 @@ def setup_lamella(
     n_lamella = len(lamella_stages)
     lamella.lamella_position = stages[0].pattern.point
     lamella.protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
+
+    print(f'---------------------after loading to lamella object----------------------')
+    print(f'-------------------------lamella protocol {lamella.protocol}----------------------')
+
     
     # feature
     n_features = len(feature_stages)
