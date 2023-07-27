@@ -568,7 +568,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         print("go to lamella ui")
         
         idx = self.comboBox_current_lamella.currentIndex()
-        lamella = self.experiment.positions[idx]
+        lamella: Lamella = self.experiment.positions[idx]
         position = lamella.state.microscope_state.absolute_position
         self.microscope._safe_absolute_stage_movement(position)
         logging.info(f"Moved to position of {lamella.info}.")
