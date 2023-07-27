@@ -7,7 +7,7 @@ from pprint import pprint
 import matplotlib.pyplot as plt
 import numpy as np
 from fibsem import acquire, milling, patterning, utils, calibration, alignment
-from fibsem.microscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, TescanMicroscope
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
     BeamType,
@@ -275,6 +275,7 @@ def mill_lamella(
     # prev current
 
     existing_current = microscope.get("current", BeamType.ION)
+    existing_preset = microscope.get("preset", BeamType.ION) if isinstance(microscope,TescanMicroscope) else None
 
     print(f"------------------ existing current {existing_current} ------------------")
 
@@ -283,12 +284,14 @@ def mill_lamella(
         alignment_preset = stages[0].milling.milling_preset
         print(f'---------------using milling current--------------------')
     else:
-        alignment_current = existing_current
         print(f'---------------using imaging current--------------------')
         
     print(f'------------------ alignment current {alignment_current} ------------------')
-
-    microscope.set("current",BeamType.ION,alignment_current)
+    
+    if isinstance(microscope,(ThermoMicroscope)):
+        microscope.set("current",BeamType.ION,alignment_current)
+    elif isinstance(microscope,TescanMicroscope):
+        microscope.set("preset",BeamType.ION,alignment_preset)
 
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
@@ -300,10 +303,10 @@ def mill_lamella(
     settings.image.reduced_area = None
 
     # TODO: CHANGE_CURRENT_BACK
-
-    microscope.set("current",BeamType.ION,existing_current)
-
-    microscope.set("current",BeamType.ION,existing_current)
+    if isinstance(microscope,(ThermoMicroscope)):
+        microscope.set("current",BeamType.ION,existing_current)
+    elif isinstance(microscope,TescanMicroscope):
+        microscope.set("preset",BeamType.ION,existing_preset)
 
     # take reference images
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
