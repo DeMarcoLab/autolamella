@@ -79,7 +79,7 @@ from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 
 
 
-_DEV_MODE = True
+_DEV_MODE = False
 DEV_EXP_PATH = r"C:/Users/Admin/Github/autolamella/autolamella/log\PAT_TEST_TILE/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
@@ -147,6 +147,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_go_to_lamella.setEnabled(False)
         self.comboBox_current_lamella.currentIndexChanged.connect(self.update_lamella_ui)
         self.pushButton_save_position.clicked.connect(self.save_lamella_ui)
+        self.pushButton_fail_lamella.clicked.connect(self.fail_lamella_ui)
 
         self.pushButton_run_waffle_trench.clicked.connect(self._run_trench_workflow)
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
@@ -599,6 +600,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._update_lamella_combobox()
         self.update_ui()
 
+
+    def fail_lamella_ui(self):
+        idx = self.comboBox_current_lamella.currentIndex()
+        self.experiment.positions[idx]._is_failure = True if not self.experiment.positions[idx]._is_failure else False
+        self.update_ui()
 
     def save_lamella_ui(self):
 

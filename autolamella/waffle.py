@@ -363,7 +363,7 @@ def run_trench_milling(
         logging.info(
             f"------------------------{lamella._petname}----------------------------------------"
         )
-        if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench:
+        if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -393,7 +393,7 @@ def run_undercut_milling(
         logging.info(
             f"------------------------{lamella._petname}----------------------------------------"
         )
-        if lamella.state.stage == AutoLamellaWaffleStage.MillTrench:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillTrench and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -423,7 +423,7 @@ def run_notch_milling(
         logging.info(
             f"------------------------{lamella._petname}----------------------------------------"
         )
-        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -461,7 +461,7 @@ def run_lamella_milling(
             logging.info(
                 f"------------------------{lamella._petname}----------------------------------------"
             )
-            if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1):
+            if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1) and not lamella._is_failure:
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
 
                 lamella = WORKFLOW_STAGES[lamella.state.stage](microscope, settings, lamella, parent_ui)
