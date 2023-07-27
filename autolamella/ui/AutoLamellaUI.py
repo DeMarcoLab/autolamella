@@ -146,8 +146,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionNew_Experiment.triggered.connect(self.setup_experiment)
         self.actionLoad_Experiment.triggered.connect(self.setup_experiment)
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
-        # self.actionSave_Protocol.triggered.connect(self.save_protocol)
-        # self.actionEdit_Protocol.triggered.connect(self.edit_protocol)
         self.actionCryo_Sputter.triggered.connect(self._cryo_sputter)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
@@ -331,14 +329,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # experiment loaded
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
-        # self.actionSave_Protocol.setVisible(_protocol_loaded)
         self.actionCryo_Sputter.setVisible(_protocol_loaded)
 
         self.actionLoad_Positions.setVisible(_experiment_loaded and _microscope_connected)
 
-        # workflow buttons
-        # self.pushButton_setup_autoliftout.setEnabled(_microscope_connected and _protocol_loaded)
-        # self.pushButton_run_autoliftout.setEnabled(_lamella_selected and _microscope_connected and _protocol_loaded)
 
         # labels
         if _experiment_loaded:
@@ -350,8 +344,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.label_info.setText(msg)
 
             self.comboBox_current_lamella.setVisible(_lamella_selected)
-            # self.label_current_lamella.setVisible(_lamella_selected)
-            # self.label_lamella_detail.setVisible(_lamella_selected)
 
         if _protocol_loaded:
             method = self.settings.protocol.get("method", "waffle")
@@ -432,13 +424,20 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
             
-            method = self.settings.protocol.get("method", "waffle")
-            pattern = "trench" if  method == "waffle" else "lamella"
-            position = lamella.trench_position if method == "waffle" else lamella.lamella_position
-            stages = patterning._get_milling_stages(pattern, self.settings.protocol, position)
-            self.milling_widget.set_milling_stages(stages)
+            if self.settings is not None:
+                
 
-            # TODO make this work properly including updating position
+                method = self.settings.protocol.get("method", "waffle")
+                pattern = "trench" if  method == "waffle" else "lamella"
+                position = lamella.trench_position if method == "waffle" else lamella.lamella_position
+
+                # load the default protocol unless in lamella protocol
+                protocol = lamella.protocol if pattern in lamella.protocol else self.settings.protocol
+
+                stages = patterning._get_milling_stages(pattern, protocol, position)
+                self.milling_widget.set_milling_stages(stages)
+
+                # TODO make this work properly including updating position
 
     def _update_milling_position(self):
 
@@ -458,11 +457,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # update the trench point
         method = self.settings.protocol.get("method", "waffle")
-        position = self.milling_widget.get_point_from_ui()
+        stages = deepcopy(self.milling_widget.get_milling_stages())
         if method == "waffle":
-            lamella.trench_position = deepcopy(position)
+            lamella.trench_position = stages[0].pattern.point
+            lamella.protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
         else:
-            lamella.lamella_position = deepcopy(position)
+            lamella.trench_position = stages[0].pattern.point
+            lamella.protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages))
 
         self.experiment.save() 
 
