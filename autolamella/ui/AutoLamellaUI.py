@@ -58,7 +58,7 @@ from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 
 
 
-_DEV_MODE = True
+_DEV_MODE = False
 DEV_EXP_PATH = r"/home/patrick/github/autolamella/autolamella/log/TEST_PAT_PROTOCOL/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
@@ -570,7 +570,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         idx = self.comboBox_current_lamella.currentIndex()
         lamella = self.experiment.positions[idx]
         position = lamella.state.microscope_state.absolute_position
-        self.microscope.move_stage_absolute(position)
+        self.microscope._safe_absolute_stage_movement(position)
         logging.info(f"Moved to position of {lamella.info}.")
         self.movement_widget.update_ui_after_movement()
 

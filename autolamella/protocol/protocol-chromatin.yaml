@@ -1,5 +1,5 @@
 
-name: autolamella-waffle-scan-rotation-0deg
+name: autolamella-chromatin-scan-rotation-0deg
 application_file: autolamella # Thermo only
 method: default # waffle or default
 
@@ -44,40 +44,66 @@ lamella:
   lamella_width: 20.e-6
   lamella_height: 800.e-9
   stages:
-  - trench_height: 10.e-6
-    lamella_width: 20.e-6
-    lamella_height: 800.e-9
-    depth: 2.e-6
-    offset: 2.e-6
-    size_ratio: 1.0
-    milling_current: 2.e-9
-    preset: "30 keV; 2.5 nA" # TESCAN only
-    hfw: 80.0e-6
-    application_file: autolamella
-    cleaning_cross_section: true
-  - trench_height: 2.e-6
-    lamella_width: 12.e-6
-    lamella_height: 800.e-9
-    depth: 1.e-6
-    offset: 0.5e-6
-    size_ratio: 1.0
-    milling_current: 0.74e-9
-    preset: "30 keV; 1 nA" # TESCAN only
-    hfw: 80.0e-6
-    application_file: autolamella
-    cleaning_cross_section: true
-  - trench_height: 0.5e-6
-    lamella_width: 12.e-6
-    lamella_height: 800.e-9
-    depth: 0.4e-6
-    offset: 0.0e-6
-    size_ratio: 1.0
-    milling_current: 60.0e-12 
-    preset: "30 keV; 50 pA" # TESCAN only
-    hfw: 80.0e-6
-    application_file: autolamella
-    cleaning_cross_section: true
-
+    -   application_file: autolamella
+        cleaning_cross_section: false
+        depth: 6.5e-07
+        dwell_time: 1.0e-06
+        hfw: 7.999999999999999e-05
+        lamella_height: 8.0e-07
+        lamella_width: 6.0e-06
+        milling_current: 7.4e-10
+        offset: 2.0e-06
+        patterning_mode: Serial
+        preset: ''
+        rate: 0.0001
+        size_ratio: 1.0
+        spot_size: 5.0e-08
+        trench_height: 3.5e-06
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 6.5e-07
+        dwell_time: 1.0e-06
+        hfw: 7.999999999999999e-05
+        lamella_height: 8.0e-07
+        lamella_width: 6.0e-06
+        milling_current: 2.0e-10
+        offset: 5.0e-07
+        patterning_mode: Serial
+        preset: ''
+        rate: 0.0001
+        size_ratio: 1.0
+        spot_size: 5.0e-08
+        trench_height: 2.0e-06
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 4.0e-07
+        dwell_time: 1.0e-06
+        hfw: 7.999999999999999e-05
+        lamella_height: 8.0e-07
+        lamella_width: 6.0e-06
+        milling_current: 6.0e-11
+        offset: 0.0
+        patterning_mode: Serial
+        preset: ''
+        rate: 0.0001
+        size_ratio: 1.0
+        spot_size: 5.0e-08
+        trench_height: 5.0e-07
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 4.0e-07
+        dwell_time: 1.0e-06
+        hfw: 7.999999999999999e-05
+        lamella_height: 4.0e-07
+        lamella_width: 6.0e-06
+        milling_current: 6.0e-11
+        offset: 0.0
+        patterning_mode: Serial
+        preset: ''
+        rate: 0.0001
+        size_ratio: 1.0
+        spot_size: 5.0e-08
+        trench_height: 4.0e-07
 
 
 microexpansion:
