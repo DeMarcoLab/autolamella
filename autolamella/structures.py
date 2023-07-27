@@ -73,7 +73,6 @@ class Lamella:
     lamella_position: Point = Point()
     trench_position: Point = Point()
     feature_position: Point = Point()
-    mill_microexpansion: bool = False
     history: list[LamellaState] = None
     _petname: str = None
     protocol: dict = None    

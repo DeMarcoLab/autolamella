@@ -409,7 +409,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             return
 
         idx = self.comboBox_current_lamella.currentIndex()
-        lamella = self.experiment.positions[idx]
+        lamella: Lamella = self.experiment.positions[idx]
 
         logging.info(f"Updating Lamella UI for {lamella.info}")
 
@@ -434,8 +434,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             
             method = self.settings.protocol.get("method", "waffle")
             pattern = "trench" if  method == "waffle" else "lamella"
-            print(method, pattern)
-            stages = patterning._get_milling_stages("trench", self.settings.protocol, lamella.trench_position)
+            position = lamella.trench_position if method == "waffle" else lamella.lamella_position
+            stages = patterning._get_milling_stages(pattern, self.settings.protocol, position)
             self.milling_widget.set_milling_stages(stages)
 
             # TODO make this work properly including updating position
@@ -449,7 +449,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             return
 
         idx = self.comboBox_current_lamella.currentIndex()
-        lamella = self.experiment.positions[idx]
+        lamella: Lamella = self.experiment.positions[idx]
 
         if lamella.state.stage != AutoLamellaWaffleStage.Setup:
             return
@@ -457,7 +457,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info(f"Updating Lamella Pattern for {lamella.info}")
 
         # update the trench point
-        lamella.trench_position = self.milling_widget.get_point_from_ui()
+        method = self.settings.protocol.get("method", "waffle")
+        position = self.milling_widget.get_point_from_ui()
+        if method == "waffle":
+            lamella.trench_position = deepcopy(position)
+        else:
+            lamella.lamella_position = deepcopy(position)
 
         self.experiment.save() 
 

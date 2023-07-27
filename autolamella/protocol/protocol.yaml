@@ -1,7 +1,7 @@
 
 name: autolamella-waffle-scan-rotation-0deg
 application_file: autolamella # Thermo only
-method: default # waffle or default
+method: waffle # waffle or default
 
 options:
   supervise:
