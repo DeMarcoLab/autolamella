@@ -59,7 +59,7 @@ from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 
 
 _DEV_MODE = False
-DEV_EXP_PATH = r"/home/patrick/github/autolamella/autolamella/log/TEST_PAT_PROTOCOL/experiment.yaml"
+DEV_EXP_PATH = r"/home/patrick/github/autolamella/autolamella/log/TEST_PROTOCOLv2/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
 _AUTO_SYNC_MINIMAP = False
@@ -433,14 +433,27 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
                 # load the default protocol unless in lamella protocol
                 protocol = lamella.protocol if pattern in lamella.protocol else self.settings.protocol
-
                 stages = patterning._get_milling_stages(pattern, protocol, position)
+
+                # feature (or at SetupLamella)
+                if method == "default":
+                    _feature_name = "notch" if self.settings.protocol["notch"]["enabled"]  else "microexpansion"
+                    protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol
+                    feature_stage = patterning._get_milling_stages(_feature_name, protocol, lamella.feature_position)
+                    stages += feature_stage
+
+                    # fiducial
+                    if self.settings.protocol["fiducial"]["enabled"]:
+                        protocol = lamella.protocol if "fiducial" in lamella.protocol else self.settings.protocol
+                        fiducial_stage = patterning._get_milling_stages("fiducial", protocol, lamella.fiducial_centre)
+                        stages += fiducial_stage
+
                 self.milling_widget.set_milling_stages(stages)
 
                 # TODO make this work properly including updating position
 
     def _update_milling_position(self):
-
+        # triggered when milling position is moved
         if self.experiment is None:
             return
         
@@ -457,13 +470,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # update the trench point
         method = self.settings.protocol.get("method", "waffle")
-        stages = deepcopy(self.milling_widget.get_milling_stages())
-        if method == "waffle":
-            lamella.trench_position = stages[0].pattern.point
-            lamella.protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
-        else:
-            lamella.trench_position = stages[0].pattern.point
-            lamella.protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages))
+        self._update_milling_protocol(idx=idx, method=method)
 
         self.experiment.save() 
 
@@ -612,6 +619,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
     def save_lamella_ui(self):
+        # triggered when save button is pressed
 
         if self.experiment.positions == []:
             return
@@ -622,11 +630,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         method = self.settings.protocol.get("method", "waffle")
         READY_STATE = AutoLamellaWaffleStage.ReadyTrench if method == "waffle" else AutoLamellaWaffleStage.ReadyLamella
         
+        lamella: Lamella = self.experiment.positions[idx]
+
         if self.experiment.positions[idx].state.stage is AutoLamellaWaffleStage.Setup:
             self.experiment.positions[idx].state.microscope_state = deepcopy(
                 self.microscope.get_current_microscope_state()
             )
             self.experiment.positions[idx].state.stage = READY_STATE
+
+            # update the protocol / point
+            self._update_milling_protocol(idx, method)
 
             # get current ib image, save as reference
             fname = os.path.join(
@@ -640,6 +653,34 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._update_lamella_combobox()
         self.update_ui()
         self.experiment.save()
+
+    def _update_milling_protocol(self, idx: int, method: str):
+
+        # TODO: add fiducial for lamella
+        # TODO: add feature for lamella
+
+        stages = deepcopy(self.milling_widget.get_milling_stages())
+        if method == "waffle":
+            self.experiment.positions[idx].trench_position = stages[0].pattern.point
+            self.experiment.positions[idx].protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
+        else:
+            n_lamella = len(self.settings.protocol["lamella"]["stages"])
+
+            # lamella
+            self.experiment.positions[idx].lamella_position = stages[0].pattern.point
+            self.experiment.positions[idx].protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
+
+            # feature
+            _feature_name = "notch" if self.settings.protocol["notch"]["enabled"] else "microexpansion"
+            self.experiment.positions[idx].feature_position = stages[n_lamella].pattern.point
+            self.experiment.positions[idx].protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella]))
+            
+            # fiducial (optional)
+            if self.settings.protocol["fiducial"]["enabled"]:
+                self.experiment.positions[idx].fiducial_centre = stages[-1].pattern.point
+                self.experiment.positions[idx].protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-1]))
+
+
 
     def _run_milling(self):
         self._MILLING_RUNNING = True
@@ -737,7 +778,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.update_ui()
 
     @thread_worker
-    def _threaded_worker(self, microscope, settings, experiment, workflow="trench"):
+    def _threaded_worker(self, microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment, workflow: str="trench"):
         
         self.WAITING_FOR_USER_INTERACTION = False
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)

@@ -121,7 +121,7 @@ microexpansion:
 
 
 notch:
-  enabled: true
+  enabled: false
   vheight: 2.0e-6
   vwidth: 0.2e-6
   hwidth: 2.0e-6

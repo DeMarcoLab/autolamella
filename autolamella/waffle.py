@@ -284,7 +284,9 @@ def mill_lamella(
     if idx in [0, 1]:
         stages = [stages[idx]]
     else:
-        stages = [stages[idx:]]
+        stages = stages[idx:]
+        if not isinstance(stages, list):
+            stages = [stages]
     
     _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
@@ -324,7 +326,7 @@ def setup_lamella(
     _set_images_ui(parent_ui, eb_image, ib_image)
 
     # select positions and protocol for feature (notch or microexpansion), lamella
-    lamella_stages = patterning._get_milling_stages("lamella", settings.protocol)
+    lamella_stages = patterning._get_milling_stages("lamella", lamella.protocol)
 
     # calculate feature position
     _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
@@ -336,17 +338,17 @@ def setup_lamella(
     else:
         feature_position = Point(0, 0)
 
-    feature_stages = patterning._get_milling_stages(_feature_name, settings.protocol, feature_position)
+    feature_stages = patterning._get_milling_stages(_feature_name, settings.protocol, feature_position) # TODO: update to lamella.protocol
     stages = lamella_stages + feature_stages
 
     # optional fiducial
     use_fiducial = settings.protocol["fiducial"]["enabled"]
     if use_fiducial:
-        fiducial_stage = patterning._get_milling_stages("fiducial", settings.protocol)
+        fiducial_stage = patterning._get_milling_stages("fiducial", settings.protocol, lamella.fiducial_centre) # TODO: update to lamella.protocol
         stages += fiducial_stage
 
     stages =_validate_mill_ui(stages, parent_ui, 
-        msg=f"Confirm the positions for the {lamella._petname} milling. Don't run milling yet, this is just setup.", 
+        msg=f"Confirm the positions for the {lamella._petname} milling. Don't run milling yet, this is just setup.", # TODO: disable milling button here
         validate=validate)
     
     from pprint import pprint 
