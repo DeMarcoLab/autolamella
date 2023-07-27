@@ -13,7 +13,7 @@ import numpy as np
 import yaml
 from fibsem import acquire, constants, conversions, gis, milling, utils
 from fibsem import patterning
-from fibsem.microscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, DemoMicroscope,TescanMicroscope
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
     FibsemRectangle,
@@ -181,10 +181,21 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
 
-        # if isinstance(self.microscope,(ThermoMicroscope,DemoMicroscope)):
-        #     application_files = self.microscope.get_available_values("application_files")
-        #     self.comboBoxapplication_file.addItems(application_files)
-        #     self.comboBoxapplication_file.set
+        if isinstance(self.microscope,(ThermoMicroscope,DemoMicroscope)):
+            application_files = self.microscope.get_available_values("application_file")
+            protocol_app_file = self.settings.protocol["application_file"]
+            self.comboBoxapplication_file.addItems(application_files)
+            if protocol_app_file in application_files:
+                file_index = application_files.index(protocol_app_file)
+                self.comboBoxapplication_file.setCurrentIndex(file_index)
+            else:
+                self.comboBoxapplication_file.setCurrentIndex(0)
+                logging.warning(f"Protocol application file {protocol_app_file} not found in microscope application files {application_files}. Setting to Default")
+        else:
+            self.comboBoxapplication_file.setVisible(False)
+            self.application_file_label.setVisible(False)
+
+
 
     def setup_experiment(self):
         new_experiment = bool(self.sender() is self.actionNew_Experiment)

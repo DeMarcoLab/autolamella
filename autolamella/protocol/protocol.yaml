@@ -39,7 +39,7 @@ trench:
 
 lamella:
   beam_shift_attempts: 3.0
-  alignment_current: "Imaging"
+  alignment_current: "Milling"
   lamella_width: 10.e-6
   lamella_height: 800.e-9
   stages:

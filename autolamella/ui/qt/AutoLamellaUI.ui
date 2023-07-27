@@ -283,23 +283,13 @@
          <widget class="QComboBox" name="comboBox_current_alignment"/>
         </item>
         <item row="3" column="0">
-         <widget class="QLabel" name="scanDirectionLabel">
-          <property name="text">
-           <string>Scan Direction</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QComboBox" name="scanDirectionComboBox"/>
-        </item>
-        <item row="4" column="0">
          <widget class="QLabel" name="label">
           <property name="text">
            <string>Undercut Tilt Angle</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="1">
+        <item row="3" column="1">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_undercut_tilt">
           <property name="minimum">
            <double>-180.000000000000000</double>
@@ -309,14 +299,14 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="0">
+        <item row="4" column="0">
          <widget class="QLabel" name="label_2">
           <property name="text">
            <string>Undercut Tilt Step</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="1">
+        <item row="4" column="1">
          <widget class="QDoubleSpinBox" name="doubleSpinBox_undercut_step">
           <property name="minimum">
            <double>-180.000000000000000</double>
@@ -326,14 +316,14 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
+        <item row="5" column="0">
          <widget class="QLabel" name="label_3">
           <property name="text">
            <string>Stress Relief</string>
           </property>
          </widget>
         </item>
-        <item row="6" column="1">
+        <item row="5" column="1">
          <widget class="QComboBox" name="comboBox_stress_relief">
           <item>
            <property name="text">
@@ -347,7 +337,7 @@
           </item>
          </widget>
         </item>
-        <item row="20" column="0" colspan="2">
+        <item row="19" column="0" colspan="2">
          <widget class="QPushButton" name="export_protocol">
           <property name="text">
            <string>Save protocol to file</string>

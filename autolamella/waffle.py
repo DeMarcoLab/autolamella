@@ -248,6 +248,37 @@ def mill_lamella(
 
     # TODO: CHANGE_CURRENT_HERE
 
+    # define feature
+    stages = patterning._get_milling_stages(
+        "lamella", lamella.protocol, point=lamella.lamella_position
+    )
+
+    # filter stage based on the current stage
+    stage_map = {
+        AutoLamellaWaffleStage.MillRoughCut: 0,
+        AutoLamellaWaffleStage.MillRegularCut: 1,
+        AutoLamellaWaffleStage.MillPolishingCut: 2,
+    }
+
+    idx = stage_map[lamella.state.stage]
+    stages = [stages[idx]]# TODO: make this so user can define a number of stages to run
+    # prev current
+
+    existing_current = microscope.get("current", BeamType.ION)
+
+    print(f"------------------ existing current {existing_current} ------------------")
+
+    if settings.protocol["lamella"]["alignment_current"] in ["Milling", "milling","Milling Current"]:
+        alignment_current = stages[0].milling.milling_current
+        alignment_preset = stages[0].milling.milling_preset
+        print(f'---------------using milling current--------------------')
+    else:
+        alignment_current = existing_current
+        print(f'---------------using imaging current--------------------')
+        
+    print(f'------------------ alignment current {alignment_current} ------------------')
+
+    microscope.set("current",BeamType.ION,alignment_current)
 
     # beam_shift alignment
     settings.image.save = True
@@ -261,21 +292,11 @@ def mill_lamella(
 
     # TODO: CHANGE_CURRENT_BACK
 
+    microscope.set("current",BeamType.ION,existing_current)
+
     # TODO: DISPLAY IMAGES
 
-    # define feature
-    stages = patterning._get_milling_stages(
-        "lamella", lamella.protocol, point=lamella.lamella_position
-    )
 
-    # filter stage based on the current stage
-    stage_map = {
-        AutoLamellaWaffleStage.MillRoughCut: 0,
-        AutoLamellaWaffleStage.MillRegularCut: 1,
-        AutoLamellaWaffleStage.MillPolishingCut: 2,
-    }
-    idx = stage_map[lamella.state.stage]
-    stages = [stages[idx]]# TODO: make this so user can define a number of stages to run
 
     _validate_mill_ui(microscope, settings, stages, parent_ui,
         msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
