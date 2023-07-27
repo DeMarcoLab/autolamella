@@ -162,7 +162,10 @@ class Ui_MainWindow(object):
         self.formLayout_2.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.comboBox_stress_relief)
         self.export_protocol = QtWidgets.QPushButton(self.tab_2)
         self.export_protocol.setObjectName("export_protocol")
-        self.formLayout_2.setWidget(19, QtWidgets.QFormLayout.SpanningRole, self.export_protocol)
+        self.formLayout_2.setWidget(20, QtWidgets.QFormLayout.SpanningRole, self.export_protocol)
+        self.pushButton_update_protocol = QtWidgets.QPushButton(self.tab_2)
+        self.pushButton_update_protocol.setObjectName("pushButton_update_protocol")
+        self.formLayout_2.setWidget(19, QtWidgets.QFormLayout.SpanningRole, self.pushButton_update_protocol)
         self.tabWidget.addTab(self.tab_2, "")
         self.gridLayout.addWidget(self.tabWidget, 0, 0, 1, 2)
         MainWindow.setCentralWidget(self.centralwidget)
@@ -199,7 +202,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuTools.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -232,6 +235,7 @@ class Ui_MainWindow(object):
         self.comboBox_stress_relief.setItemText(0, _translate("MainWindow", "Notch"))
         self.comboBox_stress_relief.setItemText(1, _translate("MainWindow", "Microexpansion "))
         self.export_protocol.setText(_translate("MainWindow", "Save protocol to file"))
+        self.pushButton_update_protocol.setText(_translate("MainWindow", "Update Protocol"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Protocol"))
         self.menuAutoLamella.setTitle(_translate("MainWindow", "File"))
         self.menuTools.setTitle(_translate("MainWindow", "Tools"))

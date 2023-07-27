@@ -138,6 +138,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_setup_autolamella.clicked.connect(self._run_setup_lamella_workflow)
 
         self.export_protocol.clicked.connect(self.export_protocol_ui)
+        self.pushButton_update_protocol.clicked.connect(self.export_protocol_ui)
   
         # system widget
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
@@ -214,7 +215,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
         self.settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
 
-        utils.save_yaml(cfg.PROTOCOL_PATH, self.settings.protocol)
+        if self.sender() == self.export_protocol:
+            utils.save_yaml(cfg.PROTOCOL_PATH, self.settings.protocol)
+            logging.info("Protocol saved to file")
+        elif self.sender() == self.pushButton_update_protocol:
+            logging.info("Protocol updated")
+            
+
 
 
     def setup_experiment(self):
