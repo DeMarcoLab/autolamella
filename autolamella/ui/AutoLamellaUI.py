@@ -6,20 +6,16 @@ import traceback
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from time import sleep
 
 import napari
-import numpy as np
 import yaml
-from fibsem import acquire, constants, conversions, gis, milling, utils
+from fibsem import acquire, gis, milling, utils
 from fibsem import patterning
 from fibsem.microscope import FibsemMicroscope
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
-    FibsemRectangle,
     ImageSettings,
     MicroscopeSettings,
-    Point,
     FibsemStagePosition,
 )
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
