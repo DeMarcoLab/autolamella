@@ -419,13 +419,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             self.pushButton_save_position.setEnabled(True)
 
-
-        # TODO: more        
-
         if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
             
             if self.settings is not None:
-                
 
                 method = self.settings.protocol.get("method", "waffle")
                 pattern = "trench" if  method == "waffle" else "lamella"
@@ -449,8 +445,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         stages += fiducial_stage
 
                 self.milling_widget.set_milling_stages(stages)
-
-                # TODO make this work properly including updating position
 
     def _update_milling_position(self):
         # triggered when milling position is moved
