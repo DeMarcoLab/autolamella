@@ -61,6 +61,9 @@ def mill_trench(
     # define trench
     settings.protocol["trench"]["cleaning_cross_section"] = False
     stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.trench_position)
+    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+    ref_images = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, ref_images[0], ref_images[1])
     _validate_mill_ui(microscope, settings, stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,

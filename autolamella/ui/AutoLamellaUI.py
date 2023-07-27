@@ -356,7 +356,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
-                msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \n"
+                if lamella._is_failure:
+                    msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \t\t FAILED \n"
+                else:
+                    msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \n"
             self.label_info.setText(msg)
 
             self.comboBox_current_lamella.setVisible(_lamella_selected)
@@ -373,6 +376,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_remove_lamella.setEnabled(_lamella_selected)
         self.pushButton_save_position.setEnabled(_lamella_selected)
         self.pushButton_go_to_lamella.setEnabled(_lamella_selected)
+
+        
 
 
         # Current Lamella Status
@@ -439,6 +444,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench]:
             stages = patterning._get_milling_stages("trench", self.settings.protocol, lamella.trench_position)
             self.milling_widget.set_milling_stages(stages)
+
+        if lamella._is_failure:
+            self.pushButton_fail_lamella.setText("Unfail Lamella")
+        else:
+            self.pushButton_fail_lamella.setText("Mark Lamella As Failed")
 
     def _update_milling_position(self):
 
