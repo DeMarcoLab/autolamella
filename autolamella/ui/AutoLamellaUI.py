@@ -333,7 +333,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.actionLoad_Positions.setVisible(_experiment_loaded and _microscope_connected)
 
-
         # labels
         if _experiment_loaded:
             self.label_experiment_name.setText(f"Experiment: {self.experiment.name}")
@@ -423,8 +422,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
             
-            if self.settings is not None:
-
+            if self._PROTOCOL_LOADED:
+                
                 method = self.settings.protocol.get("method", "waffle")
                 pattern = "trench" if  method == "waffle" else "lamella"
                 position = lamella.trench_position if method == "waffle" else lamella.lamella_position

@@ -325,26 +325,21 @@ def setup_lamella(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    # select positions and protocol for feature (notch or microexpansion), lamella
-    lamella_stages = patterning._get_milling_stages("lamella", lamella.protocol)
+    # load the default protocol unless in lamella protocol
+    protocol = lamella.protocol if "lamella" in lamella.protocol else settings.protocol
+    lamella_stages = patterning._get_milling_stages("lamella", protocol, lamella.lamella_position)
+    stages = deepcopy(lamella_stages)
 
-    # calculate feature position
-    _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
-    
-    # notch
-    if _feature_name == "notch":
-        dx = lamella_stages[0].pattern.protocol["lamella_width"] / 2
-        feature_position = Point(dx, 0.0)
-    else:
-        feature_position = Point(0, 0)
+    # feature 
+    _feature_name = "notch" if settings.protocol["notch"]["enabled"]  else "microexpansion"
+    protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol
+    feature_stage = patterning._get_milling_stages(_feature_name, protocol, lamella.feature_position)
+    stages += feature_stage
 
-    feature_stages = patterning._get_milling_stages(_feature_name, settings.protocol, feature_position) # TODO: update to lamella.protocol
-    stages = lamella_stages + feature_stages
-
-    # optional fiducial
-    use_fiducial = settings.protocol["fiducial"]["enabled"]
-    if use_fiducial:
-        fiducial_stage = patterning._get_milling_stages("fiducial", settings.protocol, lamella.fiducial_centre) # TODO: update to lamella.protocol
+    # fiducial
+    if use_fiducial := settings.protocol["fiducial"]["enabled"]:
+        protocol = lamella.protocol if "fiducial" in lamella.protocol else settings.protocol
+        fiducial_stage = patterning._get_milling_stages("fiducial", protocol, lamella.fiducial_centre)
         stages += fiducial_stage
 
     stages =_validate_mill_ui(stages, parent_ui, 
@@ -360,7 +355,7 @@ def setup_lamella(
     lamella.protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
     
     # feature
-    n_features = len(feature_stages)
+    n_features = len(feature_stage)
     lamella.feature_position = stages[n_lamella].pattern.point
     lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella:n_lamella+n_features]))
 
@@ -449,7 +444,7 @@ def start_of_stage_update(
         microscope.set_microscope_state(lamella.state.microscope_state)
 
     # set current state information
-    lamella.state.stage = next_stage
+    lamella.state.stage = deepcopy(next_stage)
     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
     log_status_message(lamella, "STARTED")
     _update_status_ui(parent_ui, f"{lamella.info} Starting...")
