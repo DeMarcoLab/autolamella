@@ -1,17 +1,18 @@
 
 name: autolamella-waffle-scan-rotation-0deg
 application_file: autolamella # Thermo only
+method: default # waffle or default
 
 options:
   supervise:
     trench: false
     undercut: true
-    features: false
-    lamella: false
     setup_lamella: true
+    features: true
+    lamella: true
 
 fiducial:
-  enabled: false
+  enabled: true
   height: 10.e-6
   width: 1.e-6
   depth: 1.0e-6
@@ -106,7 +107,7 @@ notch:
   preset: "30 keV; 2.5 nA" # TESCAN only
   hfw: 80e-6
   application_file: autolamella
-
+  cleaning_cross_section: false
 
 autolamella_undercut:
   width: 10.e-6

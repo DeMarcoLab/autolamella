@@ -118,12 +118,11 @@ def mill_undercut(
     features = [LamellaCentre()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
-    # mvoe lamella to centre
-    detection.move_based_on_detection(
-        microscope,
-        settings,
-        det,
-        beam_type=settings.image.beam_type,
+    microscope.stable_move(
+        settings, 
+        dx=det.features[0].feature_m.x,
+        dy=det.features[0].feature_m.y,
+        beam_type=settings.image.beam_type
     )
 
     N_UNDERCUTS = settings.protocol["autolamella_undercut"].get("tilt_angle_step", 2)
@@ -140,7 +139,7 @@ def mill_undercut(
         # detect
         log_status_message(lamella, f"ALIGN_UNDERCUT_{_n}")
         settings.image.beam_type = BeamType.ION
-        settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM if i == 0 else fcfg.REFERENCE_HFW_HIGH
+        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
         settings.image.label = f"ref_undercut_align_ml_{_n}"
         settings.image.save = True
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
@@ -210,10 +209,10 @@ def mill_feature(
     )
 
     # optional fiducial
-    use_fiducial = settings.protocol["fiducial"]["enabled"]
-    if use_fiducial:
-        fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, lamella.fiducial_centre)
-        stages += fiducial_stage
+    # use_fiducial = settings.protocol["fiducial"]["enabled"]
+    # if use_fiducial:
+    #     fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, lamella.fiducial_centre)
+    #     stages += fiducial_stage
 
 
     _validate_mill_ui(microscope, settings, stages, parent_ui,
@@ -379,7 +378,7 @@ def setup_lamella(
 
         # mill the fiducial
         fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, lamella.fiducial_centre)
-        stages =_validate_mill_ui(microscope, settings, stages, parent_ui, 
+        stages =_validate_mill_ui(microscope, settings, fiducial_stage, parent_ui, 
             msg=f"Milling Fiducial for {lamella._petname}.", 
             validate=False)
     
@@ -516,6 +515,14 @@ def run_undercut_milling(
 
             parent_ui.update_experiment_signal.emit(experiment)
 
+    # ready lamella
+    for lamella in experiment.positions:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut:
+            lamella.state.stage = AutoLamellaWaffleStage.ReadyLamella
+            log_status_message(lamella, "STARTED")
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
+            parent_ui.update_experiment_signal.emit(experiment)
+
     return experiment
 
 def run_setup_lamella(
@@ -526,7 +533,7 @@ def run_setup_lamella(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut:
+        if lamella.state.stage == AutoLamellaWaffleStage.ReadyLamella:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -571,6 +578,7 @@ def run_lamella_milling(
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut:
             lamella.state.stage = AutoLamellaWaffleStage.Finished
+            log_status_message(lamella, "STARTED")
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
             parent_ui.update_experiment_signal.emit(experiment)
 

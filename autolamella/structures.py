@@ -27,6 +27,7 @@ class AutoLamellaWaffleStage(Enum):
     ReadyTrench = auto()
     MillTrench = auto()
     MillUndercut = auto()
+    ReadyLamella = auto()
     SetupLamella = auto()
     MillFeatures = auto()
     MillRoughCut = auto()

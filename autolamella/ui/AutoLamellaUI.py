@@ -58,11 +58,11 @@ from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 
 
 
-_DEV_MODE = False
-DEV_EXP_PATH = r"C:/Users/Admin/Github/autolamella/autolamella/log\PAT_TEST_TILE/experiment.yaml"
+_DEV_MODE = True
+DEV_EXP_PATH = r"/home/patrick/github/autolamella/autolamella/log/TEST_PAT_PROTOCOL/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
-_AUTO_SYNC_MINIMAP = True
+_AUTO_SYNC_MINIMAP = False
 
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | {step}")
@@ -354,8 +354,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # self.label_lamella_detail.setVisible(_lamella_selected)
 
         if _protocol_loaded:
+            method = self.settings.protocol.get("method", "waffle")
             self.label_protocol_name.setText(
-                f"Protocol: {self.settings.protocol.get('name', 'protocol')}"
+                f"Protocol: {self.settings.protocol.get('name', 'protocol')} ({method} method)"
             )
 
         # buttons
@@ -414,7 +415,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # buttons
         SETUP_STAGES =  [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.MillTrench]
-        READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench]#, AutoLamellaWaffleStage.ReadyLamella]
+        READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]
         if lamella.state.stage in SETUP_STAGES:
             self.pushButton_save_position.setText(f"Save Position")
             self.pushButton_save_position.setStyleSheet("background-color: darkgray; color: white;")
@@ -428,10 +429,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
         # TODO: more        
-        from fibsem import patterning
-        if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench]:
+
+        if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
+            
+            method = self.settings.protocol.get("method", "waffle")
+            pattern = "trench" if  method == "waffle" else "lamella"
+            print(method, pattern)
             stages = patterning._get_milling_stages("trench", self.settings.protocol, lamella.trench_position)
             self.milling_widget.set_milling_stages(stages)
+
+            # TODO make this work properly including updating position
 
     def _update_milling_position(self):
 
@@ -605,11 +612,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         idx = self.comboBox_current_lamella.currentIndex()
         # TOGGLE BETWEEN READY AND SETUP
+
+        method = self.settings.protocol.get("method", "waffle")
+        READY_STATE = AutoLamellaWaffleStage.ReadyTrench if method == "waffle" else AutoLamellaWaffleStage.ReadyLamella
+        
         if self.experiment.positions[idx].state.stage is AutoLamellaWaffleStage.Setup:
             self.experiment.positions[idx].state.microscope_state = deepcopy(
                 self.microscope.get_current_microscope_state()
             )
-            self.experiment.positions[idx].state.stage = AutoLamellaWaffleStage.ReadyTrench
+            self.experiment.positions[idx].state.stage = READY_STATE
 
             # get current ib image, save as reference
             fname = os.path.join(
@@ -617,7 +628,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             self.image_widget.ib_image.save(fname)
 
-        elif (self.experiment.positions[idx].state.stage is AutoLamellaWaffleStage.ReadyTrench):
+        elif (self.experiment.positions[idx].state.stage is READY_STATE):
             self.experiment.positions[idx].state.stage = AutoLamellaWaffleStage.Setup
 
         self._update_lamella_combobox()
