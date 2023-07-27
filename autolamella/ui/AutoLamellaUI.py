@@ -348,7 +348,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if _protocol_loaded:
             method = self.settings.protocol.get("method", "waffle")
             self.label_protocol_name.setText(
-                f"Protocol: {self.settings.protocol.get('name', 'protocol')} ({method} method)"
+                f"Protocol: {self.settings.protocol.get('name', 'protocol')} ({method.title()} Method)"
             )
 
         # buttons
@@ -412,12 +412,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_save_position.setText(f"Save Position")
             self.pushButton_save_position.setStyleSheet("background-color: darkgray; color: white;")
             self.pushButton_save_position.setEnabled(True)
+            self.milling_widget._PATTERN_IS_MOVEABLE = True
         elif lamella.state.stage in READY_STAGES:
             self.pushButton_save_position.setText(f"Position Ready")
             self.pushButton_save_position.setStyleSheet(
                 "color: white; background-color: green"
             )
             self.pushButton_save_position.setEnabled(True)
+            self.milling_widget._PATTERN_IS_MOVEABLE = False
 
         if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
             
@@ -640,9 +642,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.experiment.positions[idx].path, "ref_position_ib"
             )
             self.image_widget.ib_image.save(fname)
+            self.milling_widget._PATTERN_IS_MOVEABLE = False
 
         elif (self.experiment.positions[idx].state.stage is READY_STATE):
             self.experiment.positions[idx].state.stage = AutoLamellaWaffleStage.Setup
+            self.milling_widget._PATTERN_IS_MOVEABLE = True
 
         self._update_lamella_combobox()
         self.update_ui()
@@ -774,6 +778,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     @thread_worker
     def _threaded_worker(self, microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment, workflow: str="trench"):
         
+        self.milling_widget._PATTERN_IS_MOVEABLE = True
         self.WAITING_FOR_USER_INTERACTION = False
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
