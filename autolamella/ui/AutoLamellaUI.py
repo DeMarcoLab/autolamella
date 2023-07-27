@@ -213,7 +213,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["autolamella_undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
         self.settings.protocol["autolamella_undercut"]["tilt_angle_step"] = self.doubleSpinBox_undercut_step.value()
         self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
-        self.settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
+
+        if isinstance(self.microscope,(ThermoMicroscope,DemoMicroscope)):
+            self.settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
 
         if self.sender() == self.export_protocol:
             utils.save_yaml(cfg.PROTOCOL_PATH, self.settings.protocol)
