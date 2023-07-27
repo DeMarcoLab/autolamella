@@ -1,13 +1,13 @@
 
-name: autolamella_demo
+name: autolamella-waffle-scan-rotation-0deg
 application_file: autolamella # Thermo only
 
 options:
   supervise:
-    trench: true
+    trench: false
     undercut: true
-    features: true
-    lamella: true
+    features: false
+    lamella: false
     setup_lamella: true
 
 fiducial:
@@ -27,11 +27,11 @@ fiducial:
 trench:
   lamella_width: 22.e-6
   lamella_height: 30.0e-6
-  milling_current: 7.6e-9
+  milling_current: 28.0e-9
   trench_height: 32.e-6
-  depth: 1.5e-6
+  depth: 2.5e-6
   offset: 0.0e-6
-  size_ratio: 0.5
+  size_ratio: 2.0
   preset: "30 keV; 2.5 nA" # TESCAN only
   hfw: 180.0e-6
   application_file: autolamella
@@ -39,14 +39,14 @@ trench:
 
 lamella:
   beam_shift_attempts: 3.0
-  alignment_current: "Milling"
-  lamella_width: 10.e-6
+  alignment_current: "Imaging"
+  lamella_width: 20.e-6
   lamella_height: 800.e-9
   stages:
   - trench_height: 10.e-6
-    lamella_width: 10.e-6
+    lamella_width: 20.e-6
     lamella_height: 800.e-9
-    depth: 1.e-6
+    depth: 2.e-6
     offset: 2.e-6
     size_ratio: 1.0
     milling_current: 2.e-9
@@ -55,7 +55,7 @@ lamella:
     application_file: autolamella
     cleaning_cross_section: true
   - trench_height: 2.e-6
-    lamella_width: 10.e-6
+    lamella_width: 12.e-6
     lamella_height: 800.e-9
     depth: 1.e-6
     offset: 0.5e-6
@@ -66,7 +66,7 @@ lamella:
     application_file: autolamella
     cleaning_cross_section: true
   - trench_height: 0.5e-6
-    lamella_width: 10.e-6
+    lamella_width: 12.e-6
     lamella_height: 800.e-9
     depth: 0.4e-6
     offset: 0.0e-6
@@ -110,14 +110,15 @@ notch:
 
 autolamella_undercut:
   width: 10.e-6
-  height: 10.e-6
-  depth: 1.0e-6
-  milling_current: 2.e-9
+  height: 4.e-6
+  depth: 2.0e-6
+  milling_current: 7.6e-9
   preset: "30 keV; 2.5 nA" # TESCAN only
   hfw: 80.0e-6
   application_file: autolamella
-  tilt_angle: -11
-  tilt_angle_step: -10
+  tilt_angle: -10
+  tilt_angle_step: 2
+  cleaning_cross_section: false
 
 ml:
     encoder: resnet34

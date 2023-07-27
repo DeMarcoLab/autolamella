@@ -208,6 +208,8 @@ class Experiment:
                 "feature.position.x": lamella.feature_position.x,
                 "feature.position.y": lamella.feature_position.y,
                 "lamella.history": lamella.history,
+                "feature.position.x": lamella.feature_position.x,
+                "feature.position.y": lamella.feature_position.y,
                 "fiducial.centre.x": lamella.fiducial_centre.x,
                 "fiducial.centre.y": lamella.fiducial_centre.y,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
