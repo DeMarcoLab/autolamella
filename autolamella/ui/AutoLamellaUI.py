@@ -452,7 +452,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.milling_widget.set_milling_stages(stages)
 
         if lamella._is_failure:
-            self.pushButton_fail_lamella.setText("Unfail Lamella")
+            self.pushButton_fail_lamella.setText("Mark Lamella as Active")
         else:
             self.pushButton_fail_lamella.setText("Mark Lamella As Failed")
 
