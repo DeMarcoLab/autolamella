@@ -458,7 +458,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         def _to_str(state: LamellaState):
             return f"{state.stage.name} ({datetime.fromtimestamp(state.end_timestamp).strftime('%I:%M%p')})"
+        
         self.comboBox_lamella_history.clear()
+        if lamella.history == []:
+            self.comboBox_lamella_history.setVisible(False)
+            self.pushButton_revert_stage.setVisible(False)
+        else:
+            self.comboBox_lamella_history.setVisible(True)
+            self.pushButton_revert_stage.setVisible(True)
         self.comboBox_lamella_history.addItems([_to_str(state) for state in lamella.history])
 
     def _update_milling_position(self):
