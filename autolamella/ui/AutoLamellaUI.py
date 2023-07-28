@@ -456,9 +456,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         else:
             self.pushButton_fail_lamella.setText("Mark Lamella As Failed")
 
+        def _to_str(state: LamellaState):
+            return f"{state.stage.name} ({datetime.fromtimestamp(state.end_timestamp).strftime('%I:%M%p')})"
         self.comboBox_lamella_history.clear()
-        for state in lamella.history:
-            self.comboBox_lamella_history.addItem(state.stage.name)
+        self.comboBox_lamella_history.addItems([_to_str(state) for state in lamella.history])
 
     def _update_milling_position(self):
         # triggered when milling position is moved
@@ -632,11 +633,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def revert_stage(self):
         idx = self.comboBox_current_lamella.currentIndex()
-        stage = self.comboBox_lamella_history.currentText()
-        for state in self.experiment.positions[idx].history:
-            if state.stage.name == stage:
-                self.experiment.positions[idx].state = deepcopy(state)
-                break
+        hidx = self.comboBox_lamella_history.currentIndex()
+        self.experiment.positions[idx].state = deepcopy(self.experiment.positions[idx].history[hidx])
         self.update_ui()
 
     def save_lamella_ui(self):
@@ -668,6 +666,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             self.image_widget.ib_image.save(fname)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
+
+            wfl.log_status_message(self.experiment.positions[idx], "STARTED")
 
         elif (self.experiment.positions[idx].state.stage is READY_STATE):
             self.experiment.positions[idx].state.stage = AutoLamellaWaffleStage.Setup
