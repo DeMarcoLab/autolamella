@@ -225,6 +225,13 @@
           </property>
          </widget>
         </item>
+        <item row="11" column="0">
+         <widget class="QPushButton" name="pushButton_revert_stage">
+          <property name="text">
+           <string>Revert To Previous Stage</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
       <widget class="QWidget" name="tab_2">

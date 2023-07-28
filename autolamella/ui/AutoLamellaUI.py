@@ -148,6 +148,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.comboBox_current_lamella.currentIndexChanged.connect(self.update_lamella_ui)
         self.pushButton_save_position.clicked.connect(self.save_lamella_ui)
         self.pushButton_fail_lamella.clicked.connect(self.fail_lamella_ui)
+        self.pushButton_revert_stage.clicked.connect(self.revert_stage)
 
         self.pushButton_run_waffle_trench.clicked.connect(self._run_trench_workflow)
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
@@ -614,6 +615,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def fail_lamella_ui(self):
         idx = self.comboBox_current_lamella.currentIndex()
         self.experiment.positions[idx]._is_failure = True if not self.experiment.positions[idx]._is_failure else False
+        self.update_ui()
+
+    def revert_stage(self):
+        idx = self.comboBox_current_lamella.currentIndex()
+        stages = list(AutoLamellaWaffleStage)
+        current_index = stages.index(self.experiment.positions[idx].state.stage)
+        if current_index == 0:
+            return
+        self.experiment.positions[idx].state.stage = AutoLamellaWaffleStage[stages[current_index-1].name]
         self.update_ui()
 
     def save_lamella_ui(self):
