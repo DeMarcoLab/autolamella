@@ -170,6 +170,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self._PROTOCOL_LOADED is False:
             return
         
+        self.lineEdit_name.setText(self.settings.protocol["name"])
+
         self.beamshift_attempts.setValue(self.settings.protocol["lamella"]["beam_shift_attempts"])
 
 
@@ -203,6 +205,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self._PROTOCOL_LOADED is False:
             return
 
+        self.settings.protocol["name"] = self.lineEdit_name.text()
         self.settings.protocol["lamella"]["beam_shift_attempts"] = self.beamshift_attempts.value()
         self.settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText()
         self.settings.protocol["autolamella_undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
@@ -221,7 +224,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
         if self.sender() == self.export_protocol:
-            utils.save_yaml(cfg.PROTOCOL_PATH, self.settings.protocol)
+            path = _get_save_file_ui(msg='Save protocol')
+            utils.save_yaml(path, self.settings.protocol)
+            
             logging.info("Protocol saved to file")
         elif self.sender() == self.pushButton_update_protocol:
             logging.info("Protocol updated")
