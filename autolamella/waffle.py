@@ -183,6 +183,30 @@ def mill_feature(
     if settings.protocol["fiducial"]["enabled"] is False:
         lamella.fiducial_area = None
 
+    stages = patterning._get_milling_stages(
+        _feature_name, lamella.protocol, point=lamella.feature_position
+    )
+
+    existing_current = microscope.get("current", BeamType.ION)
+    existing_preset = "30 keV; UHR imaging"
+
+    if settings.protocol["lamella"]["alignment_current"] in ["Milling", "milling","Milling Current"]:
+        alignment_current = stages[0].milling.milling_current
+        alignment_preset = stages[0].milling.preset
+        print(f'---------------using milling current--------------------')
+    else:
+        print(f'---------------using imaging current--------------------')
+        alignment_current = existing_current
+        alignment_preset = existing_preset
+        
+    print(f'------------------ alignment current {alignment_current} ------------------')
+    print(f'------------------ alignment preset {alignment_preset} ------------------')
+    
+    if isinstance(microscope,(ThermoMicroscope)):
+        microscope.set(key="current",value=alignment_current,beam_type=BeamType.ION)
+    elif isinstance(microscope,TescanMicroscope):
+        microscope.set(key="preset",value=alignment_preset,beam_type=BeamType.ION)
+
     log_status_message(lamella, "ALIGN_REFERENCE")
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
@@ -192,6 +216,12 @@ def mill_feature(
                                     ref_image=ref_image,
                                     reduced_area=lamella.fiducial_area)
     settings.image.reduced_area = None
+
+    # TODO: CHANGE_CURRENT_BACK
+    if isinstance(microscope,(ThermoMicroscope)):
+        microscope.set(key="current",value=existing_current,beam_type=BeamType.ION)
+    elif isinstance(microscope,TescanMicroscope):
+        microscope.set(key="preset",value=existing_preset, beam_type=BeamType.ION)
 
 
     # check if using notch or microexpansion
@@ -206,9 +236,6 @@ def mill_feature(
 
     # define notch/microexpansion
     log_status_message(lamella, "MILL_FEATURES")
-    stages = patterning._get_milling_stages(
-        _feature_name, lamella.protocol, point=lamella.feature_position
-    )
 
     _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the {_feature_name} for {lamella._petname}. Press Continue when done.",

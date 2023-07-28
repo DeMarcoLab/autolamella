@@ -94,11 +94,11 @@ notch:
     vwidth: 2.0e-07
 options:
     supervise:
-        features: true
+        features: false
         lamella: false
         setup_lamella: true
-        trench: true
-        undercut: true
+        trench: false
+        undercut: false
 trench:
     application_file: autolamella
     cleaning_cross_section: false
