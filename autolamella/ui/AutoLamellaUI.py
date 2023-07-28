@@ -183,19 +183,20 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
 
-        if isinstance(self.microscope,(ThermoMicroscope,DemoMicroscope)):
-            application_files = self.microscope.get_available_values("application_file")
-            protocol_app_file = self.settings.protocol["application_file"]
-            self.comboBoxapplication_file.addItems(application_files)
-            if protocol_app_file in application_files:
-                file_index = application_files.index(protocol_app_file)
-                self.comboBoxapplication_file.setCurrentIndex(file_index)
-            else:
-                self.comboBoxapplication_file.setCurrentIndex(0)
-                logging.warning(f"Protocol application file {protocol_app_file} not found in microscope application files {application_files}. Setting to Default")
-        else:
-            self.comboBoxapplication_file.setVisible(False)
-            self.application_file_label.setVisible(False)
+        self.comboBox_method.setCurrentIndex(1) if self.settings.protocol["method"] == "waffle" else self.comboBox_method.setCurrentIndex(0)
+
+        self.checkBox_fiducial.setChecked(self.settings.protocol["fiducial"]["enabled"])
+
+        # supervision
+
+        self.checkBox_trench.setChecked(self.settings.protocol["options"]["supervise"]["trench"])
+        self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"]["undercut"])
+        self.checkBox_setup.setChecked(self.settings.protocol["options"]["supervise"]["setup_lamella"])
+        self.checkBox_features.setChecked(self.settings.protocol["options"]["supervise"]["features"])
+        self.checkBox_lamella.setChecked(self.settings.protocol["options"]["supervise"]["lamella"])
+
+
+
 
     def export_protocol_ui(self):
 
@@ -207,9 +208,17 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["autolamella_undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
         self.settings.protocol["autolamella_undercut"]["tilt_angle_step"] = self.doubleSpinBox_undercut_step.value()
         self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
+        self.settings.protocol["fiducial"]["enabled"] = self.checkBox_fiducial.isChecked()
+        self.settings.protocol["method"] = self.comboBox_method.currentText().lower()
 
-        if isinstance(self.microscope,(ThermoMicroscope,DemoMicroscope)):
-            self.settings.protocol["application_file"] = self.comboBoxapplication_file.currentText()
+        #supervision
+
+        self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
+        self.settings.protocol["options"]["supervise"]["undercut"] = self.checkBox_undercut.isChecked()
+        self.settings.protocol["options"]["supervise"]["setup_lamella"] = self.checkBox_setup.isChecked()
+        self.settings.protocol["options"]["supervise"]["features"] = self.checkBox_features.isChecked()
+        self.settings.protocol["options"]["supervise"]["lamella"] = self.checkBox_lamella.isChecked()
+
 
         if self.sender() == self.export_protocol:
             utils.save_yaml(cfg.PROTOCOL_PATH, self.settings.protocol)
@@ -790,10 +799,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
-        
-        _mill = bool(info["mill"] is not None)
+        _mill = bool(info["mill"] is not None) if info["mill"] is None else info["mill"]
         _det = bool(info["det"] is not None)
         stages = info.get("stages", None)
+
 
         if _det:
             self.det_widget.set_detected_features(info["det"])

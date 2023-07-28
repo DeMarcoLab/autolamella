@@ -390,7 +390,8 @@ def setup_lamella(
 
     stages =_validate_mill_ui(stages, parent_ui, 
         msg=f"Confirm the positions for the {lamella._petname} milling. Don't run milling yet, this is just setup.", # TODO: disable milling button here
-        validate=validate)
+        validate=validate,
+        milling_enabled=False)
     
     from pprint import pprint 
     pprint(stages)
@@ -631,11 +632,11 @@ def run_lamella_milling(
     return experiment
 
 
-def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg, validate: bool):
+def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg, validate: bool,milling_enabled: bool = True):
     _update_mill_stages_ui(parent_ui, stages=stages)
 
     if validate:
-        response = ask_user(parent_ui, msg=msg, pos="Continue", mill=True)
+        response = ask_user(parent_ui, msg=msg, pos="Continue", mill=milling_enabled)
         stages = deepcopy(parent_ui.milling_widget.get_milling_stages())
     else:
         _update_status_ui(parent_ui, f"Milling {len(stages)} stages...")
