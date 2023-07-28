@@ -224,7 +224,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
         if self.sender() == self.export_protocol:
-            path = _get_save_file_ui(msg='Save protocol')
+            path = _get_save_file_ui(msg='Save protocol',
+                path = cfg.PROTOCOL_PATH,
+                _filter= "*yaml",
+                parent=self)
             utils.save_yaml(path, self.settings.protocol)
             
             logging.info("Protocol saved to file")
