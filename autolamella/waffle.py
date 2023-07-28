@@ -117,7 +117,7 @@ def mill_undercut(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    features = [LamellaCentre(),ImageCentre()] 
+    features = [LamellaCentre()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
     microscope.stable_move(
@@ -147,7 +147,7 @@ def mill_undercut(
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         _set_images_ui(parent_ui, eb_image, ib_image)
 
-        features = [LamellaCentre(),ImageCentre()] # TODO: add LamellaBottom / Top Edge
+        features = [LamellaCentre()] # TODO: add LamellaBottom / Top Edge
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
         # mill undercut 1
@@ -182,30 +182,33 @@ def mill_feature(
     
     if settings.protocol["fiducial"]["enabled"] is False:
         lamella.fiducial_area = None
+    
+    # check if using notch or microexpansion
+    _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
 
     stages = patterning._get_milling_stages(
         _feature_name, lamella.protocol, point=lamella.feature_position
     )
 
-    existing_current = microscope.get("current", BeamType.ION)
-    existing_preset = "30 keV; UHR imaging"
+    # existing_current = microscope.get("current", BeamType.ION)
+    # existing_preset = "30 keV; UHR imaging"
 
-    if settings.protocol["lamella"]["alignment_current"] in ["Milling", "milling","Milling Current"]:
-        alignment_current = stages[0].milling.milling_current
-        alignment_preset = stages[0].milling.preset
-        print(f'---------------using milling current--------------------')
-    else:
-        print(f'---------------using imaging current--------------------')
-        alignment_current = existing_current
-        alignment_preset = existing_preset
+    # if settings.protocol["lamella"]["alignment_current"] in ["Milling", "milling","Milling Current"]:
+    #     alignment_current = stages[0].milling.milling_current
+    #     alignment_preset = stages[0].milling.preset
+    #     print(f'---------------using milling current--------------------')
+    # else:
+    #     print(f'---------------using imaging current--------------------')
+    #     alignment_current = existing_current
+    #     alignment_preset = existing_preset
         
-    print(f'------------------ alignment current {alignment_current} ------------------')
-    print(f'------------------ alignment preset {alignment_preset} ------------------')
+    # print(f'------------------ alignment current {alignment_current} ------------------')
+    # print(f'------------------ alignment preset {alignment_preset} ------------------')
     
-    if isinstance(microscope,(ThermoMicroscope)):
-        microscope.set(key="current",value=alignment_current,beam_type=BeamType.ION)
-    elif isinstance(microscope,TescanMicroscope):
-        microscope.set(key="preset",value=alignment_preset,beam_type=BeamType.ION)
+    # if isinstance(microscope,(ThermoMicroscope)):
+    #     microscope.set(key="current",value=alignment_current,beam_type=BeamType.ION)
+    # elif isinstance(microscope,TescanMicroscope):
+    #     microscope.set(key="preset",value=alignment_preset,beam_type=BeamType.ION)
 
     log_status_message(lamella, "ALIGN_REFERENCE")
     settings.image.save = True
@@ -217,15 +220,13 @@ def mill_feature(
                                     reduced_area=lamella.fiducial_area)
     settings.image.reduced_area = None
 
-    # TODO: CHANGE_CURRENT_BACK
-    if isinstance(microscope,(ThermoMicroscope)):
-        microscope.set(key="current",value=existing_current,beam_type=BeamType.ION)
-    elif isinstance(microscope,TescanMicroscope):
-        microscope.set(key="preset",value=existing_preset, beam_type=BeamType.ION)
+    # # TODO: CHANGE_CURRENT_BACK
+    # if isinstance(microscope,(ThermoMicroscope)):
+    #     microscope.set(key="current",value=existing_current,beam_type=BeamType.ION)
+    # elif isinstance(microscope,TescanMicroscope):
+    #     microscope.set(key="preset",value=existing_preset, beam_type=BeamType.ION)
 
 
-    # check if using notch or microexpansion
-    _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
 
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
     settings.image.label = f"ref_{_feature_name}_start"
@@ -280,43 +281,43 @@ def mill_lamella(
     # TODO: CHANGE_CURRENT_HERE
 
     # define feature
-    stages = patterning._get_milling_stages(
-        "lamella", lamella.protocol, point=lamella.lamella_position
-    )
+    # stages = patterning._get_milling_stages(
+    #     "lamella", lamella.protocol, point=lamella.lamella_position
+    # )
 
-    # filter stage based on the current stage
-    stage_map = {
-        AutoLamellaWaffleStage.MillRoughCut: 0,
-        AutoLamellaWaffleStage.MillRegularCut: 1,
-        AutoLamellaWaffleStage.MillPolishingCut: 2,
-    }
+    # # filter stage based on the current stage
+    # stage_map = {
+    #     AutoLamellaWaffleStage.MillRoughCut: 0,
+    #     AutoLamellaWaffleStage.MillRegularCut: 1,
+    #     AutoLamellaWaffleStage.MillPolishingCut: 2,
+    # }
 
-    idx = stage_map[lamella.state.stage]
-    stages = [stages[idx]]# TODO: make this so user can define a number of stages to run
+    # idx = stage_map[lamella.state.stage]
+    # stages = [stages[idx]]# TODO: make this so user can define a number of stages to run
     # prev current
 
-    existing_current = microscope.get("current", BeamType.ION)
+    # existing_current = microscope.get("current", BeamType.ION)
 
-    existing_preset = "30 keV; UHR imaging"
-    print(f"------------------ existing current {existing_current} ------------------")
-    print(f'------------------ existing preset {existing_preset} ------------------')
+    # existing_preset = "30 keV; UHR imaging"
+    # print(f"------------------ existing current {existing_current} ------------------")
+    # print(f'------------------ existing preset {existing_preset} ------------------')
 
-    if settings.protocol["lamella"]["alignment_current"] in ["Milling", "milling","Milling Current"]:
-        alignment_current = stages[0].milling.milling_current
-        alignment_preset = stages[0].milling.preset
-        print(f'---------------using milling current--------------------')
-    else:
-        print(f'---------------using imaging current--------------------')
-        alignment_current = existing_current
-        alignment_preset = existing_preset
+    # if settings.protocol["lamella"]["alignment_current"] in ["Milling", "milling","Milling Current"]:
+    #     alignment_current = stages[0].milling.milling_current
+    #     alignment_preset = stages[0].milling.preset
+    #     print(f'---------------using milling current--------------------')
+    # else:
+    #     print(f'---------------using imaging current--------------------')
+    #     alignment_current = existing_current
+    #     alignment_preset = existing_preset
         
-    print(f'------------------ alignment current {alignment_current} ------------------')
-    print(f'------------------ alignment preset {alignment_preset} ------------------')
+    # print(f'------------------ alignment current {alignment_current} ------------------')
+    # print(f'------------------ alignment preset {alignment_preset} ------------------')
     
-    if isinstance(microscope,(ThermoMicroscope)):
-        microscope.set(key="current",value=alignment_current,beam_type=BeamType.ION)
-    elif isinstance(microscope,TescanMicroscope):
-        microscope.set(key="preset",value=alignment_preset,beam_type=BeamType.ION)
+    # if isinstance(microscope,(ThermoMicroscope)):
+    #     microscope.set(key="current",value=alignment_current,beam_type=BeamType.ION)
+    # elif isinstance(microscope,TescanMicroscope):
+    #     microscope.set(key="preset",value=alignment_preset,beam_type=BeamType.ION)
 
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
@@ -327,11 +328,11 @@ def mill_lamella(
                                     reduced_area=lamella.fiducial_area)
     settings.image.reduced_area = None
 
-    # TODO: CHANGE_CURRENT_BACK
-    if isinstance(microscope,(ThermoMicroscope)):
-        microscope.set(key="current",value=existing_current,beam_type=BeamType.ION)
-    elif isinstance(microscope,TescanMicroscope):
-        microscope.set(key="preset",value=existing_preset, beam_type=BeamType.ION)
+    # # TODO: CHANGE_CURRENT_BACK
+    # if isinstance(microscope,(ThermoMicroscope)):
+    #     microscope.set(key="current",value=existing_current,beam_type=BeamType.ION)
+    # elif isinstance(microscope,TescanMicroscope):
+    #     microscope.set(key="preset",value=existing_preset, beam_type=BeamType.ION)
 
     # take reference images
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
@@ -427,10 +428,6 @@ def setup_lamella(
     n_lamella = len(lamella_stages)
     lamella.lamella_position = stages[0].pattern.point
     lamella.protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
-
-    print(f'---------------------after loading to lamella object----------------------')
-    print(f'-------------------------lamella protocol {lamella.protocol}----------------------')
-
     
     # feature
     n_features = len(feature_stage)
