@@ -11,7 +11,7 @@ import napari
 import yaml
 from fibsem import acquire, gis, milling, utils
 from fibsem import patterning
-from fibsem.microscope import FibsemMicroscope
+from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, DemoMicroscope,TescanMicroscope
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
     ImageSettings,
@@ -134,6 +134,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
         self.pushButton_run_waffle_undercut.clicked.connect(self._run_undercut_workflow)
         self.pushButton_run_setup_autolamella.clicked.connect(self._run_setup_lamella_workflow)
+
+        self.export_protocol.clicked.connect(self.export_protocol_ui)
+        self.pushButton_update_protocol.clicked.connect(self.export_protocol_ui)
   
         # system widget
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
@@ -160,6 +163,81 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.pushButton_add_lamella.setStyleSheet("background-color: green")
         self.pushButton_remove_lamella.setStyleSheet("background-color: red")
+
+        alignment_currents = ["Imaging Current","Milling Current"]
+        self.comboBox_current_alignment.addItems(alignment_currents)
+
+    def update_protocol_ui(self):
+
+        if self._PROTOCOL_LOADED is False:
+            return
+        
+        self.lineEdit_name.setText(self.settings.protocol["name"])
+
+        self.beamshift_attempts.setValue(self.settings.protocol["lamella"]["beam_shift_attempts"])
+
+
+        if self.settings.protocol["lamella"]["alignment_current"] in ["Imaging Current","Imaging"]:
+            self.comboBox_current_alignment.setCurrentIndex(0)
+        elif self.settings.protocol["lamella"]["alignment_current"] in ["Milling Current","Milling"]:
+            self.comboBox_current_alignment.setCurrentIndex(1)
+
+        self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["autolamella_undercut"]["tilt_angle"])
+        self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["autolamella_undercut"]["tilt_angle_step"])
+
+        self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
+
+        self.comboBox_method.setCurrentIndex(1) if self.settings.protocol["method"] == "waffle" else self.comboBox_method.setCurrentIndex(0)
+
+        self.checkBox_fiducial.setChecked(self.settings.protocol["fiducial"]["enabled"])
+
+        # supervision
+
+        self.checkBox_trench.setChecked(self.settings.protocol["options"]["supervise"]["trench"])
+        self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"]["undercut"])
+        self.checkBox_setup.setChecked(self.settings.protocol["options"]["supervise"]["setup_lamella"])
+        self.checkBox_features.setChecked(self.settings.protocol["options"]["supervise"]["features"])
+        self.checkBox_lamella.setChecked(self.settings.protocol["options"]["supervise"]["lamella"])
+
+
+
+
+    def export_protocol_ui(self):
+
+        if self._PROTOCOL_LOADED is False:
+            return
+
+        self.settings.protocol["name"] = self.lineEdit_name.text()
+        self.settings.protocol["lamella"]["beam_shift_attempts"] = self.beamshift_attempts.value()
+        self.settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText()
+        self.settings.protocol["autolamella_undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
+        self.settings.protocol["autolamella_undercut"]["tilt_angle_step"] = self.doubleSpinBox_undercut_step.value()
+        self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
+        self.settings.protocol["fiducial"]["enabled"] = self.checkBox_fiducial.isChecked()
+        self.settings.protocol["method"] = self.comboBox_method.currentText().lower()
+
+        #supervision
+
+        self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
+        self.settings.protocol["options"]["supervise"]["undercut"] = self.checkBox_undercut.isChecked()
+        self.settings.protocol["options"]["supervise"]["setup_lamella"] = self.checkBox_setup.isChecked()
+        self.settings.protocol["options"]["supervise"]["features"] = self.checkBox_features.isChecked()
+        self.settings.protocol["options"]["supervise"]["lamella"] = self.checkBox_lamella.isChecked()
+
+
+        if self.sender() == self.export_protocol:
+            path = _get_save_file_ui(msg='Save protocol',
+                path = cfg.PROTOCOL_PATH,
+                _filter= "*yaml",
+                parent=self)
+            utils.save_yaml(path, self.settings.protocol)
+            
+            logging.info("Protocol saved to file")
+        elif self.sender() == self.pushButton_update_protocol:
+            logging.info("Protocol updated")
+            
+        self.update_ui()
+
 
 
     def setup_experiment(self):
@@ -508,6 +586,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.settings.protocol = utils.load_protocol(protocol_path=PATH)
         self._PROTOCOL_LOADED = True
+        self.update_protocol_ui()
         napari.utils.notifications.show_info(
             f"Loaded Protocol from {os.path.basename(PATH)}"
         )
@@ -763,10 +842,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
-        
-        _mill = bool(info["mill"] is not None)
+        _mill = bool(info["mill"] is not None) if info["mill"] is None else info["mill"]
         _det = bool(info["det"] is not None)
         stages = info.get("stages", None)
+
 
         if _det:
             self.det_widget.set_detected_features(info["det"])
