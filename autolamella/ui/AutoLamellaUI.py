@@ -324,7 +324,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         _lamella_selected = bool(self.experiment.positions) if _experiment_loaded else False
 
         # setup experiment -> connect to microscope -> select lamella -> run autolamella
-
+        self.pushButton_fail_lamella.setVisible(_lamella_selected)
+        self.pushButton_revert_stage.setVisible(_lamella_selected)
+        self.comboBox_lamella_history.setVisible(_lamella_selected)
+        
         # experiment loaded
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
         self.actionCryo_Sputter.setVisible(_protocol_loaded)
@@ -398,7 +401,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             return
         
         if self.experiment.positions == []:
-            return
+            return      
 
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
