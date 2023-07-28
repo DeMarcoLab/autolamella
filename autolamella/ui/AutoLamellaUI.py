@@ -52,6 +52,7 @@ from PyQt5.QtCore import pyqtSignal
 from napari.qt.threading import thread_worker
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 
+from collections import Counter
 
 
 _DEV_MODE = False
@@ -134,6 +135,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
         self.pushButton_run_waffle_undercut.clicked.connect(self._run_undercut_workflow)
         self.pushButton_run_setup_autolamella.clicked.connect(self._run_setup_lamella_workflow)
+
+        self.pushButton_run_waffle_trench.setVisible(False)
+        self.pushButton_run_autolamella.setVisible(False)
+        self.pushButton_run_waffle_undercut.setVisible(False)
+        self.pushButton_run_setup_autolamella.setVisible(False)
 
         self.export_protocol.clicked.connect(self.export_protocol_ui)
         self.pushButton_update_protocol.clicked.connect(self.export_protocol_ui)
@@ -438,6 +444,34 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_save_position.setEnabled(_lamella_selected)
         self.pushButton_go_to_lamella.setEnabled(_lamella_selected)
 
+        if _experiment_loaded and _protocol_loaded:
+            # workflow buttons
+            _WAFFLE_METHOD = self.settings.protocol.get("method", "waffle") == "waffle"
+            _counter = Counter([p.state.stage.name for p in self.experiment.positions])
+            
+            _READY_TRENCH = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
+            _READY_UNDERCUT = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
+            _READY_LAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
+            _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
+
+            self.pushButton_run_waffle_trench.setVisible(_WAFFLE_METHOD)
+            self.pushButton_run_waffle_trench.setEnabled(_WAFFLE_METHOD and _READY_TRENCH)
+            self.pushButton_run_waffle_undercut.setVisible(_WAFFLE_METHOD)
+            self.pushButton_run_waffle_undercut.setEnabled(_WAFFLE_METHOD and _READY_UNDERCUT)
+            self.pushButton_run_setup_autolamella.setVisible(True)
+            self.pushButton_run_setup_autolamella.setEnabled(_READY_LAMELLA)
+            self.pushButton_run_autolamella.setVisible(True)
+            self.pushButton_run_autolamella.setEnabled(_READY_AUTOLAMELLA)
+
+            # TODO: TEMPLATE THIS CSS   
+            _PUSHBUTTON_STYLE = """
+            QPushButton {
+                background-color: rgba(255, 0, 0, 125);
+                }
+                QPushButton:hover {
+                    background-color: rgba(255, 0, 0, 200);
+                }"""
+            self.pushButton_run_waffle_trench.setStyleSheet(_PUSHBUTTON_STYLE)
 
         # Current Lamella Status
         if _lamella_selected:
