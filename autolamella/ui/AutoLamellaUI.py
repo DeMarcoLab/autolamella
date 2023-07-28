@@ -162,6 +162,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_add_lamella.setStyleSheet("background-color: green")
         self.pushButton_remove_lamella.setStyleSheet("background-color: red")
 
+        alignment_currents = ["Imaging Current","Milling Current"]
+        self.comboBox_current_alignment.addItems(alignment_currents)
 
     def update_protocol_ui(self):
 
@@ -170,9 +172,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         
         self.beamshift_attempts.setValue(self.settings.protocol["lamella"]["beam_shift_attempts"])
 
-        alignment_currents = ["Imaging Current","Milling Current"]
 
-        self.comboBox_current_alignment.addItems(alignment_currents)
         if self.settings.protocol["lamella"]["alignment_current"] in ["Imaging Current","Imaging"]:
             self.comboBox_current_alignment.setCurrentIndex(0)
         elif self.settings.protocol["lamella"]["alignment_current"] in ["Milling Current","Milling"]:
@@ -226,6 +226,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         elif self.sender() == self.pushButton_update_protocol:
             logging.info("Protocol updated")
             
+        self.update_ui()
 
 
 
