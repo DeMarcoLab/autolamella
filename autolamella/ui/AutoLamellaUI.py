@@ -127,6 +127,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_go_to_lamella.setEnabled(False)
         self.comboBox_current_lamella.currentIndexChanged.connect(self.update_lamella_ui)
         self.pushButton_save_position.clicked.connect(self.save_lamella_ui)
+        self.pushButton_fail_lamella.clicked.connect(self.fail_lamella_ui)
+        self.pushButton_revert_stage.clicked.connect(self.revert_stage)
 
         self.pushButton_run_waffle_trench.clicked.connect(self._run_trench_workflow)
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
@@ -335,7 +337,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
-                msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \n"
+                if lamella._is_failure:
+                    msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \t\t FAILED \n"
+                else:
+                    msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \n"
             self.label_info.setText(msg)
 
             self.comboBox_current_lamella.setVisible(_lamella_selected)
@@ -442,6 +447,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         stages += fiducial_stage
 
                 self.milling_widget.set_milling_stages(stages)
+
+        if lamella._is_failure:
+            self.pushButton_fail_lamella.setText("Unfail Lamella")
+        else:
+            self.pushButton_fail_lamella.setText("Mark Lamella As Failed")
+
+        self.comboBox_lamella_history.clear()
+        for state in lamella.history:
+            self.comboBox_lamella_history.addItem(state.stage.name)
 
     def _update_milling_position(self):
         # triggered when milling position is moved
@@ -608,6 +622,19 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._update_lamella_combobox()
         self.update_ui()
 
+    def fail_lamella_ui(self):
+        idx = self.comboBox_current_lamella.currentIndex()
+        self.experiment.positions[idx]._is_failure = True if not self.experiment.positions[idx]._is_failure else False
+        self.update_ui()
+
+    def revert_stage(self):
+        idx = self.comboBox_current_lamella.currentIndex()
+        stage = self.comboBox_lamella_history.currentText()
+        for state in self.experiment.positions[idx].history:
+            if state.stage.name == stage:
+                self.experiment.positions[idx].state = deepcopy(state)
+                break
+        self.update_ui()
 
     def save_lamella_ui(self):
         # triggered when save button is pressed

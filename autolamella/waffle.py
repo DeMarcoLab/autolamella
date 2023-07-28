@@ -471,7 +471,7 @@ def run_trench_milling(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench:
+        if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -497,7 +497,7 @@ def run_undercut_milling(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.MillTrench:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillTrench and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -513,7 +513,7 @@ def run_undercut_milling(
 
     # ready lamella
     for lamella in experiment.positions:
-        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut and not lamella._is_failure:
             lamella.state.stage = AutoLamellaWaffleStage.ReadyLamella
             log_status_message(lamella, "STARTED")
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
@@ -529,7 +529,7 @@ def run_setup_lamella(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.ReadyLamella:
+        if lamella.state.stage == AutoLamellaWaffleStage.ReadyLamella and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -562,7 +562,7 @@ def run_lamella_milling(
     ]
     for stage in stages:
         for lamella in experiment.positions:
-            if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1):
+            if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1) and not lamella._is_failure:
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
                 lamella = WORKFLOW_STAGES[lamella.state.stage](microscope, settings, lamella, parent_ui)
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
@@ -572,7 +572,7 @@ def run_lamella_milling(
 
     # finish
     for lamella in experiment.positions:
-        if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut and not lamella._is_failure:
             lamella.state.stage = AutoLamellaWaffleStage.Finished
             log_status_message(lamella, "STARTED")
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
