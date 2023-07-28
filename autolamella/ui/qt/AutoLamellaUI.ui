@@ -84,14 +84,84 @@
           </property>
          </widget>
         </item>
-        <item row="15" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_trench">
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_current_lamella_header">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
           <property name="text">
-           <string>Run Waffle Trench Milling</string>
+           <string>Current Lamella</string>
           </property>
          </widget>
         </item>
-        <item row="21" column="0" colspan="2">
+        <item row="18" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_waffle_undercut">
+          <property name="text">
+           <string>Run Waffle Undercut Milling</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QLabel" name="label_experiment_name">
+          <property name="text">
+           <string>Experiment:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="0" colspan="2">
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="7" column="1">
+         <widget class="QPushButton" name="pushButton_remove_lamella">
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="text">
+           <string>Remove Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="1">
+         <widget class="QPushButton" name="pushButton_fail_lamella">
+          <property name="text">
+           <string>Mark Lamella As Failed</string>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="0" colspan="2">
+         <widget class="QLabel" name="label_info">
+          <property name="text">
+           <string>No Lamella Selected</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="0" colspan="2">
+         <spacer name="verticalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="23" column="0" colspan="2">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -104,10 +174,57 @@
           </property>
          </spacer>
         </item>
-        <item row="1" column="0" colspan="2">
-         <widget class="QLabel" name="label_experiment_name">
+        <item row="17" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_waffle_trench">
           <property name="text">
-           <string>Experiment:</string>
+           <string>Run Waffle Trench Milling</string>
+          </property>
+         </widget>
+        </item>
+        <item row="21" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_autolamella">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: darkGreen</string>
+          </property>
+          <property name="text">
+           <string>Run AutoLamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QComboBox" name="comboBox_current_lamella"/>
+        </item>
+        <item row="7" column="0">
+         <widget class="QPushButton" name="pushButton_add_lamella">
+          <property name="text">
+           <string>Add Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0">
+         <widget class="QPushButton" name="pushButton_save_position">
+          <property name="text">
+           <string>Save Position</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_setup_header">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Setup</string>
           </property>
          </widget>
         </item>
@@ -128,29 +245,6 @@
           </property>
          </widget>
         </item>
-        <item row="7" column="0">
-         <widget class="QPushButton" name="pushButton_add_lamella">
-          <property name="text">
-           <string>Add Lamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="19" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_autolamella">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">background-color: darkGreen</string>
-          </property>
-          <property name="text">
-           <string>Run AutoLamella</string>
-          </property>
-         </widget>
-        </item>
         <item row="10" column="1">
          <widget class="QPushButton" name="pushButton_go_to_lamella">
           <property name="text">
@@ -158,99 +252,22 @@
           </property>
          </widget>
         </item>
-        <item row="12" column="0" colspan="2">
-         <widget class="QLabel" name="label_info">
-          <property name="text">
-           <string>No Lamella Selected</string>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="1">
-         <widget class="QComboBox" name="comboBox_current_lamella"/>
-        </item>
-        <item row="7" column="1">
-         <widget class="QPushButton" name="pushButton_remove_lamella">
-          <property name="styleSheet">
-           <string notr="true"/>
-          </property>
-          <property name="text">
-           <string>Remove Lamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="0">
-         <widget class="QLabel" name="label_current_lamella_header">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Current Lamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_undercut">
-          <property name="text">
-           <string>Run Waffle Undercut Milling</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_setup_header">
-          <property name="font">
-           <font>
-            <pointsize>12</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Setup</string>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="0" colspan="2">
-         <spacer name="verticalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="10" column="0">
-         <widget class="QPushButton" name="pushButton_save_position">
-          <property name="text">
-           <string>Save Position</string>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="0" colspan="2">
-         <spacer name="verticalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="17" column="0" colspan="2">
+        <item row="19" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_setup_autolamella">
           <property name="text">
            <string>Run Setup AutoLamella</string>
           </property>
          </widget>
+        </item>
+        <item row="12" column="1">
+         <widget class="QPushButton" name="pushButton_revert_stage">
+          <property name="text">
+           <string>Time Travel To</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0">
+         <widget class="QComboBox" name="comboBox_lamella_history"/>
         </item>
        </layout>
       </widget>

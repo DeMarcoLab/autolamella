@@ -127,6 +127,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_go_to_lamella.setEnabled(False)
         self.comboBox_current_lamella.currentIndexChanged.connect(self.update_lamella_ui)
         self.pushButton_save_position.clicked.connect(self.save_lamella_ui)
+        self.pushButton_fail_lamella.clicked.connect(self.fail_lamella_ui)
+        self.pushButton_revert_stage.clicked.connect(self.revert_stage)
 
         self.pushButton_run_waffle_trench.clicked.connect(self._run_trench_workflow)
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
@@ -322,7 +324,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         _lamella_selected = bool(self.experiment.positions) if _experiment_loaded else False
 
         # setup experiment -> connect to microscope -> select lamella -> run autolamella
-
+        self.pushButton_fail_lamella.setVisible(_lamella_selected)
+        self.pushButton_revert_stage.setVisible(_lamella_selected)
+        self.comboBox_lamella_history.setVisible(_lamella_selected)
+        
         # experiment loaded
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
         self.actionCryo_Sputter.setVisible(_protocol_loaded)
@@ -335,7 +340,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
-                msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \n"
+                if lamella._is_failure:
+                    msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \t\t FAILED \n"
+                else:
+                    msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \n"
             self.label_info.setText(msg)
 
             self.comboBox_current_lamella.setVisible(_lamella_selected)
@@ -393,7 +401,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             return
         
         if self.experiment.positions == []:
-            return
+            return      
 
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
@@ -442,6 +450,20 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         stages += fiducial_stage
 
                 self.milling_widget.set_milling_stages(stages)
+
+        if lamella._is_failure:
+            self.pushButton_fail_lamella.setText("Mark Lamella as Active")
+        else:
+            self.pushButton_fail_lamella.setText("Mark Lamella As Failed")
+
+        def _to_str(state: LamellaState):
+            return f"{state.stage.name} ({datetime.fromtimestamp(state.end_timestamp).strftime('%I:%M%p')})"
+        
+        self.comboBox_lamella_history.clear()
+        _lamella_history = bool(lamella.history)
+        self.comboBox_lamella_history.setVisible(_lamella_history)
+        self.pushButton_revert_stage.setVisible(_lamella_history)
+        self.comboBox_lamella_history.addItems([_to_str(state) for state in lamella.history])
 
     def _update_milling_position(self):
         # triggered when milling position is moved
@@ -608,6 +630,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._update_lamella_combobox()
         self.update_ui()
 
+    def fail_lamella_ui(self):
+        idx = self.comboBox_current_lamella.currentIndex()
+        self.experiment.positions[idx]._is_failure = True if not self.experiment.positions[idx]._is_failure else False
+        self.update_ui()
+
+    def revert_stage(self):
+        idx = self.comboBox_current_lamella.currentIndex()
+        hidx = self.comboBox_lamella_history.currentIndex()
+        self.experiment.positions[idx].state = deepcopy(self.experiment.positions[idx].history[hidx])
+        self.update_ui()
 
     def save_lamella_ui(self):
         # triggered when save button is pressed
@@ -638,6 +670,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             self.image_widget.ib_image.save(fname)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
+
+            wfl.log_status_message(self.experiment.positions[idx], "STARTED")
 
         elif (self.experiment.positions[idx].state.stage is READY_STATE):
             self.experiment.positions[idx].state.stage = AutoLamellaWaffleStage.Setup
