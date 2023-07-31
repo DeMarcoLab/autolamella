@@ -2,18 +2,18 @@ autolamella_undercut:
     application_file: autolamella
     cleaning_cross_section: false
     depth: 2.0e-06
-    height: 4.0e-06
+    height: 8.0e-06
     hfw: 8.0e-05
     milling_current: 7.6e-09
     preset: 30 keV; 2.5 nA
     tilt_angle: -10.0
     tilt_angle_step: 2.0
-    width: 1.0e-05
+    width: 22.0e-6
 fiducial:
     application_file: autolamella
     cleaning_cross_section: false
     depth: 1.0e-06
-    enabled: false
+    enabled: true
     height: 1.0e-05
     hfw: 8.0e-05
     milling_current: 2.0e-09

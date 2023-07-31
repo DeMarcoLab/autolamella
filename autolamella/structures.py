@@ -67,7 +67,7 @@ class LamellaState:
 class Lamella:
     state: LamellaState = LamellaState()
     path: Path = Path()
-    fiducial_centre: Point = Point()
+    fiducial_centre: Point = Point(25e-6, 0)
     fiducial_area: FibsemRectangle = FibsemRectangle()
     _number: int = 0
     lamella_position: Point = Point()

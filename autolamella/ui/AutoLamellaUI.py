@@ -454,7 +454,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _READY_UNDERCUT = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
             _READY_LAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
             _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
-
+            _READY_FEATURES = _counter[AutoLamellaWaffleStage.MillFeatures.name] > 0
+            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_FEATURES
 
             _ENABLE_TRENCH = _WAFFLE_METHOD and _READY_TRENCH
             _ENABLE_UNDERCUT = _WAFFLE_METHOD and _READY_UNDERCUT
@@ -804,7 +805,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             # get current ib image, save as reference
             fname = os.path.join(
-                self.experiment.positions[idx].path, "ref_position_ib"
+                self.experiment.positions[idx].path, 
+                f"ref_{self.experiment.positions[idx].state.stage.name}"
             )
             self.image_widget.ib_image.save(fname)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
