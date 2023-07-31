@@ -52,7 +52,7 @@ def create_history_dataframe(experiment: Experiment) -> pd.DataFrame:
 def calculate_statistics_dataframe(path: Path):
 
     fname = os.path.join(path, "logfile.log")
-    beam_shift_info = []
+    df_beam_shift = []
     current_lamella = None 
     current_stage = "Setup"
     current_step = None
@@ -120,12 +120,13 @@ def calculate_statistics_dataframe(path: Path):
                     if beam_type.upper() in ["ELECTRON", "ION", "PHOTON"]:
                         gamma_d = {
                             "beam_type": beam_type,
-                            "shift": Point(float(shiftx), float(shifty)),
+                            "shift.x": float(shiftx),
+                            "shift.y": float(shifty),
                             "lamella": current_lamella,
                             "stage": current_stage,
                             "step": current_step,
                         }
-                        beam_shift_info.append(deepcopy(gamma_d))
+                        df_beam_shift.append(deepcopy(gamma_d))
             except Exception as e:
                 pass
                 #print(e)
@@ -145,17 +146,17 @@ def calculate_statistics_dataframe(path: Path):
     # add date and name to all dataframes
     df_experiment["name"] = experiment.name
     df_history["name"] = experiment.name
-    beam_shift_info = pd.DataFrame.from_dict(beam_shift_info)
-    beam_shift_info["name"] = experiment.name
+    df_beam_shift = pd.DataFrame.from_dict(df_beam_shift)
+    df_beam_shift["name"] = experiment.name
 
     filename = os.path.join(path, 'duration.csv')
     df_history.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
     filename = os.path.join(path, 'beam_shift.csv')
-    beam_shift_info.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
+    df_beam_shift.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
     filename = os.path.join(path, 'experiment.csv')
     df_experiment.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
 
-    return df_experiment, df_history, beam_shift_info, df_steps, df_stage
+    return df_experiment, df_history, df_beam_shift, df_steps, df_stage
 
 def main():
     tkinter.Tk().withdraw()
