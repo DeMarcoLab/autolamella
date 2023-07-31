@@ -2,7 +2,6 @@ import glob
 import os
 from copy import deepcopy
 
-import liftout
 import pandas as pd
 import plotly.express as px
 import streamlit as st

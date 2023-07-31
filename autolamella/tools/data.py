@@ -18,7 +18,7 @@ from pathlib import Path
 def load_experiment(path):
     
     directory_name = os.path.basename(os.path.normpath(path))
-    full_path = os.path.join(path, directory_name)
+    full_path = os.path.join(path, "experiment.yaml")
     experiment = Experiment.load(full_path) 
 
     return experiment
@@ -59,6 +59,8 @@ def calculate_statistics_dataframe(path: Path):
     step_n = 0 
     steps_data = []
 
+    stage_position = []
+
     print("-" * 80)
     with open(fname, encoding="cp1252") as f:
         # Note: need to check the encoding as this is required for em dash (long dash) # TODO: change this delimiter so this isnt required.
@@ -72,27 +74,50 @@ def calculate_statistics_dataframe(path: Path):
                     -1
                 ].strip()  # should just be the message # TODO: need to check the delimeter character...
                 func = line.split("—")[-2].strip()
+                ts = line.split("—")[0].split(",")[0].strip()
+                tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
 
-                if "log_status_message" in func:
+
+                # MOVEMENT
+                if "move_stage_absolute" in func or "move_stage_relative" in func:
+
+                    TYPE = "absolute" if "move_stage_absolute" in func else "relative"
+
+                    pos_msg = msg.split("(")[1].split(")")[0].split(",")
+                    name = pos_msg[0].split("=")[-1].strip()
+                    x = pos_msg[1].split("=")[-1].strip()
+                    y = pos_msg[2].split("=")[-1].strip()
+                    z = pos_msg[3].split("=")[-1].strip()
+                    r = pos_msg[4].split("=")[-1].strip()
+                    t = pos_msg[5].split("=")[-1].strip()
+                    vals = [x, y, z, r, t]
+                    vals = [float(v) if v != 'None' else 0 for v in vals ]
+
+
+                    mdict = {"lamella": current_lamella, "stage": current_stage, "step": current_step, 
+                        "timestamp": tsd, "step_n": step_n, 
+                        "type": TYPE, "name": name, "x": vals[0], "y": vals[1], 
+                        "z": vals[2], "r": vals[3], "t": vals[4]}
+                    stage_position.append(deepcopy(mdict))
+
+                if "STATUS" in msg:
+                    if "Widget" in msg:
+                        continue
                     current_lamella = msg.split("|")[1].strip()
                     current_stage = msg.split("|")[2].strip().split(".")[-1].strip()
-                    if "Widget" in current_stage:
-                        break
                     current_step = msg.split("|")[3].strip()
 
                     # datetime string to timestamp int
                     ts = line.split("—")[0].split(",")[0].strip()
                     tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
-                    print(msg)
                     step_d = {"lamella": current_lamella, "stage": current_stage, "step": current_step, "timestamp": tsd, "step_n": step_n}
                     step_n += 1
-                    print(step_d)
                     steps_data.append(deepcopy(step_d))
 
                 if "beam_shift" in func:
                     beam_type, shiftx, shifty = msg.split("|")[-3:]
                     beam_type = beam_type.strip()
-                    if beam_type in ["Electron", "Ion", "Photon", "ELECTRON", "ION", "PHOTON"]:
+                    if beam_type.upper() in ["ELECTRON", "ION", "PHOTON"]:
                         gamma_d = {
                             "beam_type": beam_type,
                             "shift": Point(float(shiftx), float(shifty)),
@@ -104,16 +129,21 @@ def calculate_statistics_dataframe(path: Path):
             except Exception as e:
                 pass
                 #print(e)
-
+ 
     # sample
     experiment = load_experiment(path)
-    df_sample = experiment.__to_dataframe__()
+    df_experiment = experiment.__to_dataframe__()
     df_history = create_history_dataframe(experiment)
     df_steps = pd.DataFrame(steps_data)
+    df_stage = pd.DataFrame(stage_position)
+
+    
+    df_steps["duration"] = df_steps["timestamp"].diff() # TODO: fix this duration
+    df_steps["duration"] = df_steps["duration"].shift(-1)
 
 
     # add date and name to all dataframes
-    df_sample["name"] = experiment.name
+    df_experiment["name"] = experiment.name
     df_history["name"] = experiment.name
     beam_shift_info = pd.DataFrame.from_dict(beam_shift_info)
     beam_shift_info["name"] = experiment.name
@@ -122,10 +152,10 @@ def calculate_statistics_dataframe(path: Path):
     df_history.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
     filename = os.path.join(path, 'beam_shift.csv')
     beam_shift_info.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
-    filename = os.path.join(path, 'sample.csv')
-    df_sample.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
+    filename = os.path.join(path, 'experiment.csv')
+    df_experiment.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
 
-    return df_sample, df_history, beam_shift_info, df_steps
+    return df_experiment, df_history, beam_shift_info, df_steps, df_stage
 
 def main():
     tkinter.Tk().withdraw()
