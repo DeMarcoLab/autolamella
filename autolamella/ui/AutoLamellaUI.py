@@ -168,8 +168,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.ui_signal.connect(self._ui_signal)
         self._run_milling_signal.connect(self._run_milling)
 
-        self.pushButton_add_lamella.setStyleSheet("background-color: green")
-        self.pushButton_remove_lamella.setStyleSheet("background-color: red")
+        self.pushButton_add_lamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_remove_lamella.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        self.pushButton_go_to_lamella.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
 
         alignment_currents = ["Imaging Current","Milling Current"]
         self.comboBox_current_alignment.addItems(alignment_currents)
@@ -533,16 +534,19 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]
         if lamella.state.stage in SETUP_STAGES:
             self.pushButton_save_position.setText(f"Save Position")
-            self.pushButton_save_position.setStyleSheet("background-color: darkgray; color: white;")
+            self.pushButton_save_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_save_position.setEnabled(True)
             self.milling_widget._PATTERN_IS_MOVEABLE = True
         elif lamella.state.stage in READY_STAGES:
             self.pushButton_save_position.setText(f"Position Ready")
-            self.pushButton_save_position.setStyleSheet(
-                "color: white; background-color: green"
-            )
+            self.pushButton_save_position.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_save_position.setEnabled(True)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
+        else:
+            self.pushButton_save_position.setText(f"")
+            self.pushButton_save_position.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_save_position.setEnabled(False)
+            self.milling_widget._PATTERN_IS_MOVEABLE = True
 
         # update the milling widget
         if self._WORKFLOW_RUNNING:
@@ -712,22 +716,22 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     ###################################### Imaging ##########################################
 
-    def enable_buttons(
-        self,
-        add: bool = False,
-        remove: bool = False,
-        fiducial: bool = False,
-        go_to: bool = False,
-    ):
-        self.add_button.setEnabled(add)
-        self.remove_button.setEnabled(remove)
-        self.save_button.setEnabled(fiducial)
-        self.save_button.setText("Mill Fiducial for current lamella")
-        self.save_button.setStyleSheet("color: white")
-        self.go_to_lamella.setEnabled(go_to)
-        self.run_button.setEnabled(self.can_run_milling())
-        self.run_button.setText("Run AutoLamella")
-        self.run_button.setStyleSheet("color: white; background-color: green")
+    # def enable_buttons(
+    #     self,
+    #     add: bool = False,
+    #     remove: bool = False,
+    #     fiducial: bool = False,
+    #     go_to: bool = False,
+    # ):
+    #     self.add_button.setEnabled(add)
+    #     self.remove_button.setEnabled(remove)
+    #     self.save_button.setEnabled(fiducial)
+    #     self.save_button.setText("Mill Fiducial for current lamella")
+    #     self.save_button.setStyleSheet("color: white")
+    #     self.go_to_lamella.setEnabled(go_to)
+    #     self.run_button.setEnabled(self.can_run_milling())
+    #     self.run_button.setText("Run AutoLamella")
+    #     self.run_button.setStyleSheet("color: white; background-color: green")
 
     def go_to_lamella_ui(self):
         print("go to lamella ui")
