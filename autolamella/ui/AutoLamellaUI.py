@@ -55,8 +55,8 @@ from autolamella.ui import _stylesheets
 from collections import Counter
 
 
-_DEV_MODE = False
-DEV_EXP_PATH = r"/home/patrick/github/autolamella/autolamella/log/TEST_PROTOCOLv2/experiment.yaml"
+_DEV_MODE = True
+DEV_EXP_PATH = r"C:\Users\Admin\Github\autolamella\autolamella\log\TEST_DEV_01\experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
 _AUTO_SYNC_MINIMAP = False
@@ -455,20 +455,27 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _READY_LAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
             _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
 
+
+            _ENABLE_TRENCH = _WAFFLE_METHOD and _READY_TRENCH
+            _ENABLE_UNDERCUT = _WAFFLE_METHOD and _READY_UNDERCUT
+            _ENABLE_LAMELLA = _READY_LAMELLA
+            _ENABLE_AUTOLAMELLA = _READY_AUTOLAMELLA
+
+
             self.pushButton_run_waffle_trench.setVisible(_WAFFLE_METHOD)
-            self.pushButton_run_waffle_trench.setEnabled(_WAFFLE_METHOD and _READY_TRENCH)
+            self.pushButton_run_waffle_trench.setEnabled(_ENABLE_TRENCH)
             self.pushButton_run_waffle_undercut.setVisible(_WAFFLE_METHOD)
-            self.pushButton_run_waffle_undercut.setEnabled(_WAFFLE_METHOD and _READY_UNDERCUT)
+            self.pushButton_run_waffle_undercut.setEnabled(_ENABLE_UNDERCUT)
             self.pushButton_run_setup_autolamella.setVisible(True)
-            self.pushButton_run_setup_autolamella.setEnabled(_READY_LAMELLA)
+            self.pushButton_run_setup_autolamella.setEnabled(_ENABLE_LAMELLA)
             self.pushButton_run_autolamella.setVisible(True)
-            self.pushButton_run_autolamella.setEnabled(_READY_AUTOLAMELLA)
+            self.pushButton_run_autolamella.setEnabled(_ENABLE_AUTOLAMELLA)
 
 
-            self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
         # Current Lamella Status
         if _lamella_selected:
@@ -543,17 +550,30 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
             
             if self._PROTOCOL_LOADED:
-                
+
+                _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, False
                 method = self.settings.protocol.get("method", "waffle")
-                pattern = "trench" if  method == "waffle" else "lamella"
-                position = lamella.trench_position if method == "waffle" else lamella.lamella_position
+                
+                if method == "waffle" and lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench]:
+                    _DISPLAY_TRENCH = True
 
-                # load the default protocol unless in lamella protocol
-                protocol = lamella.protocol if pattern in lamella.protocol else self.settings.protocol
-                stages = patterning._get_milling_stages(pattern, protocol, position)
+                if method == "waffle" and lamella.state.stage is AutoLamellaWaffleStage.ReadyLamella:
+                    # show lamella and friends
+                    _DISPLAY_LAMELLA = True
 
-                # feature (or at SetupLamella)
-                if method == "default":
+                if method == "default" and lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyLamella]:
+                    # show lamella and friends
+                    _DISPLAY_LAMELLA = True
+
+
+                if _DISPLAY_TRENCH:
+                    protocol = lamella.protocol if "trench" in lamella.protocol else self.settings.protocol
+                    stages = patterning._get_milling_stages("trench", protocol, lamella.trench_position)
+
+                if _DISPLAY_LAMELLA:
+                    protocol = lamella.protocol if "lamella" in lamella.protocol else self.settings.protocol
+                    stages = patterning._get_milling_stages("lamella", protocol, lamella.lamella_position)
+                    
                     _feature_name = "notch" if self.settings.protocol["notch"]["enabled"]  else "microexpansion"
                     protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol
                     feature_stage = patterning._get_milling_stages(_feature_name, protocol, lamella.feature_position)
@@ -684,6 +704,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # load protocol
         self.settings.protocol = utils.load_protocol(protocol_path=DEV_PROTOCOL_PATH)
         self._PROTOCOL_LOADED = True
+        self.update_protocol_ui()
 
         self.update_ui()
         return 

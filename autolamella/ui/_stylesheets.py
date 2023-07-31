@@ -55,3 +55,9 @@ QPushButton {
 QPushButton:hover {
     background-color: rgba(255, 125, 0, 125);
 }"""
+
+_DISABLED_PUSHBUTTON_STYLE = """
+QPushButton {
+    background-color: none;
+    }
+"""    

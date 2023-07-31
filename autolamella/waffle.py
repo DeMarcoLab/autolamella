@@ -441,9 +441,9 @@ def setup_lamella(
     if use_fiducial:
         # save fiducial information
         n_fiducial = len(fiducial_stage)
-        lamella.fiducial_centre = stages[-n_fiducial].pattern.point
+        lamella.fiducial_centre = stages[-n_fiducial].pattern.point # this goes the wrong way?
         lamella.protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-n_fiducial:]))
-        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, lamella.fiducial_centre, lamella.protocol["fiducial"]["stages"][0]["height"])
+        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, deepcopy(lamella.fiducial_centre), lamella.protocol["fiducial"]["stages"][0]["height"])
         logging.info(f"Fiducial centre: {lamella.fiducial_centre}")
 
         # mill the fiducial
@@ -454,12 +454,14 @@ def setup_lamella(
     
         # set reduced area for fiducial alignment
         settings.image.reduced_area = lamella.fiducial_area
+        print(f"REDUCED_AREA: ", lamella.fiducial_area)
 
     # for alignment
     settings.image.beam_type = BeamType.ION
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
     settings.image.label = f"ref_alignment"
+    print(f"REDUCED_AREA: ", settings.image.reduced_area)
     ib_image = acquire.new_image(microscope, settings.image)
     settings.image.reduced_area = None
 
@@ -596,7 +598,7 @@ def run_undercut_milling(
         if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut and not lamella._is_failure:
             lamella.state.stage = AutoLamellaWaffleStage.ReadyLamella
             log_status_message(lamella, "STARTED")
-            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
             parent_ui.update_experiment_signal.emit(experiment)
 
     return experiment
@@ -812,7 +814,7 @@ def ask_user(
 def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->tuple[FibsemRectangle, bool]:
     pixelsize = image.metadata.pixel_size.x
     
-    fiducial_centre.y = fiducial_centre.y
+    fiducial_centre.y = -fiducial_centre.y
     fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
         fiducial_centre, pixelsize
     )
