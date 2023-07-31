@@ -32,3 +32,7 @@ testpaths = [
     "tests",
 ]
 filterwarnings = "ignore::pytest.PytestCacheWarning"
+
+[tool.black]
+line-length = 120
+target_version = ['py39']
