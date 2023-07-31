@@ -51,7 +51,7 @@ from PyQt5.QtCore import pyqtSignal
 
 from napari.qt.threading import thread_worker
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
-
+from autolamella.ui import _stylesheets
 from collections import Counter
 
 
@@ -105,6 +105,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.USER_RESPONSE: bool = False
         self.WAITING_FOR_UI_UPDATE: bool = False
         self._MILLING_RUNNING: bool = False
+        self._WORKFLOW_RUNNING: bool = False
 
 
 
@@ -463,26 +464,25 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_run_autolamella.setVisible(True)
             self.pushButton_run_autolamella.setEnabled(_READY_AUTOLAMELLA)
 
-            # TODO: TEMPLATE THIS CSS   
-            _PUSHBUTTON_STYLE = """
-            QPushButton {
-                background-color: rgba(255, 0, 0, 125);
-                }
-                QPushButton:hover {
-                    background-color: rgba(255, 0, 0, 200);
-                }"""
-            self.pushButton_run_waffle_trench.setStyleSheet(_PUSHBUTTON_STYLE)
+
+            self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
 
         # Current Lamella Status
         if _lamella_selected:
             self.update_lamella_ui()
 
         # instructions# TODO: update with autolamella instructions
-        INSTRUCTIONS = {"NOT_CONNECTED": "Please connect to the microscope.",
-                        "NO_EXPERIMENT": "Please create or load an experiment.",
-                        "NO_PROTOCOL": "Please load a protocol.",
-                        "NO_LAMELLA": "Please Run Setup to select Lamella Positions.",
-                        "LAMELLA_READY": "Lamella Positions Selected. Ready to Run AutoLamella.",
+        INSTRUCTIONS = {"NOT_CONNECTED": "Please connect to the microscope (System -> Connect to Microscope).",
+                        "NO_EXPERIMENT": "Please create or load an experiment (File -> Create / Load Experiment)",
+                        "NO_PROTOCOL": "Please load a protocol (File -> Load Protocol).",
+                        "NO_LAMELLA": "Please Add Lamella Positions (Experiment -> Add Lamella).",
+                        "TRENCH_READY": "Trench Positions Selected. Ready to Run Waffle Trench.",
+                        "UNDERCUT_READY": "Undercut Positions Selected. Ready to Run Waffle Undercut.",
+                        "LAMELLA_READY": "Lamella Positions Selected. Ready to Run Setup AutoLamella.",
+                        "AUTOLAMELLA_READY": "Lamella Positions Selected. Ready to Run AutoLamella.",
                         }
 
         if not _microscope_connected:
@@ -494,7 +494,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         elif not _lamella_selected:
             self._set_instructions(INSTRUCTIONS["NO_LAMELLA"])
         elif _lamella_selected:
-            self._set_instructions(INSTRUCTIONS["LAMELLA_READY"])
+            self._set_instructions(INSTRUCTIONS["AUTOLAMELLA_READY"])
 
     def _update_lamella_combobox(self):
         # detail combobox
@@ -535,6 +535,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             self.pushButton_save_position.setEnabled(True)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
+
+        # update the milling widget
+        if self._WORKFLOW_RUNNING:
+            self.milling_widget._PATTERN_IS_MOVEABLE = True
 
         if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
             
@@ -872,6 +876,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def _workflow_finished(self):
         logging.info(f'Workflow finished.')
+        self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
 
     def _ui_signal(self, info:dict) -> None:
@@ -920,6 +925,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     @thread_worker
     def _threaded_worker(self, microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment, workflow: str="trench"):
         
+        self._WORKFLOW_RUNNING = True
         self.milling_widget._PATTERN_IS_MOVEABLE = True
         self.WAITING_FOR_USER_INTERACTION = False
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)

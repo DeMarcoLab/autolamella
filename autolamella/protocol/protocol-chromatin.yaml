@@ -1,6 +1,5 @@
 
 name: autolamella-chromatin-scan-rotation-0deg
-application_file: autolamella # Thermo only
 method: default # waffle or default
 
 options:

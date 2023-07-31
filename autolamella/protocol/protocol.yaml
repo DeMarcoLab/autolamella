@@ -1,4 +1,3 @@
-application_file: autolamella
 autolamella_undercut:
     application_file: autolamella
     cleaning_cross_section: false
@@ -94,11 +93,11 @@ notch:
     vwidth: 2.0e-07
 options:
     supervise:
-        features: false
-        lamella: false
+        features: true
+        lamella: true
         setup_lamella: true
-        trench: false
-        undercut: false
+        trench: true
+        undercut: true
 trench:
     application_file: autolamella
     cleaning_cross_section: false
@@ -106,7 +105,7 @@ trench:
     hfw: 0.00018
     lamella_height: 3.0e-05
     lamella_width: 2.2e-05
-    milling_current: 2.8e-08
+    milling_current: 7.6e-09
     offset: 0.0
     preset: 30 keV; 2.5 nA
     size_ratio: 2.0

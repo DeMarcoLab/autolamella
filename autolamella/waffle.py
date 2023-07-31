@@ -549,7 +549,7 @@ def run_trench_milling(
         if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench and not lamella._is_failure:
             
             # finish readying the lamella
-            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
             parent_ui.update_experiment_signal.emit(experiment)
             
             lamella = start_of_stage_update(
