@@ -130,7 +130,7 @@ class Lamella:
             protocol=data.get("protocol", {}),
             _number=data["_number"],
             history=[LamellaState().__from_dict__(state) for state in data["history"]],
-            _is_failure=data["_is_failure"],
+            _is_failure=data.get("_is_failure", False),
         )
     
     def update(self, stage: AutoLamellaWaffleStage):
