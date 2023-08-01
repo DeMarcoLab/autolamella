@@ -716,25 +716,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.update_ui()
         return 
 
-    ###################################### Imaging ##########################################
-
-    # def enable_buttons(
-    #     self,
-    #     add: bool = False,
-    #     remove: bool = False,
-    #     fiducial: bool = False,
-    #     go_to: bool = False,
-    # ):
-    #     self.add_button.setEnabled(add)
-    #     self.remove_button.setEnabled(remove)
-    #     self.save_button.setEnabled(fiducial)
-    #     self.save_button.setText("Mill Fiducial for current lamella")
-    #     self.save_button.setStyleSheet("color: white")
-    #     self.go_to_lamella.setEnabled(go_to)
-    #     self.run_button.setEnabled(self.can_run_milling())
-    #     self.run_button.setText("Run AutoLamella")
-    #     self.run_button.setStyleSheet("color: white; background-color: green")
-
     def go_to_lamella_ui(self):
         print("go to lamella ui")
         
@@ -811,11 +792,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 start_timestamp = datetime.timestamp(datetime.now()),
 
             )
-            # self.experiment.positions[idx].state.microscope_state = deepcopy(
-            #     self.microscope.get_current_microscope_state()
-            # )
-            # self.experiment.positions[idx].state.stage = READY_STATE
-
 
             # update the protocol / point
             self._update_milling_protocol(idx, method)
