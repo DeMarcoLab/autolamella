@@ -29,9 +29,6 @@ from fibsem.detection.detection import (
     LamellaCentre,
     LamellaLeftEdge,
     LamellaRightEdge,
-    LandingPost,
-    NeedleTip,
-    LandingPost,
     detect_features,
     DetectedFeatures,
 )
@@ -55,13 +52,13 @@ def mill_trench(
     settings.image.save_path = lamella.path
 
     # TODO: cross correlate the reference here
-    fname = os.path.join(lamella.path, "ref_position_ib.tif")
-    img = FibsemImage.load(fname)
+    # fname = os.path.join(lamella.path, f"ref_{AutoLamellaWaffleStage.Setup.name}_ib.tif")
+    # img = FibsemImage.load(fname)
     
     log_status_message(lamella, "MILL_TRENCH")
 
     settings.image.hfw = settings.protocol["trench"]["hfw"]
-    settings.image.label = f"ref_trench_start"
+    settings.image.label = f"ref_{lamella.state.stage.name}_start"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
@@ -69,7 +66,7 @@ def mill_trench(
 
     # define trench #TODO: update to lamella.protocol
     settings.image.beam_type = BeamType.ION
-    stages = patterning._get_milling_stages("trench", settings.protocol, point=lamella.trench_position)
+    stages = patterning._get_milling_stages("trench", lamella.protocol, point=lamella.trench_position)
     _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
@@ -86,7 +83,7 @@ def mill_trench(
         microscope=microscope,
         image_settings=settings.image,
         hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH],
-        label="ref_trench",
+        label=f"ref_{lamella.state.stage.name}_final",
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -112,7 +109,7 @@ def mill_undercut(
     log_status_message(lamella, f"ALIGN_TRENCH")
     settings.image.beam_type = BeamType.ION
     settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.label = f"ref_trench_align_ml"
+    settings.image.label = f"ref_{lamella.state.stage.name}_trench_align_ml"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
@@ -142,7 +139,7 @@ def mill_undercut(
         log_status_message(lamella, f"ALIGN_UNDERCUT_{_n}")
         settings.image.beam_type = BeamType.ION
         settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
-        settings.image.label = f"ref_undercut_align_ml_{_n}"
+        settings.image.label = f"ref_{lamella.state.stage.name}_align_ml_{_n}"
         settings.image.save = True
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         _set_images_ui(parent_ui, eb_image, ib_image)
@@ -164,7 +161,7 @@ def mill_undercut(
         microscope=microscope,
         image_settings=settings.image,
         hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
-        label="ref_undercut",
+        label=f"ref_{lamella.state.stage.name}_final",
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -213,6 +210,7 @@ def mill_feature(
     log_status_message(lamella, "ALIGN_REFERENCE")
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.beam_type = BeamType.ION
     settings.image.label = f"alignment_target_{lamella.state.stage.name}"
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
     alignment.beam_shift_alignment(microscope, settings.image, 
@@ -229,7 +227,7 @@ def mill_feature(
 
 
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
-    settings.image.label = f"ref_{_feature_name}_start"
+    settings.image.label = f"ref_{lamella.state.stage.name}_start"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
@@ -250,7 +248,7 @@ def mill_feature(
         microscope=microscope,
         image_settings=settings.image,
         hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
-        label=f"ref_{_feature_name}",
+        label=f"ref_{lamella.state.stage.name}_final",
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -321,6 +319,7 @@ def mill_lamella(
 
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.beam_type = BeamType.ION
     settings.image.label = f"alignment_target_{lamella.state.stage.name}"
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
     alignment.beam_shift_alignment(microscope, settings.image, 
@@ -336,7 +335,7 @@ def mill_lamella(
 
     # take reference images
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
-    settings.image.label = f"ref_lamella_{lamella.state.stage.name}-start"
+    settings.image.label = f"ref_{lamella.state.stage.name}_start"
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
@@ -374,7 +373,7 @@ def mill_lamella(
         microscope=microscope,
         image_settings=settings.image,
         hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
-        label=f"ref_lamella_{lamella.state.stage.name}",
+        label=f"ref_{lamella.state.stage.name}_final",
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -393,7 +392,7 @@ def setup_lamella(
 
     log_status_message(lamella, "SETUP_PATTERNS")
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
-    settings.image.label = f"ref_setup_lamella"
+    settings.image.label = f"ref_{lamella.state.stage.name}_start"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
@@ -441,9 +440,9 @@ def setup_lamella(
     if use_fiducial:
         # save fiducial information
         n_fiducial = len(fiducial_stage)
-        lamella.fiducial_centre = stages[-n_fiducial].pattern.point
+        lamella.fiducial_centre = stages[-n_fiducial].pattern.point # this goes the wrong way?
         lamella.protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-n_fiducial:]))
-        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, lamella.fiducial_centre, lamella.protocol["fiducial"]["stages"][0]["height"])
+        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, deepcopy(lamella.fiducial_centre), lamella.protocol["fiducial"]["stages"][0]["height"])
         logging.info(f"Fiducial centre: {lamella.fiducial_centre}")
 
         # mill the fiducial
@@ -454,12 +453,14 @@ def setup_lamella(
     
         # set reduced area for fiducial alignment
         settings.image.reduced_area = lamella.fiducial_area
+        print(f"REDUCED_AREA: ", lamella.fiducial_area)
 
     # for alignment
     settings.image.beam_type = BeamType.ION
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
     settings.image.label = f"ref_alignment"
+    print(f"REDUCED_AREA: ", settings.image.reduced_area)
     ib_image = acquire.new_image(microscope, settings.image)
     settings.image.reduced_area = None
 
@@ -471,7 +472,7 @@ def setup_lamella(
         microscope,
         settings.image,
         hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
-        label="ref_setup_lamella",
+        label=f"ref_{lamella.state.stage.name}_final",
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -546,7 +547,12 @@ def run_trench_milling(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench:
+        if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench and not lamella._is_failure:
+            
+            # finish readying the lamella
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
+            parent_ui.update_experiment_signal.emit(experiment)
+            
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -572,7 +578,7 @@ def run_undercut_milling(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.MillTrench:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillTrench and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -588,10 +594,10 @@ def run_undercut_milling(
 
     # ready lamella
     for lamella in experiment.positions:
-        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut and not lamella._is_failure:
             lamella.state.stage = AutoLamellaWaffleStage.ReadyLamella
             log_status_message(lamella, "STARTED")
-            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
             parent_ui.update_experiment_signal.emit(experiment)
 
     return experiment
@@ -604,7 +610,7 @@ def run_setup_lamella(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.ReadyLamella:
+        if lamella.state.stage == AutoLamellaWaffleStage.ReadyLamella and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -637,7 +643,7 @@ def run_lamella_milling(
     ]
     for stage in stages:
         for lamella in experiment.positions:
-            if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1):
+            if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1) and not lamella._is_failure:
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
                 lamella = WORKFLOW_STAGES[lamella.state.stage](microscope, settings, lamella, parent_ui)
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
@@ -647,7 +653,7 @@ def run_lamella_milling(
 
     # finish
     for lamella in experiment.positions:
-        if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut:
+        if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut and not lamella._is_failure:
             lamella.state.stage = AutoLamellaWaffleStage.Finished
             log_status_message(lamella, "STARTED")
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
@@ -807,7 +813,7 @@ def ask_user(
 def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->tuple[FibsemRectangle, bool]:
     pixelsize = image.metadata.pixel_size.x
     
-    fiducial_centre.y = fiducial_centre.y
+    fiducial_centre.y = -fiducial_centre.y
     fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
         fiducial_centre, pixelsize
     )

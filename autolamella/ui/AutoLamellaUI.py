@@ -51,11 +51,12 @@ from PyQt5.QtCore import pyqtSignal
 
 from napari.qt.threading import thread_worker
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
+from autolamella.ui import _stylesheets
+from collections import Counter
 
 
-
-_DEV_MODE = False
-DEV_EXP_PATH = r"/home/patrick/github/autolamella/autolamella/log/TEST_PROTOCOLv2/experiment.yaml"
+_DEV_MODE = True
+DEV_EXP_PATH = r"C:\Users\Admin\Github\autolamella\autolamella\log\TEST_DEV_01\experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
 _AUTO_SYNC_MINIMAP = False
@@ -104,6 +105,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.USER_RESPONSE: bool = False
         self.WAITING_FOR_UI_UPDATE: bool = False
         self._MILLING_RUNNING: bool = False
+        self._WORKFLOW_RUNNING: bool = False
 
 
 
@@ -127,11 +129,18 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_go_to_lamella.setEnabled(False)
         self.comboBox_current_lamella.currentIndexChanged.connect(self.update_lamella_ui)
         self.pushButton_save_position.clicked.connect(self.save_lamella_ui)
+        self.pushButton_fail_lamella.clicked.connect(self.fail_lamella_ui)
+        self.pushButton_revert_stage.clicked.connect(self.revert_stage)
 
         self.pushButton_run_waffle_trench.clicked.connect(self._run_trench_workflow)
         self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
         self.pushButton_run_waffle_undercut.clicked.connect(self._run_undercut_workflow)
         self.pushButton_run_setup_autolamella.clicked.connect(self._run_setup_lamella_workflow)
+
+        self.pushButton_run_waffle_trench.setVisible(False)
+        self.pushButton_run_autolamella.setVisible(False)
+        self.pushButton_run_waffle_undercut.setVisible(False)
+        self.pushButton_run_setup_autolamella.setVisible(False)
 
         self.export_protocol.clicked.connect(self.export_protocol_ui)
         self.pushButton_update_protocol.clicked.connect(self.export_protocol_ui)
@@ -159,8 +168,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.ui_signal.connect(self._ui_signal)
         self._run_milling_signal.connect(self._run_milling)
 
-        self.pushButton_add_lamella.setStyleSheet("background-color: green")
-        self.pushButton_remove_lamella.setStyleSheet("background-color: red")
+        self.pushButton_add_lamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_remove_lamella.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        self.pushButton_go_to_lamella.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
 
         alignment_currents = ["Imaging Current","Milling Current"]
         self.comboBox_current_alignment.addItems(alignment_currents)
@@ -224,7 +234,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
         if self.sender() == self.export_protocol:
-            path = _get_save_file_ui(msg='Save protocol')
+            path = _get_save_file_ui(msg='Save protocol',
+                path = cfg.PROTOCOL_PATH,
+                _filter= "*yaml",
+                parent=self)
             utils.save_yaml(path, self.settings.protocol)
             
             logging.info("Protocol saved to file")
@@ -397,7 +410,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         _lamella_selected = bool(self.experiment.positions) if _experiment_loaded else False
 
         # setup experiment -> connect to microscope -> select lamella -> run autolamella
-
+        self.pushButton_fail_lamella.setVisible(_lamella_selected)
+        self.pushButton_revert_stage.setVisible(_lamella_selected)
+        self.comboBox_lamella_history.setVisible(_lamella_selected)
+        
         # experiment loaded
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
         self.actionCryo_Sputter.setVisible(_protocol_loaded)
@@ -410,7 +426,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
-                msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \n"
+                if lamella._is_failure:
+                    msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \t\t FAILED \n"
+                else:
+                    msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \n"
             self.label_info.setText(msg)
 
             self.comboBox_current_lamella.setVisible(_lamella_selected)
@@ -427,17 +446,52 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_save_position.setEnabled(_lamella_selected)
         self.pushButton_go_to_lamella.setEnabled(_lamella_selected)
 
+        if _experiment_loaded and _protocol_loaded:
+            # workflow buttons
+            _WAFFLE_METHOD = self.settings.protocol.get("method", "waffle") == "waffle"
+            _counter = Counter([p.state.stage.name for p in self.experiment.positions])
+            
+            _READY_TRENCH = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
+            _READY_UNDERCUT = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
+            _READY_LAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
+            _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
+            _READY_FEATURES = _counter[AutoLamellaWaffleStage.MillFeatures.name] > 0
+            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_FEATURES
+
+            _ENABLE_TRENCH = _WAFFLE_METHOD and _READY_TRENCH
+            _ENABLE_UNDERCUT = _WAFFLE_METHOD and _READY_UNDERCUT
+            _ENABLE_LAMELLA = _READY_LAMELLA
+            _ENABLE_AUTOLAMELLA = _READY_AUTOLAMELLA
+
+
+            self.pushButton_run_waffle_trench.setVisible(_WAFFLE_METHOD)
+            self.pushButton_run_waffle_trench.setEnabled(_ENABLE_TRENCH)
+            self.pushButton_run_waffle_undercut.setVisible(_WAFFLE_METHOD)
+            self.pushButton_run_waffle_undercut.setEnabled(_ENABLE_UNDERCUT)
+            self.pushButton_run_setup_autolamella.setVisible(True)
+            self.pushButton_run_setup_autolamella.setEnabled(_ENABLE_LAMELLA)
+            self.pushButton_run_autolamella.setVisible(True)
+            self.pushButton_run_autolamella.setEnabled(_ENABLE_AUTOLAMELLA)
+
+
+            self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
         # Current Lamella Status
         if _lamella_selected:
             self.update_lamella_ui()
 
         # instructions# TODO: update with autolamella instructions
-        INSTRUCTIONS = {"NOT_CONNECTED": "Please connect to the microscope.",
-                        "NO_EXPERIMENT": "Please create or load an experiment.",
-                        "NO_PROTOCOL": "Please load a protocol.",
-                        "NO_LAMELLA": "Please Run Setup to select Lamella Positions.",
-                        "LAMELLA_READY": "Lamella Positions Selected. Ready to Run AutoLamella.",
+        INSTRUCTIONS = {"NOT_CONNECTED": "Please connect to the microscope (System -> Connect to Microscope).",
+                        "NO_EXPERIMENT": "Please create or load an experiment (File -> Create / Load Experiment)",
+                        "NO_PROTOCOL": "Please load a protocol (File -> Load Protocol).",
+                        "NO_LAMELLA": "Please Add Lamella Positions (Experiment -> Add Lamella).",
+                        "TRENCH_READY": "Trench Positions Selected. Ready to Run Waffle Trench.",
+                        "UNDERCUT_READY": "Undercut Positions Selected. Ready to Run Waffle Undercut.",
+                        "LAMELLA_READY": "Lamella Positions Selected. Ready to Run Setup AutoLamella.",
+                        "AUTOLAMELLA_READY": "Lamella Positions Selected. Ready to Run AutoLamella.",
                         }
 
         if not _microscope_connected:
@@ -449,7 +503,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         elif not _lamella_selected:
             self._set_instructions(INSTRUCTIONS["NO_LAMELLA"])
         elif _lamella_selected:
-            self._set_instructions(INSTRUCTIONS["LAMELLA_READY"])
+            self._set_instructions(INSTRUCTIONS["AUTOLAMELLA_READY"])
 
     def _update_lamella_combobox(self):
         # detail combobox
@@ -468,7 +522,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             return
         
         if self.experiment.positions == []:
-            return
+            return      
 
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
@@ -480,31 +534,51 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]
         if lamella.state.stage in SETUP_STAGES:
             self.pushButton_save_position.setText(f"Save Position")
-            self.pushButton_save_position.setStyleSheet("background-color: darkgray; color: white;")
+            self.pushButton_save_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
             self.pushButton_save_position.setEnabled(True)
             self.milling_widget._PATTERN_IS_MOVEABLE = True
         elif lamella.state.stage in READY_STAGES:
             self.pushButton_save_position.setText(f"Position Ready")
-            self.pushButton_save_position.setStyleSheet(
-                "color: white; background-color: green"
-            )
+            self.pushButton_save_position.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
             self.pushButton_save_position.setEnabled(True)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
+        else:
+            self.pushButton_save_position.setText(f"")
+            self.pushButton_save_position.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_save_position.setEnabled(False)
+            self.milling_widget._PATTERN_IS_MOVEABLE = True
+
+        # update the milling widget
+        if self._WORKFLOW_RUNNING:
+            self.milling_widget._PATTERN_IS_MOVEABLE = True
 
         if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
             
             if self._PROTOCOL_LOADED:
-                
+
+                _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, False
                 method = self.settings.protocol.get("method", "waffle")
-                pattern = "trench" if  method == "waffle" else "lamella"
-                position = lamella.trench_position if method == "waffle" else lamella.lamella_position
+                
+                if method == "waffle" and lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench]:
+                    _DISPLAY_TRENCH = True
 
-                # load the default protocol unless in lamella protocol
-                protocol = lamella.protocol if pattern in lamella.protocol else self.settings.protocol
-                stages = patterning._get_milling_stages(pattern, protocol, position)
+                if method == "waffle" and lamella.state.stage is AutoLamellaWaffleStage.ReadyLamella:
+                    # show lamella and friends
+                    _DISPLAY_LAMELLA = True
 
-                # feature (or at SetupLamella)
-                if method == "default":
+                if method == "default" and lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyLamella]:
+                    # show lamella and friends
+                    _DISPLAY_LAMELLA = True
+
+
+                if _DISPLAY_TRENCH:
+                    protocol = lamella.protocol if "trench" in lamella.protocol else self.settings.protocol
+                    stages = patterning._get_milling_stages("trench", protocol, lamella.trench_position)
+
+                if _DISPLAY_LAMELLA:
+                    protocol = lamella.protocol if "lamella" in lamella.protocol else self.settings.protocol
+                    stages = patterning._get_milling_stages("lamella", protocol, lamella.lamella_position)
+                    
                     _feature_name = "notch" if self.settings.protocol["notch"]["enabled"]  else "microexpansion"
                     protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol
                     feature_stage = patterning._get_milling_stages(_feature_name, protocol, lamella.feature_position)
@@ -517,6 +591,20 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         stages += fiducial_stage
 
                 self.milling_widget.set_milling_stages(stages)
+
+        if lamella._is_failure:
+            self.pushButton_fail_lamella.setText("Mark Lamella as Active")
+        else:
+            self.pushButton_fail_lamella.setText("Mark Lamella As Failed")
+
+        def _to_str(state: LamellaState):
+            return f"{state.stage.name} ({datetime.fromtimestamp(state.end_timestamp).strftime('%I:%M%p')})"
+        
+        self.comboBox_lamella_history.clear()
+        _lamella_history = bool(lamella.history)
+        self.comboBox_lamella_history.setVisible(_lamella_history)
+        self.pushButton_revert_stage.setVisible(_lamella_history)
+        self.comboBox_lamella_history.addItems([_to_str(state) for state in lamella.history])
 
     def _update_milling_position(self):
         # triggered when milling position is moved
@@ -621,28 +709,29 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # load protocol
         self.settings.protocol = utils.load_protocol(protocol_path=DEV_PROTOCOL_PATH)
         self._PROTOCOL_LOADED = True
+        self.update_protocol_ui()
 
         self.update_ui()
         return 
 
     ###################################### Imaging ##########################################
 
-    def enable_buttons(
-        self,
-        add: bool = False,
-        remove: bool = False,
-        fiducial: bool = False,
-        go_to: bool = False,
-    ):
-        self.add_button.setEnabled(add)
-        self.remove_button.setEnabled(remove)
-        self.save_button.setEnabled(fiducial)
-        self.save_button.setText("Mill Fiducial for current lamella")
-        self.save_button.setStyleSheet("color: white")
-        self.go_to_lamella.setEnabled(go_to)
-        self.run_button.setEnabled(self.can_run_milling())
-        self.run_button.setText("Run AutoLamella")
-        self.run_button.setStyleSheet("color: white; background-color: green")
+    # def enable_buttons(
+    #     self,
+    #     add: bool = False,
+    #     remove: bool = False,
+    #     fiducial: bool = False,
+    #     go_to: bool = False,
+    # ):
+    #     self.add_button.setEnabled(add)
+    #     self.remove_button.setEnabled(remove)
+    #     self.save_button.setEnabled(fiducial)
+    #     self.save_button.setText("Mill Fiducial for current lamella")
+    #     self.save_button.setStyleSheet("color: white")
+    #     self.go_to_lamella.setEnabled(go_to)
+    #     self.run_button.setEnabled(self.can_run_milling())
+    #     self.run_button.setText("Run AutoLamella")
+    #     self.run_button.setStyleSheet("color: white; background-color: green")
 
     def go_to_lamella_ui(self):
         print("go to lamella ui")
@@ -684,6 +773,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._update_lamella_combobox()
         self.update_ui()
 
+    def fail_lamella_ui(self):
+        idx = self.comboBox_current_lamella.currentIndex()
+        self.experiment.positions[idx]._is_failure = True if not self.experiment.positions[idx]._is_failure else False
+        self.update_ui()
+
+    def revert_stage(self):
+        idx = self.comboBox_current_lamella.currentIndex()
+        hidx = self.comboBox_lamella_history.currentIndex()
+        self.experiment.positions[idx].state = deepcopy(self.experiment.positions[idx].history[hidx])
+        self.update_ui()
 
     def save_lamella_ui(self):
         # triggered when save button is pressed
@@ -710,10 +809,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             # get current ib image, save as reference
             fname = os.path.join(
-                self.experiment.positions[idx].path, "ref_position_ib"
+                self.experiment.positions[idx].path, 
+                f"ref_{self.experiment.positions[idx].state.stage.name}"
             )
             self.image_widget.ib_image.save(fname)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
+
+            wfl.log_status_message(self.experiment.positions[idx], "STARTED")
 
         elif (self.experiment.positions[idx].state.stage is READY_STATE):
             self.experiment.positions[idx].state.stage = AutoLamellaWaffleStage.Setup
@@ -801,6 +903,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def _workflow_finished(self):
         logging.info(f'Workflow finished.')
+        self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
 
     def _ui_signal(self, info:dict) -> None:
@@ -849,6 +952,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     @thread_worker
     def _threaded_worker(self, microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment, workflow: str="trench"):
         
+        self._WORKFLOW_RUNNING = True
         self.milling_widget._PATTERN_IS_MOVEABLE = True
         self.WAITING_FOR_USER_INTERACTION = False
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
