@@ -157,13 +157,14 @@ def mill_undercut(
 
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
-    reference_images = acquire.take_set_of_reference_images(
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    print("weird bug spot")
+    settings.image.label = f"ref_{lamella.state.stage.name}_final"
+    reference_images = acquire.take_reference_images(
         microscope=microscope,
         image_settings=settings.image,
-        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
-        label=f"ref_{lamella.state.stage.name}_final",
     )
-    _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
+    _set_images_ui(parent_ui, reference_images[0], reference_images[1])
 
     return lamella
 
