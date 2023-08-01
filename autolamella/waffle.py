@@ -127,11 +127,21 @@ def mill_undercut(
 
     features = [LamellaCentre()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
-
+    
+    # align vertical
     microscope.eucentric_move(
         settings, 
         dy=det.features[0].feature_m.y,
     )
+    # align horizontal
+    microscope.stable_move(
+        settings, 
+        dx=det.features[0].feature_m.x,
+        dy=0,
+        beam_type=settings.image.beam_type
+    )
+
+    # lamella should now be centred in ion beam
 
     settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
     settings.image.label = f"ref_{lamella.state.stage.name}_start"

@@ -802,10 +802,20 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         lamella: Lamella = self.experiment.positions[idx]
 
         if self.experiment.positions[idx].state.stage is AutoLamellaWaffleStage.Setup:
-            self.experiment.positions[idx].state.microscope_state = deepcopy(
-                self.microscope.get_current_microscope_state()
+            
+            self.experiment.positions[idx].state = LamellaState(
+                microscope_state = deepcopy(
+                    self.microscope.get_current_microscope_state()
+                ),
+                stage = READY_STATE,
+                start_timestamp = datetime.timestamp(datetime.now()),
+
             )
-            self.experiment.positions[idx].state.stage = READY_STATE
+            # self.experiment.positions[idx].state.microscope_state = deepcopy(
+            #     self.microscope.get_current_microscope_state()
+            # )
+            # self.experiment.positions[idx].state.stage = READY_STATE
+
 
             # update the protocol / point
             self._update_milling_protocol(idx, method)
