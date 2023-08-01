@@ -56,7 +56,7 @@ from collections import Counter
 
 
 _DEV_MODE = True
-DEV_EXP_PATH = r"C:\Users\Admin\Github\autolamella\autolamella\log\TEST_DEV_01\experiment.yaml"
+DEV_EXP_PATH = r"C:\Users\Admin\Github\autolamella\autolamella\log\HANNAH-WAFFLE-01082023\experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
 _AUTO_SYNC_MINIMAP = False
@@ -364,7 +364,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # TODO: should make this more generic i guess, but this is fine for now
         self.viewer2 = napari.Viewer(ndisplay=2)
-        self.minimap_widget = FibsemMinimapWidget(self.microscope, self.settings, viewer=self.viewer2, parent=self)
+        self.minimap_widget = FibsemMinimapWidget(self.microscope, deepcopy(self.settings), viewer=self.viewer2, parent=self)
         self.viewer2.window.add_dock_widget(
             self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
         )
@@ -456,7 +456,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _READY_LAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
             _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
             _READY_FEATURES = _counter[AutoLamellaWaffleStage.MillFeatures.name] > 0
-            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_FEATURES
+            _READY_ROUGH = _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0
+            _READY_REGULAR = _counter[AutoLamellaWaffleStage.MillRegularCut.name] > 0
+            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_FEATURES or _READY_ROUGH or _READY_REGULAR
 
             _ENABLE_TRENCH = _WAFFLE_METHOD and _READY_TRENCH
             _ENABLE_UNDERCUT = _WAFFLE_METHOD and _READY_UNDERCUT
@@ -776,6 +778,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def fail_lamella_ui(self):
         idx = self.comboBox_current_lamella.currentIndex()
         self.experiment.positions[idx]._is_failure = True if not self.experiment.positions[idx]._is_failure else False
+        self.experiment.save()
         self.update_ui()
 
     def revert_stage(self):
