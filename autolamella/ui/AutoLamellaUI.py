@@ -55,7 +55,7 @@ from autolamella.ui import _stylesheets
 from collections import Counter
 
 
-_DEV_MODE = True
+_DEV_MODE = False
 DEV_EXP_PATH = r"C:\Users\Admin\Github\autolamella\autolamella\log\TEST_DEV_01\experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
