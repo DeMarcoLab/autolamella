@@ -73,8 +73,9 @@ st.plotly_chart(fig_duration, use_container_width=True)
 # step breakdown
 # select a stage 
 st.markdown("---")
+_unique_stages = len(df_steps["stage"].unique())
 fig_steps = px.bar(df_steps, x="lamella", y="duration", color="step", title="Step Duration", 
-    barmode="stack", facet_col="stage", facet_col_wrap=2, hover_data=df_steps.columns, height=2000 )
+    barmode="stack", facet_col="stage", facet_col_wrap=2, hover_data=df_steps.columns, height=200*_unique_stages )
 st.plotly_chart(fig_steps, use_container_width=True)
 
 # timeline
@@ -93,59 +94,49 @@ st.plotly_chart(fig_duration, use_container_width=True)
 
 
 # get all images of this stage
-IMAGE_PATHS = sorted(glob.glob(os.path.join(EXPERIMENT_PATH, f"**/*{stage}*.tif"), recursive=True))
+IMAGE_PATHS = sorted(glob.glob(os.path.join(EXPERIMENT_PATH, f"**/*{stage}_final_high_res_ib.tif"), recursive=True))
 
-# get petname (directory name) of each image
-petnames = [os.path.basename(os.path.dirname(path)) for path in IMAGE_PATHS]
+if IMAGE_PATHS:
+    # get petname (directory name) of each image
+    petnames = [os.path.basename(os.path.dirname(path)) for path in IMAGE_PATHS]
+    n_cols = max(int(len(IMAGE_PATHS)//2), 2)
+    cols = st.columns(n_cols)
 
-# show the start and final images for each petname
-cols = st.columns(2)
-for fname in IMAGE_PATHS:
-
-    if "start_ib" in fname:
+    for i, (petname, fname) in enumerate(zip(petnames, IMAGE_PATHS)):
         image = FibsemImage.load(fname)
-        cols[0].image(image.data, caption=f"{os.path.basename(os.path.dirname(fname))} - {os.path.basename(fname)}")
-    elif "final_high_res_ib" in fname:
-        image = FibsemImage.load(fname)
-        cols[1].image(image.data, caption=f"{os.path.basename(os.path.dirname(fname))} - {os.path.basename(fname)}")
+        idx = i % n_cols
+        cols[idx].image(image.data, caption=f"{os.path.basename(os.path.dirname(fname))} - {os.path.basename(fname)}")
 
-
-# overview image
-st.markdown("---")
-
-# select box
-st.subheader("Overview Image")
-
-
-
-
-OVERVIEW_IMAGE = glob.glob(os.path.join(EXPERIMENT_PATH, "*overview*.tif"))
-image_fname = st.selectbox(label="Overview Image", options=OVERVIEW_IMAGE)
-image = FibsemImage.load(image_fname)
-
-key2 = st.selectbox(label="Stage Position", options=df_history["stage"].unique())
-
-
-
-# loop through stages and create empty list
-# dictionary comprehension
 
 exp = Experiment.load(os.path.join(EXPERIMENT_PATH, "experiment.yaml"))
 
-positions = {stage: [] for stage in df_history["stage"].unique()}
+# overview image
+st.markdown("---")
+st.subheader("Overview Image")
+OVERVIEW_IMAGE = glob.glob(os.path.join(EXPERIMENT_PATH, "*overview*.tif"))
+if OVERVIEW_IMAGE:
+    image_fname = st.selectbox(label="Overview Image", options=OVERVIEW_IMAGE)
+    image = FibsemImage.load(image_fname)
 
-for lamella in exp.positions:
-    for state in lamella.history:
-        
-        if state.stage.name in positions.keys():
-            positions[state.stage.name].append(state.microscope_state.absolute_position)
-            positions[state.stage.name][-1].name = f"{lamella._petname}"
+    key2 = st.selectbox(label="Stage Position", options=df_history["stage"].unique())
+
+    # loop through stages and create empty list
+    # dictionary comprehension
+
+    positions = {stage: [] for stage in df_history["stage"].unique()}
+
+    for lamella in exp.positions:
+        for state in lamella.history:
+            
+            if state.stage.name in positions.keys():
+                positions[state.stage.name].append(state.microscope_state.absolute_position)
+                positions[state.stage.name][-1].name = f"{lamella._petname}"
 
 
-st.write(positions[key2])
+    st.write(positions[key2])
 
-# fig = _tile._plot_positions(image, positions[key2], show=True)
-# st.pyplot(fig)
+    fig = _tile._plot_positions(image, positions[key2], show=True)
+    st.pyplot(fig)
 
 
 st.markdown("---")
@@ -178,3 +169,9 @@ cols[0].dataframe(df_steps[df_steps["lamella"] == lamella])
 fig_steps = px.bar(df_steps[df_steps["lamella"] == lamella].sort_values(by="timestamp"), x="stage", y="duration", color="step", hover_data=df_steps.columns)
 cols[1].plotly_chart(fig_steps, use_container_width=True)
 
+
+# loop through exp.position, return lamella that matches lamella
+
+for lam in exp.positions:
+    if lam._petname == lamella:
+        st.write(lam.protocol)
