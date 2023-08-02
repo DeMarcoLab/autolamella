@@ -76,4 +76,48 @@ Once all the stages have been completed and the lamellae have been prepared, the
 
 ![Finish default](img/walkthrough_2/finish_default.png)
 
+### Waffle Method
+
+The waffle method for lamella preparation involves a different workflow. 
+
+The initial trenches are milled in a way to allow for undercuts to be performed. Once these are done, the lamellae are milled in the usual fashion as the default workflow
+
+#### Waffle Trenches
+
+Once the positions have been selected as outlined above, click Run Waffle Trench Milling to begin the process
+
+Similar to the default workflow, at each stage, the program will iterate through each stage for each lamella and allow you to make changes to the milling if necessary. If the milling is unsatisfactory, click Run Milling again to redo the milling. Once satisfied, click continue to move to the next stage.
+
+![waffle milling](img/walkthrough_2/run_trench_waffle.png)
+
+#### Waffle Undercut
+
+
+Once the waffle trenches have been milled, the next step is to perform undercuts on the lamellae. The Run waffle Undercut Milling button will be highlighted. Clicking this will begin the process of undercutting the lamellae.
+
+If the trench milling was unsuccessful and cannot be redone, you can mark the specific lamella as Failed. This will skip the rest of the process for that lamella. The status of the lamella will be marked as failed in the main experiment tab.
+
+![Failed Lamllea](img/walkthrough_2/lamella_failed.png)
+
+The undercut milling begins by first identifying the location of the lamella centre, this brings up the detection tab where the user can verify that the lamella centre has been detected correctly by the program. If incorrect, the centre location can be manually adjusted by dragging the location point.
+
+![detection_ex](img/walkthrough_2/detection_ex.png)
+
+Once detection is verified, the stage will tilt to the specified undercut tilt angle and relaunch the centre verification process from the tilted angle. Once the centre location has been verified, it will return to the milling tab to confirm the milling step. As usual, any changes to be made can be done so and remilling can be done until result is satisfactory. Once satisfied, click continue to move to the next stage.
+
+The program will continue to tilt to the next undercut and rerun the process. By default, there are two undercuts, however, any number of undercuts can be set up.
+
+It will perform all the undercuts for each lamella before moving onto the subsequent lamella
+
+Once the undercuts are done, the next stages are identical to the default workflow. In the main experiment tab, the Run Setup Autolamella will be highlighted and the process can continue as outlined above.
+
+
+## Supervision
+
+The supervision parameter outlines how much of the process can be user supervised. The example outlined shows the process being fully supervised. This ensures that the user has control of milling parameters before running, detected features and the ability to redo milling if necessary.
+
+The process can be done fully unsupervised if required. You may also selectively supervise and unsupervise relevant stages as necessary. In the protocol tab under supervision, the supervision checkbox can be set for each stage.
+
+![supervision](img/walkthrough_2/supervision.png)
+
 
