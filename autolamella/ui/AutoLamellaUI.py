@@ -1,8 +1,5 @@
 import logging
 import os
-import re
-import sys
-import traceback
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -25,13 +22,8 @@ from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
 from fibsem.ui.FibsemCryoSputterWidget import FibsemCryoSputterWidget
 from fibsem.ui.utils import (
-    _draw_patterns_in_napari,
-    _get_directory_ui,
     _get_save_file_ui,
     _get_file_ui,
-    convert_pattern_to_napari_rect,
-    message_box_ui,
-    validate_pattern_placement,
 )
 from fibsem.ui import utils as fui
 from qtpy import QtWidgets
@@ -46,7 +38,6 @@ from autolamella.structures import (
     LamellaState,
 )
 from autolamella.ui.qt import AutoLamellaUI
-from autolamella.utils import INSTRUCTION_MESSAGES, check_loaded_protocol
 from PyQt5.QtCore import pyqtSignal
 
 from napari.qt.threading import thread_worker
@@ -55,8 +46,8 @@ from autolamella.ui import _stylesheets
 from collections import Counter
 
 
-_DEV_MODE = True
-DEV_EXP_PATH = r"C:\Users\Admin\Github\autolamella\autolamella\log\HANNAH-WAFFLE-01082023\experiment.yaml"
+_DEV_MODE = False
+DEV_EXP_PATH = r"C:\Users\Admin\Github\autolamella\autolamella\log\HANNAH-WAFFLE-02-02082023\experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
 _AUTO_SYNC_MINIMAP = False

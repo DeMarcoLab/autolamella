@@ -131,7 +131,7 @@ def mill_undercut(
     # align vertical
     microscope.eucentric_move(
         settings, 
-        dy=det.features[0].feature_m.y,
+        dy=-det.features[0].feature_m.y,
     )
     # align horizontal
     microscope.stable_move(
@@ -186,7 +186,8 @@ def mill_undercut(
     reference_images = acquire.take_set_of_reference_images(
         microscope=microscope,
         image_settings=settings.image,
-        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
+        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH],
+
         label=f"ref_{lamella.state.stage.name}_final",
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
@@ -348,7 +349,7 @@ def mill_lamella(
     settings.image.beam_type = BeamType.ION
     settings.image.label = f"alignment_target_{lamella.state.stage.name}"
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
-    alignment.beam_shift_alignment(microscope, settings.image, 
+    alignment.beam_shift_alignment(microscope, deepcopy(settings.image), 
                                     ref_image=ref_image,
                                     reduced_area=lamella.fiducial_area)
     settings.image.reduced_area = None
