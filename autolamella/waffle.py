@@ -4,7 +4,6 @@ from copy import deepcopy
 from datetime import datetime
 from pprint import pprint
 
-import matplotlib.pyplot as plt
 import numpy as np
 from fibsem import acquire, milling, patterning, utils, calibration, alignment
 from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, TescanMicroscope
@@ -18,7 +17,6 @@ from fibsem.structures import (
 )
 import time
 from autolamella.structures import (
-    AutoLamellaStage,
     AutoLamellaWaffleStage,
     Experiment,
     Lamella,
@@ -104,10 +102,9 @@ def mill_undercut(
     _update_status_ui(parent_ui, f"{lamella.info} Moving to Undercut Position...")
     microscope.move_flat_to_beam(settings, BeamType.ELECTRON)
 
-    # TODO: do detection here to make sure we are cented on the lamella / coincident before we start milling
     # detect
     log_status_message(lamella, f"ALIGN_TRENCH")
-    settings.image.beam_type = BeamType.ION
+    settings.image.beam_type = BeamType.ELECTRON
     settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
     settings.image.label = f"ref_{lamella.state.stage.name}_trench_align_ml"
     settings.image.save = True
@@ -123,6 +120,34 @@ def mill_undercut(
         dy=det.features[0].feature_m.y,
         beam_type=settings.image.beam_type
     )
+
+    # Align ion so it is coincident with the electron beam
+    settings.image.beam_type = BeamType.ION
+    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+
+    features = [LamellaCentre()] 
+    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    
+    # align vertical
+    microscope.eucentric_move(
+        settings, 
+        dy=-det.features[0].feature_m.y,
+    )
+    # align horizontal
+    microscope.stable_move(
+        settings, 
+        dx=det.features[0].feature_m.x,
+        dy=0,
+        beam_type=settings.image.beam_type
+    )
+
+    # lamella should now be centred in ion beam
+
+    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+    settings.image.label = f"ref_{lamella.state.stage.name}_start"
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
 
     N_UNDERCUTS = int(settings.protocol["autolamella_undercut"].get("tilt_angle_step", 2))
     UNDERCUT_ANGLE_DEG = settings.protocol["autolamella_undercut"].get("tilt_angle", -10)
@@ -160,7 +185,7 @@ def mill_undercut(
     reference_images = acquire.take_set_of_reference_images(
         microscope=microscope,
         image_settings=settings.image,
-        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
+        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH],
         label=f"ref_{lamella.state.stage.name}_final",
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
@@ -322,7 +347,7 @@ def mill_lamella(
     settings.image.beam_type = BeamType.ION
     settings.image.label = f"alignment_target_{lamella.state.stage.name}"
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
-    alignment.beam_shift_alignment(microscope, settings.image, 
+    alignment.beam_shift_alignment(microscope, deepcopy(settings.image), 
                                     ref_image=ref_image,
                                     reduced_area=lamella.fiducial_area)
     settings.image.reduced_area = None
@@ -505,14 +530,15 @@ def end_of_stage_update(
 def start_of_stage_update(
     microscope: FibsemMicroscope,
     lamella: Lamella,
-    next_stage: AutoLamellaStage,
-    parent_ui: AutoLamellaUI
+    next_stage: AutoLamellaWaffleStage,
+    parent_ui: AutoLamellaUI, 
+    _restore_state: bool = True,
 ) -> Lamella:
     """Check the last completed stage and reload the microscope state if required. Log that the stage has started."""
     last_completed_stage = lamella.state.stage
 
     # restore to the last state
-    if last_completed_stage.value == next_stage.value - 1:
+    if last_completed_stage.value == next_stage.value - 1 and _restore_state:
         logging.info(
             f"{lamella._petname} restarting from end of stage: {last_completed_stage.name}"
         )
@@ -595,8 +621,13 @@ def run_undercut_milling(
     # ready lamella
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaWaffleStage.MillUndercut and not lamella._is_failure:
-            lamella.state.stage = AutoLamellaWaffleStage.ReadyLamella
-            log_status_message(lamella, "STARTED")
+            lamella = start_of_stage_update(
+                microscope,
+                lamella,
+                AutoLamellaWaffleStage.ReadyLamella,
+                parent_ui=parent_ui,
+                _restore_state=False,
+            )
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
             parent_ui.update_experiment_signal.emit(experiment)
 
@@ -654,8 +685,7 @@ def run_lamella_milling(
     # finish
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut and not lamella._is_failure:
-            lamella.state.stage = AutoLamellaWaffleStage.Finished
-            log_status_message(lamella, "STARTED")
+            lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.Finished, parent_ui, _restore_state=False)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
             parent_ui.update_experiment_signal.emit(experiment)
 
