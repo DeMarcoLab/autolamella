@@ -2,6 +2,20 @@
 
 ## Minimap
 
+The minimap tool allows the user to create a map of a cryo-EM grid as a whole at high resolution to allow for easy navigation and selection of possible lamellae locations. The minimap is created by taking a grid of high resolution images from either the SEM or FIB and stitching the images together to form a map. The minimap tool can be accessed from the tools menu.
+
+![tools_menu](img/features/tools_menu.png)
+
+The minimap tool opens in a seperate window, where the user can select the grid size and the tile size. The tile size is the size of the image taken for each subsection to form the whole grid. Once the parameters have been set, click run tile collection to run the process
+
+![minimap_run](img/features/minimap_run.png)
+
+Once the minimap is created, positions can be added and correlated. From here, you can also move to the selected position by clicking move to position. 
+
+!! ADD better picture of positions with tiled images
+
+correlation
+
 ## Supervision
 
 The supervision parameter outlines how much of the process can be user supervised. The example outlined shows the process being fully supervised. This ensures that the user has control of milling parameters before running, detected features and the ability to redo milling if necessary.
