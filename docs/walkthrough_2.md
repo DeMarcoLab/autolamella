@@ -111,13 +111,9 @@ It will perform all the undercuts for each lamella before moving onto the subseq
 
 Once the undercuts are done, the next stages are identical to the default workflow. In the main experiment tab, the Run Setup Autolamella will be highlighted and the process can continue as outlined above.
 
+## Features and Details
 
-## Supervision
+This walkthrough goes through a basic outline of the autolamella process. However, there are a vast array of tools and features available to customise and automate the process. These are outlined in the [features](features.md) section of the documentation. 
 
-The supervision parameter outlines how much of the process can be user supervised. The example outlined shows the process being fully supervised. This ensures that the user has control of milling parameters before running, detected features and the ability to redo milling if necessary.
-
-The process can be done fully unsupervised if required. You may also selectively supervise and unsupervise relevant stages as necessary. In the protocol tab under supervision, the supervision checkbox can be set for each stage.
-
-![supervision](img/walkthrough_2/supervision.png)
 
 
