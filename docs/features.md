@@ -36,6 +36,8 @@ The time travel feature allows the user to bring the lamella back to any of its 
 
 ## Lamella Protocol
 
+[Protocol walkthrough](protocol.md) 
+
 ## Statistics, Data and Logging
 
 The tools folder in the project directory contains a number of useful tools for analysing data and logging. The stats.py file allows the user to generate statistics from the data collected during the autolamella process. The stats.py file can be run from the command line using the following command:
