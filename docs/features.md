@@ -14,6 +14,8 @@ The process can be done fully unsupervised if required. You may also selectively
 
 ## Time Travel
 
+The time travel feature allows the user to bring the lamella back to any of its previous states, to allow for repetition of any part of the process. 
+
 ## Lamella Protocol
 
 ## Statistics, Data and Logging
