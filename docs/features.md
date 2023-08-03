@@ -12,6 +12,10 @@ The process can be done fully unsupervised if required. You may also selectively
 
 ## Workflows
 
+As outlined in the walkthrough, there are two main workflows available. The standard autolamella workflow labelled as Default and the waffle method labelled as Waffle.
+
+With the default method, the lamellae are milled in a standard fashion. The waffle method involves milling trenches in a way to allow for undercuts to be performed. Once the trenches are milled, the undercuts are performed and the lamellae are milled in the same fashion as the default method.
+
 ## Time Travel
 
 ## Lamella Protocol
