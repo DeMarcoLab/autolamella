@@ -18,3 +18,15 @@ The process can be done fully unsupervised if required. You may also selectively
 
 ## Statistics, Data and Logging
 
+The tools folder in the project directory contains a number of useful tools for analysing data and logging. The stats.py file allows the user to generate statistics from the data collected during the autolamella process. The stats.py file can be run from the command line using the following command:
+
+streamlit run stats.py
+
+The experiments analytics include information about the following:
+
+- The number of lamellas that went through each stage of the process ( Trenches, Undercut, Polish)
+- The experiment timeline
+- The durtion of each step with reference images
+- Each lamella's history
+
+
