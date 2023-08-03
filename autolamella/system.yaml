@@ -1,5 +1,5 @@
 apply_settings_on_startup: false
-connect_to_microscope_on_startup: true
+connect_to_microscope_on_startup: false
 model:
     electron:
         enabled: true
@@ -34,7 +34,7 @@ model:
 system:
     description: test
     electron:
-        current: 1.0000000000000002e-12
+        current: 50.0000000000000002e-12
         detector_mode: SecondaryElectrons
         detector_type: E-T
         eucentric_height: 0.0039

@@ -1,8 +1,5 @@
 import logging
 import os
-import re
-import sys
-import traceback
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
@@ -25,13 +22,8 @@ from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
 from fibsem.ui.FibsemCryoSputterWidget import FibsemCryoSputterWidget
 from fibsem.ui.utils import (
-    _draw_patterns_in_napari,
-    _get_directory_ui,
     _get_save_file_ui,
     _get_file_ui,
-    convert_pattern_to_napari_rect,
-    message_box_ui,
-    validate_pattern_placement,
 )
 from fibsem.ui import utils as fui
 from qtpy import QtWidgets
@@ -46,7 +38,6 @@ from autolamella.structures import (
     LamellaState,
 )
 from autolamella.ui.qt import AutoLamellaUI
-from autolamella.utils import INSTRUCTION_MESSAGES, check_loaded_protocol
 from PyQt5.QtCore import pyqtSignal
 
 from napari.qt.threading import thread_worker
@@ -56,7 +47,7 @@ from collections import Counter
 
 
 _DEV_MODE = False
-DEV_EXP_PATH = r"C:\Users\Admin\Github\autolamella\autolamella\log\TEST_DEV_01\experiment.yaml"
+DEV_EXP_PATH = r"C:\Users\Admin\Github\autolamella\autolamella\log\HANNAH-WAFFLE-02-02082023\experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
 _AUTO_SYNC_MINIMAP = False
@@ -364,7 +355,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # TODO: should make this more generic i guess, but this is fine for now
         self.viewer2 = napari.Viewer(ndisplay=2)
-        self.minimap_widget = FibsemMinimapWidget(self.microscope, self.settings, viewer=self.viewer2, parent=self)
+        self.minimap_widget = FibsemMinimapWidget(self.microscope, deepcopy(self.settings), viewer=self.viewer2, parent=self)
         self.viewer2.window.add_dock_widget(
             self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
         )
@@ -456,7 +447,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _READY_LAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
             _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
             _READY_FEATURES = _counter[AutoLamellaWaffleStage.MillFeatures.name] > 0
-            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_FEATURES
+            _READY_ROUGH = _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0
+            _READY_REGULAR = _counter[AutoLamellaWaffleStage.MillRegularCut.name] > 0
+            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_FEATURES or _READY_ROUGH or _READY_REGULAR
 
             _ENABLE_TRENCH = _WAFFLE_METHOD and _READY_TRENCH
             _ENABLE_UNDERCUT = _WAFFLE_METHOD and _READY_UNDERCUT
@@ -714,25 +707,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.update_ui()
         return 
 
-    ###################################### Imaging ##########################################
-
-    # def enable_buttons(
-    #     self,
-    #     add: bool = False,
-    #     remove: bool = False,
-    #     fiducial: bool = False,
-    #     go_to: bool = False,
-    # ):
-    #     self.add_button.setEnabled(add)
-    #     self.remove_button.setEnabled(remove)
-    #     self.save_button.setEnabled(fiducial)
-    #     self.save_button.setText("Mill Fiducial for current lamella")
-    #     self.save_button.setStyleSheet("color: white")
-    #     self.go_to_lamella.setEnabled(go_to)
-    #     self.run_button.setEnabled(self.can_run_milling())
-    #     self.run_button.setText("Run AutoLamella")
-    #     self.run_button.setStyleSheet("color: white; background-color: green")
-
     def go_to_lamella_ui(self):
         print("go to lamella ui")
         
@@ -776,6 +750,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def fail_lamella_ui(self):
         idx = self.comboBox_current_lamella.currentIndex()
         self.experiment.positions[idx]._is_failure = True if not self.experiment.positions[idx]._is_failure else False
+        self.experiment.save()
         self.update_ui()
 
     def revert_stage(self):
@@ -799,10 +774,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         lamella: Lamella = self.experiment.positions[idx]
 
         if self.experiment.positions[idx].state.stage is AutoLamellaWaffleStage.Setup:
-            self.experiment.positions[idx].state.microscope_state = deepcopy(
-                self.microscope.get_current_microscope_state()
+            
+            self.experiment.positions[idx].state = LamellaState(
+                microscope_state = deepcopy(
+                    self.microscope.get_current_microscope_state()
+                ),
+                stage = READY_STATE,
+                start_timestamp = datetime.timestamp(datetime.now()),
+
             )
-            self.experiment.positions[idx].state.stage = READY_STATE
 
             # update the protocol / point
             self._update_milling_protocol(idx, method)
