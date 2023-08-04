@@ -1,73 +1,125 @@
 # Walkthrough
-The following is a short explanation of the basic workflow of the AutoLamella program. 
 
-## Step 1: Creating a protocol
-The AutoLamella package uses a yaml file to store all of the necessary information on the dimensions and characteristics of the fiducial, lamella, and optional microexpansion joints. Details such as the width and height of the lamella, in how many stages the lamella trenches are milled, the dimensions of each stage, milling current, etc are outlined in the yaml file. 
+This is a general walkthrough on running an autolamella workflow. Further details can be viewed in their respective documentation and some are linked within this walkthrough.
 
-The protocol format was updated alongside the rest of the AutoLamella package. As such, an in-depth explanation of the parameters in the new protocol format, and how to convert from the old protocol format to the new one can be found in the [AutoLamella Protocol](protocol.md) section. 
+A guided video walkthrough can be found [here](put video link here)
 
-## Step 2: Connecting to a microscope
-The first thing to do when opening the AutoLamella program is to connect to a microscope. This can be done by entering the IP address of the microscope you would like to connect to in the 'IP address' field and selecting the correct manufacturer, then clicking the 'Connect' button. 
+You can find more details on the application features here: [Autolamella Features](features.md)
 
-![connect to microscope](img/walkthrough/connectToMicroscope.png)   
+## Methods
 
-Once the hardware is properly connected, the status bar will update, as well as the stage parameters, which can be updated by clicking the 'Set Stage Parameters' button.
+The autolamella program has incorporated two possible workflows that can be achieved. One is the default auto lamella which is the standard lamella preparation workflow. The other is the waffle method workflow which has been recently developed as outlined in this [paper](https://www.nature.com/articles/s41467-022-29501-3). 
 
-![Microscope connected and stage parameters](img/walkthrough/connectToMicroscope2.png)
+From a user interface perspective, both methods can be setup and run in a near identical fashion. The core processes of selecting lamella positions, milling parameters, supervision and monitoring can be set up the same way for both methods.
 
-## Step 3: Creating/Loading an Experiment
-AutoLamella requires an experiment to be created/loaded before any saving and milling of lamellae can begin. An 'experiment' groups all of the fiducials and lamellae into a single object that is logged and saved upon any updates to any of the current lamellae or any additions. The Experiment is automatically saved, this does not need to be done by hand and can then be loaded again later by importing the .yaml file. 
+## Connection and Setup
 
-To create/load an experiment, click on the file menu and click on either create or load experiment as shown in the figure below: 
+The first step is to connect to the microscope. This can be setup to be done manually or automatically if the system parameters are setup in the system.yaml file.
 
-![create/load experiment](img/walkthrough/createExperiment.png)
+To connect, first launch the autolamella program. Then in the connect tab (Under the system tab), enter the IP address of the microscope server and select the manufacturer of the microscope. Then click connect. 
 
-Once you have navigated to either creating or loading an experiment, you will be prompted to either select a directory to save the experiment to in the case of Experiment creation, or select the filepath of the Experiment's yaml file in the case of loading an Experiment. 
+![connect to microscope](img/walkthrough_2/connect_to_microscope.png)
 
-![select folder/select yaml](img/walkthrough/selectExperimentFolderYaml.png)
+Once connected, create an experiment from the file menu by clicking create experiment. This will prompt you to choose a location to save the experiment folder which contains the experiment.yaml file. 
 
-If you are creating a new Experiment, you will also be prompted to select a name for the Experiment. A folder will be created with the name of the Experiment that will store all of the necessary files within (such as the yaml file that can later be used to load the Experiment).
+The experiment file contains all the information about the experiment and the lamellae. This includes the positions of the lamellae, the milling parameters, and the status of each lamella.
 
-![choose Experiment name](img/walkthrough/experimentName.png)
+Once an experiment has been created, the experiment can be reloaded anytime by clicking load experiment from the file menu. This will prompt you to select the experiment.yaml file to load.
 
-Finally, you will be prompted to choose a protocol file to load (.yaml). Select (one of) the protocol file(s) you created in Step 1 to begin. If you would like to later change the protocol you are using, you can do so by navigating through file > load protocol.
+The next step is to load a protocol. Select load protocol from the file menu. This will prompt you to select a protocol.yaml file to load. A default one is provided, however, it can be modified to suit your needs. In the protocol tab, changes can be made and then saved. Details on each parameter is explained in the [features](features.md) section of the documentation under Lamella protocol. !
 
-You can update/verify the protocol by navigating to the protocol tab. 
+![load protocol](img/walkthrough_2/change_protocol.png)
 
-![protocol tab](img/walkthrough/protoTab.png)
+To update the changes for the current session, click update protocol. To save these changes to a new protocol file, click save protocol. This will prompt you to select a location to save the protocol.yaml file. 
 
-## Step 4: Adding Lamellae
-You will first need to take atleast one set of reference images before adding any lamellae to the Experiment. This can be done by simply clicking the 'Acquire All Images' button in the imaging tab of the UI. 
+## Adding Lamellae
 
-![take reference images](img/walkthrough/takeReferenceImages.png)
+Once the system is setup, the first step is to acquire images and move to a location for creating a lamella. This can be done by clicking acquire all images in the imaging tab. This will acquire all the images and display them in the napari viewer. To move, directly to some coordinates, you can move to a position in the movement tab. Alternatively, you can also click on the image to move to that position. The movement tab also has controls for tilting and moving flat to the ion or electron beam.
 
-Once images have been taken, you can optionally tick the 'Show Lamella' and 'Microexpansion Joints' checkboxes. The 'Show Lamella' checkbox will draw the lamella and fiducial patterns onto the napari viewer over the ion beam image when ticked, to help you visualise what the lamella will look like. The 'Microexpansion Joints' checkbox will add stress relief joints to the sides of the lamella, if the microexpansion attributes were added to the protocol. Microexpansion joints will be milled as the first stage of the lamella if selected.
+Once at a desired location, click add lamella to add a lamella to the experiment. This will setup a position. To move around, double clicking on the image will move the stage to that position. Alternatively, you can also move to a position in the movement tab. 
 
-![show lamella and microexpansion joints](img/walkthrough/showLamellaAndMicroexpansionJoints.png)
+![add lamella](img/walkthrough_2/add_lamella.png)
 
-An empty lamella can be created by pressing the 'Add Lamella' button in the UI. This button tells AutoLamella how many lamellae you are working with. A lamella (and fidicual) is not properly created until you click the 'Save Lamella' button, upon which a fiducial will be milled for said lamella. You can either sequentially 'Add Lamella' and 'Save Lamella' as needed, or if you are aware of how many lamellae you are planning to mill for a particular experiment, you can add X number of lamellae all at once, and save them later. 
+This image shows an example of the setup when using the waffle method workflow. However, the initial placement phase is identical for the default workflow. 
 
-You can remove lamella as you wish by clicking remove lamella. If lamellae have been added but not saved, removing lamellae simply removes them from the experiment. If lamellae have been added and saved, removing them will remove them from the experiment, however the fiducial that is already milled will remain. You can selectively remove lamella by selecting the lamella from the "Current Lamella" box and clicking remove.
+![add lamella](img/walkthrough_2/default_method_setup.png)
 
-You can select which lamella you would like to save with the 'Current Lamella' bar. The fiducial and lamella patterns can be moved within the bounds of the ion beam image. Simply select the pattern you would like to move via the comboBox on the side of the UI, and right click on the desired location.
 
-![move lamella](img/walkthrough/movingPatterns.png)
+To remove a lamella, click remove lamella and this will remove it from the experiment. The dropdown next to current lamella can be used to select a lamella individually and remove it or change its placement as necessary.
+Once satisfied with the placement, click save position to confirm its location. Additional lamellae can be added and saved in the same way. Once all the lamellae location have been saved, the process can continue to the next step.
 
-You can move the microscope stage by either double clicking on somewhere on one of the images to move there, or via the movement tab. 
+## Workflow
 
-![move stage](img/walkthrough/moveStage.png)
+The process now diverges based on which workflow is being used. 
 
-Once you are happy with the placement of a lamella, click 'Save Lamella'. This will begin the milling process of the fiducial, and save the lamella's position. Once a lamella has been saved, its position can not be changed. Remill the fiducial if needed. Once you have saved the desired number of lamellae and milled a fiducial for each, the AutoLamella process can begin.
+### Default Workflow
 
-## Step 5: Run AutoLamella
-Click the 'Run AutoLamella' button to begin the process. The program will check behind the scenes that you have met the prerequisites before beginning. If you do not meet these prerequisites a pop-up message will let you know. These prerequisites are:
+#### Setup
 
-    1. A microscope is connected.
-    2. An experiment has been loaded/created.
-    3. Atleast one lamella has been added.
-    4. Each lamella has atleast milled a fiducial.
+With lamellae chosen and position saved. The button labelled "Run Setup Autolamella" will be highlighted. Clicking this will begin the process of setting up the lamellae and confirming the position. 
 
-If these prerequisites are met the process will begin. The milling order is by protocol stage. So the program will loop through each lamella milling just the first stage, then second, then third, etc. After each lamella has had a stage milled, the Experiment is saved and that lamella's history is logged. This means that if the process stops during running the Experiment can be loaded again and will begin where it left off.
+To make any changes to the milling parameters, click on the milling tab. In the dropdown labelled milling stage, the specific aspect can be selected. The paraemters such as width and height can then be changed. 
+
+For multiple lamellae, the program will iterate through the lamellae and setup each one. Each individial lamella has its own state saved.
+
+![setup default](img/walkthrough_2/setup_default_lamella.png)
+
+Changes to the fiducial, microexpansion or notch can also be done here. Once satisfied with the process, press the continue to progress through the setup into the milling process. If a fiducial is being used, it will mill the fiducial at this stage.
+
+#### Run Autolamella
+
+Once setup is complete and the program is ready to run autolamella, click the Run Autolamella button in the experiment tab to begin the process. This will begin the process of milling the lamella.
+
+It will now run through each stage in the lamella preparation phase. Press run milling in the milling tab to run the milling process in each stage. Once again, any last minute changes can be made at the milling tab. 
+
+![run milling](img/walkthrough_2/run_milling_default.png)
+
+If milling is unsatisfactory, changes can be made and the milling process can be redone by clicking Run Milling again. Once satisfactory, click continue to move to the next stage. 
+
+The program will run through each stage on multiple lamellae before moving onto the next stage. i.e. it will mill the rough trenches for all the lamellae before moving onto the next stage for any lamella.
+
+Once all the stages have been completed and the lamellae have been prepared, the experiment is complete. In the main experiment tab, the status of each lamella will be marked as finished.
+
+![Finish default](img/walkthrough_2/finish_default.png)
+
+### Waffle Method
+
+The waffle method for lamella preparation involves a different workflow. 
+
+The initial trenches are milled in a way to allow for undercuts to be performed. Once these are done, the lamellae are milled in the usual fashion as the default workflow
+
+#### Waffle Trenches
+
+Once the positions have been selected as outlined above, click Run Waffle Trench Milling to begin the process
+
+Similar to the default workflow, at each stage, the program will iterate through each stage for each lamella and allow you to make changes to the milling if necessary. If the milling is unsatisfactory, click Run Milling again to redo the milling. Once satisfied, click continue to move to the next stage.
+
+![waffle milling](img/walkthrough_2/run_trench_waffle.png)
+
+#### Waffle Undercut
+
+
+Once the waffle trenches have been milled, the next step is to perform undercuts on the lamellae. The Run waffle Undercut Milling button will be highlighted. Clicking this will begin the process of undercutting the lamellae.
+
+If the trench milling was unsuccessful and cannot be redone, you can mark the specific lamella as Failed. This will skip the rest of the process for that lamella. The status of the lamella will be marked as failed in the main experiment tab.
+
+![Failed Lamllea](img/walkthrough_2/lamella_failed.png)
+
+The undercut milling begins by first identifying the location of the lamella centre, this brings up the detection tab where the user can verify that the lamella centre has been detected correctly by the program. If incorrect, the centre location can be manually adjusted by dragging the location point.
+
+![detection_ex](img/walkthrough_2/detection_ex.png)
+
+Once detection is verified, the stage will tilt to the specified undercut tilt angle and relaunch the centre verification process from the tilted angle. Once the centre location has been verified, it will return to the milling tab to confirm the milling step. As usual, any changes to be made can be done so and remilling can be done until result is satisfactory. Once satisfied, click continue to move to the next stage.
+
+The program will continue to tilt to the next undercut and rerun the process. By default, there are two undercuts, however, any number of undercuts can be set up.
+
+It will perform all the undercuts for each lamella before moving onto the subsequent lamella
+
+Once the undercuts are done, the next stages are identical to the default workflow. In the main experiment tab, the Run Setup Autolamella will be highlighted and the process can continue as outlined above.
+
+## Features and Details
+
+This walkthrough goes through a basic outline of the autolamella process. However, there are a vast array of tools and features available to customise and automate the process. These are outlined in the [features](features.md) section of the documentation. 
 
 
 

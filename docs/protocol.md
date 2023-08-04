@@ -1,7 +1,15 @@
 # AutoLamella Protocol
 The new AutoLamella program utilises the OpenFIBSEM code package to build a more streamlined and robust automated lamella workflow that includes a new user interface. This updated AutoLamella program also includes a more intuitive system for the lamella protocol. AutoLamella protocol's should now be easier to make, without requiring any calculations. 
 
-## The new protocol format
+## Waffle Method
+
+The waffle method is a new method of milling lamellae that allows for undercuts to be performed. The waffle method involves milling trenches in a way to allow for undercuts to be performed. Once the trenches are milled, the undercuts are performed and the lamellae are milled in the same fashion as the default method.
+
+The lamella height and width are specified in the protocol, as well as the height and width of the rectangles that make up the waffle pattern. The protocol also includes the milling current/preset to be used when milling, as well as the size ratio of the trenches.
+
+The undercuts are defined as rectangle patterns of a given height and width. The tilt angles are also specified. 
+
+## The new lamella protocol format
 ![New Protocol Format](img/NewProtocolFormat.bmp)
 
 Each of the colours indicates a different protocol stage. In this case there are three: Rough Cut in yellow, Regular Cut in blue, and Polishing Cut in magenta. Additionally the optional microexpansion joints are indicated in yellow as they are milled during the Rough Cut stage if the user opts to use them. 
@@ -10,55 +18,115 @@ The Lamella width and height are indicated at the centre, and must be input for 
 
 As previously mentioned the microexpansion joints are optional and can be enabled/disabled in within the UI. If they are enabled they must have the height, width, and distance from the Lamella within the protocol. The distance does NOT include the Lamella width itself, and is accounted for when milling.
 
-The fiducial requires the width and height of a rectangle, which will then be rotated +/- 45 degrees to create the 'X'. Currently the fiducial is hard coded to be milled approximately one fifth of way through the view from the left. A visual of a completed protocol working within the UI might look like so: 
+If running the waffle method, a notch is used instead of microexpansion joints. The protocol specifies all the milling settings, as well as the dimensions of the patterns: height and width for the vertical rectangles and for the horizontal ones. The distance between the rectangles is also specified. The distance is the distance between the centre of the notch and the centre of the lamella, and does not include the width of the rectangles themselves. The distance is accounted for when milling.
 
-![Protocol visual](img\walkthrough\protoTab.png)
+Optionally, a fiducal mark can be used for beam alignment during the lamella milling process.
+The fiducial requires the width and height of a rectangle, which will then be rotated +/- 45 degrees to create the 'X'.  
 
-All milling operations for the fiducial and trenches must also contain the milling depth and current for each stage. The depth and current for the microexpansion joint is assumed to be the same as that of the first stage. Additionally, the number of attempts the program should make when attempting to align the imaging beam to the fiducial should be stored within the Lamella section of the protocol. You can also specify whether to align at the imaging current or the milling current of each stage.
+Additionally, the number of attempts the program should make when attempting to align the imaging beam to the fiducial should be stored within the Lamella section of the protocol. You can also specify whether to align at the imaging current or the milling current of each stage.
 
 Finally, here is what a completed protocol in the new format might look like as a .yaml file:
 
 ```yaml
 name: autolamella_demo
 application_file: Si # Thermo only
-
+method: waffle
+ml: # machine learning parameters 
+    encoder: resnet34
+    num_classes: 3
+    weights: model4.pt #model4.pt
+options:
+    supervise:
+        features: false
+        lamella: true
+        setup_lamella: true
+        trench: true
+        undercut: true
+trench:
+    application_file: autolamella
+    cleaning_cross_section: false
+    depth: 1.0e-06
+    hfw: 0.00018
+    lamella_height: 2.5e-05
+    lamella_width: 2.2e-05
+    milling_current: 7.6e-09
+    offset: 0.0
+    preset: 30 keV; 2.5 nA
+    size_ratio: 2.0
+    trench_height: 3.2e-05
+autolamella_undercut:
+    application_file: autolamella
+    cleaning_cross_section: false
+    depth: 1.0e-06
+    height: 8.0e-06
+    hfw: 8.0e-05
+    milling_current: 7.6e-09
+    preset: 30 keV; 2.5 nA
+    tilt_angle: -5.0
+    tilt_angle_step: 2.0
+    width: 22.0e-6
 fiducial:
-  height: 10.e-6
-  width: 1.e-6
-  depth: 1.0e-6
+  application_file: autolamella
+  cleaning_cross_section: false
+  depth: 1.0e-06
+  enabled: true
+  height: 1.0e-05
+  hfw: 8.0e-05
+  milling_current: 2.0e-09
+  passes: null
+  preset: 30 keV; 20 nA
   rotation: 45
-  milling_current: 28.e-9
-  preset: "30 keV; 20 nA" # TESCAN only
-
+  width: 1.0e-06
 lamella:
-  beam_shift_attempts: 3
-  alignment_current: "Imaging"
-  lamella_width: 10.e-6
-  lamella_height: 800.e-9
-  protocol_stages:
-  - trench_height: 10.e-6
-    depth: 1.e-6
-    offset: 2.e-6
-    size_ratio: 1.0
-    milling_current: 2.e-9
-    preset: "30 keV; 2.5 nA" # TESCAN only
-  - trench_height: 2.e-6
-    depth: 1.e-6
-    offset: 0.5e-6
-    size_ratio: 1.0
-    milling_current: 0.74e-9
-    preset: "30 keV; 1 nA" # TESCAN only
-  - trench_height: 0.5e-6
-    depth: 0.4e-6
-    offset: 0.0e-6
-    size_ratio: 1.0
-    milling_current: 60.0e-12 
-    preset: "30 keV; 50 pA" # TESCAN only
-
+  alignment_current: Imaging Current
+    beam_shift_attempts: 3.0
+    lamella_height: 8.0e-07
+    lamella_width: 1.0e-05
+    stages:
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 2.0e-06
+        hfw: 8.0e-05
+        lamella_height: 8.0e-07
+        lamella_width: 14.0e-6
+        milling_current: 2.0e-09
+        offset: 2.0e-06
+        preset: 30 keV; 2.5 nA
+        size_ratio: 2.0
+        trench_height: 1.0e-05
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 1.0e-06
+        hfw: 8.0e-05
+        lamella_height: 8.0e-07
+        lamella_width: 1.4e-05
+        milling_current: 7.4e-10
+        offset: 5.0e-07
+        preset: 30 keV; 1 nA
+        size_ratio: 1.0
+        trench_height: 2.0e-06
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 4.0e-07
+        hfw: 8.0e-05
+        lamella_height: 6.0e-07
+        lamella_width: 1.4e-05
+        milling_current: 6.0e-11
+        offset: 0.0
+        preset: 30 keV; 50 pA
+        size_ratio: 1.0
+        trench_height: 5.0e-07
 microexpansion:
-  width: 0.5e-6
-  height: 18.e-6
-  distance: 10.e-6 # Does not include Lamella width. So centre of microexpansion is lamella_width/2 + distance.
+  application_file: autolamella
+  cleaning_cross_section: false
+  depth: 1.0e-06
+  distance: 1.0e-05
+  height: 1.8e-05
+  hfw: 200e-6
+  lamella_width: 1.0e-05
+  milling_current: 2.0e-09
+  preset: 30 keV; 2.5 nA
+  width: 5.0e-07
 ```
 
 ## How to convert to the new protocol format

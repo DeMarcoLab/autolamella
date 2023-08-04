@@ -48,7 +48,7 @@ system:
         plasma_gas: Argon
         voltage: 30000
     ip_address: 10.0.0.1
-    manufacturer: Thermo
+    manufacturer: Demo
     name: S8252G
     stage:
         needle_stage_height_limit: 0.0037
