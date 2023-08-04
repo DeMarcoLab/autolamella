@@ -4,6 +4,8 @@ This is a general walkthrough on running an autolamella workflow. Further detail
 
 A guided video walkthrough can be found [here](put video link here)
 
+You can find more details on the application features here: [Autolamella Features](features.md)
+
 ## Methods
 
 The autolamella program has incorporated two possible workflows that can be achieved. One is the default auto lamella which is the standard lamella preparation workflow. The other is the waffle method workflow which has been recently developed as outlined in this [paper](https://www.nature.com/articles/s41467-022-29501-3). 
@@ -22,7 +24,7 @@ Once connected, create an experiment from the file menu by clicking create exper
 
 Once an experiment has been created, the experiment can be reloaded anytime by clicking load experiment from the file menu. This will prompt you to select the experiment.yaml file to load.
 
-The next step is to load a protocol. Select load protocol from the file menu. This will prompt you to select a protocol.yaml file to load. A default one is provided, however, it can be modified to suit your needs. In the protocol tab, changes can be made and then saved. Details on each parameter is explained in the features section of the documentation. !! LINK TO FEATURES !! #TODO
+The next step is to load a protocol. Select load protocol from the file menu. This will prompt you to select a protocol.yaml file to load. A default one is provided, however, it can be modified to suit your needs. In the protocol tab, changes can be made and then saved. Details on each parameter is explained in the features section of the documentation. 
 
 ![load protocol](img/walkthrough_2/change_protocol.png)
 
