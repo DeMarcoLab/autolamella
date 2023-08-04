@@ -30,7 +30,6 @@ from qtpy import QtWidgets
 
 from autolamella.ui import utils as aui_utils
 import autolamella.config as cfg
-from autolamella import waffle as wfl
 from autolamella.structures import (
     AutoLamellaWaffleStage,
     Experiment,
@@ -795,6 +794,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.image_widget.ib_image.save(fname)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
 
+            from autolamella import waffle as wfl
             wfl.log_status_message(self.experiment.positions[idx], "STARTED")
 
         elif (self.experiment.positions[idx].state.stage is READY_STATE):
@@ -938,6 +938,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
 
+        from autolamella import waffle as wfl
         if workflow == "trench":
             wfl.run_trench_milling(microscope, settings, experiment, parent_ui=self )
 
