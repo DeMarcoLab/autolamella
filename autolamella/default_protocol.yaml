@@ -11,25 +11,43 @@ fiducial:
   milling_current: 28.e-9
   preset: "30 keV; 20 nA" # TESCAN only
 
+trench:
+  lamella_width: 22.e-6
+  lamella_height: 30.0e-6
+  milling_current: 16.0e-9
+  trench_height: 32.e-6
+  depth: 1.5e-6
+  offset: 0.0e-6
+  size_ratio: 0.5
+  preset: "30 keV; 2.5 nA" # TESCAN only
+  hfw: 180.0e-6
+
+
 lamella:
   beam_shift_attempts: 3.0
   alignment_current: "Imaging"
   lamella_width: 10.e-6
   lamella_height: 800.e-9
-  protocol_stages:
+  stages:
   - trench_height: 10.e-6
+    lamella_width: 10.e-6
+    lamella_height: 800.e-9
     depth: 1.e-6
     offset: 2.e-6
     size_ratio: 1.0
     milling_current: 2.e-9
     preset: "30 keV; 2.5 nA" # TESCAN only
   - trench_height: 2.e-6
+    lamella_width: 10.e-6
+    lamella_height: 800.e-9
     depth: 1.e-6
     offset: 0.5e-6
     size_ratio: 1.0
     milling_current: 0.74e-9
     preset: "30 keV; 1 nA" # TESCAN only
   - trench_height: 0.5e-6
+    lamella_width: 10.e-6
+    lamella_height: 800.e-9
     depth: 0.4e-6
     offset: 0.0e-6
     size_ratio: 1.0
@@ -40,3 +58,15 @@ microexpansion:
   width: 0.5e-6
   height: 18.e-6
   distance: 10.e-6 # Does not include Lamella width. So centre of microexpansion is lamella_width/2 + distance.
+
+notch: 
+  vheight: 5.0e-6
+  vwidth: 1.0e-6
+  hwidth: 5.0e-6
+  hheight: 1.0e-6
+  depth: 5.0e-6
+  distance: 5.0e-6
+  flip: 0
+  milling_current: 2.e-9
+  preset: "30 keV; 2.5 nA" # TESCAN only
+  hfw: 80e-6

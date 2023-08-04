@@ -74,7 +74,7 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
             return error_check
         
 
-        lamella_exception = ["protocol_stages"]
+        lamella_exception = ["stages"]
 
         error_check = _check_helper(lamella_headers, microscope_protocol["lamella"], lamella_exception)
 
@@ -90,7 +90,7 @@ def check_loaded_protocol(microscope_protocol: dict, _THERMO: bool = False,_TESC
 
             protocol_stage_exception = ["preset"] if (_THERMO and _DEMO) else []
 
-            error_check =_check_helper(stage,  microscope_protocol["lamella"]["protocol_stages"][idx], protocol_stage_exception)
+            error_check =_check_helper(stage,  microscope_protocol["lamella"]["stages"][idx], protocol_stage_exception)
 
             if error_check is not None:
                 return error_check
@@ -113,3 +113,4 @@ INSTRUCTION_MESSAGES = {
     "mod_lamella_message": "Lamella added\nMove lamella\\fiducial by right clicking on the image\nRemove a lamella by clicking Remove\nOnce confirmed, save lamella by clicking Save Current Lamella\nThis will mill the fiducial crosshair\nOnce all Lamellae are saved click Run Autolamella\n\nLamellae created: {}\nLamellae ready: {}/{}\nLamellae milled: {}/{}",
     "lamella_milled":"Lamella Milled!\nLamellae Milled: {}\n\nClick Add Lamella to mill further lamellae\nThe program can now be closed if finished"
 }
+
