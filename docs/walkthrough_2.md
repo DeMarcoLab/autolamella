@@ -2,9 +2,11 @@
 
 This is a general walkthrough on running an autolamella workflow. Further details can be viewed in their respective documentation and some are linked within this walkthrough.
 
+A guided video walkthrough can be found [here](put video link here)
+
 ## Methods
 
-The autolamella program has incorporated two possible workflows that can be achieved. One is the default auto lamella workflow which is the standard lamella preparation workflow. The other is the waffle method workflow which has been recently developed as outlined in this [paper](https://www.nature.com/articles/s41467-022-29501-3). 
+The autolamella program has incorporated two possible workflows that can be achieved. One is the default auto lamella which is the standard lamella preparation workflow. The other is the waffle method workflow which has been recently developed as outlined in this [paper](https://www.nature.com/articles/s41467-022-29501-3). 
 
 From a user interface perspective, both methods can be setup and run in a near identical fashion. The core processes of selecting lamella positions, milling parameters, supervision and monitoring can be set up the same way for both methods.
 
