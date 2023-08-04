@@ -347,13 +347,13 @@ def mill_lamella(
     settings.image.beam_type = BeamType.ION
     settings.image.label = f"alignment_target_{lamella.state.stage.name}"
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
-    for _ in range(
-                int(settings.protocol["lamella"]["beam_shift_attempts"])
-            ):
-        settings.image.reduced_area = lamella.fiducial_area
-        settings.image.beam_type = BeamType.ION
-        alignment.beam_shift_alignment(microscope, settings.image, 
-                                        ref_image=ref_image,
+    # for _ in range(
+    #             int(settings.protocol["lamella"]["beam_shift_attempts"])
+    #         ):
+        # settings.image.reduced_area = lamella.fiducial_area
+    settings.image.beam_type = BeamType.ION
+    alignment.beam_shift_alignment(microscope, settings.image, 
+                                    ref_image=ref_image,
                                         reduced_area=lamella.fiducial_area)
 
     settings.image.reduced_area = None
