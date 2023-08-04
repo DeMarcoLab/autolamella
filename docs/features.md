@@ -12,7 +12,7 @@ The minimap tool opens in a seperate window, where the user can select the grid 
 
 Once the minimap is created, positions can be added and correlated. From here, you can also move to the selected position by clicking move to position. 
 
-#TODO ADD better picture of positions with tiled images
+![minimap_add](img/features/overview-ion-positions.png)
 
 A more detailed and in depth follow through of the minimap can be found in this [video](https://www.youtube.com/watch?v=zzH2XJB3OSc)
 
