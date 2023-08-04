@@ -938,7 +938,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
 
-        from autolamella import waffle as wfl
+        from autolamella import waffle as wfl # avoiding circular import
         if workflow == "trench":
             wfl.run_trench_milling(microscope, settings, experiment, parent_ui=self )
 
