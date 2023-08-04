@@ -179,10 +179,9 @@ def mill_undercut(
 
         # move pattern
         offset = settings.protocol["autolamella_undercut"].get("height", 10) / 2
-        point = deepcopy(det.features[0].feature_m)
-        print("POINT: ", point)        
+        point = deepcopy(det.features[0].feature_m)     
         point.y += offset if np.isclose(scan_rotation, 0) else -offset
-        print("POINT AFTER OFFSET: ", point)
+
         # mill undercut 1
         log_status_message(lamella, f"MILL_UNDERCUT_{_n}")
         stages = patterning._get_milling_stages("autolamella_undercut", settings.protocol, point=point)
