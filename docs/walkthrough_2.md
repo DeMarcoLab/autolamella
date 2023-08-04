@@ -4,6 +4,8 @@ This is a general walkthrough on running an autolamella workflow. Further detail
 
 A guided video walkthrough can be found [here](put video link here)
 
+You can find more details on the application features here: [Autolamella Features](features.md)
+
 ## Methods
 
 The autolamella program has incorporated two possible workflows that can be achieved. One is the default auto lamella which is the standard lamella preparation workflow. The other is the waffle method workflow which has been recently developed as outlined in this [paper](https://www.nature.com/articles/s41467-022-29501-3). 
