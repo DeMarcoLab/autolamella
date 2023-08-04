@@ -47,8 +47,14 @@ streamlit run stats.py
 The experiments analytics include information about the following:
 
 - The number of lamellas that went through each stage of the process ( Trenches, Undercut, Polish)
+![Experiment overview](img\walkthrough\experimentOverview.png)
 - The experiment timeline
-- The durtion of each step with reference images
+![Experiment timeline](img\walkthrough\timeline.png)
+- The duration of each step with reference images
+![Stage analytics](img\walkthrough\stageanalytics.png)
+![Steps duration](img\walkthrough\stepsduration.png)
 - Each lamella's history
+![Lamella overview](img\walkthrough\lamellaoverview.png)
+![Lamella history](img\walkthrough\lamellahistory.png)
 
 
