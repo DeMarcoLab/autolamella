@@ -27,6 +27,8 @@ from fibsem.detection.detection import (
     LamellaCentre,
     LamellaLeftEdge,
     LamellaRightEdge,
+    LamellaTopEdge,
+    LamellaBottomEdge,
     detect_features,
     DetectedFeatures,
 )
@@ -169,12 +171,21 @@ def mill_undercut(
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         _set_images_ui(parent_ui, eb_image, ib_image)
 
-        features = [LamellaCentre()] # TODO: add LamellaBottom / Top Edge
+        # get pattern
+        scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
+        features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge()]
+
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
+        # move pattern
+        offset = settings.protocol["autolamella_undercut"].get("height", 10) / 2
+        point = deepcopy(det.features[0].feature_m)
+        print("POINT: ", point)        
+        point.y += offset if np.isclose(scan_rotation, 0) else -offset
+        print("POINT AFTER OFFSET: ", point)
         # mill undercut 1
         log_status_message(lamella, f"MILL_UNDERCUT_{_n}")
-        stages = patterning._get_milling_stages("autolamella_undercut", settings.protocol, point=det.features[0].feature_m)
+        stages = patterning._get_milling_stages("autolamella_undercut", settings.protocol, point=point)
         _validate_mill_ui(stages, parent_ui,
             msg=f"Press Run Milling to mill the Undercut {_n} for {lamella._petname}. Press Continue when done.",
             validate=validate,
