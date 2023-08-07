@@ -34,7 +34,7 @@ method: waffle
 ml: # machine learning parameters 
     encoder: resnet34
     num_classes: 3
-    weights: model4.pt #model4.pt
+    checkpoint: model4.pt #model4.pt
 options:
     supervise:
         features: false

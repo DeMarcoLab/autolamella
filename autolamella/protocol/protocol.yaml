@@ -75,7 +75,7 @@ microexpansion:
 ml:
     encoder: resnet34
     num_classes: 3
-    weights: autolamella-02-34.pt #model4.pt
+    checkpoint: autolamella-02-34.pt
 name: autolamella-waffle-scan-rotation-0deg
 notch:
     application_file: autolamella
@@ -94,7 +94,6 @@ notch:
 options:
     supervise:
         features: true
-        lamella: true
         setup_lamella: true
         trench: true
         undercut: true

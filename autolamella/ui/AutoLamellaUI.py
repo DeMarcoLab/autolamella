@@ -162,8 +162,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_remove_lamella.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
         self.pushButton_go_to_lamella.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
 
-        alignment_currents = ["Imaging Current","Milling Current"]
-        self.comboBox_current_alignment.addItems(alignment_currents)
+        # comboboxes
+        self.comboBox_method.addItems(["Default", "Waffle"])
+        self.comboBox_stress_relief.addItems(["Notch","Microexpansion"])
+        self.comboBox_current_alignment.addItems(["Imaging Current","Milling Current"])
+        self.comboBox_alignment_with.addItems(["Fiducial", "No Fiducial"])
 
     def update_protocol_ui(self):
 
@@ -187,7 +190,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.comboBox_method.setCurrentIndex(1) if self.settings.protocol["method"] == "waffle" else self.comboBox_method.setCurrentIndex(0)
 
-        self.checkBox_fiducial.setChecked(self.settings.protocol["fiducial"]["enabled"])
+        self.comboBox_alignment_with.setCurrentIndex(0) if self.settings.protocol["fiducial"]["enabled"] else self.comboBox_alignment_with.setCurrentIndex(1)
 
         # supervision
 
@@ -199,6 +202,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.checkBox_supervise_mill_regular.setChecked(self.settings.protocol["options"]["supervise"]["mill_regular"])
         self.checkBox_supervise_mill_polishing.setChecked(self.settings.protocol["options"]["supervise"]["mill_polishing"])
 
+        # machine learning
+        self.lineEdit_ml_checkpoint.setText(self.settings.protocol["ml"]["checkpoint"])
+        self.lineEdit_ml_encoder.setText(self.settings.protocol["ml"]["encoder"])
 
 
     def export_protocol_ui(self):
@@ -212,10 +218,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["autolamella_undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
         self.settings.protocol["autolamella_undercut"]["tilt_angle_step"] = self.doubleSpinBox_undercut_step.value()
         self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
-        self.settings.protocol["fiducial"]["enabled"] = self.checkBox_fiducial.isChecked()
+        self.settings.protocol["fiducial"]["enabled"] = bool(self.comboBox_alignment_with.currentIndex() == 0)
         self.settings.protocol["method"] = self.comboBox_method.currentText().lower()
 
-        #supervision
+        # supervision
 
         self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
         self.settings.protocol["options"]["supervise"]["undercut"] = self.checkBox_undercut.isChecked()
@@ -225,6 +231,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["options"]["supervise"]["mill_regular"] = self.checkBox_supervise_mill_regular.isChecked()
         self.settings.protocol["options"]["supervise"]["mill_polishing"] = self.checkBox_supervise_mill_polishing.isChecked()
 
+        # machine learning
+        self.settings.protocol["ml"]["checkpoint"] = self.lineEdit_ml_checkpoint.text()
+        self.settings.protocol["ml"]["encoder"] = self.lineEdit_ml_encoder.text()
 
         if self.sender() == self.export_protocol:
             path = _get_save_file_ui(msg='Save protocol',
@@ -745,8 +754,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self._update_lamella_combobox()
         self.update_ui()
-
-        # START_HERE: Allow pattern to be moved when method=default, stage=setuplamella
     
     def remove_lamella_ui(self):
 
