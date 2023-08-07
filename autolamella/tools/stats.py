@@ -28,8 +28,10 @@ EXPERIMENT_NAME = st.sidebar.selectbox(label="Experiment ", options=[os.path.bas
 
 EXPERIMENT_PATH = os.path.join(cfg.LOG_PATH, EXPERIMENT_NAME)
 
-
-df_experiment, df_history, df_beam_shift, df_steps, df_stage = calculate_statistics_dataframe(EXPERIMENT_PATH)
+(df_experiment, df_history, 
+df_beam_shift, 
+    df_steps, df_stage, 
+    df_det, df_click) = calculate_statistics_dataframe(EXPERIMENT_PATH)
 
 # experiment metrics
 n_lamella = len(df_history["petname"].unique())
@@ -37,6 +39,7 @@ n_lamella = len(df_history["petname"].unique())
 n_trenches = len(df_history[df_history["stage"] == "MillTrench"]["petname"].unique())
 n_undercut = len(df_history[df_history["stage"] == "MillUndercut"]["petname"].unique())
 n_polish = len(df_history[df_history["stage"] == "MillPolishingCut"]["petname"].unique())
+
 
 
 cols = st.columns(4)
@@ -79,6 +82,49 @@ fig_steps = px.bar(df_steps, x="lamella", y="duration", color="step", title="Ste
 st.plotly_chart(fig_steps, use_container_width=True)
 
 # timeline
+
+## Automation
+
+st.markdown("---")
+st.subheader("Automation Analytics")
+
+
+## CLICKS
+# user interaction (clicks)
+fig = px.histogram(df_click, x="subtype", color="stage", facet_col="type", hover_data=df_click.columns,
+    title="User Interaction (Click Count)")
+cols[0].plotly_chart(fig, use_container_width=True)
+
+# click size
+fig = px.scatter(df_click, x="dm_x", y="dm_y", 
+    color="stage", symbol="subtype", facet_col="type", 
+    hover_data=df_click.columns,
+    title="User Interaction (Click Size)")
+
+cols[1].plotly_chart(fig, use_container_width=True)
+
+
+### ML
+
+# accuracy
+df_group = df_det.groupby(["feature", "is_correct"]).count().reset_index() 
+df_group = df_group.pivot(index="feature", columns="is_correct", values="lamella")
+df_group["total"] = df_group["True"] + df_group["False"]
+df_group["percent_correct"] = df_group["True"] / df_group["total"]
+df_group["percent_correct"] = df_group["percent_correct"].round(2)
+df_group = df_group.sort_values(by="percent_correct", ascending=False)
+df_group.reset_index(inplace=True)
+
+# plot
+cols = st.columns(2)
+fig_acc = px.bar(df_group, x="feature", y="percent_correct", color="feature", title="ML Accuracy", hover_data=df_group.columns)
+cols[0].plotly_chart(fig_acc, use_container_width=True)
+
+# precision
+fig_det = px.scatter(df_det, x="dpx_x", y="dpx_y", color="stage", symbol="feature",  hover_data=df_det.columns, title="ML Error Size")
+cols[1].plotly_chart(fig_det, use_container_width=True)
+
+
 
 # Stage Analytics
 

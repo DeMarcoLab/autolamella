@@ -1,6 +1,6 @@
 import os
 import sys
-from structures import Lamella, Experiment, LamellaState 
+from autolamella.structures import Lamella, Experiment, LamellaState 
 from fibsem.structures import Point
 from copy import deepcopy
 import pandas as pd
@@ -54,6 +54,7 @@ def calculate_statistics_dataframe(path: Path):
 
     stage_position = []
     det_data = []
+    click_data = []
 
 
     print("-" * 80)
@@ -124,6 +125,7 @@ def calculate_statistics_dataframe(path: Path):
                         df_beam_shift.append(deepcopy(gamma_d))
 
                 if "confirm_button" in func:
+                    
 
                     feat = msg.split("|")[0].strip()
                     dpx = msg.split("|")[1].split("=")
@@ -146,9 +148,40 @@ def calculate_statistics_dataframe(path: Path):
                         "dm_x": dm_x,
                         "dm_y": dm_y,
                         "is_correct": _is_correct,
+                        "timestamp": tsd,
                     }
                     det_data.append(deepcopy(detd))
+                    
+                    if _is_correct == "False":
+                        click_d = {
+                            "lamella": current_lamella,
+                            "stage": current_stage,
+                            "step": current_step,
+                            "type": "DET",
+                            "subtype": feat,
+                            "dm_x": dm_x,
+                            "dm_y": dm_y,
+                        }
+                        click_data.append(deepcopy(click_d))
 
+                if "_single_click" in func:
+
+                    ctype = msg.split("|")[0].strip()
+                    subtype = msg.split("|")[1].strip()
+                    dm = msg.split("|")[2].split("=")
+                    dm_x = float(dm[1].split(",")[0].strip())
+                    dm_y = float(dm[-1].split(")")[0].strip())
+
+                    click_d = {
+                        "lamella": current_lamella,
+                        "stage": current_stage,
+                        "step": current_step,
+                        "type": ctype,
+                        "subtype": subtype,
+                        "dm_x": dm_x,
+                        "dm_y": dm_y,
+                    }
+                    click_data.append(deepcopy(click_d))
 
                 # TODO: add milling clicks, movement clicks, etc.
 
@@ -164,16 +197,28 @@ def calculate_statistics_dataframe(path: Path):
     df_stage = pd.DataFrame(stage_position)
     df_det = pd.DataFrame(det_data)
     df_beam_shift = pd.DataFrame.from_dict(df_beam_shift)
-
+    df_click = pd.DataFrame(click_data)
     
     df_steps["duration"] = df_steps["timestamp"].diff() # TODO: fix this duration
     df_steps["duration"] = df_steps["duration"].shift(-1)
 
 
     # add date and name to all dataframes
-    df_experiment["name"] = experiment.name
-    df_history["name"] = experiment.name
-    df_beam_shift["name"] = experiment.name
+    df_experiment["exp_name"] = experiment.name
+    df_history["exp_name"] = experiment.name
+    df_beam_shift["exp_name"] = experiment.name
+    df_steps["exp_name"] = experiment.name
+    df_stage["exp_name"] = experiment.name
+    df_det["exp_name"] = experiment.name
+    df_click["exp_name"] = experiment.name
+
+    # add experiment id to all df
+    df_history["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
+    df_beam_shift["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
+    df_steps["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
+    df_stage["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
+    df_det["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
+    df_click["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
 
     filename = os.path.join(path, 'duration.csv')
     df_history.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
@@ -182,5 +227,5 @@ def calculate_statistics_dataframe(path: Path):
     filename = os.path.join(path, 'experiment.csv')
     df_experiment.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
 
-    return df_experiment, df_history, df_beam_shift, df_steps, df_stage, df_det
+    return df_experiment, df_history, df_beam_shift, df_steps, df_stage, df_det, df_click
 
