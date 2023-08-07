@@ -185,8 +185,8 @@
          <widget class="QPushButton" name="pushButton_run_autolamella">
           <property name="font">
            <font>
-            <weight>75</weight>
-            <bold>true</bold>
+            <weight>50</weight>
+            <bold>false</bold>
            </font>
           </property>
           <property name="styleSheet">
@@ -218,7 +218,7 @@
          <widget class="QLabel" name="label_setup_header">
           <property name="font">
            <font>
-            <pointsize>12</pointsize>
+            <pointsize>9</pointsize>
             <weight>75</weight>
             <bold>true</bold>
            </font>
@@ -238,7 +238,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Autolamella</string>
+           <string>AutoLamella</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -515,12 +515,14 @@
     <addaction name="actionNew_Experiment"/>
     <addaction name="actionLoad_Experiment"/>
     <addaction name="actionLoad_Protocol"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
      <string>Tools</string>
     </property>
     <addaction name="actionCryo_Sputter"/>
+    <addaction name="separator"/>
     <addaction name="actionLoad_Positions"/>
     <addaction name="actionOpen_Minimap"/>
    </widget>
