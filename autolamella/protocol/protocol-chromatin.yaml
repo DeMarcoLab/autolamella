@@ -9,6 +9,9 @@ options:
     setup_lamella: true
     features: true
     lamella: true
+    mill_rough: true
+    mill_regular: true
+    mill_polishing: true
 
 fiducial:
   enabled: true

@@ -98,6 +98,9 @@ options:
         setup_lamella: true
         trench: true
         undercut: true
+        mill_rough: true
+        mill_regular: true
+        mill_polishing: true
 trench:
     application_file: autolamella
     cleaning_cross_section: false

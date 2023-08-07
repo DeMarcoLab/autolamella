@@ -408,6 +408,14 @@ def mill_lamella(
         AutoLamellaWaffleStage.MillRegularCut: 1,
         AutoLamellaWaffleStage.MillPolishingCut: 2,
     }
+
+    supervise_map = {
+        AutoLamellaWaffleStage.MillRoughCut: "mill_rough",
+        AutoLamellaWaffleStage.MillRegularCut: "mill_regular",
+        AutoLamellaWaffleStage.MillPolishingCut: "mill_polishing",
+    }
+    validate = settings.protocol["options"]["supervise"].get(supervise_map[lamella.state.stage], True)
+
     idx = stage_map[lamella.state.stage]
     if idx in [0, 1]:
         stages = [stages[idx]]

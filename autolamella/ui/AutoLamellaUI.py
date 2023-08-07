@@ -195,8 +195,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"]["undercut"])
         self.checkBox_setup.setChecked(self.settings.protocol["options"]["supervise"]["setup_lamella"])
         self.checkBox_features.setChecked(self.settings.protocol["options"]["supervise"]["features"])
-        self.checkBox_lamella.setChecked(self.settings.protocol["options"]["supervise"]["lamella"])
-
+        self.checkBox_supervise_mill_rough.setChecked(self.settings.protocol["options"]["supervise"]["mill_rough"])
+        self.checkBox_supervise_mill_regular.setChecked(self.settings.protocol["options"]["supervise"]["mill_regular"])
+        self.checkBox_supervise_mill_polishing.setChecked(self.settings.protocol["options"]["supervise"]["mill_polishing"])
 
 
 
@@ -220,7 +221,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["options"]["supervise"]["undercut"] = self.checkBox_undercut.isChecked()
         self.settings.protocol["options"]["supervise"]["setup_lamella"] = self.checkBox_setup.isChecked()
         self.settings.protocol["options"]["supervise"]["features"] = self.checkBox_features.isChecked()
-        self.settings.protocol["options"]["supervise"]["lamella"] = self.checkBox_lamella.isChecked()
+        self.settings.protocol["options"]["supervise"]["mill_rough"] = self.checkBox_supervise_mill_rough.isChecked()
+        self.settings.protocol["options"]["supervise"]["mill_regular"] = self.checkBox_supervise_mill_regular.isChecked()
+        self.settings.protocol["options"]["supervise"]["mill_polishing"] = self.checkBox_supervise_mill_polishing.isChecked()
 
 
         if self.sender() == self.export_protocol:

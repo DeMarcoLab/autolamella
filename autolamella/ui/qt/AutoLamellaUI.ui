@@ -276,6 +276,16 @@
         <string>Protocol</string>
        </attribute>
        <layout class="QFormLayout" name="formLayout_2">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>Name</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="lineEdit_name"/>
+        </item>
         <item row="1" column="0">
          <widget class="QLabel" name="label_4">
           <property name="text">
@@ -372,62 +382,6 @@
           </item>
          </widget>
         </item>
-        <item row="8" column="0" colspan="2">
-         <widget class="QLabel" name="label_5">
-          <property name="text">
-           <string>Supervision</string>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_update_protocol">
-          <property name="text">
-           <string>Update Protocol</string>
-          </property>
-         </widget>
-        </item>
-        <item row="17" column="0" colspan="2">
-         <widget class="QPushButton" name="export_protocol">
-          <property name="text">
-           <string>Save protocol to file</string>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="0">
-         <widget class="QCheckBox" name="checkBox_trench">
-          <property name="text">
-           <string>Trench Stage</string>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="0">
-         <widget class="QCheckBox" name="checkBox_undercut">
-          <property name="text">
-           <string>Undercut Stage</string>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="0">
-         <widget class="QCheckBox" name="checkBox_setup">
-          <property name="text">
-           <string>Setup Stage</string>
-          </property>
-         </widget>
-        </item>
-        <item row="12" column="0">
-         <widget class="QCheckBox" name="checkBox_features">
-          <property name="text">
-           <string>Features Stage</string>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="0">
-         <widget class="QCheckBox" name="checkBox_lamella">
-          <property name="text">
-           <string>Lamella Stage</string>
-          </property>
-         </widget>
-        </item>
         <item row="7" column="0">
          <widget class="QCheckBox" name="checkBox_fiducial">
           <property name="text">
@@ -435,15 +389,75 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_7">
+        <item row="13" column="1">
+         <widget class="QCheckBox" name="checkBox_supervise_mill_rough">
           <property name="text">
-           <string>Name</string>
+           <string>Mill Rough Stage</string>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="lineEdit_name"/>
+        <item row="14" column="1">
+         <widget class="QCheckBox" name="checkBox_supervise_mill_regular">
+          <property name="text">
+           <string>Mill Regular Stage</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="1">
+         <widget class="QCheckBox" name="checkBox_supervise_mill_polishing">
+          <property name="text">
+           <string>Mill Polishing Stage</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_update_protocol">
+          <property name="text">
+           <string>Update Protocol</string>
+          </property>
+         </widget>
+        </item>
+        <item row="19" column="0" colspan="2">
+         <widget class="QPushButton" name="export_protocol">
+          <property name="text">
+           <string>Save protocol to file</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0">
+         <widget class="QCheckBox" name="checkBox_trench">
+          <property name="text">
+           <string>Trench Stage</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0">
+         <widget class="QCheckBox" name="checkBox_undercut">
+          <property name="text">
+           <string>Undercut Stage</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="1">
+         <widget class="QCheckBox" name="checkBox_setup">
+          <property name="text">
+           <string>Setup Stage</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="1">
+         <widget class="QCheckBox" name="checkBox_features">
+          <property name="text">
+           <string>Features Stage</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Supervision</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -457,7 +471,7 @@
      <x>0</x>
      <y>0</y>
      <width>521</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAutoLamella">
