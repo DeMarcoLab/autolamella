@@ -45,8 +45,8 @@ from autolamella.ui import _stylesheets
 from collections import Counter
 
 
-_DEV_MODE = False
-DEV_EXP_PATH = r"C:\Users\Admin\Github\autolamella\autolamella\log\HANNAH-WAFFLE-02-02082023\experiment.yaml"
+_DEV_MODE = True
+DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBACK_01/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
 _AUTO_SYNC_MINIMAP = False
@@ -573,6 +573,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     
                     _feature_name = "notch" if self.settings.protocol["notch"]["enabled"]  else "microexpansion"
                     protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol
+                    
+                    if _feature_name == "notch":
+                        NOTCH_H_OFFSET = 0.5e-6 
+                        lamella.feature_position.x += stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET  # TODO: this wont be saved
                     feature_stage = patterning._get_milling_stages(_feature_name, protocol, lamella.feature_position)
                     stages += feature_stage
 
