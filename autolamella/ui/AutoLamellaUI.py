@@ -45,7 +45,7 @@ from autolamella.ui import _stylesheets
 from collections import Counter
 
 
-_DEV_MODE = True
+_DEV_MODE = False
 DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBACK_01/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
@@ -443,8 +443,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             
             _READY_TRENCH = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
             _READY_UNDERCUT = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
-            _READY_LAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
-            _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
+            _READY_LAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
+            _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
             _READY_FEATURES = _counter[AutoLamellaWaffleStage.MillFeatures.name] > 0
             _READY_ROUGH = _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0
             _READY_REGULAR = _counter[AutoLamellaWaffleStage.MillRegularCut.name] > 0
@@ -523,7 +523,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # buttons
         SETUP_STAGES =  [AutoLamellaWaffleStage.SetupTrench]
-        READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]
+        READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.SetupLamella]
         if lamella.state.stage in SETUP_STAGES:
             self.pushButton_save_position.setText(f"Save Position")
             self.pushButton_save_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
@@ -544,7 +544,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self._WORKFLOW_RUNNING:
             self.milling_widget._PATTERN_IS_MOVEABLE = True
 
-        if lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
+        if lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench, 
+            AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.ReadyLamella]:
             
             if self._PROTOCOL_LOADED:
 
@@ -554,13 +555,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 if method == "waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
                     _DISPLAY_TRENCH = True
 
-                if method == "waffle" and lamella.state.stage is AutoLamellaWaffleStage.ReadyLamella:
-                    # show lamella and friends
-                    _DISPLAY_LAMELLA = True
-
-                if method == "default" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyLamella]:
-                    # show lamella and friends
-                    _DISPLAY_LAMELLA = True
+                # show lamella and friends
+                if lamella.state.stage in [AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.ReadyLamella]:
+                    _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, True
 
 
                 if _DISPLAY_TRENCH:
@@ -722,12 +719,17 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def add_lamella_ui(self, pos:FibsemStagePosition=None):
 
+        method = self.settings.protocol.get("method", "waffle")
+        stage = AutoLamellaWaffleStage.SetupTrench if method == "waffle" else AutoLamellaWaffleStage.SetupLamella
+
         lamella = Lamella(
             path=self.experiment.path,
             _number=len(self.experiment.positions) + 1,
-        )
-        lamella.state.microscope_state = self.microscope.get_current_microscope_state()
-
+            state=LamellaState(
+                stage=stage,
+                microscope_state=self.microscope.get_current_microscope_state()
+        ))
+        
         if pos is not None:
             lamella.state.microscope_state.absolute_position = deepcopy(pos)
 
@@ -739,6 +741,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self._update_lamella_combobox()
         self.update_ui()
+
+        # START_HERE: Allow pattern to be moved when method=default, stage=setuplamella
     
     def remove_lamella_ui(self):
 

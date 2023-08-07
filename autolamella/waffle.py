@@ -475,12 +475,14 @@ def setup_lamella(
         stages += fiducial_stage
 
     stages =_validate_mill_ui(stages, parent_ui, 
-        msg=f"Confirm the positions for the {lamella._petname} milling. Don't run milling yet, this is just setup.", # TODO: disable milling button here
-        validate=validate,
+        msg=f"Confirm the positions for the {lamella._petname} milling. Press Continue to Confirm.",
+        validate=True,
         milling_enabled=False)
     
-    from pprint import pprint 
+    from pprint import pprint
+    print("-"*80) 
     pprint(stages)
+    print("-"*80)
 
     # lamella
     n_lamella = len(lamella_stages)
@@ -658,7 +660,7 @@ def run_undercut_milling(
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
-                AutoLamellaWaffleStage.ReadyLamella,
+                AutoLamellaWaffleStage.SetupLamella,
                 parent_ui=parent_ui,
                 _restore_state=False,
             )
@@ -675,7 +677,7 @@ def run_setup_lamella(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.ReadyLamella and not lamella._is_failure:
+        if lamella.state.stage == AutoLamellaWaffleStage.SetupLamella and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
@@ -700,7 +702,7 @@ def run_lamella_milling(
 
 
     stages = [
-        # AutoLamellaWaffleStage.SetupLamella,
+        # AutoLamellaWaffleStage.ReadyLamella,
         AutoLamellaWaffleStage.MillFeatures,
         AutoLamellaWaffleStage.MillRoughCut,
         AutoLamellaWaffleStage.MillRegularCut,
