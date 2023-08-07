@@ -174,12 +174,12 @@ class Experiment:
     
     def __to_dataframe__(self) -> pd.DataFrame:
 
-        lamella_list = []
+        exp_data = []
         lamella: Lamella
         for lamella in self.positions:
 
             # lamella
-            lamella_dict = {
+            ldict = {
                 "experiment_name": self.name,
                 "experiment_path": self.path,
                 "experiment_created_at": self._created_at,
@@ -195,9 +195,9 @@ class Experiment:
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
             }
 
-            lamella_list.append(lamella_dict)
+            exp_data.append(ldict)
 
-        df = pd.DataFrame.from_dict(lamella_list)
+        df = pd.DataFrame(exp_data)
 
         return df
 
