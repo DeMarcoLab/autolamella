@@ -66,15 +66,15 @@ def mill_trench(
 
     # define trench milling stage
     settings.image.beam_type = BeamType.ION
-    stages = patterning._get_milling_stages("trench", lamella.protocol, point=lamella.trench_position)
+    stages = patterning._get_milling_stages("trench", lamella.protocol, point=Point.__from_dict__(lamella.protocol["trench"]["point"]))
     stages = _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
     
     # log the protocol
-    lamella.trench_position = stages[0].pattern.point
     lamella.protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
+    lamella.protocol["trench"]["point"] = stages[0].pattern.point.__to_dict__()
     
     # charge neutralisation
     log_status_message(lamella, "CHARGE_NEUTRALISATION")
@@ -231,7 +231,7 @@ def mill_feature(
     _feature_name = "notch" if settings.protocol["notch"]["enabled"] else "microexpansion"
 
     stages = patterning._get_milling_stages(
-        _feature_name, lamella.protocol, point=lamella.feature_position
+        _feature_name, lamella.protocol, point=Point.__from_dict__(lamella.protocol[_feature_name]["point"])
     )
 
     # existing_current = microscope.get("current", BeamType.ION)
@@ -289,8 +289,8 @@ def mill_feature(
     )
 
     # log feature stages
-    lamella.feature_position = stages[0].pattern.point
     lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages))
+    lamella.protocol[_feature_name]["point"] = stages[0].pattern.point.__to_dict__()
 
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
@@ -399,7 +399,7 @@ def mill_lamella(
     # define feature
     log_status_message(lamella, "MILL_LAMELLA")
     stages = patterning._get_milling_stages(
-        "lamella", lamella.protocol, point=lamella.lamella_position
+        "lamella", lamella.protocol, point=Point.__from_dict__(lamella.protocol["lamella"]["point"])
     )
 
     # filter stage based on the current stage
@@ -467,19 +467,25 @@ def setup_lamella(
 
     # load the default protocol unless in lamella protocol
     protocol = lamella.protocol if "lamella" in lamella.protocol else settings.protocol
-    lamella_stages = patterning._get_milling_stages("lamella", protocol, lamella.lamella_position)
+    lamella_position = Point.__from_dict__(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
+    lamella_stages = patterning._get_milling_stages("lamella", protocol, lamella_position)
     stages = deepcopy(lamella_stages)
 
     # feature 
     _feature_name = "notch" if settings.protocol["notch"]["enabled"]  else "microexpansion"
     protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol
-    feature_stage = patterning._get_milling_stages(_feature_name, protocol, lamella.feature_position)
+    NOTCH_H_OFFSET = 0.5e-6                     
+    feature_position = Point.__from_dict__(protocol[_feature_name].get("point", 
+            {"x":lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET, 
+            "y": lamella_position.y} if _feature_name == "notch" else {"x": 0, "y": 0})) 
+    feature_stage = patterning._get_milling_stages(_feature_name, protocol, feature_position)
     stages += feature_stage
 
     # fiducial
     if use_fiducial := settings.protocol["fiducial"]["enabled"]:
         protocol = lamella.protocol if "fiducial" in lamella.protocol else settings.protocol
-        fiducial_stage = patterning._get_milling_stages("fiducial", protocol, lamella.fiducial_centre)
+        fiducial_position = Point.__from_dict__(protocol["fiducial"].get("point", {"x": 25e-6, "y": 0})) 
+        fiducial_stage = patterning._get_milling_stages("fiducial", protocol, fiducial_position)
         stages += fiducial_stage
 
     stages =_validate_mill_ui(stages, parent_ui, 
@@ -494,28 +500,26 @@ def setup_lamella(
 
     # lamella
     n_lamella = len(lamella_stages)
-    lamella.lamella_position = stages[0].pattern.point
     lamella.protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
-    
+    lamella.protocol["lamella"]["point"] = stages[0].pattern.point.__to_dict__()
+
     # feature
     n_features = len(feature_stage)
-    lamella.feature_position = stages[n_lamella].pattern.point
     lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella:n_lamella+n_features]))
-
-    logging.info(f"Feature position: {lamella.feature_position}")
-    logging.info(f"Lamella position: {lamella.lamella_position}")
+    lamella.protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.__to_dict__()
 
     # fiducial
     if use_fiducial:
         # save fiducial information
         n_fiducial = len(fiducial_stage)
-        lamella.fiducial_centre = stages[-n_fiducial].pattern.point # this goes the wrong way?
         lamella.protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-n_fiducial:]))
-        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, deepcopy(lamella.fiducial_centre), lamella.protocol["fiducial"]["stages"][0]["height"])
-        logging.info(f"Fiducial centre: {lamella.fiducial_centre}")
+        lamella.protocol["fiducial"]["point"] = stages[-n_fiducial].pattern.point.__to_dict__()
+        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, 
+            deepcopy(stages[-n_fiducial].pattern.point), 
+            lamella.protocol["fiducial"]["stages"][0]["height"])
 
         # mill the fiducial
-        fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, lamella.fiducial_centre)
+        fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, Point.__from_dict__(lamella.protocol["fiducial"]["point"]))
         stages =_validate_mill_ui(fiducial_stage, parent_ui, 
             msg=f"Milling Fiducial for {lamella._petname}.", 
             validate=False)

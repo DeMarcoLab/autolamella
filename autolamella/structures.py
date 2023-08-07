@@ -67,17 +67,13 @@ class LamellaState:
 class Lamella:
     state: LamellaState = LamellaState()
     path: Path = Path()
-    fiducial_centre: Point = Point(25e-6, 0)
     fiducial_area: FibsemRectangle = FibsemRectangle()
     _number: int = 0
     lamella_position: Point = Point()
-    trench_position: Point = Point()
-    feature_position: Point = Point()
     history: list[LamellaState] = None
     _petname: str = None
     protocol: dict = None    
     _is_failure: bool = False
-    _feature_initialised: bool = False
 
     
     def __post_init__(self):
@@ -96,16 +92,11 @@ class Lamella:
             "petname": self._petname,
             "state": self.state.__to_dict__() if self.state is not None else None,
             "path": str(self.path) if self.path is not None else None,
-            "fiducial_centre": self.fiducial_centre.__to_dict__() if self.fiducial_centre is not None else None,
             "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else None,
-            "lamella_position": self.lamella_position.__to_dict__(),
-            "trench_position": self.trench_position.__to_dict__(),
-            "feature_position": self.feature_position.__to_dict__(),
             "protocol": self.protocol,
             "_number": self._number,
             "history": [state.__to_dict__() for state in self.history] if self.history is not False else [],
             "_is_failure": self._is_failure,
-            "_feature_initialised": self._feature_initialised,
         }
 
     @property
@@ -115,25 +106,16 @@ class Lamella:
     @classmethod
     def __from_dict__(cls, data):
         state = LamellaState().__from_dict__(data["state"])
-        fiducial_centre = Point.__from_dict__(data["fiducial_centre"])
         fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
-        lamella_position = Point.__from_dict__(data.get("lamella_position", {"x": 0, "y": 0}))
-        trench_position = Point.__from_dict__(data.get("trench_position", {"x": 0, "y": 0}))
-        feature_position = Point.__from_dict__(data.get("feature_position", {"x": 0, "y": 0}))
         return cls(
             _petname=data["petname"],
             state=state,
             path=data["path"],
-            fiducial_centre=fiducial_centre,
             fiducial_area=fiducial_area,
-            lamella_position=lamella_position,
-            trench_position = trench_position,
-            feature_position = feature_position,
             protocol=data.get("protocol", {}),
             _number=data["_number"],
             history=[LamellaState().__from_dict__(state) for state in data["history"]],
             _is_failure=data.get("_is_failure", False),
-            _feature_initialised=data.get("_feature_initialised", False),
         )
     
     def update(self, stage: AutoLamellaWaffleStage):
@@ -207,17 +189,7 @@ class Experiment:
                 "lamella.z": lamella.state.microscope_state.absolute_position.z,
                 "lamella.r": lamella.state.microscope_state.absolute_position.r,
                 "lamella.t": lamella.state.microscope_state.absolute_position.t,
-                "lamella.position.x": lamella.lamella_position.x,
-                "lamella.position.y": lamella.lamella_position.y,
-                "trench.position.x": lamella.trench_position.x,
-                "trench.position.y": lamella.trench_position.y,
-                "feature.position.x": lamella.feature_position.x,
-                "feature.position.y": lamella.feature_position.y,
                 "lamella.history": lamella.history,
-                "feature.position.x": lamella.feature_position.x,
-                "feature.position.y": lamella.feature_position.y,
-                "fiducial.centre.x": lamella.fiducial_centre.x,
-                "fiducial.centre.y": lamella.fiducial_centre.y,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
             }
 

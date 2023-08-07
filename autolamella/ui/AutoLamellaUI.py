@@ -13,7 +13,7 @@ from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
     ImageSettings,
     MicroscopeSettings,
-    FibsemStagePosition,
+    FibsemStagePosition, Point
 )
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
@@ -574,26 +574,29 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
                 if _DISPLAY_TRENCH:
                     protocol = lamella.protocol if "trench" in lamella.protocol else self.settings.protocol
-                    stages = patterning._get_milling_stages("trench", protocol, lamella.trench_position)
+                    trench_position = Point.__from_dict__(protocol["trench"].get("point", {"x": 0, "y": 0})) 
+                    stages = patterning._get_milling_stages("trench", protocol, trench_position)
 
                 if _DISPLAY_LAMELLA:
                     protocol = lamella.protocol if "lamella" in lamella.protocol else self.settings.protocol
-                    stages = patterning._get_milling_stages("lamella", protocol, lamella.lamella_position)
+                    lamella_position = Point.__from_dict__(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
+                    stages = patterning._get_milling_stages("lamella", protocol, lamella_position)
                     
                     _feature_name = "notch" if self.settings.protocol["notch"]["enabled"]  else "microexpansion"
                     protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol
                     
-                    if _feature_name == "notch" and lamella._feature_initialised is False:
-                        NOTCH_H_OFFSET = 0.5e-6 
-                        lamella.feature_position.x = lamella.lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET
-                        lamella._feature_initialised = True  
-                    feature_stage = patterning._get_milling_stages(_feature_name, protocol, lamella.feature_position)
+                    NOTCH_H_OFFSET = 0.5e-6                     
+                    feature_position = Point.__from_dict__(protocol[_feature_name].get("point", 
+                            {"x":lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET, 
+                            "y": lamella_position.y} if _feature_name == "notch" else {"x": 0, "y": 0})) 
+                    feature_stage = patterning._get_milling_stages(_feature_name, protocol, feature_position)
                     stages += feature_stage
 
                     # fiducial
                     if self.settings.protocol["fiducial"]["enabled"]:
                         protocol = lamella.protocol if "fiducial" in lamella.protocol else self.settings.protocol
-                        fiducial_stage = patterning._get_milling_stages("fiducial", protocol, lamella.fiducial_centre)
+                        fiducial_position = Point.__from_dict__(protocol["fiducial"].get("point", {"x": 25e-6, "y": 0})) 
+                        fiducial_stage = patterning._get_milling_stages("fiducial", protocol, fiducial_position)
                         stages += fiducial_stage
 
                 self.milling_widget.set_milling_stages(stages)
@@ -848,25 +851,28 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         stages = deepcopy(self.milling_widget.get_milling_stages())
         if method == "waffle" and stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
-            self.experiment.positions[idx].trench_position = stages[0].pattern.point
             self.experiment.positions[idx].protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
+            self.experiment.positions[idx].protocol["trench"]["point"] = stages[0].pattern.point.__to_dict__()
         
         if stage == AutoLamellaWaffleStage.SetupLamella:
             n_lamella = len(self.settings.protocol["lamella"]["stages"])
 
             # lamella
-            self.experiment.positions[idx].lamella_position = stages[0].pattern.point
             self.experiment.positions[idx].protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
+            self.experiment.positions[idx].protocol["lamella"]["point"] = stages[0].pattern.point.__to_dict__()
 
             # feature
             _feature_name = "notch" if self.settings.protocol["notch"]["enabled"] else "microexpansion"
             self.experiment.positions[idx].feature_position = stages[n_lamella].pattern.point
             self.experiment.positions[idx].protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella]))
+            self.experiment.positions[idx].protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.__to_dict__()
+
             
             # fiducial (optional)
             if self.settings.protocol["fiducial"]["enabled"]:
                 self.experiment.positions[idx].fiducial_centre = stages[-1].pattern.point
                 self.experiment.positions[idx].protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-1]))
+                self.experiment.positions[idx].protocol["fiducial"]["point"] = stages[-1].pattern.point.__to_dict__()
 
 
 
