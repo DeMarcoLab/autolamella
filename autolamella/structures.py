@@ -77,6 +77,7 @@ class Lamella:
     _petname: str = None
     protocol: dict = None    
     _is_failure: bool = False
+    _feature_initialised: bool = False
 
     
     def __post_init__(self):
@@ -104,6 +105,7 @@ class Lamella:
             "_number": self._number,
             "history": [state.__to_dict__() for state in self.history] if self.history is not False else [],
             "_is_failure": self._is_failure,
+            "_feature_initialised": self._feature_initialised,
         }
 
     @property
@@ -131,6 +133,7 @@ class Lamella:
             _number=data["_number"],
             history=[LamellaState().__from_dict__(state) for state in data["history"]],
             _is_failure=data.get("_is_failure", False),
+            _feature_initialised=data.get("_feature_initialised", False),
         )
     
     def update(self, stage: AutoLamellaWaffleStage):

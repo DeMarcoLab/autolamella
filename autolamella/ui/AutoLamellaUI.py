@@ -523,7 +523,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # buttons
         SETUP_STAGES =  [AutoLamellaWaffleStage.SetupTrench]
-        READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.SetupLamella]
+        READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench]
         if lamella.state.stage in SETUP_STAGES:
             self.pushButton_save_position.setText(f"Save Position")
             self.pushButton_save_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
@@ -571,9 +571,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     _feature_name = "notch" if self.settings.protocol["notch"]["enabled"]  else "microexpansion"
                     protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol
                     
-                    if _feature_name == "notch":
+                    if _feature_name == "notch" and lamella._feature_initialised is False:
                         NOTCH_H_OFFSET = 0.5e-6 
-                        lamella.feature_position.x = lamella.lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET  
+                        lamella.feature_position.x = lamella.lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET
+                        lamella._feature_initialised = True  
                     feature_stage = patterning._get_milling_stages(_feature_name, protocol, lamella.feature_position)
                     stages += feature_stage
 
@@ -610,14 +611,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
 
-        if lamella.state.stage != AutoLamellaWaffleStage.SetupTrench:
+        if lamella.state.stage not in  [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.SetupLamella]:
             return
 
         logging.info(f"Updating Lamella Pattern for {lamella.info}")
 
         # update the trench point
         method = self.settings.protocol.get("method", "waffle")
-        self._update_milling_protocol(idx=idx, method=method)
+        self._update_milling_protocol(idx=idx, method=method, stage=lamella.state.stage)
 
         self.experiment.save() 
 
@@ -808,7 +809,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 _restore_state=False) 
 
             # update the protocol / point
-            self._update_milling_protocol(idx, method)
+            self._update_milling_protocol(idx, method, READY_STATE)
 
             # get current ib image, save as reference
             fname = os.path.join(
@@ -833,13 +834,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.update_ui()
         self.experiment.save()
 
-    def _update_milling_protocol(self, idx: int, method: str):
+    def _update_milling_protocol(self, idx: int, method: str, stage: AutoLamellaWaffleStage):
 
         stages = deepcopy(self.milling_widget.get_milling_stages())
-        if method == "waffle":
+        if method == "waffle" and stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
             self.experiment.positions[idx].trench_position = stages[0].pattern.point
             self.experiment.positions[idx].protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
-        else:
+        
+        if stage == AutoLamellaWaffleStage.SetupLamella:
             n_lamella = len(self.settings.protocol["lamella"]["stages"])
 
             # lamella
