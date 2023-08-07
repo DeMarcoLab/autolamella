@@ -90,8 +90,15 @@ st.subheader("Automation Analytics")
 
 
 ## CLICKS
+cols= st.columns(2)
 # user interaction (clicks)
-fig = px.histogram(df_click, x="subtype", color="stage", facet_col="type", hover_data=df_click.columns,
+
+st.dataframe(df_click)
+# drop beam_type column
+df_click.drop(columns=["beam_type"], inplace=True)
+
+fig = px.histogram(df_click, x="subtype", color="stage", facet_col="type",
+    hover_data=df_click.columns,
     title="User Interaction (Click Count)")
 cols[0].plotly_chart(fig, use_container_width=True)
 
@@ -116,7 +123,6 @@ df_group = df_group.sort_values(by="percent_correct", ascending=False)
 df_group.reset_index(inplace=True)
 
 # plot
-cols = st.columns(2)
 fig_acc = px.bar(df_group, x="feature", y="percent_correct", color="feature", title="ML Accuracy", hover_data=df_group.columns)
 cols[0].plotly_chart(fig_acc, use_container_width=True)
 

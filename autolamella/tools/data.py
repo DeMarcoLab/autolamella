@@ -183,7 +183,27 @@ def calculate_statistics_dataframe(path: Path):
                     }
                     click_data.append(deepcopy(click_d))
 
-                # TODO: add milling clicks, movement clicks, etc.
+                if "_double_click" in func:
+
+                    ctype = "MOVE"
+                    subtype = msg.split("|")[0].split(":")[-1].strip().upper()
+                    dm = msg.split("|")[2].split(",")
+                    dm_x = float(dm[1].split(" ")[1].strip())
+                    dm_y = float(dm[-1].strip())
+                    beam_type = msg.split("|")[-1].split(".")[-1].strip().upper()
+                    click_d = {
+                        "lamella": current_lamella,
+                        "stage": current_stage,
+                        "step": current_step,
+                        "type": ctype,
+                        "subtype": subtype,
+                        "dm_x": dm_x,
+                        "dm_y": dm_y,
+                        "beam_type": beam_type,
+                    }
+                    
+                    click_data.append(deepcopy(click_d))
+
 
             except Exception as e:
                 pass
