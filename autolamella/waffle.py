@@ -64,13 +64,18 @@ def mill_trench(
     _set_images_ui(parent_ui, eb_image, ib_image)
     _update_status_ui(parent_ui, f"{lamella.info} Preparing Trench...")
 
-    # define trench #TODO: update to lamella.protocol
+    # define trench milling stage
     settings.image.beam_type = BeamType.ION
     stages = patterning._get_milling_stages("trench", lamella.protocol, point=lamella.trench_position)
-    _validate_mill_ui(stages, parent_ui,
+    stages = _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
+    
+    # log the protocol
+    lamella.trench_position = stages[0].pattern.point
+    lamella.protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
+    
     # charge neutralisation
     log_status_message(lamella, "CHARGE_NEUTRALISATION")
     _update_status_ui(parent_ui, f"{lamella.info} Neutralising Sample Charge...")
@@ -153,6 +158,7 @@ def mill_undercut(
 
     N_UNDERCUTS = int(settings.protocol["autolamella_undercut"].get("tilt_angle_step", 2))
     UNDERCUT_ANGLE_DEG = settings.protocol["autolamella_undercut"].get("tilt_angle", -10)
+    undercut_stages = []
     for i in range(N_UNDERCUTS):
 
         _n = f"{i+1:02d}" # helper
@@ -185,10 +191,16 @@ def mill_undercut(
         # mill undercut 1
         log_status_message(lamella, f"MILL_UNDERCUT_{_n}")
         stages = patterning._get_milling_stages("autolamella_undercut", settings.protocol, point=point)
-        _validate_mill_ui(stages, parent_ui,
+        stages = _validate_mill_ui(stages, parent_ui,
             msg=f"Press Run Milling to mill the Undercut {_n} for {lamella._petname}. Press Continue when done.",
             validate=validate,
         )
+
+        undercut_stages.append(stages[0])
+
+    # log undercut stages
+    lamella.protocol["undercut"] = deepcopy(patterning._get_protocol_from_stages(undercut_stages))
+   
 
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
@@ -271,11 +283,14 @@ def mill_feature(
     # define notch/microexpansion
     log_status_message(lamella, "MILL_FEATURES")
 
-    _validate_mill_ui(stages, parent_ui,
+    stages = _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the {_feature_name} for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
 
+    # log feature stages
+    lamella.feature_position = stages[0].pattern.point
+    lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages))
 
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
@@ -401,12 +416,15 @@ def mill_lamella(
         if not isinstance(stages, list):
             stages = [stages]
     
-    _validate_mill_ui(stages, parent_ui,
+    stages = _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
 
-
+    # TODO: refactor this so it is like the original protocol
+    lamella.protocol[lamella.state.stage.name] = deepcopy(patterning._get_protocol_from_stages(stages))
+    lamella.protocol[lamella.state.stage.name]["point"] = stages[0].pattern.point.__to_dict__()
+    
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")

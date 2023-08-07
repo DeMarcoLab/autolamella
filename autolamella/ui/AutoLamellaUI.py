@@ -576,7 +576,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     
                     if _feature_name == "notch":
                         NOTCH_H_OFFSET = 0.5e-6 
-                        lamella.feature_position.x += stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET  # TODO: this wont be saved
+                        lamella.feature_position.x = lamella.lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET  
                     feature_stage = patterning._get_milling_stages(_feature_name, protocol, lamella.feature_position)
                     stages += feature_stage
 

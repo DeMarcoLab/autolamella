@@ -93,7 +93,7 @@ notch:
     vwidth: 2.0e-07
 options:
     supervise:
-        features: false
+        features: true
         lamella: true
         setup_lamella: true
         trench: true
