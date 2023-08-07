@@ -52,7 +52,7 @@ def mill_trench(
     settings.image.save_path = lamella.path
 
     # TODO: cross correlate the reference here
-    # fname = os.path.join(lamella.path, f"ref_{AutoLamellaWaffleStage.Setup.name}_ib.tif")
+    # fname = os.path.join(lamella.path, f"ref_{AutoLamellaWaffleStage.SetupTrench.name}_ib.tif")
     # img = FibsemImage.load(fname)
     
     log_status_message(lamella, "MILL_TRENCH")

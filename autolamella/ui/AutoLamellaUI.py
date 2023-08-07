@@ -522,7 +522,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info(f"Updating Lamella UI for {lamella.info}")
 
         # buttons
-        SETUP_STAGES =  [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.MillTrench]
+        SETUP_STAGES =  [AutoLamellaWaffleStage.SetupTrench]
         READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]
         if lamella.state.stage in SETUP_STAGES:
             self.pushButton_save_position.setText(f"Save Position")
@@ -544,21 +544,21 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self._WORKFLOW_RUNNING:
             self.milling_widget._PATTERN_IS_MOVEABLE = True
 
-        if lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
+        if lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench, AutoLamellaWaffleStage.ReadyLamella]:
             
             if self._PROTOCOL_LOADED:
 
                 _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, False
                 method = self.settings.protocol.get("method", "waffle")
                 
-                if method == "waffle" and lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyTrench]:
+                if method == "waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
                     _DISPLAY_TRENCH = True
 
                 if method == "waffle" and lamella.state.stage is AutoLamellaWaffleStage.ReadyLamella:
                     # show lamella and friends
                     _DISPLAY_LAMELLA = True
 
-                if method == "default" and lamella.state.stage in [AutoLamellaWaffleStage.Setup, AutoLamellaWaffleStage.ReadyLamella]:
+                if method == "default" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyLamella]:
                     # show lamella and friends
                     _DISPLAY_LAMELLA = True
 
@@ -613,7 +613,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
 
-        if lamella.state.stage != AutoLamellaWaffleStage.Setup:
+        if lamella.state.stage != AutoLamellaWaffleStage.SetupTrench:
             return
 
         logging.info(f"Updating Lamella Pattern for {lamella.info}")
@@ -772,20 +772,36 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # TOGGLE BETWEEN READY AND SETUP
 
         method = self.settings.protocol.get("method", "waffle")
+        SETUP_STATE = AutoLamellaWaffleStage.SetupTrench if method == "waffle" else AutoLamellaWaffleStage.SetupLamella
         READY_STATE = AutoLamellaWaffleStage.ReadyTrench if method == "waffle" else AutoLamellaWaffleStage.ReadyLamella
         
+        # if waffle, but at setuplamella: 
+        # SETUP_STATE = AutoLamellaWaffleStage.SetupLamella
+        # READY_STATE = AutoLamellaWaffleStage.ReadyLamella
+
         lamella: Lamella = self.experiment.positions[idx]
+        from autolamella import waffle as wfl
 
-        if self.experiment.positions[idx].state.stage is AutoLamellaWaffleStage.Setup:
-            
-            self.experiment.positions[idx].state = LamellaState(
-                microscope_state = deepcopy(
-                    self.microscope.get_current_microscope_state()
-                ),
-                stage = READY_STATE,
-                start_timestamp = datetime.timestamp(datetime.now()),
+        if lamella.state.stage not in [SETUP_STATE, READY_STATE]:
+            return
 
-            )
+        # end of stage update
+        self.experiment = wfl.end_of_stage_update(
+            microscope=self.microscope, 
+            experiment=self.experiment, 
+            lamella=lamella, 
+            parent_ui=self, 
+            _save_state=True
+        ) 
+        
+        if lamella.state.stage is SETUP_STATE:   
+
+            # start of stage update
+            self.experiment.positions[idx] = wfl.start_of_stage_update(
+                microscope=self.microscope, 
+                lamella=lamella, 
+                next_stage=READY_STATE, parent_ui=self, 
+                _restore_state=False) 
 
             # update the protocol / point
             self._update_milling_protocol(idx, method)
@@ -798,11 +814,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.image_widget.ib_image.save(fname)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
 
-            from autolamella import waffle as wfl
-            wfl.log_status_message(self.experiment.positions[idx], "STARTED")
+        elif (lamella.state.stage is READY_STATE):
 
-        elif (self.experiment.positions[idx].state.stage is READY_STATE):
-            self.experiment.positions[idx].state.stage = AutoLamellaWaffleStage.Setup
+            self.experiment.positions[idx] = wfl.start_of_stage_update(
+                self.microscope, 
+                lamella, 
+                SETUP_STATE, 
+                parent_ui=self, 
+                _restore_state=False) 
+
             self.milling_widget._PATTERN_IS_MOVEABLE = True
 
         self._update_lamella_combobox()
@@ -810,9 +830,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.experiment.save()
 
     def _update_milling_protocol(self, idx: int, method: str):
-
-        # TODO: add fiducial for lamella
-        # TODO: add feature for lamella
 
         stages = deepcopy(self.milling_widget.get_milling_stages())
         if method == "waffle":

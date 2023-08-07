@@ -23,7 +23,7 @@ class AutoLamellaStage(Enum):
     Finished = 6
 
 class AutoLamellaWaffleStage(Enum):
-    Setup = auto()
+    SetupTrench = auto()
     ReadyTrench = auto()
     MillTrench = auto()
     MillUndercut = auto()
@@ -40,7 +40,7 @@ class AutoLamellaWaffleStage(Enum):
 @dataclass
 class LamellaState:
     microscope_state: MicroscopeState = MicroscopeState()
-    stage: AutoLamellaWaffleStage = AutoLamellaWaffleStage.Setup
+    stage: AutoLamellaWaffleStage = AutoLamellaWaffleStage.SetupTrench
     start_timestamp: float = datetime.timestamp(datetime.now())
     end_timestamp: float = None
 
