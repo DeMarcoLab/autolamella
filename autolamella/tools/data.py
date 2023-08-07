@@ -108,6 +108,7 @@ def calculate_statistics_dataframe(path: Path):
                     step_d = {"lamella": current_lamella, "stage": current_stage, "step": current_step, "timestamp": tsd, "step_n": step_n}
                     step_n += 1
                     steps_data.append(deepcopy(step_d))
+                
                 if "beam_shift" in func:
                     beam_type, shiftx, shifty = msg.split("|")[-3:]
                     beam_type = beam_type.strip()
@@ -121,8 +122,6 @@ def calculate_statistics_dataframe(path: Path):
                             "step": current_step,
                         }
                         df_beam_shift.append(deepcopy(gamma_d))
-
-
 
                 if "confirm_button" in func:
 
@@ -150,7 +149,9 @@ def calculate_statistics_dataframe(path: Path):
                     }
                     det_data.append(deepcopy(detd))
 
-                
+
+                # TODO: add milling clicks, movement clicks, etc.
+
             except Exception as e:
                 pass
                 #print(e)
@@ -162,6 +163,8 @@ def calculate_statistics_dataframe(path: Path):
     df_steps = pd.DataFrame(steps_data)
     df_stage = pd.DataFrame(stage_position)
     df_det = pd.DataFrame(det_data)
+    df_beam_shift = pd.DataFrame.from_dict(df_beam_shift)
+
     
     df_steps["duration"] = df_steps["timestamp"].diff() # TODO: fix this duration
     df_steps["duration"] = df_steps["duration"].shift(-1)
@@ -170,7 +173,6 @@ def calculate_statistics_dataframe(path: Path):
     # add date and name to all dataframes
     df_experiment["name"] = experiment.name
     df_history["name"] = experiment.name
-    df_beam_shift = pd.DataFrame.from_dict(df_beam_shift)
     df_beam_shift["name"] = experiment.name
 
     filename = os.path.join(path, 'duration.csv')

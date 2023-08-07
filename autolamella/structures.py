@@ -11,7 +11,7 @@ import petname
 import yaml
 from fibsem.structures import (FibsemImage, FibsemRectangle, MicroscopeState,
                                Point)
-
+import uuid
 
 class AutoLamellaStage(Enum):
     Setup = 0
@@ -137,6 +137,7 @@ class Experiment:
     def __init__(self, path: Path, name: str = "AutoLamella") -> None:
 
         self.name: str = name
+        self._id = str(uuid.uuid4())
         self.path: Path = utils.make_logging_directory(path=path, name=name)
         self.log_path: Path = utils.configure_logging(
             path=self.path, log_filename="logfile"
@@ -149,6 +150,7 @@ class Experiment:
 
         state_dict = {
             "name": self.name,
+            "_id": self._id,
             "path": self.path,
             "log_path": self.log_path,
             "positions": [lamella.__to_dict__() for lamella in self.positions],
@@ -181,6 +183,7 @@ class Experiment:
                 "experiment_name": self.name,
                 "experiment_path": self.path,
                 "experiment_created_at": self._created_at,
+                "experiment_id": self._id,
                 "number": lamella._number,
                 "petname": lamella._petname,  # what?
                 "path": lamella.path,
@@ -189,7 +192,6 @@ class Experiment:
                 "lamella.z": lamella.state.microscope_state.absolute_position.z,
                 "lamella.r": lamella.state.microscope_state.absolute_position.r,
                 "lamella.t": lamella.state.microscope_state.absolute_position.t,
-                "lamella.history": lamella.history,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
             }
 
@@ -207,18 +209,19 @@ class Experiment:
         path = Path(fname).with_suffix(".yaml")
         if os.path.exists(path):
             with open(path, "r") as f:
-                sample_dict = yaml.safe_load(f)
+                ddict = yaml.safe_load(f)
         else:
             raise FileNotFoundError(f"No file with name {path} found.")
 
         # create sample
-        path = os.path.dirname(sample_dict["path"])
-        name = sample_dict["name"]
+        path = os.path.dirname(ddict["path"])
+        name = ddict["name"]
         experiment = Experiment(path=path, name=name)
-        experiment._created_at = sample_dict.get("created_at", None)
+        experiment._created_at = ddict.get("created_at", None)
+        experiment._id = ddict.get("_id", None)
 
         # load lamella from dict
-        for lamella_dict in sample_dict["positions"]:
+        for lamella_dict in ddict["positions"]:
             lamella = Lamella.__from_dict__(data=lamella_dict)
             experiment.positions.append(lamella)
 
