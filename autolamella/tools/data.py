@@ -1,16 +1,9 @@
 import os
 import sys
-# Get the path of the parent directory of the current file
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-# Add the parent directory to the Python module search path
-sys.path.append(parent_dir)
 from structures import Lamella, Experiment, LamellaState 
 from fibsem.structures import Point
 from copy import deepcopy
 import pandas as pd
-import tkinter
-from tkinter import filedialog
 import yaml
 import datetime
 from pathlib import Path
@@ -54,15 +47,18 @@ def calculate_statistics_dataframe(path: Path):
     fname = os.path.join(path, "logfile.log")
     df_beam_shift = []
     current_lamella = None 
-    current_stage = "Setup"
+    current_stage = "NULL"
     current_step = None
     step_n = 0 
     steps_data = []
 
     stage_position = []
+    det_data = []
+
 
     print("-" * 80)
-    with open(fname, encoding="cp1252") as f:
+    encoding = "None" if "nt" in os.name else None
+    with open(fname, encoding=encoding) as f:
         # Note: need to check the encoding as this is required for em dash (long dash) # TODO: change this delimiter so this isnt required.
         lines = f.read().splitlines()
         for i, line in enumerate(lines):
@@ -76,7 +72,6 @@ def calculate_statistics_dataframe(path: Path):
                 func = line.split("—")[-2].strip()
                 ts = line.split("—")[0].split(",")[0].strip()
                 tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
-
 
                 # MOVEMENT
                 if "move_stage_absolute" in func or "move_stage_relative" in func:
@@ -113,7 +108,6 @@ def calculate_statistics_dataframe(path: Path):
                     step_d = {"lamella": current_lamella, "stage": current_stage, "step": current_step, "timestamp": tsd, "step_n": step_n}
                     step_n += 1
                     steps_data.append(deepcopy(step_d))
-
                 if "beam_shift" in func:
                     beam_type, shiftx, shifty = msg.split("|")[-3:]
                     beam_type = beam_type.strip()
@@ -127,17 +121,47 @@ def calculate_statistics_dataframe(path: Path):
                             "step": current_step,
                         }
                         df_beam_shift.append(deepcopy(gamma_d))
+
+
+
+                if "confirm_button" in func:
+
+                    feat = msg.split("|")[0].strip()
+                    dpx = msg.split("|")[1].split("=")
+                    dpx_x = int(dpx[1].split(",")[0].strip())
+                    dpx_y = int(dpx[-1].split(")")[0].strip())
+                    
+                    dm =  msg.split("|")[2].split("=") 
+                    dm_x = float(dm[1].split(",")[0].strip())
+                    dm_y = float(dm[-1].split(")")[0].strip())
+
+                    _is_correct = msg.split("|")[3].strip()
+
+                    detd = {
+                        "lamella": current_lamella,
+                        "stage": current_stage,
+                        "step": current_step,
+                        "feature": feat,
+                        "dpx_x": dpx_x,
+                        "dpx_y": dpx_y,
+                        "dm_x": dm_x,
+                        "dm_y": dm_y,
+                        "is_correct": _is_correct,
+                    }
+                    det_data.append(deepcopy(detd))
+
+                
             except Exception as e:
                 pass
                 #print(e)
  
     # sample
-    experiment = load_experiment(path)
+    experiment = Experiment.load(os.path.join(path, "experiment.yaml"))
     df_experiment = experiment.__to_dataframe__()
     df_history = create_history_dataframe(experiment)
     df_steps = pd.DataFrame(steps_data)
     df_stage = pd.DataFrame(stage_position)
-
+    df_det = pd.DataFrame(det_data)
     
     df_steps["duration"] = df_steps["timestamp"].diff() # TODO: fix this duration
     df_steps["duration"] = df_steps["duration"].shift(-1)
@@ -156,12 +180,5 @@ def calculate_statistics_dataframe(path: Path):
     filename = os.path.join(path, 'experiment.csv')
     df_experiment.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
 
-    return df_experiment, df_history, df_beam_shift, df_steps, df_stage
+    return df_experiment, df_history, df_beam_shift, df_steps, df_stage, df_det
 
-def main():
-    tkinter.Tk().withdraw()
-    file_path = filedialog.askdirectory(title="Select experiment directory")
-    calculate_statistics_dataframe(file_path)
-
-if __name__ == "__main__":
-    main()
