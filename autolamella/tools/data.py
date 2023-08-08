@@ -51,8 +51,10 @@ def calculate_statistics_dataframe(path: Path):
     current_step = "SystemSetup"
     step_n = 0 
     steps_data = []
-
-    stage_position = []
+    
+    state_data = []
+    stage_data = []
+    move_data = []
     det_data = []
     click_data = []
 
@@ -75,26 +77,26 @@ def calculate_statistics_dataframe(path: Path):
                 tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
 
                 # MOVEMENT
-                if "move_stage_absolute" in func or "move_stage_relative" in func:
+                if "get_" in func:
+                    import json
+                    if "get_current_microscope_state" in func:
+                        state_dict = str(msg.split("|")[1].strip()).replace("'", '"').replace("None", '"None"')
+                        state_dict = json.loads(state_dict)
 
-                    TYPE = "absolute" if "move_stage_absolute" in func else "relative"
+                        state_data.append(deepcopy(state_dict))
 
-                    pos_msg = msg.split("(")[1].split(")")[0].split(",")
-                    name = pos_msg[0].split("=")[-1].strip()
-                    x = pos_msg[1].split("=")[-1].strip()
-                    y = pos_msg[2].split("=")[-1].strip()
-                    z = pos_msg[3].split("=")[-1].strip()
-                    r = pos_msg[4].split("=")[-1].strip()
-                    t = pos_msg[5].split("=")[-1].strip()
-                    vals = [x, y, z, r, t]
-                    vals = [float(v) if v != 'None' else 0 for v in vals ]
+                        # print("STATE: ", state_dict)
+                        
+                    if "get_stage_position" in func:
+                        stage_dict = str(msg.split("|")[1].strip()).replace("'", '"').replace("None", '"None"')
+                        stage_dict = json.loads(stage_dict)
+                        stage_dict["timestamp"] = tsd
+                        stage_dict["lamella"] = current_lamella
+                        stage_dict["stage"] = current_stage
+                        stage_dict["step"] = current_step
+                    
+                        stage_data.append(deepcopy(stage_dict))
 
-
-                    mdict = {"lamella": current_lamella, "stage": current_stage, "step": current_step, 
-                        "timestamp": tsd, "step_n": step_n, 
-                        "type": TYPE, "name": name, "x": vals[0], "y": vals[1], 
-                        "z": vals[2], "r": vals[3], "t": vals[4]}
-                    stage_position.append(deepcopy(mdict))
 
                 if "STATUS" in msg:
                     if "Widget" in msg:
@@ -124,7 +126,7 @@ def calculate_statistics_dataframe(path: Path):
                         }
                         df_beam_shift.append(deepcopy(gamma_d))
 
-                if "confirm_button" in func:
+                if "confirm_button" in func: # DETECTION
 
                     feat = msg.split("|")[0].strip()
                     dpx = msg.split("|")[1].split("=")
@@ -168,7 +170,7 @@ def calculate_statistics_dataframe(path: Path):
                         }
                         click_data.append(deepcopy(click_d))
 
-                if "_single_click" in func:
+                if "_single_click" in func: # MILLING
 
                     ctype = msg.split("|")[0].strip()
                     subtype = msg.split("|")[1].strip()
@@ -188,7 +190,7 @@ def calculate_statistics_dataframe(path: Path):
                     }
                     click_data.append(deepcopy(click_d))
 
-                if "_double_click" in func:
+                if "_double_click" in func: # MOVEMENT
 
                     ctype = "MOVE"
                     subtype = msg.split("|")[0].split(":")[-1].strip().upper()
@@ -211,15 +213,15 @@ def calculate_statistics_dataframe(path: Path):
 
 
             except Exception as e:
+                # print(e, " | ", line)
                 pass
-                #print(e)
  
     # sample
     experiment = Experiment.load(os.path.join(path, "experiment.yaml"))
     df_experiment = experiment.__to_dataframe__()
     df_history = create_history_dataframe(experiment)
     df_steps = pd.DataFrame(steps_data)
-    df_stage = pd.DataFrame(stage_position)
+    df_stage = pd.DataFrame(stage_data)
     df_det = pd.DataFrame(det_data)
     df_beam_shift = pd.DataFrame.from_dict(df_beam_shift)
     df_click = pd.DataFrame(click_data)

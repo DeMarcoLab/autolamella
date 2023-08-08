@@ -33,16 +33,15 @@ df_beam_shift,
     df_steps, df_stage, 
     df_det, df_click) = calculate_statistics_dataframe(EXPERIMENT_PATH)
 
+
+# experiment metrics
+cols = st.columns(4)
+
 # experiment metrics
 n_lamella = len(df_history["petname"].unique())
-
 n_trenches = len(df_history[df_history["stage"] == "MillTrench"]["petname"].unique())
 n_undercut = len(df_history[df_history["stage"] == "MillUndercut"]["petname"].unique())
 n_polish = len(df_history[df_history["stage"] == "MillPolishingCut"]["petname"].unique())
-
-
-
-cols = st.columns(4)
 cols[0].metric(label="Lamella", value=n_lamella)
 cols[1].metric(label="Trenches", value=n_trenches)
 cols[2].metric(label="Undercut", value=n_undercut)
@@ -130,6 +129,24 @@ fig_steps = px.bar(df_steps, x="lamella", y="duration", color="step", title="Ste
 st.plotly_chart(fig_steps, use_container_width=True)
 
 # timeline
+
+st.markdown("---")
+st.subheader("System Telemetry")
+
+# sort by timestamp
+df_stage.sort_values("timestamp", inplace=True)
+
+# convert timestamp to datetime, aus timezone
+df_stage.timestamp = pd.to_datetime(df_stage.timestamp, unit="s")
+df_stage.timestamp = df_stage.timestamp.dt.tz_localize("UTC").dt.tz_convert("Australia/Sydney")
+
+# plot as scatter with x = timestamp
+vals = ["x", "y", "z", "r", "t"]
+for val in ["x", "y", "z", "r", "t"]:
+    fig = px.scatter(df_stage, x="timestamp", y=val, hover_data=df_stage.columns, color="stage",
+                        title=f"Stage Position ({val})")
+    st.plotly_chart(fig, use_container_width=True)
+
 
 ## Automation
 
