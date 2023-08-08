@@ -79,9 +79,16 @@ cols[0].metric(label="Total Clicks", value=total_clicks)
 cols[1].metric(label="Avg Click Size (dx)", value=avg_dx)
 cols[2].metric(label="Avg Click Size (dy)", value=avg_dy)
 
-
 # ml accuracy
+# total correct, total incorrect, accuracy
+total_correct = len(df_det[df_det["is_correct"] == 'True'])
+total_incorrect = len(df_det[df_det["is_correct"] == 'False'])
+accuracy = total_correct / (total_correct + total_incorrect)
+accuracy = str(round(accuracy*100, 2)) + "%"
 
+cols[0].metric(label="ML Total Correct ", value=total_correct)
+cols[1].metric(label="ML Total Incorrect", value=total_incorrect)
+cols[2].metric(label="ML Accuracy", value=accuracy)
 
 
 st.markdown("---")
@@ -134,7 +141,7 @@ st.subheader("Automation Analytics")
 cols= st.columns(2)
 # user interaction (clicks)
 
-st.dataframe(df_click)
+# st.dataframe(df_click)
 # drop beam_type column
 df_click.drop(columns=["beam_type"], inplace=True)
 
@@ -157,6 +164,13 @@ cols[1].plotly_chart(fig, use_container_width=True)
 # accuracy
 df_group = df_det.groupby(["feature", "is_correct"]).count().reset_index() 
 df_group = df_group.pivot(index="feature", columns="is_correct", values="lamella")
+
+# if no false, add false column
+if "False" not in df_group.columns:
+    df_group["False"] = 0
+if "True" not in df_group.columns:
+    df_group["True"] = 0
+
 df_group["total"] = df_group["True"] + df_group["False"]
 df_group["percent_correct"] = df_group["True"] / df_group["total"]
 df_group["percent_correct"] = df_group["percent_correct"].round(2)

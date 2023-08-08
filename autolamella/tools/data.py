@@ -137,6 +137,7 @@ def calculate_statistics_dataframe(path: Path):
 
                     _is_correct = msg.split("|")[3].strip()
                     beam_type = msg.split("|")[4].split(".")[-1].strip().upper()
+                    fname = msg.split("|")[5].strip()
 
                     detd = {
                         "lamella": current_lamella,
@@ -149,6 +150,8 @@ def calculate_statistics_dataframe(path: Path):
                         "dm_y": dm_y,
                         "is_correct": _is_correct,
                         "timestamp": tsd,
+                        "beam_type": beam_type,
+                        "fname": fname,
                     }
                     det_data.append(deepcopy(detd))
                     

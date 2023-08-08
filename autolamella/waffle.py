@@ -634,7 +634,8 @@ def run_trench_milling(
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
             parent_ui.update_experiment_signal.emit(experiment)
-
+    
+    log_status_message(lamella, "NULL_END") # for logging purposes
 
     return experiment
 
@@ -673,6 +674,8 @@ def run_undercut_milling(
             )
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
             parent_ui.update_experiment_signal.emit(experiment)
+    
+    log_status_message(lamella, "NULL_END") # for logging purposes
 
     return experiment
 
@@ -697,6 +700,8 @@ def run_setup_lamella(
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
             parent_ui.update_experiment_signal.emit(experiment)
+    
+    log_status_message(lamella, "NULL_END") # for logging purposes
 
     return experiment
 
@@ -731,6 +736,8 @@ def run_lamella_milling(
             lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.Finished, parent_ui, _restore_state=False)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
             parent_ui.update_experiment_signal.emit(experiment)
+
+    log_status_message(lamella, "NULL_END") # for logging purposes
 
     return experiment
 
