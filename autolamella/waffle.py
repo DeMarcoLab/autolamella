@@ -152,6 +152,7 @@ def mill_undercut(
 
     N_UNDERCUTS = int(settings.protocol["autolamella_undercut"].get("tilt_angle_step", 2))
     UNDERCUT_ANGLE_DEG = settings.protocol["autolamella_undercut"].get("tilt_angle", -10)
+    _UNDERCUT_V_OFFSET = 1e-6
     undercut_stages = []
     for i in range(N_UNDERCUTS):
 
@@ -178,7 +179,7 @@ def mill_undercut(
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
         # move pattern
-        offset = settings.protocol["autolamella_undercut"].get("height", 10) / 2
+        offset = settings.protocol["autolamella_undercut"].get("height", 10) / 2 + _UNDERCUT_V_OFFSET
         point = deepcopy(det.features[0].feature_m)     
         point.y += offset if np.isclose(scan_rotation, 0) else -offset
 

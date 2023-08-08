@@ -70,8 +70,13 @@ st.plotly_chart(fig_timeline, use_container_width=True)
 
 
 # Duration
-fig_duration = px.bar(df_history, x="stage", y="duration", color="petname", barmode="group", hover_data=df_history.columns, title="Stage Duration")
-st.plotly_chart(fig_duration, use_container_width=True)
+cols = st.columns(2)
+fig_duration = px.bar(df_history, x="petname", y="duration", color="stage", barmode="group", hover_data=df_history.columns, title="Lamella Duration by Stage")
+cols[0].plotly_chart(fig_duration, use_container_width=True)
+
+# Duration
+fig_duration = px.bar(df_history, x="stage", y="duration", color="petname", barmode="group", hover_data=df_history.columns, title="Stage Duration by Lamella")
+cols[1].plotly_chart(fig_duration, use_container_width=True)
 
 # step breakdown
 # select a stage 
@@ -146,31 +151,36 @@ st.plotly_chart(fig_duration, use_container_width=True)
 
 
 # get all images of this stage
-IMAGE_PATHS = sorted(glob.glob(os.path.join(EXPERIMENT_PATH, f"**/*{stage}_final_high_res_ib.tif"), recursive=True))
+EB_IMAGE_PATHS = sorted(glob.glob(os.path.join(EXPERIMENT_PATH, f"**/*{stage}_final_high_res_eb.tif"), recursive=True))
+IB_IMAGE_PATHS = sorted(glob.glob(os.path.join(EXPERIMENT_PATH, f"**/*{stage}_final_high_res_ib.tif"), recursive=True))
 
-if IMAGE_PATHS:
+if IB_IMAGE_PATHS and EB_IMAGE_PATHS:
     # get petname (directory name) of each image
-    petnames = [os.path.basename(os.path.dirname(path)) for path in IMAGE_PATHS]
-    n_cols = max(int(len(IMAGE_PATHS)//2), 2)
-    cols = st.columns(n_cols)
+    petnames = [os.path.basename(os.path.dirname(path)) for path in IB_IMAGE_PATHS]
+    # n_cols = max(int(len(IMAGE_PATHS)//2), 2)
+    cols = st.columns(2)
 
-    for i, (petname, fname) in enumerate(zip(petnames, IMAGE_PATHS)):
-        image = FibsemImage.load(fname)
-        idx = i % n_cols
-        cols[idx].image(image.data, caption=f"{os.path.basename(os.path.dirname(fname))} - {os.path.basename(fname)}")
-
+    for i, (petname, fname_eb, fname_ib) in enumerate(zip(petnames, EB_IMAGE_PATHS, IB_IMAGE_PATHS)):
+        eb_image = FibsemImage.load(fname_eb)
+        ib_image = FibsemImage.load(fname_ib)
+        cols[0].image(eb_image.data, caption=f"{petname} - {os.path.basename(fname_eb)}")
+        cols[1].image(ib_image.data, caption=f"{petname} - {os.path.basename(fname_ib)}")
 
 exp = Experiment.load(os.path.join(EXPERIMENT_PATH, "experiment.yaml"))
 
 # overview image
 st.markdown("---")
 st.subheader("Overview Image")
+
+# TODO: CACHE THIS IMAGE
+SHOW_OVERVIEW = st.checkbox(label="Show Overview Image", value=False)
 OVERVIEW_IMAGE = glob.glob(os.path.join(EXPERIMENT_PATH, "*overview*.tif"))
-if OVERVIEW_IMAGE:
-    image_fname = st.selectbox(label="Overview Image", options=OVERVIEW_IMAGE)
+if OVERVIEW_IMAGE and SHOW_OVERVIEW:
+    cols = st.columns(2)
+    image_fname = cols[0].selectbox(label="Overview Image", options=OVERVIEW_IMAGE)
+    key2 = cols[0].selectbox(label="Stage Position", options=df_history["stage"].unique())
     image = FibsemImage.load(image_fname)
 
-    key2 = st.selectbox(label="Stage Position", options=df_history["stage"].unique())
 
     # loop through stages and create empty list
     # dictionary comprehension
@@ -185,22 +195,22 @@ if OVERVIEW_IMAGE:
                 positions[state.stage.name][-1].name = f"{lamella._petname}"
 
 
-    st.write(positions[key2])
+    cols[0].write(positions[key2])
 
     fig = _tile._plot_positions(image, positions[key2], show=True)
-    st.pyplot(fig)
-
+    cols[1].pyplot(fig)
 
 st.markdown("---")
 st.subheader("Lamella Overview")
-lamella = st.selectbox(label="Lamella", options=df_history["petname"].unique())
 
 cols = st.columns(2)
+lamella = cols[0].selectbox(label="Lamella", options=df_history["petname"].unique())
 
 IMAGE_PATHS = sorted(glob.glob(os.path.join(EXPERIMENT_PATH, f"{lamella}/**.tif"), recursive=True))
-IMAGE_FILENAME = cols[0].selectbox(label="Image", options=IMAGE_PATHS)
+IMAGE_FILENAMES = [os.path.basename(path) for path in IMAGE_PATHS]
+IMAGE_FILENAME = cols[0].selectbox(label="Image", options=IMAGE_FILENAMES)
 
-image = FibsemImage.load(IMAGE_FILENAME)
+image = FibsemImage.load(glob.glob(os.path.join(EXPERIMENT_PATH, f"{lamella}/**{IMAGE_FILENAME}"), recursive=True)[0])
 cols[1].image(image.data, caption=os.path.basename(IMAGE_FILENAME), use_column_width=True)
 
 st.subheader("Lamella History")
@@ -223,7 +233,11 @@ cols[1].plotly_chart(fig_steps, use_container_width=True)
 
 
 # loop through exp.position, return lamella that matches lamella
-
+st.subheader("Lamella Protocol")
 for lam in exp.positions:
     if lam._petname == lamella:
-        st.write(lam.protocol)
+        cols = st.columns(2)
+        k = cols[0].selectbox(label="Protocol Stage", options=lam.protocol.keys())
+        cols[1].write(lam.protocol[k])
+
+        # TODO: plot on image

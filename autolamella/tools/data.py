@@ -46,9 +46,9 @@ def calculate_statistics_dataframe(path: Path):
 
     fname = os.path.join(path, "logfile.log")
     df_beam_shift = []
-    current_lamella = None 
-    current_stage = "NULL"
-    current_step = None
+    current_lamella = "NULL" 
+    current_stage = "SystemSetup"
+    current_step = "SystemSetup"
     step_n = 0 
     steps_data = []
 
@@ -58,7 +58,7 @@ def calculate_statistics_dataframe(path: Path):
 
 
     print("-" * 80)
-    encoding = "None" if "nt" in os.name else None
+    encoding = "cp1252" if "nt" in os.name else None
     with open(fname, encoding=encoding) as f:
         # Note: need to check the encoding as this is required for em dash (long dash) # TODO: change this delimiter so this isnt required.
         lines = f.read().splitlines()
@@ -125,7 +125,6 @@ def calculate_statistics_dataframe(path: Path):
                         df_beam_shift.append(deepcopy(gamma_d))
 
                 if "confirm_button" in func:
-                    
 
                     feat = msg.split("|")[0].strip()
                     dpx = msg.split("|")[1].split("=")
@@ -137,6 +136,7 @@ def calculate_statistics_dataframe(path: Path):
                     dm_y = float(dm[-1].split(")")[0].strip())
 
                     _is_correct = msg.split("|")[3].strip()
+                    beam_type = msg.split("|")[4].split(".")[-1].strip().upper()
 
                     detd = {
                         "lamella": current_lamella,
@@ -161,6 +161,7 @@ def calculate_statistics_dataframe(path: Path):
                             "subtype": feat,
                             "dm_x": dm_x,
                             "dm_y": dm_y,
+                            "beam_type": beam_type,
                         }
                         click_data.append(deepcopy(click_d))
 
@@ -180,6 +181,7 @@ def calculate_statistics_dataframe(path: Path):
                         "subtype": subtype,
                         "dm_x": dm_x,
                         "dm_y": dm_y,
+                        "beam_type": "ION"
                     }
                     click_data.append(deepcopy(click_d))
 
