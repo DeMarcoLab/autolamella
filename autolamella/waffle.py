@@ -138,14 +138,8 @@ def mill_undercut(
     # align vertical
     microscope.eucentric_move(
         settings, 
-        dy=-det.features[0].feature_m.y,
-    )
-    # align horizontal
-    microscope.stable_move(
-        settings, 
         dx=det.features[0].feature_m.x,
-        dy=0,
-        beam_type=settings.image.beam_type
+        dy=-det.features[0].feature_m.y,
     )
 
     # lamella should now be centred in ion beam
