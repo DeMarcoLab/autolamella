@@ -48,6 +48,42 @@ cols[1].metric(label="Trenches", value=n_trenches)
 cols[2].metric(label="Undercut", value=n_undercut)
 cols[3].metric(label="Polish", value=n_polish)
 
+
+# average duration
+# group by petname
+df_group = df_history.groupby("petname").sum().reset_index()
+df_group["duration"] = df_group["duration"]
+df_group["avg_duration"] = df_group["duration"].mean() / 60
+df_group["avg_duration"] = df_group["avg_duration"].round(2).astype(str) + " min"
+avg_duration = df_group["avg_duration"].iloc[0]
+
+
+
+# total duration
+total_duration = df_history["duration"].sum() / 60
+total_duration = str(total_duration.round(2)) + " min"
+longest_stage = df_history.groupby("stage").sum().sort_values("duration", ascending=False).iloc[0]
+
+# duration metrics
+cols[0].metric(label="Avg Duration (Per Lamella)", value=avg_duration)
+cols[1].metric(label="Total Duration (All Lamella)", value=total_duration)
+cols[2].metric(label="Longest Stage", value=f"{longest_stage.name} : {round(longest_stage.duration/60, 0)} min")
+# automation metrics
+
+# total clicks, avg click size
+total_clicks = len(df_click)
+avg_dx = str(round(df_click["dm_x"].mean()*1e6, 2)) + " um"
+avg_dy = str(round(df_click["dm_y"].mean()*1e6, 2)) + " um"
+
+cols[0].metric(label="Total Clicks", value=total_clicks)
+cols[1].metric(label="Avg Click Size (dx)", value=avg_dx)
+cols[2].metric(label="Avg Click Size (dy)", value=avg_dy)
+
+
+# ml accuracy
+
+
+
 st.markdown("---")
 
 st.subheader("Experiment Analytics")
@@ -241,3 +277,11 @@ for lam in exp.positions:
         cols[1].write(lam.protocol[k])
 
         # TODO: plot on image
+
+# full protocol
+st.subheader("Full Protocol")
+from fibsem import utils
+
+protocol = utils.load_protocol(os.path.join(EXPERIMENT_PATH, "protocol.yaml"))
+
+st.write(protocol)

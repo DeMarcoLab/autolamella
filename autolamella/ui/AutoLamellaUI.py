@@ -6,12 +6,10 @@ from pathlib import Path
 
 import napari
 import yaml
-from fibsem import acquire, gis, milling, utils
+from fibsem import utils
 from fibsem import patterning
-from fibsem.microscope import FibsemMicroscope, ThermoMicroscope, DemoMicroscope,TescanMicroscope
-from fibsem.patterning import FibsemMillingStage
+from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
-    ImageSettings,
     MicroscopeSettings,
     FibsemStagePosition, Point
 )
@@ -21,10 +19,7 @@ from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
 from fibsem.ui.FibsemCryoSputterWidget import FibsemCryoSputterWidget
-from fibsem.ui.utils import (
-    _get_save_file_ui,
-    _get_file_ui,
-)
+from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui import utils as fui
 from qtpy import QtWidgets
 
@@ -40,7 +35,6 @@ from autolamella.ui.qt import AutoLamellaUI
 from PyQt5.QtCore import pyqtSignal
 
 from napari.qt.threading import thread_worker
-from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from autolamella.ui import _stylesheets
 from collections import Counter
 
@@ -50,9 +44,6 @@ DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBA
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
 _AUTO_SYNC_MINIMAP = False
-
-def log_status_message(lamella: Lamella, step: str):
-    logging.debug(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | {step}")
 
 class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     ui_signal = pyqtSignal(dict)
@@ -132,7 +123,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_undercut.setVisible(False)
         self.pushButton_run_setup_autolamella.setVisible(False)
 
-        self.export_protocol.clicked.connect(self.export_protocol_ui)
         self.pushButton_update_protocol.clicked.connect(self.export_protocol_ui)
   
         # system widget
@@ -144,6 +134,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionNew_Experiment.triggered.connect(self.setup_experiment)
         self.actionLoad_Experiment.triggered.connect(self.setup_experiment)
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
+        self.actionSave_Protocol.triggered.connect(self.export_protocol_ui)
         self.actionCryo_Sputter.triggered.connect(self._cryo_sputter)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
@@ -211,7 +202,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if self._PROTOCOL_LOADED is False:
             return
-
         self.settings.protocol["name"] = self.lineEdit_name.text()
         self.settings.protocol["lamella"]["beam_shift_attempts"] = self.beamshift_attempts.value()
         self.settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText()
@@ -235,8 +225,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["ml"]["checkpoint"] = self.lineEdit_ml_checkpoint.text()
         self.settings.protocol["ml"]["encoder"] = self.lineEdit_ml_encoder.text()
 
-        if self.sender() == self.export_protocol:
-            path = _get_save_file_ui(msg='Save protocol',
+        if self.sender() == self.actionSave_Protocol:
+            path = fui._get_save_file_ui(msg='Save protocol',
                 path = cfg.PROTOCOL_PATH,
                 _filter= "*yaml",
                 parent=self)
@@ -245,7 +235,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             logging.info("Protocol saved to file")
         elif self.sender() == self.pushButton_update_protocol:
             logging.info("Protocol updated")
-            
+
+        # auto save copy to experiment folder        
+        if self.experiment:
+            utils.save_yaml(os.path.join(self.experiment.path, "protocol.yaml"), self.settings.protocol) # Q: do we really wanna overwrite this file?
+
+        napari.utils.notifications.show_info(f"Protocol updated.")
         self.update_ui()
 
 
@@ -387,7 +382,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def _load_positions(self):
         
         
-        path = _get_file_ui( msg="Select a position file to load", 
+        path = fui._get_file_ui( msg="Select a position file to load", 
             path=self.experiment.path, 
             _filter= "*yaml", 
             parent=self)
@@ -418,9 +413,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         
         # experiment loaded
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
+        self.actionSave_Protocol.setVisible(_protocol_loaded)
         self.actionCryo_Sputter.setVisible(_protocol_loaded)
-
-        self.actionLoad_Positions.setVisible(_experiment_loaded and _microscope_connected)
+        self.actionOpen_Minimap.setVisible(_protocol_loaded)
+        self.actionLoad_Positions.setVisible(_protocol_loaded)
 
         # labels
         if _experiment_loaded:
@@ -428,11 +424,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
-                if lamella._is_failure:
-                    msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \t\t FAILED \n"
-                else:
-                    msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \n"
-            self.label_info.setText(msg)
+                fmsg = '\t\t FAILED' if lamella._is_failure else ''
+                msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} {fmsg} \n"            self.label_info.setText(msg)
 
             self.comboBox_current_lamella.setVisible(_lamella_selected)
 
@@ -662,6 +655,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         napari.utils.notifications.show_info(
             f"Loaded Protocol from {os.path.basename(PATH)}"
         )
+
+        # save a copy of the protocol to the experiment.path
+        if self.experiment:
+            utils.save_yaml(os.path.join(self.experiment.path, "protocol.yaml"), self.settings.protocol)
+
         self.update_ui()
 
     def _cryo_sputter(self):
@@ -670,7 +668,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         cryo_sputter_widget.exec_()
 
     def save_protocol(self):
-        fname = _get_save_file_ui(msg="Select protocol file", path=cfg.LOG_PATH)
+        fname = fui._get_save_file_ui(msg="Select protocol file", path=cfg.LOG_PATH)
         if fname == "":
             return
 
@@ -743,8 +741,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _number=len(self.experiment.positions) + 1,
             state=LamellaState(
                 stage=stage,
-                microscope_state=self.microscope.get_current_microscope_state()
+                microscope_state=self.microscope.get_current_microscope_state(),
+                start_timestamp = datetime.timestamp(datetime.now())
         ))
+        from autolamella import waffle as wfl
+        wfl.log_status_message(lamella, "STARTED")
         
         if pos is not None:
             lamella.state.microscope_state.absolute_position = deepcopy(pos)
@@ -921,7 +922,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.worker.finished.connect(self._workflow_finished)
         self.worker.start()
 
-    def _run_lamella_workflow(self):
+    # TODO: consolidate all these diff workflow functions
+    def _run_lamella_workflow(self): 
         try:
             self.milling_widget.milling_position_changed.disconnect()
         except:
@@ -938,6 +940,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info(f'Workflow finished.')
         self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
+        self.tabWidget.setCurrentIndex(0)
 
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
