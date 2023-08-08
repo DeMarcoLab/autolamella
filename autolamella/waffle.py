@@ -151,7 +151,7 @@ def mill_undercut(
     _set_images_ui(parent_ui, eb_image, ib_image)
 
     N_UNDERCUTS = int(settings.protocol["autolamella_undercut"].get("tilt_angle_step", 2))
-    UNDERCUT_ANGLE_DEG = settings.protocol["autolamella_undercut"].get("tilt_angle", -10)
+    UNDERCUT_ANGLE_DEG = settings.protocol["autolamella_undercut"].get("tilt_angle", -5)
     _UNDERCUT_V_OFFSET = 1e-6
     undercut_stages = []
     for i in range(N_UNDERCUTS):

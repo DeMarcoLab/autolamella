@@ -2,7 +2,7 @@ autolamella_undercut:
     application_file: autolamella
     cleaning_cross_section: false
     depth: 1.0e-06
-    height: 8.0e-06
+    height: 12.0e-06
     hfw: 8.0e-05
     milling_current: 7.6e-09
     preset: 30 keV; 2.5 nA
