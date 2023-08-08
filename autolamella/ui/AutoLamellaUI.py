@@ -425,7 +425,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
                 fmsg = '\t\t FAILED' if lamella._is_failure else ''
-                msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} {fmsg} \n"            self.label_info.setText(msg)
+                msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} {fmsg} \n"            
+            self.label_info.setText(msg)
 
             self.comboBox_current_lamella.setVisible(_lamella_selected)
 
