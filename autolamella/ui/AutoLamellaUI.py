@@ -888,8 +888,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.det_widget.confirm_button_clicked()
 
     def _run_trench_workflow(self):
-        self.milling_widget.milling_position_changed.disconnect()
-
+        try:
+            self.milling_widget.milling_position_changed.disconnect()
+        except:
+            pass
+        
         self.worker = self._threaded_worker(
             microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="trench",
         )
@@ -897,8 +900,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.worker.start()
 
     def _run_undercut_workflow(self):
-        self.milling_widget.milling_position_changed.disconnect()
-
+        try:
+            self.milling_widget.milling_position_changed.disconnect()
+        except:
+            pass
         self.worker = self._threaded_worker(
             microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="undercut",
         )
@@ -906,8 +911,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.worker.start()
     
     def _run_setup_lamella_workflow(self):
-        self.milling_widget.milling_position_changed.disconnect()
-
+        try:
+            self.milling_widget.milling_position_changed.disconnect()
+        except:
+            pass
         self.worker = self._threaded_worker(
             microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="setup-lamella",
         )
@@ -915,7 +922,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.worker.start()
 
     def _run_lamella_workflow(self):
-        self.milling_widget.milling_position_changed.disconnect()
+        try:
+            self.milling_widget.milling_position_changed.disconnect()
+        except:
+            pass 
 
         self.worker = self._threaded_worker(
             microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="lamella",
@@ -977,7 +987,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         
         self._WORKFLOW_RUNNING = True
         self.milling_widget._PATTERN_IS_MOVEABLE = True
+        self.milling_widget._remove_all_stages()
         self.WAITING_FOR_USER_INTERACTION = False
+
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
 
