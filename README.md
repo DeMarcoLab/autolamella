@@ -1,4 +1,6 @@
-## Overview
+[![image](http://img.shields.io/pypi/v/autolamella.svg)](https://pypi.python.org/pypi/autolamella/)
+
+# Overview
 
 AutoLamella is a python package for automated cryo-lamella preparation with focused ion beam milling. It is based on [openFIBSEM](https://github.com/DeMarcoLab/fibsem), and currently supports the [TESCAN Automation SDK](https://www.tescan.com/en/products/automation-sdk/) and [ThermoFisher AutoScript](https://www.tescan.com/en/products/autoscript/). Support for other FIBSEM systems is planned.
 
