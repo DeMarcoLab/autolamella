@@ -50,7 +50,12 @@ cols[3].metric(label="Polish", value=n_polish)
 
 # average duration
 # group by petname
-df_group = df_history.groupby("petname").sum().reset_index()
+df_hist2 = deepcopy(df_history)
+
+# drop if stage == "ReadyTrench"
+df_hist2 = df_hist2[df_hist2["stage"] != "ReadyTrench"]
+
+df_group = df_hist2.groupby("petname").sum().reset_index()
 df_group["duration"] = df_group["duration"]
 df_group["avg_duration"] = df_group["duration"].mean() / 60
 df_group["avg_duration"] = df_group["avg_duration"].round(2).astype(str) + " min"
@@ -59,9 +64,9 @@ avg_duration = df_group["avg_duration"].iloc[0]
 
 
 # total duration
-total_duration = df_history["duration"].sum() / 60
+total_duration = df_hist2["duration"].sum() / 60
 total_duration = str(total_duration.round(2)) + " min"
-longest_stage = df_history.groupby("stage").sum().sort_values("duration", ascending=False).iloc[0]
+longest_stage = df_hist2.groupby("stage").sum().sort_values("duration", ascending=False).iloc[0]
 
 # duration metrics
 cols[0].metric(label="Avg Duration (Per Lamella)", value=avg_duration)
@@ -80,14 +85,16 @@ cols[2].metric(label="Avg Click Size (dy)", value=avg_dy)
 
 # ml accuracy
 # total correct, total incorrect, accuracy
-total_correct = len(df_det[df_det["is_correct"] == 'True'])
-total_incorrect = len(df_det[df_det["is_correct"] == 'False'])
-accuracy = total_correct / (total_correct + total_incorrect)
-accuracy = str(round(accuracy*100, 2)) + "%"
 
-cols[0].metric(label="ML Total Correct ", value=total_correct)
-cols[1].metric(label="ML Total Incorrect", value=total_incorrect)
-cols[2].metric(label="ML Accuracy", value=accuracy)
+if len(df_det) > 0:
+    total_correct = len(df_det[df_det["is_correct"] == 'True'])
+    total_incorrect = len(df_det[df_det["is_correct"] == 'False'])
+    accuracy = total_correct / (total_correct + total_incorrect)
+    accuracy = str(round(accuracy*100, 2)) + "%"
+
+    cols[0].metric(label="ML Total Correct ", value=total_correct)
+    cols[1].metric(label="ML Total Incorrect", value=total_incorrect)
+    cols[2].metric(label="ML Accuracy", value=accuracy)
 
 
 st.markdown("---")
@@ -179,28 +186,29 @@ cols[1].plotly_chart(fig, use_container_width=True)
 ### ML
 
 # accuracy
-df_group = df_det.groupby(["feature", "is_correct"]).count().reset_index() 
-df_group = df_group.pivot(index="feature", columns="is_correct", values="lamella")
+if len(df_det) > 0:
+    df_group = df_det.groupby(["feature", "is_correct"]).count().reset_index() 
+    df_group = df_group.pivot(index="feature", columns="is_correct", values="lamella")
 
-# if no false, add false column
-if "False" not in df_group.columns:
-    df_group["False"] = 0
-if "True" not in df_group.columns:
-    df_group["True"] = 0
+    # if no false, add false column
+    if "False" not in df_group.columns:
+        df_group["False"] = 0
+    if "True" not in df_group.columns:
+        df_group["True"] = 0
 
-df_group["total"] = df_group["True"] + df_group["False"]
-df_group["percent_correct"] = df_group["True"] / df_group["total"]
-df_group["percent_correct"] = df_group["percent_correct"].round(2)
-df_group = df_group.sort_values(by="percent_correct", ascending=False)
-df_group.reset_index(inplace=True)
+    df_group["total"] = df_group["True"] + df_group["False"]
+    df_group["percent_correct"] = df_group["True"] / df_group["total"]
+    df_group["percent_correct"] = df_group["percent_correct"].round(2)
+    df_group = df_group.sort_values(by="percent_correct", ascending=False)
+    df_group.reset_index(inplace=True)
 
-# plot
-fig_acc = px.bar(df_group, x="feature", y="percent_correct", color="feature", title="ML Accuracy", hover_data=df_group.columns)
-cols[0].plotly_chart(fig_acc, use_container_width=True)
+    # plot
+    fig_acc = px.bar(df_group, x="feature", y="percent_correct", color="feature", title="ML Accuracy", hover_data=df_group.columns)
+    cols[0].plotly_chart(fig_acc, use_container_width=True)
 
-# precision
-fig_det = px.scatter(df_det, x="dpx_x", y="dpx_y", color="stage", symbol="feature",  hover_data=df_det.columns, title="ML Error Size")
-cols[1].plotly_chart(fig_det, use_container_width=True)
+    # precision
+    fig_det = px.scatter(df_det, x="dpx_x", y="dpx_y", color="stage", symbol="feature",  hover_data=df_det.columns, title="ML Error Size")
+    cols[1].plotly_chart(fig_det, use_container_width=True)
 
 
 

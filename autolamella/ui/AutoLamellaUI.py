@@ -834,6 +834,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.image_widget.ib_image.save(fname)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
 
+            self.experiment = wfl.end_of_stage_update(
+                microscope=self.microscope, 
+                experiment=self.experiment, 
+                lamella=lamella, 
+                parent_ui=self, 
+                _save_state=True
+            ) 
+
         elif (lamella.state.stage is READY_STATE):
 
             self.experiment.positions[idx] = wfl.start_of_stage_update(

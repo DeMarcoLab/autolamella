@@ -197,6 +197,20 @@ def mill_undercut(
     lamella.protocol["undercut"] = deepcopy(patterning._get_protocol_from_stages(undercut_stages))
    
 
+    settings.image.beam_type = BeamType.ION
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+
+    features = [LamellaCentre()] 
+    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    
+    # align vertical
+    microscope.eucentric_move(
+        settings, 
+        dx=det.features[0].feature_m.x,
+        dy=-det.features[0].feature_m.y,
+    )
+
+
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
     reference_images = acquire.take_set_of_reference_images(
@@ -619,8 +633,8 @@ def run_trench_milling(
         if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench and not lamella._is_failure:
             
             # finish readying the lamella
-            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
-            parent_ui.update_experiment_signal.emit(experiment)
+            # experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
+            # parent_ui.update_experiment_signal.emit(experiment)
             
             lamella = start_of_stage_update(
                 microscope,
