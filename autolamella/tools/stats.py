@@ -13,6 +13,11 @@ from fibsem.imaging import _tile
 
 import autolamella.config as cfg
 
+import plotly.io as pio
+
+
+pio.templates.default = "plotly_white"
+
 st.set_page_config(layout="wide")
 st.title("AutoLamella Analytics")
 
@@ -26,7 +31,7 @@ LOG_PATH = st.sidebar.text_input("Log Path", cfg.LOG_PATH)
 paths = glob.glob(os.path.join(LOG_PATH, "*/"))
 EXPERIMENT_NAME = st.sidebar.selectbox(label="Experiment ", options=[os.path.basename(os.path.dirname(path)) for path in paths])
 
-EXPERIMENT_PATH = os.path.join(cfg.LOG_PATH, EXPERIMENT_NAME)
+EXPERIMENT_PATH = os.path.join(LOG_PATH, EXPERIMENT_NAME)
 
 (df_experiment, df_history, 
 df_beam_shift, 

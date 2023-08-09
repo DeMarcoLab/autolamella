@@ -60,7 +60,7 @@ def calculate_statistics_dataframe(path: Path):
 
 
     print("-" * 80)
-    encoding = "cp1252" if "nt" in os.name else None
+    encoding = "cp1252" if "nt" in os.name else "cp1252" # TODO: this depends on the OS it was logged on, usually windows, need to make this more robust.
     with open(fname, encoding=encoding) as f:
         # Note: need to check the encoding as this is required for em dash (long dash) # TODO: change this delimiter so this isnt required.
         lines = f.read().splitlines()
@@ -247,12 +247,22 @@ def calculate_statistics_dataframe(path: Path):
     df_det["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
     df_click["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
 
-    filename = os.path.join(path, 'duration.csv')
-    df_history.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
+    # write dataframes to csv, overwrite
+    filename = os.path.join(path, 'history.csv')
+    df_history.to_csv(filename, mode='w', header=True, index=False)
     filename = os.path.join(path, 'beam_shift.csv')
-    df_beam_shift.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
+    df_beam_shift.to_csv(filename, mode='w', header=True, index=False)
     filename = os.path.join(path, 'experiment.csv')
-    df_experiment.to_csv(filename, mode='a', header=not os.path.exists(filename), index=False)
+    df_experiment.to_csv(filename, mode='w', header=True, index=False)
+    filename = os.path.join(path, 'steps.csv')
+    df_steps.to_csv(filename, mode='w', header=True, index=False)
+    filename = os.path.join(path, 'stage.csv')
+    df_stage.to_csv(filename, mode='w', header=True, index=False)
+    filename = os.path.join(path, 'det.csv')
+    df_det.to_csv(filename, mode='w', header=True, index=False)
+    filename = os.path.join(path, 'click.csv')
+    df_click.to_csv(filename, mode='w', header=True, index=False)
+
 
     return df_experiment, df_history, df_beam_shift, df_steps, df_stage, df_det, df_click
 
