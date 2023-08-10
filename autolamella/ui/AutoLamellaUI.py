@@ -528,30 +528,33 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info(f"Updating Lamella UI for {lamella.info}")
 
         # buttons
-        SETUP_STAGES =  [AutoLamellaWaffleStage.SetupTrench]
-        READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench]
-        if lamella.state.stage in SETUP_STAGES:
-            self.pushButton_save_position.setText(f"Save Position")
-            self.pushButton_save_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
-            self.pushButton_save_position.setEnabled(True)
-            self.milling_widget._PATTERN_IS_MOVEABLE = True
-        elif lamella.state.stage in READY_STAGES:
-            self.pushButton_save_position.setText(f"Position Ready")
-            self.pushButton_save_position.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-            self.pushButton_save_position.setEnabled(True)
-            self.milling_widget._PATTERN_IS_MOVEABLE = False
-        else:
-            self.pushButton_save_position.setText(f"")
-            self.pushButton_save_position.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_save_position.setEnabled(False)
-            self.milling_widget._PATTERN_IS_MOVEABLE = True
+        if self._PROTOCOL_LOADED:
+
+            method = self.settings.protocol.get("method", "waffle")
+            SETUP_STAGES =  [AutoLamellaWaffleStage.SetupTrench] if method == "waffle" else [AutoLamellaWaffleStage.PreSetupLamella]
+            READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench] if method == "waffle" else [AutoLamellaWaffleStage.SetupLamella]
+            if lamella.state.stage in SETUP_STAGES:
+                self.pushButton_save_position.setText(f"Save Position")
+                self.pushButton_save_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+                self.pushButton_save_position.setEnabled(True)
+                self.milling_widget._PATTERN_IS_MOVEABLE = True
+            elif lamella.state.stage in READY_STAGES:
+                self.pushButton_save_position.setText(f"Position Ready")
+                self.pushButton_save_position.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+                self.pushButton_save_position.setEnabled(True)
+                self.milling_widget._PATTERN_IS_MOVEABLE = False
+            else:
+                self.pushButton_save_position.setText(f"")
+                self.pushButton_save_position.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_save_position.setEnabled(False)
+                self.milling_widget._PATTERN_IS_MOVEABLE = True
 
         # update the milling widget
         if self._WORKFLOW_RUNNING:
             self.milling_widget._PATTERN_IS_MOVEABLE = True
 
         if lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench, 
-            AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.ReadyLamella]:
+            AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.ReadyLamella, AutoLamellaWaffleStage.PreSetupLamella]:
             
             if self._PROTOCOL_LOADED:
 
@@ -562,7 +565,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     _DISPLAY_TRENCH = True
 
                 # show lamella and friends
-                if lamella.state.stage in [AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.ReadyLamella]:
+                if lamella.state.stage in [AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.ReadyLamella, AutoLamellaWaffleStage.PreSetupLamella]:
                     _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, True
 
 
@@ -620,7 +623,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
 
-        if lamella.state.stage not in  [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.SetupLamella]:
+        if lamella.state.stage not in  [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.PreSetupLamella]:
             return
 
         logging.info(f"Updating Lamella Pattern for {lamella.info}")
@@ -735,7 +738,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def add_lamella_ui(self, pos:FibsemStagePosition=None):
 
         method = self.settings.protocol.get("method", "waffle")
-        stage = AutoLamellaWaffleStage.SetupTrench if method == "waffle" else AutoLamellaWaffleStage.SetupLamella
+        stage = AutoLamellaWaffleStage.SetupTrench if method == "waffle" else AutoLamellaWaffleStage.PreSetupLamella
 
         lamella = Lamella(
             path=self.experiment.path,
@@ -792,8 +795,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # TOGGLE BETWEEN READY AND SETUP
 
         method = self.settings.protocol.get("method", "waffle")
-        SETUP_STATE = AutoLamellaWaffleStage.SetupTrench if method == "waffle" else AutoLamellaWaffleStage.SetupLamella
-        READY_STATE = AutoLamellaWaffleStage.ReadyTrench if method == "waffle" else AutoLamellaWaffleStage.ReadyLamella
+        SETUP_STATE = AutoLamellaWaffleStage.SetupTrench if method == "waffle" else AutoLamellaWaffleStage.PreSetupLamella
+        READY_STATE = AutoLamellaWaffleStage.ReadyTrench if method == "waffle" else AutoLamellaWaffleStage.SetupLamella
         
         # if waffle, but at setuplamella: 
         # SETUP_STATE = AutoLamellaWaffleStage.SetupLamella
@@ -864,7 +867,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.experiment.positions[idx].protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
             self.experiment.positions[idx].protocol["trench"]["point"] = stages[0].pattern.point.__to_dict__()
         
-        if stage == AutoLamellaWaffleStage.SetupLamella:
+        if stage in [AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.PreSetupLamella]:
             n_lamella = len(self.settings.protocol["lamella"]["stages"])
 
             # lamella

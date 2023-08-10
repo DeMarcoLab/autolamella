@@ -96,7 +96,7 @@ lamella:
         depth: 4.0e-07
         dwell_time: 1.0e-06
         hfw: 7.999999999999999e-05
-        lamella_height: 4.0e-07
+        lamella_height: 5.0e-07
         lamella_width: 6.0e-06
         milling_current: 6.0e-11
         offset: 0.0

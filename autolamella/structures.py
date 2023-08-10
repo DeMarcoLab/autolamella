@@ -34,6 +34,7 @@ class AutoLamellaWaffleStage(Enum):
     MillRegularCut = auto()
     MillPolishingCut = auto()
     Finished = auto()
+    PreSetupLamella = auto()
 
 
 
