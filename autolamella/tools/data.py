@@ -42,7 +42,7 @@ def create_history_dataframe(experiment: Experiment) -> pd.DataFrame:
 
     return df_stage_history
 
-def calculate_statistics_dataframe(path: Path):
+def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: str = "cp1252"):
 
     fname = os.path.join(path, "logfile.log")
     df_beam_shift = []
@@ -60,7 +60,7 @@ def calculate_statistics_dataframe(path: Path):
 
 
     print("-" * 80)
-    encoding = "cp1252" if "nt" in os.name else "cp1252" # TODO: this depends on the OS it was logged on, usually windows, need to make this more robust.
+    # encoding = "cp1252" if "nt" in os.name else "cp1252" # TODO: this depends on the OS it was logged on, usually windows, need to make this more robust.
     with open(fname, encoding=encoding) as f:
         # Note: need to check the encoding as this is required for em dash (long dash) # TODO: change this delimiter so this isnt required.
         lines = f.read().splitlines()
@@ -75,7 +75,7 @@ def calculate_statistics_dataframe(path: Path):
                 func = line.split("—")[-2].strip()
                 ts = line.split("—")[0].split(",")[0].strip()
                 tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
-
+                
                 # MOVEMENT
                 if "get_" in func:
                     import json
@@ -101,6 +101,7 @@ def calculate_statistics_dataframe(path: Path):
                 if "STATUS" in msg:
                     if "Widget" in msg:
                         continue
+                    # print(msg)
                     current_lamella = msg.split("|")[1].strip()
                     current_stage = msg.split("|")[2].strip().split(".")[-1].strip()
                     current_step = msg.split("|")[3].strip()
@@ -111,6 +112,7 @@ def calculate_statistics_dataframe(path: Path):
                     step_d = {"lamella": current_lamella, "stage": current_stage, "step": current_step, "timestamp": tsd, "step_n": step_n}
                     step_n += 1
                     steps_data.append(deepcopy(step_d))
+                    # print(step_d)
                 
                 if "beam_shift" in func:
                     beam_type, shiftx, shifty = msg.split("|")[-3:]
@@ -217,6 +219,9 @@ def calculate_statistics_dataframe(path: Path):
                 pass
  
     # sample
+    if program == "autoliftout":
+        from liftout.structures import Experiment
+    
     experiment = Experiment.load(os.path.join(path, "experiment.yaml"))
     df_experiment = experiment.__to_dataframe__()
     df_history = create_history_dataframe(experiment)
