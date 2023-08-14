@@ -107,7 +107,7 @@ def mill_undercut(
     # rotate flat to eb
     log_status_message(lamella, "MOVE_TO_UNDERCUT")
     _update_status_ui(parent_ui, f"{lamella.info} Moving to Undercut Position...")
-    microscope.move_flat_to_beam(settings, BeamType.ELECTRON)
+    microscope.move_flat_to_beam(settings, BeamType.ELECTRON) # TODO: TEST UNSAFE MOVE
 
     # detect
     log_status_message(lamella, f"ALIGN_TRENCH")
