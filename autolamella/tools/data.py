@@ -221,7 +221,9 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
     # sample
     if program == "autoliftout":
         from liftout.structures import Experiment
-    
+    if program == "autolamella":
+        from autolamella.structures import Experiment
+        
     experiment = Experiment.load(os.path.join(path, "experiment.yaml"))
     df_experiment = experiment.__to_dataframe__()
     df_history = create_history_dataframe(experiment)

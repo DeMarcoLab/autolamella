@@ -30,13 +30,17 @@ LOG_PATH = st.sidebar.text_input("Log Path", cfg.LOG_PATH)
 # FILTER_STR = path_cols[1].text_input("Filter", "*/")
 paths = glob.glob(os.path.join(LOG_PATH, "*/"))
 EXPERIMENT_NAME = st.sidebar.selectbox(label="Experiment ", options=[os.path.basename(os.path.dirname(path)) for path in paths])
-
 EXPERIMENT_PATH = os.path.join(LOG_PATH, EXPERIMENT_NAME)
+
+program = st.sidebar.selectbox(label="Program", options=["autolamella", "autoliftout"])
+encoding = st.sidebar.text_input("Encoding", "cp1252")
+
+encoding = None if encoding == "None" else encoding
 
 (df_experiment, df_history, 
 df_beam_shift, 
     df_steps, df_stage, 
-    df_det, df_click) = calculate_statistics_dataframe(EXPERIMENT_PATH)
+    df_det, df_click) = calculate_statistics_dataframe(EXPERIMENT_PATH, program=program, encoding=encoding)
 
 
 # experiment metrics
@@ -142,22 +146,23 @@ st.plotly_chart(fig_steps, use_container_width=True)
 
 # timeline
 
-st.markdown("---")
-st.subheader("System Telemetry")
 
-# sort by timestamp
-df_stage.sort_values("timestamp", inplace=True)
+if len(df_stage) > 0:
+    st.markdown("---")
+    st.subheader("System Telemetry")
+    # sort by timestamp
+    df_stage.sort_values("timestamp", inplace=True)
 
-# convert timestamp to datetime, aus timezone
-df_stage.timestamp = pd.to_datetime(df_stage.timestamp, unit="s")
-df_stage.timestamp = df_stage.timestamp.dt.tz_localize("UTC").dt.tz_convert("Australia/Sydney")
+    # convert timestamp to datetime, aus timezone
+    df_stage.timestamp = pd.to_datetime(df_stage.timestamp, unit="s")
+    df_stage.timestamp = df_stage.timestamp.dt.tz_localize("UTC").dt.tz_convert("Australia/Sydney")
 
-# plot as scatter with x = timestamp
-vals = ["x", "y", "z", "r", "t"]
-for val in ["x", "y", "z", "r", "t"]:
-    fig = px.scatter(df_stage, x="timestamp", y=val, hover_data=df_stage.columns, color="stage",
-                        title=f"Stage Position ({val})")
-    st.plotly_chart(fig, use_container_width=True)
+    # plot as scatter with x = timestamp
+    vals = ["x", "y", "z", "r", "t"]
+    for val in ["x", "y", "z", "r", "t"]:
+        fig = px.scatter(df_stage, x="timestamp", y=val, hover_data=df_stage.columns, color="stage",
+                            title=f"Stage Position ({val})")
+        st.plotly_chart(fig, use_container_width=True)
 
 
 ## Automation
@@ -246,6 +251,10 @@ if IB_IMAGE_PATHS and EB_IMAGE_PATHS:
         cols[0].image(eb_image.data, caption=f"{petname} - {os.path.basename(fname_eb)}")
         cols[1].image(ib_image.data, caption=f"{petname} - {os.path.basename(fname_ib)}")
 
+
+if program == "autoliftout":
+    from liftout.structures import Experiment
+    
 exp = Experiment.load(os.path.join(EXPERIMENT_PATH, "experiment.yaml"))
 
 # overview image
