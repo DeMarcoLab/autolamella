@@ -146,6 +146,8 @@ class Experiment:
         self._created_at: float = datetime.timestamp(datetime.now())
 
         self.positions: list[Lamella] = []
+        self.program = "AutoLamella"
+        self.method = "AutoLamella"
 
     def __to_dict__(self) -> dict:
 
@@ -156,6 +158,8 @@ class Experiment:
             "log_path": self.log_path,
             "positions": [lamella.__to_dict__() for lamella in self.positions],
             "created_at": self._created_at,
+            "program": self.program,
+            "method": self.method,
         }
 
         return state_dict
@@ -185,6 +189,8 @@ class Experiment:
                 "experiment_path": self.path,
                 "experiment_created_at": self._created_at,
                 "experiment_id": self._id,
+                "program": self.program,
+                "method": self.method, 
                 "number": lamella._number,
                 "petname": lamella._petname,  # what?
                 "path": lamella.path,
@@ -219,7 +225,9 @@ class Experiment:
         name = ddict["name"]
         experiment = Experiment(path=path, name=name)
         experiment._created_at = ddict.get("created_at", None)
-        experiment._id = ddict.get("_id", None)
+        experiment._id = ddict.get("_id", "NULL")
+        experiment.program = ddict.get("program", "AutoLamella")
+        experiment.method = ddict.get("method", "AutoLamella") 
 
         # load lamella from dict
         for lamella_dict in ddict["positions"]:
