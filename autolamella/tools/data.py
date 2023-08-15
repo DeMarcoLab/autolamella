@@ -169,6 +169,7 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
                             "dm_x": dm_x,
                             "dm_y": dm_y,
                             "beam_type": beam_type,
+                            "timestamp": tsd,
                         }
                         click_data.append(deepcopy(click_d))
 
@@ -188,7 +189,9 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
                         "subtype": subtype,
                         "dm_x": dm_x,
                         "dm_y": dm_y,
-                        "beam_type": "ION"
+                        "beam_type": "ION",
+                        "timestamp": tsd,
+
                     }
                     click_data.append(deepcopy(click_d))
 
@@ -209,6 +212,7 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
                         "dm_x": dm_x,
                         "dm_y": dm_y,
                         "beam_type": beam_type,
+                        "timestamp": tsd,
                     }
                     
                     click_data.append(deepcopy(click_d))
