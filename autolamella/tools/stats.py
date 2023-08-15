@@ -112,11 +112,15 @@ if len(df_det) > 0:
     total_correct = len(df_det[df_det["is_correct"] == 'True'])
     total_incorrect = len(df_det[df_det["is_correct"] == 'False'])
     accuracy = total_correct / (total_correct + total_incorrect)
-    accuracy = str(round(accuracy*100, 2)) + "%"
+    
+    BASE_ACCURACY = 0.0
+    d_accuracy = accuracy - BASE_ACCURACY
 
+    accuracy_str = str(round(accuracy*100, 2)) + "%"
+    d_accuracy_str = str(round(d_accuracy*100, 2)) + "%"
     cols[0].metric(label="ML Total Correct ", value=total_correct)
     cols[1].metric(label="ML Total Incorrect", value=total_incorrect)
-    cols[2].metric(label="ML Accuracy", value=accuracy)
+    cols[2].metric(label="ML Accuracy", value=accuracy_str, delta=d_accuracy_str)
 
 
 tab_experiment, tab_history, tab_automation, tab_stage, tab_lamella, tab_protocol, tab_telemetry = st.tabs(["Experiment", "Duration", "Automation", "Stage", "Lamella", "Protocol","Telemetry", ])
@@ -136,7 +140,7 @@ with tab_experiment:
 
     fig_timeline = px.scatter(df_steps, x="step_n", y="timestamp", color="stage", symbol="lamella",
         title="AutoLamella Timeline", 
-        hover_name="stage", hover_data=["lamella", "step_n", "step"],)
+        hover_name="stage", hover_data=df_steps.columns)
         # size = "duration", size_max=20)
     st.plotly_chart(fig_timeline, use_container_width=True)
 
