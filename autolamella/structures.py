@@ -208,6 +208,23 @@ class Experiment:
 
         return df
 
+    def to_dataframe_v2(self) -> pd.DataFrame:
+
+
+        edict = {
+            "name": self.name,
+            "path": self.path,
+            "date": self._created_at,
+            "experiment_id": self._id,
+            "program": self.program,
+            "method": self.method, 
+            "num_lamella": len(self.positions),
+        }
+
+        df = pd.DataFrame([edict])
+
+        return df
+
     @staticmethod
     def load(fname: Path) -> 'Experiment':
         """Load a sample from disk."""
