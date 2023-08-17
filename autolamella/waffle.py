@@ -107,8 +107,11 @@ def mill_undercut(
     # rotate flat to eb
     log_status_message(lamella, "MOVE_TO_UNDERCUT")
     _update_status_ui(parent_ui, f"{lamella.info} Moving to Undercut Position...")
-    microscope.move_flat_to_beam(settings, BeamType.ELECTRON, _safe=False) # TODO: TEST UNSAFE MOVE
-
+    microscope.move_flat_to_beam(settings, BeamType.ELECTRON, _safe=True) # TODO: TEST UNSAFE MOVE
+    
+    # OFFSET FOR COMPUCENTRIC ROTATION
+    microscope.stable_move(settings, dx=50e-6, dy=25e-6, beam_type=BeamType.ELECTRON)
+    
     # detect
     log_status_message(lamella, f"ALIGN_TRENCH")
     settings.image.beam_type = BeamType.ELECTRON
@@ -196,6 +199,7 @@ def mill_undercut(
     # log undercut stages
     lamella.protocol["undercut"] = deepcopy(patterning._get_protocol_from_stages(undercut_stages))
    
+    log_status_message(lamella, "ALIGN_FINAL")
 
     settings.image.beam_type = BeamType.ION
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH

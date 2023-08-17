@@ -27,7 +27,6 @@ page_title = st.title("AutoLamella Analytics")
 
 path_cols = st.sidebar.columns(2)
 LOG_PATH = st.sidebar.text_input("Log Path", cfg.LOG_PATH)
-# FILTER_STR = path_cols[1].text_input("Filter", "*/")
 paths = glob.glob(os.path.join(LOG_PATH, "*/"))
 EXPERIMENT_NAME = st.sidebar.selectbox(label="Experiment ", options=[os.path.basename(os.path.dirname(path)) for path in paths])
 EXPERIMENT_PATH = os.path.join(LOG_PATH, EXPERIMENT_NAME)
@@ -43,16 +42,6 @@ page_title.title(f"{EXPERIMENT_NAME} Analytics ({program.capitalize()})")
 df_beam_shift, 
     df_steps, df_stage, 
     df_det, df_click) = calculate_statistics_dataframe(EXPERIMENT_PATH, program=program, encoding=encoding)
-
-
-# add empty column, user, project to df_experiment
-# df_experiment["user"] = ""
-# df_experiment["project"] = ""
-# st.data_editor(df_experiment)
-
-
-
-
 
 # experiment metrics
 cols = st.columns(4)
@@ -84,8 +73,8 @@ avg_duration = df_group["avg_duration"].iloc[0]
 
 
 # total duration
-total_duration = df_hist2["duration"].sum() / 60
-total_duration = str(total_duration.round(2)) + " min"
+total_duration = df_hist2["duration"].sum() / 60 / 60
+total_duration = str(total_duration.round(2)) + " hrs"
 longest_stage = df_hist2.groupby("stage").mean().sort_values("duration", ascending=False).iloc[0]
 
 # duration metrics
@@ -226,7 +215,24 @@ with tab_automation:
 
     cols[1].plotly_chart(fig, use_container_width=True)
 
+    # # group by lamella
+    df_click.sort_values("lamella", inplace=True)
+    df_click_lamella = df_click.groupby(["lamella", "stage", "type", ]).count().reset_index()
+    df_click_lamella.fillna(0, inplace=True)
 
+    # add total column
+    df_click_lamella["total"] = df_click_lamella.groupby(["lamella","stage",  "type"])["timestamp"].transform("sum")
+
+
+    # drop all other columns except lamella and total, stage
+    df_click_lamella = df_click_lamella[["lamella",  "stage", "type","total"]].drop_duplicates()
+
+    # plot bar chart
+    fig = px.bar(df_click_lamella, x="lamella", y="total", color="stage",
+        hover_data=df_click_lamella.columns,
+        title="User Interaction Per Lamella (Click Count)")
+    
+    st.plotly_chart(fig, use_container_width=True)
 
 
 
@@ -234,6 +240,7 @@ with tab_automation:
 
     # accuracy
     if len(df_det) > 0:
+        cols = st.columns(2)
         df_group = df_det.groupby(["feature", "is_correct"]).count().reset_index() 
         df_group = df_group.pivot(index="feature", columns="is_correct", values="lamella")
 
@@ -252,14 +259,83 @@ with tab_automation:
         # df_group = df_group.sort_values(by="percent_correct", ascending=False)
         df_group.reset_index(inplace=True)
 
-
         # plot
         fig_acc = px.bar(df_group, x="feature", y="percent_correct", color="feature", title="ML Accuracy", hover_data=df_group.columns)
         cols[0].plotly_chart(fig_acc, use_container_width=True)
 
         # precision
-        fig_det = px.scatter(df_det, x="dpx_x", y="dpx_y", color="stage", symbol="feature",  hover_data=df_det.columns, title="ML Error Size")
+        fig_det = px.scatter(df_det, x="dpx_x", y="dpx_y", color="feature", symbol="stage",  hover_data=df_det.columns, title="ML Error Size")
         cols[1].plotly_chart(fig_det, use_container_width=True)
+
+
+        # calculate accuracy per lamella per features
+        df_group = df_det.groupby(["lamella", "feature", "is_correct"]).count().reset_index()
+        df_group = df_group.pivot(index=["lamella", "feature"], columns="is_correct", values="stage")
+        
+        # if no false, add false column
+        if "False" not in df_group.columns:
+            df_group["False"] = 0
+        if "True" not in df_group.columns:
+            df_group["True"] = 0
+        
+        # fill missing values with zero
+        df_group.fillna(0, inplace=True)
+
+        df_group["total"] = df_group["True"] + df_group["False"]
+        df_group["percent_correct"] = df_group["True"] / df_group["total"]
+        df_group["percent_correct"] = df_group["percent_correct"].round(2)
+        df_group.reset_index(inplace=True)
+        # plot
+        fig_acc = px.bar(df_group, x="lamella", y="percent_correct", color="feature", barmode="group", title="ML Accuracy Per Lamella", hover_data=df_group.columns)
+        st.plotly_chart(fig_acc, use_container_width=True)
+
+
+        cols = st.columns(2)
+
+        df_det_filt = df_det[["lamella", "stage", "feature", "is_correct", "fname"]].sort_values(by="lamella")
+
+
+        petname = cols[0].selectbox(label="Petname", options=df_det_filt["lamella"].unique())
+        feature = cols[0].selectbox(label="Feature", options=df_det_filt["feature"].unique())
+        stage = cols[0].selectbox(label="Stage", options=df_det_filt["stage"].unique())
+
+        # glob for all ml images
+        ML_IMAGE_PATHS = sorted(glob.glob(os.path.join(EXPERIMENT_PATH, f"**/{petname}/*ml-*.tif"), recursive=True))
+        IMAGE_FILENAMES = [os.path.basename(path) for path in ML_IMAGE_PATHS]
+
+        # select image
+        IMAGE_FILENAMES = df_det_filt[(df_det_filt["lamella"] == petname) & (df_det_filt["feature"] == feature) & (df_det_filt["stage"] == stage)]["fname"].unique().tolist()
+        image_filename = cols[0].selectbox(label="Image", options=IMAGE_FILENAMES)
+
+        # get image path
+        image_path = ML_IMAGE_PATHS[IMAGE_FILENAMES.index(image_filename)]
+
+        image = FibsemImage.load(image_path)
+
+        is_correct = df_det_filt[(df_det_filt["lamella"] == petname) & (df_det_filt["feature"] == feature) & (df_det_filt["stage"] == stage) & (df_det_filt["fname"] == image_filename)]["is_correct"].values[0]
+        caption = f"Petname: {petname}, Feature: {feature}, Stage: {stage}, Correct: {is_correct}"
+
+        cols[1].image(image.data, caption=caption, use_column_width=True)
+
+        # TODO: get the actuall detection position into log
+
+        # from fibsem import config as fcfg 
+        # import tifffile as tff
+        # from fibsem.segmentation.utils import decode_segmap
+        
+        # # join df and df_det_filt on fname / image
+        # df = pd.read_csv(os.path.join(fcfg.DATA_ML_PATH, "data.csv"))
+        # df.rename(columns={"image": "fname"}, inplace=True)
+        # df_det_filt = df_det_filt.merge(df, on="fname", how="left")
+
+        # image = FibsemImage.load(os.path.join(fcfg.DATA_ML_PATH, f"{image_filename}.tif"))
+        # mask = tff.imread(os.path.join(fcfg.DATA_ML_PATH, "mask", f"{image_filename}.tif"))
+        # mask = decode_segmap(mask, 3)
+
+        # cols = st.columns(2)
+        # cols[0].image(image.data, caption=caption, use_column_width=True)
+        # cols[1].image(mask, caption=caption, use_column_width=True) # TODO: show overlay
+
     else:
         st.warning("No ML data available")
 
