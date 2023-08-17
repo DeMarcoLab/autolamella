@@ -301,18 +301,21 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 microscope=self.microscope,
                 image_settings=self.settings.image,
                 viewer=self.viewer,
+                parent=self,
             )
             self.movement_widget = FibsemMovementWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
                 image_widget=self.image_widget,
+                parent=self,
             )
             self.milling_widget = FibsemMillingWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
                 image_widget=self.image_widget,
+                parent=self,
             )
 
             self.det_widget = FibsemEmbeddedDetectionUI(
