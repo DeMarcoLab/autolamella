@@ -99,6 +99,8 @@ notch:
     vwidth: 2.0e-07
     type: WaffleNotch
 options:
+    compucentric_x_offset: 50.0e-6
+    compucentric_y_offset: 25.0e-6 
     supervise:
         features: true
         setup_lamella: true

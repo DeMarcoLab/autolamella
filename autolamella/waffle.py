@@ -110,7 +110,9 @@ def mill_undercut(
     microscope.move_flat_to_beam(settings, BeamType.ELECTRON, _safe=True) # TODO: TEST UNSAFE MOVE
     
     # OFFSET FOR COMPUCENTRIC ROTATION
-    microscope.stable_move(settings, dx=50e-6, dy=25e-6, beam_type=BeamType.ELECTRON)
+    X_OFFSET = settings.protocol["options"].get("compucentric_x_offset", 50e-6)
+    Y_OFFSET = settings.protocol["options"].get("compucentric_y_offset", 25e-6)
+    microscope.stable_move(settings, dx=X_OFFSET, dy=Y_OFFSET, beam_type=BeamType.ELECTRON)
     
     # detect
     log_status_message(lamella, f"ALIGN_TRENCH")
