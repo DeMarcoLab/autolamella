@@ -84,8 +84,6 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
                         state_dict = json.loads(state_dict)
 
                         state_data.append(deepcopy(state_dict))
-
-                        # print("STATE: ", state_dict)
                         
                     if "get_stage_position" in func:
                         stage_dict = str(msg.split("|")[1].strip()).replace("'", '"').replace("None", '"None"')
