@@ -139,8 +139,11 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
                     beam_type = msg.split("|")[4].split(".")[-1].strip().upper()
                     fname = msg.split("|")[5].strip()
                     
-                    px = str(msg.split("|")[6].strip()).replace("'", '"').replace("None", '"None"')
-                    px = json.loads(dm)
+                    try:
+                        px = str(msg.split("|")[6].strip()).replace("'", '"').replace("None", '"None"')
+                        px = json.loads(dm)
+                    except:
+                        px = {"x": 0, "y": 0}
 
                     detd = {
                         "lamella": current_lamella,
