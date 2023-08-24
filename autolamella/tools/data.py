@@ -138,6 +138,9 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
                     _is_correct = msg.split("|")[3].strip()
                     beam_type = msg.split("|")[4].split(".")[-1].strip().upper()
                     fname = msg.split("|")[5].strip()
+                    
+                    px = str(msg.split("|")[6].strip()).replace("'", '"').replace("None", '"None"')
+                    px = json.loads(dm)
 
                     detd = {
                         "lamella": current_lamella,
@@ -152,6 +155,8 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
                         "timestamp": tsd,
                         "beam_type": beam_type,
                         "fname": fname,
+                        "px_x": px["x"],
+                        "px_y": px["y"],
                     }
 
                     det_data.append(deepcopy(detd))
