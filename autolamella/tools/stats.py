@@ -49,11 +49,19 @@ cols = st.columns(4)
 # experiment metrics
 n_lamella = len(df_history["petname"].unique())
 n_trenches = len(df_history[df_history["stage"] == "MillTrench"]["petname"].unique())
-n_undercut = len(df_history[df_history["stage"] == "MillUndercut"]["petname"].unique())
+
+if program == "autolamella":
+    n_undercut = len(df_history[df_history["stage"] == "MillUndercut"]["petname"].unique())
+    cols[2].metric(label="Undercut", value=n_undercut)
+
+if program == "autoliftout":
+    n_liftout = len(df_history[df_history["stage"] == "Landing"]["petname"].unique())
+    cols[2].metric(label="Landing", value=n_liftout)
+
 n_polish = len(df_history[df_history["stage"] == "MillPolishingCut"]["petname"].unique())
+
 cols[0].metric(label="Lamella", value=n_lamella)
 cols[1].metric(label="Trenches", value=n_trenches)
-cols[2].metric(label="Undercut", value=n_undercut)
 cols[3].metric(label="Polish", value=n_polish)
 
 
@@ -262,6 +270,7 @@ with tab_automation:
 
         # plot
         fig_acc = px.bar(df_group, x="feature", y="percent_correct", color="feature", title="ML Accuracy", hover_data=df_group.columns)
+        fig_acc.update_yaxes(range=[0, 1])
         cols[0].plotly_chart(fig_acc, use_container_width=True)
 
         # precision
@@ -288,6 +297,30 @@ with tab_automation:
         df_group.reset_index(inplace=True)
         # plot
         fig_acc = px.bar(df_group, x="lamella", y="percent_correct", color="feature", barmode="group", title="ML Accuracy Per Lamella", hover_data=df_group.columns)
+        fig_acc.update_yaxes(range=[0, 1])
+        st.plotly_chart(fig_acc, use_container_width=True)
+
+        # calculate accuracy per stage per features
+        df_group = df_det.groupby(["stage", "feature", "is_correct"]).count().reset_index()
+        df_group = df_group.pivot(index=["stage", "feature"], columns="is_correct", values="timestamp")
+        
+        # if no false, add false column
+        if "False" not in df_group.columns:
+            df_group["False"] = 0
+        if "True" not in df_group.columns:
+            df_group["True"] = 0
+        
+        # fill missing values with zero
+        df_group.fillna(0, inplace=True)
+
+        df_group["total"] = df_group["True"] + df_group["False"]
+        df_group["percent_correct"] = df_group["True"] / df_group["total"]
+        df_group["percent_correct"] = df_group["percent_correct"].round(2)
+        df_group.reset_index(inplace=True)
+
+        # plot
+        fig_acc = px.bar(df_group, x="feature", y="percent_correct", color="stage", barmode="group", title="ML Accuracy Per Stage", hover_data=df_group.columns)
+        fig_acc.update_yaxes(range=[0, 1])
         st.plotly_chart(fig_acc, use_container_width=True)
 
 
