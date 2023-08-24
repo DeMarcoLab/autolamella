@@ -102,12 +102,12 @@ options:
     compucentric_x_offset: 50.0e-6
     compucentric_y_offset: 25.0e-6 
     supervise:
-        features: true
+        features: false
         setup_lamella: true
         trench: true
         undercut: true
-        mill_rough: true
-        mill_regular: true
+        mill_rough: false
+        mill_regular: false
         mill_polishing: true
 trench:
     application_file: autolamella

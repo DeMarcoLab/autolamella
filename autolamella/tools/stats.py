@@ -64,6 +64,7 @@ df_hist2 = deepcopy(df_history)
 # drop if stage == "ReadyTrench"
 df_hist2 = df_hist2[df_hist2["stage"] != "ReadyTrench"]
 df_hist2 = df_hist2[df_hist2["stage"] != "SetupTrench"]
+df_hist2 = df_hist2[df_hist2["stage"] != "Setup"]
 
 df_group = df_hist2.groupby("petname").sum().reset_index()
 df_group["avg_duration"] = df_group["duration"].mean() / 60

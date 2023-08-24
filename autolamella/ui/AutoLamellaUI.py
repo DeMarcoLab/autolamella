@@ -782,7 +782,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def revert_stage(self):
         idx = self.comboBox_current_lamella.currentIndex()
         hidx = self.comboBox_lamella_history.currentIndex()
+        
         self.experiment.positions[idx].state = deepcopy(self.experiment.positions[idx].history[hidx])
+        self.experiment.positions[idx].state.start_timestamp = datetime.timestamp(datetime.now())
+        from autolamella import waffle as wfl
+        wfl.log_status_message(self.experiment.positions[idx], "STARTED")
+        # TODO: use start of stage update to restore the state properly
+
         self.update_ui()
 
     def save_lamella_ui(self):
@@ -1026,10 +1032,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
 def main():
+    import autolamella
     autolamella_ui = AutoLamellaUI(viewer=napari.Viewer())
     autolamella_ui.viewer.window.add_dock_widget(
         autolamella_ui, area="right", 
-        add_vertical_stretch=True, name="AutoLamella"
+        add_vertical_stretch=True, name=f"AutoLamella v{autolamella.__version__}"
     )
     napari.run()
 

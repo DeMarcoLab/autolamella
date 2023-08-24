@@ -155,10 +155,12 @@ def mill_undercut(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    N_UNDERCUTS = int(settings.protocol["autolamella_undercut"].get("tilt_angle_step", 2))
-    UNDERCUT_ANGLE_DEG = settings.protocol["autolamella_undercut"].get("tilt_angle", -5)
+    lamella.protocol["undercut"] = deepcopy(settings.protocol["autolamella_undercut"])
+    N_UNDERCUTS = int(lamella.protocol["undercut"].get("tilt_angle_step", 2))
+    UNDERCUT_ANGLE_DEG = lamella.protocol["undercut"].get("tilt_angle", -5)
     _UNDERCUT_V_OFFSET = 1e-6
     undercut_stages = []
+
     for i in range(N_UNDERCUTS):
 
         _n = f"{i+1:02d}" # helper
@@ -184,13 +186,16 @@ def mill_undercut(
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
         # move pattern
-        offset = settings.protocol["autolamella_undercut"].get("height", 10) / 2 + _UNDERCUT_V_OFFSET
+        if i > 0: # reduce the undercut height by half each time
+            lamella.protocol["undercut"]["height"] /= 2
+        offset = lamella.protocol["undercut"].get("height", 10) / 2 + _UNDERCUT_V_OFFSET
         point = deepcopy(det.features[0].feature_m)     
         point.y += offset if np.isclose(scan_rotation, 0) else -offset
 
         # mill undercut 1
         log_status_message(lamella, f"MILL_UNDERCUT_{_n}")
-        stages = patterning._get_milling_stages("autolamella_undercut", settings.protocol, point=point)
+
+        stages = patterning._get_milling_stages("undercut", lamella.protocol, point=point)
         stages = _validate_mill_ui(stages, parent_ui,
             msg=f"Press Run Milling to mill the Undercut {_n} for {lamella._petname}. Press Continue when done.",
             validate=validate,
@@ -809,7 +814,7 @@ def _update_mill_stages_ui(
         time.sleep(0.5)
 
 def _validate_det_ui_v2(
-    microscope, settings, features, parent_ui, validate: bool, msg: str = "Lamella"
+    microscope, settings, features, parent_ui, validate: bool, msg: str = "Lamella", point: Point = None,
 ) -> DetectedFeatures:
     feat_str = ", ".join([f.name for f in features])
     _update_status_ui(parent_ui, f"{msg}: Detecting Features ({feat_str})...")
@@ -818,6 +823,7 @@ def _validate_det_ui_v2(
         microscope=microscope,
         settings=settings,
         features=features,
+        point=point,
     )
 
     if validate:
