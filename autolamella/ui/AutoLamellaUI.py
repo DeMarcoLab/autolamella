@@ -860,6 +860,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.milling_widget._PATTERN_IS_MOVEABLE = True
 
         self._update_lamella_combobox()
+        position = lamella.state.microscope_state.absolute_position
+        position.name = lamella._petname
+        self.movement_widget.add_position(position)
         self.update_ui()
         self.experiment.save()
 
