@@ -268,6 +268,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 parent_type="autolamella",
                 parent_version=autolamella.__version__,
                 parent_ui=self,
+                experiment_name = self.experiment.name,
             )
         
 
