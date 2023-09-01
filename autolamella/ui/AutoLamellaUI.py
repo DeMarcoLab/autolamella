@@ -23,6 +23,7 @@ from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui import utils as fui
 from qtpy import QtWidgets
 
+import autolamella
 from autolamella.ui import utils as aui_utils
 import autolamella.config as cfg
 from autolamella.structures import (
@@ -261,6 +262,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
         if self.settings is not None:
             self.settings.image.save_path = self.experiment.path
+
+        utils._register_metadata(
+                microscope=self.microscope,
+                parent_type="autolamella",
+                parent_version=autolamella.__version__,
+                parent_ui=self,
+            )
+        
 
         self._update_lamella_combobox()
         self.update_ui()
