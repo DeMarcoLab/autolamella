@@ -422,6 +422,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionSave_Protocol.setVisible(_protocol_loaded)
         self.actionCryo_Sputter.setVisible(_protocol_loaded)
         self.actionOpen_Minimap.setVisible(_protocol_loaded)
+        self.actionLoad_Minimap_Image.setVisible(_protocol_loaded and cfg._MINIMAP_VISUALISATION)
         self.actionLoad_Positions.setVisible(_protocol_loaded)
 
         # labels
@@ -521,7 +522,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.label_minimap.setPixmap(qpixmap)
 
     def load_minimap_image(self):
-        path = fui._get_file_ui( msg="Select image to load", _filter="Image Files (*.tif *.tiff)", parent=self)
+
+        path = fui._get_file_ui( msg="Select image to load", 
+                                path=self.experiment.path, _filter="Image Files (*.tif *.tiff)", parent=self)
 
         if path == "":
             napari.utils.notifications.show_info(f"No file selected..")
