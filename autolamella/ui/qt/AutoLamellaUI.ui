@@ -77,12 +77,107 @@
         <string>Experiment</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="2" column="0" colspan="2">
-         <widget class="QLabel" name="label_protocol_name">
+        <item row="20" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_setup_autolamella">
           <property name="text">
-           <string>Protocol:</string>
+           <string>Run Setup AutoLamella</string>
           </property>
          </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QPushButton" name="pushButton_remove_lamella">
+          <property name="styleSheet">
+           <string notr="true"/>
+          </property>
+          <property name="text">
+           <string>Remove Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_title">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>AutoLamella</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="16" column="0" colspan="2">
+         <widget class="QLabel" name="label_minimap">
+          <property name="text">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_setup_header">
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Setup</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="1">
+         <widget class="QPushButton" name="pushButton_go_to_lamella">
+          <property name="text">
+           <string>Go to position</string>
+          </property>
+         </widget>
+        </item>
+        <item row="19" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_waffle_undercut">
+          <property name="text">
+           <string>Run Waffle Undercut Milling</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_waffle_trench">
+          <property name="text">
+           <string>Run Waffle Trench Milling</string>
+          </property>
+          <property name="default">
+           <bool>false</bool>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0">
+         <widget class="QComboBox" name="comboBox_lamella_history"/>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QLabel" name="label_experiment_name">
+          <property name="text">
+           <string>Experiment:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QPushButton" name="pushButton_add_lamella">
+          <property name="text">
+           <string>Add Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QComboBox" name="comboBox_current_lamella"/>
         </item>
         <item row="8" column="0">
          <widget class="QLabel" name="label_current_lamella_header">
@@ -97,97 +192,14 @@
           </property>
          </widget>
         </item>
-        <item row="18" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_undercut">
+        <item row="10" column="0">
+         <widget class="QPushButton" name="pushButton_save_position">
           <property name="text">
-           <string>Run Waffle Undercut Milling</string>
+           <string>Save Position</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0" colspan="2">
-         <widget class="QLabel" name="label_experiment_name">
-          <property name="text">
-           <string>Experiment:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="0" colspan="2">
-         <spacer name="verticalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="7" column="1">
-         <widget class="QPushButton" name="pushButton_remove_lamella">
-          <property name="styleSheet">
-           <string notr="true"/>
-          </property>
-          <property name="text">
-           <string>Remove Lamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="1">
-         <widget class="QPushButton" name="pushButton_fail_lamella">
-          <property name="text">
-           <string>Mark Lamella As Failed</string>
-          </property>
-         </widget>
-        </item>
-        <item row="14" column="0" colspan="2">
-         <widget class="QLabel" name="label_info">
-          <property name="text">
-           <string>No Lamella Selected</string>
-          </property>
-         </widget>
-        </item>
-        <item row="15" column="0" colspan="2">
-         <spacer name="verticalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="23" column="0" colspan="2">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="17" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_trench">
-          <property name="text">
-           <string>Run Waffle Trench Milling</string>
-          </property>
-          <property name="default">
-           <bool>false</bool>
-          </property>
-          <property name="flat">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="21" column="0" colspan="2">
+        <item row="22" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_autolamella">
           <property name="palette">
            <palette>
@@ -204,9 +216,9 @@
              <colorrole role="Button">
               <brush brushstyle="SolidPattern">
                <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
+                <red>0</red>
+                <green>100</green>
+                <blue>0</blue>
                </color>
               </brush>
              </colorrole>
@@ -276,18 +288,18 @@
              <colorrole role="Base">
               <brush brushstyle="SolidPattern">
                <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
+                <red>0</red>
+                <green>100</green>
+                <blue>0</blue>
                </color>
               </brush>
              </colorrole>
              <colorrole role="Window">
               <brush brushstyle="SolidPattern">
                <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
+                <red>0</red>
+                <green>100</green>
+                <blue>0</blue>
                </color>
               </brush>
              </colorrole>
@@ -350,9 +362,9 @@
              <colorrole role="Button">
               <brush brushstyle="SolidPattern">
                <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
+                <red>0</red>
+                <green>100</green>
+                <blue>0</blue>
                </color>
               </brush>
              </colorrole>
@@ -422,18 +434,18 @@
              <colorrole role="Base">
               <brush brushstyle="SolidPattern">
                <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
+                <red>0</red>
+                <green>100</green>
+                <blue>0</blue>
                </color>
               </brush>
              </colorrole>
              <colorrole role="Window">
               <brush brushstyle="SolidPattern">
                <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
+                <red>0</red>
+                <green>100</green>
+                <blue>0</blue>
                </color>
               </brush>
              </colorrole>
@@ -496,9 +508,9 @@
              <colorrole role="Button">
               <brush brushstyle="SolidPattern">
                <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
+                <red>0</red>
+                <green>100</green>
+                <blue>0</blue>
                </color>
               </brush>
              </colorrole>
@@ -568,18 +580,18 @@
              <colorrole role="Base">
               <brush brushstyle="SolidPattern">
                <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
+                <red>0</red>
+                <green>100</green>
+                <blue>0</blue>
                </color>
               </brush>
              </colorrole>
              <colorrole role="Window">
               <brush brushstyle="SolidPattern">
                <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
+                <red>0</red>
+                <green>100</green>
+                <blue>0</blue>
                </color>
               </brush>
              </colorrole>
@@ -654,65 +666,17 @@
           </property>
          </widget>
         </item>
-        <item row="8" column="1">
-         <widget class="QComboBox" name="comboBox_current_lamella"/>
-        </item>
-        <item row="7" column="0">
-         <widget class="QPushButton" name="pushButton_add_lamella">
+        <item row="14" column="0" colspan="2">
+         <widget class="QLabel" name="label_info">
           <property name="text">
-           <string>Add Lamella</string>
+           <string>No Lamella Selected</string>
           </property>
          </widget>
         </item>
-        <item row="10" column="0">
-         <widget class="QPushButton" name="pushButton_save_position">
+        <item row="2" column="0" colspan="2">
+         <widget class="QLabel" name="label_protocol_name">
           <property name="text">
-           <string>Save Position</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_setup_header">
-          <property name="font">
-           <font>
-            <pointsize>9</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Setup</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_title">
-          <property name="font">
-           <font>
-            <pointsize>12</pointsize>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>AutoLamella</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="1">
-         <widget class="QPushButton" name="pushButton_go_to_lamella">
-          <property name="text">
-           <string>Go to position</string>
-          </property>
-         </widget>
-        </item>
-        <item row="19" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_setup_autolamella">
-          <property name="text">
-           <string>Run Setup AutoLamella</string>
+           <string>Protocol:</string>
           </property>
          </widget>
         </item>
@@ -723,8 +687,38 @@
           </property>
          </widget>
         </item>
-        <item row="12" column="0">
-         <widget class="QComboBox" name="comboBox_lamella_history"/>
+        <item row="11" column="1">
+         <widget class="QPushButton" name="pushButton_fail_lamella">
+          <property name="text">
+           <string>Mark Lamella As Failed</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="0" colspan="2">
+         <spacer name="verticalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="17" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
         </item>
        </layout>
       </widget>
@@ -976,6 +970,7 @@
     <addaction name="separator"/>
     <addaction name="actionLoad_Positions"/>
     <addaction name="actionOpen_Minimap"/>
+    <addaction name="actionLoad_Minimap_Image"/>
    </widget>
    <addaction name="menuAutoLamella"/>
    <addaction name="menuTools"/>
@@ -1008,12 +1003,17 @@
   </action>
   <action name="actionOpen_Minimap">
    <property name="text">
-    <string>Open Minimap</string>
+    <string>Open Minimap Tool</string>
    </property>
   </action>
   <action name="actionSave_Protocol">
    <property name="text">
     <string>Save Protocol</string>
+   </property>
+  </action>
+  <action name="actionLoad_Minimap_Image">
+   <property name="text">
+    <string>Load Minimap Image</string>
    </property>
   </action>
  </widget>

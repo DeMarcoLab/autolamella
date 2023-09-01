@@ -779,7 +779,7 @@ def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI
         parent_ui._run_milling_signal.emit()
         
         logging.info(f"WAITING FOR MILLING TO FINISH... ")
-        while parent_ui._MILLING_RUNNING:
+        while parent_ui._MILLING_RUNNING or parent_ui.image_widget.TAKING_IMAGES:
             time.sleep(1)
         
         _update_status_ui(

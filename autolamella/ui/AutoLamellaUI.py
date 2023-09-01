@@ -21,6 +21,7 @@ from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
 from fibsem.ui.FibsemCryoSputterWidget import FibsemCryoSputterWidget
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui import utils as fui
+from fibsem.imaging._tile import _minimap 
 from qtpy import QtWidgets
 
 from autolamella.ui import utils as aui_utils
@@ -67,6 +68,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.experiment: Experiment = None
         self.worker = None
+        self.minimap_image = None
         self.microscope: FibsemMicroscope = None
         self.settings: MicroscopeSettings = None
 
@@ -138,6 +140,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionCryo_Sputter.triggered.connect(self._cryo_sputter)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
+        self.actionLoad_Minimap_Image.triggered.connect(self.load_minimap_image)
 
 
         self.pushButton_yes.clicked.connect(self.push_interaction_button)
@@ -301,18 +304,21 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 microscope=self.microscope,
                 image_settings=self.settings.image,
                 viewer=self.viewer,
+                parent=self,
             )
             self.movement_widget = FibsemMovementWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
                 image_widget=self.image_widget,
+                parent=self,
             )
             self.milling_widget = FibsemMillingWidget(
                 microscope=self.microscope,
                 settings=self.settings,
                 viewer=self.viewer,
                 image_widget=self.image_widget,
+                parent=self,
             )
 
             self.det_widget = FibsemEmbeddedDetectionUI(
@@ -416,6 +422,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionSave_Protocol.setVisible(_protocol_loaded)
         self.actionCryo_Sputter.setVisible(_protocol_loaded)
         self.actionOpen_Minimap.setVisible(_protocol_loaded)
+        self.actionLoad_Minimap_Image.setVisible(_protocol_loaded and cfg._MINIMAP_VISUALISATION)
         self.actionLoad_Positions.setVisible(_protocol_loaded)
 
         # labels
@@ -502,6 +509,35 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self._set_instructions(INSTRUCTIONS["NO_LAMELLA"])
         elif _lamella_selected:
             self._set_instructions(INSTRUCTIONS["AUTOLAMELLA_READY"])
+
+        if self.experiment is not None and self.minimap_image is not None:
+            positions = []
+            for lamella in self.experiment.positions:
+                position = lamella.state.microscope_state.absolute_position
+                position.name = lamella._petname
+                positions.append(position)
+            
+            qpixmap = _minimap(self.minimap_image, positions)
+
+            self.label_minimap.setPixmap(qpixmap)
+
+    def load_minimap_image(self):
+
+        path = fui._get_file_ui( msg="Select image to load", 
+                                path=self.experiment.path, _filter="Image Files (*.tif *.tiff)", parent=self)
+
+        if path == "":
+            napari.utils.notifications.show_info(f"No file selected..")
+            return
+
+        from fibsem.structures import FibsemImage
+        image = FibsemImage.load(path)
+        if image.metadata is None:
+            napari.utils.notifications.show_error(f"Could not load image {path}. Make sure it is an OpenFibsem Image.")
+            return
+
+        self.minimap_image = image
+        self.update_ui()
 
     def _update_lamella_combobox(self):
         # detail combobox
