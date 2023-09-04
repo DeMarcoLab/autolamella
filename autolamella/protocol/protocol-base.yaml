@@ -1,0 +1,140 @@
+
+name: autolamella-base-scan-rotation-0deg
+method: default # waffle or default
+
+options:
+  supervise:
+    trench: false
+    undercut: true
+    setup_lamella: true
+    features: true
+    lamella: true
+    mill_rough: true
+    mill_regular: true
+    mill_polishing: true
+
+fiducial:
+  enabled: true
+  height: 10.e-6
+  width: 1.e-6
+  depth: 1.0e-6
+  rotation: 45
+  milling_current: 2.0e-9
+  preset: "30 keV; 20 nA" # TESCAN only
+  application_file: autolamella
+  cleaning_cross_section: false
+  passes: null
+  hfw: 80.e-6
+
+
+trench:
+  lamella_width: 22.e-6
+  lamella_height: 30.0e-6
+  milling_current: 28.0e-9
+  trench_height: 32.e-6
+  depth: 2.5e-6
+  offset: 0.0e-6
+  size_ratio: 2.0
+  preset: "30 keV; 2.5 nA" # TESCAN only
+  hfw: 180.0e-6
+  application_file: autolamella
+  cleaning_cross_section: false
+
+lamella:
+  beam_shift_attempts: 3.0
+  alignment_current: "Imaging"
+  lamella_width: 20.e-6
+  lamella_height: 800.e-9
+  stages:
+    -   application_file: autolamella
+        cleaning_cross_section: false
+        depth: 6.5e-07
+        dwell_time: 1.0e-06
+        hfw: 7.999999999999999e-05
+        lamella_height: 8.0e-07
+        lamella_width: 6.0e-06
+        milling_current: 7.4e-10
+        offset: 2.0e-06
+        patterning_mode: Serial
+        preset: ''
+        rate: 0.0001
+        size_ratio: 1.0
+        spot_size: 5.0e-08
+        trench_height: 3.5e-06
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 6.5e-07
+        dwell_time: 1.0e-06
+        hfw: 7.999999999999999e-05
+        lamella_height: 8.0e-07
+        lamella_width: 6.0e-06
+        milling_current: 2.0e-10
+        offset: 5.0e-07
+        patterning_mode: Serial
+        preset: ''
+        rate: 0.0001
+        size_ratio: 1.0
+        spot_size: 5.0e-08
+        trench_height: 2.0e-06
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 4.0e-07
+        dwell_time: 1.0e-06
+        hfw: 7.999999999999999e-05
+        lamella_height: 6.0e-07
+        lamella_width: 6.0e-06
+        milling_current: 6.0e-11
+        offset: 0.0
+        patterning_mode: Serial
+        preset: ''
+        rate: 0.0001
+        size_ratio: 1.0
+        spot_size: 5.0e-08
+        trench_height: 5.0e-07
+
+
+microexpansion:
+  width: 0.5e-6
+  height: 18.e-6
+  depth: 1.0e-6
+  distance: 10.e-6 # Does not include Lamella width. So centre of microexpansion is lamella_width/2 + distance.
+  milling_current: 2.e-9
+  preset: "30 keV; 2.5 nA" # TESCAN only
+  hfw: 200e-6
+  application_file: autolamella
+  cleaning_cross_section: false
+  lamella_width: 10.e-6
+
+
+
+notch:
+  enabled: false
+  vheight: 2.0e-6
+  vwidth: 0.2e-6
+  hwidth: 2.0e-6
+  hheight: 0.2e-6
+  depth: 5.0e-6
+  distance: 5.0e-6
+  flip: 0
+  milling_current: 2.e-9
+  preset: "30 keV; 2.5 nA" # TESCAN only
+  hfw: 80e-6
+  application_file: autolamella
+  cleaning_cross_section: false
+
+autolamella_undercut:
+  width: 10.e-6
+  height: 4.e-6
+  depth: 2.0e-6
+  milling_current: 7.6e-9
+  preset: "30 keV; 2.5 nA" # TESCAN only
+  hfw: 80.0e-6
+  application_file: autolamella
+  tilt_angle: -10
+  tilt_angle_step: 2
+  cleaning_cross_section: false
+
+ml:
+    encoder: resnet34
+    num_classes: 3
+    checkpoint: autolamella-02-34.pt
