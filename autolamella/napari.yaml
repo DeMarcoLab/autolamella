@@ -5,7 +5,7 @@ contributions:
 
       # Widgets
     - id: autolamella.viewer
-      python_name: autolamella.autolamella_ui:UiInterface
+      python_name: autolamella.ui.AutoLamellaUI:AutoLamellaUI
       title: AutoLamella UI
 
   widgets:
