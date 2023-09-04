@@ -81,7 +81,7 @@ microexpansion:
 ml:
     encoder: resnet34
     num_classes: 3
-    checkpoint: autolamella-03-34.pt
+    checkpoint: autolamella-04-34.pt
 name: autolamella-waffle-scan-rotation-0deg
 notch:
     application_file: autolamella
