@@ -542,7 +542,7 @@ def setup_lamella(
         fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, Point.__from_dict__(lamella.protocol["fiducial"]["point"]))
         stages =_validate_mill_ui(fiducial_stage, parent_ui, 
             msg=f"Milling Fiducial for {lamella._petname}.", 
-            validate=False)
+            validate=True)
     
         # set reduced area for fiducial alignment
         settings.image.reduced_area = lamella.fiducial_area
