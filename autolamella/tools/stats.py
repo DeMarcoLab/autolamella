@@ -94,10 +94,16 @@ cols[2].metric(label="Longest Stage (Average)", value=f"{longest_stage.name} : {
 
 # total clicks, avg click size
 total_clicks = len(df_click)
-df_click["mag_dm_x"] = abs(df_click["dm_x"])
-df_click["mag_dm_y"] = abs(df_click["dm_y"])
-avg_dx = str(round(df_click["mag_dm_x"].mean()*1e6, 2)) + " um"
-avg_dy = str(round(df_click["mag_dm_y"].mean()*1e6, 2)) + " um"
+
+avg_dx = "N/A"
+avg_dy = "N/A"
+if len(df_click) > 0:
+    df_click["mag_dm_x"] = abs(df_click["dm_x"])
+    df_click["mag_dm_y"] = abs(df_click["dm_y"])
+    avg_dx = str(round(df_click["mag_dm_x"].mean()*1e6, 2)) + " um"
+    avg_dy = str(round(df_click["mag_dm_y"].mean()*1e6, 2)) + " um"
+
+
 
 cols[0].metric(label="Total Clicks", value=total_clicks)
 cols[1].metric(label="Avg Click Size (dx)", value=avg_dx)
@@ -142,24 +148,25 @@ with tab_experiment:
         # size = "duration", size_max=20)
     st.plotly_chart(fig_timeline, use_container_width=True)
 
+    if len(df_click) > 0:
+        df_click.dropna(inplace=True)
 
-    df_click.dropna(inplace=True)
+        # convert timestamp to datetime, aus timezone 
+        df_click.timestamp = pd.to_datetime(df_click.timestamp, unit="s")
 
-    # convert timestamp to datetime, aus timezone 
-    df_click.timestamp = pd.to_datetime(df_click.timestamp, unit="s")
+        # convert timestamp to australian timezone
+        df_click.timestamp = df_click.timestamp.dt.tz_localize("UTC").dt.tz_convert("Australia/Sydney")
 
-    # convert timestamp to australian timezone
-    df_click.timestamp = df_click.timestamp.dt.tz_localize("UTC").dt.tz_convert("Australia/Sydney")
+        import numpy as np
+        df_click["magnitude"] = np.sqrt(df_click["dm_x"]**2 + df_click["dm_y"]**2)
 
-    import numpy as np
-    df_click["magnitude"] = np.sqrt(df_click["dm_x"]**2 + df_click["dm_y"]**2)
-
-    fig_timeline = px.scatter(df_click, x="timestamp", y="magnitude", color="stage", symbol="type",
-        title="AutoLamella Interaction Timeline", 
-        hover_name="stage", hover_data=df_click.columns,)
-        # size = "duration", size_max=20)
-    st.plotly_chart(fig_timeline, use_container_width=True)
-
+        fig_timeline = px.scatter(df_click, x="timestamp", y="magnitude", color="stage", symbol="type",
+            title="AutoLamella Interaction Timeline", 
+            hover_name="stage", hover_data=df_click.columns,)
+            # size = "duration", size_max=20)
+        st.plotly_chart(fig_timeline, use_container_width=True)
+    else:
+        tab_experiment.warning("No interaction data available")
 
 
 with tab_history:
@@ -209,40 +216,42 @@ with tab_automation:
     cols= st.columns(2)
     # user interaction (clicks)
     # drop beam_type column
-    df_click.drop(columns=["beam_type"], inplace=True)
+    if len(df_click) > 0:
+        # df_click.drop(columns=["beam_type"], inplace=True)
 
-    fig = px.histogram(df_click, x="subtype", color="stage", facet_col="type",
-        hover_data=df_click.columns,
-        title="User Interaction (Click Count)")
-    cols[0].plotly_chart(fig, use_container_width=True)
+        fig = px.histogram(df_click, x="subtype", color="stage", facet_col="type",
+            hover_data=df_click.columns,
+            title="User Interaction (Click Count)")
+        cols[0].plotly_chart(fig, use_container_width=True)
 
-    # click size
-    fig = px.scatter(df_click, x="dm_x", y="dm_y", 
-        color="stage", symbol="subtype", facet_col="type", 
-        hover_data=df_click.columns,
-        title="User Interaction (Click Size)")
+        # click size
+        fig = px.scatter(df_click, x="dm_x", y="dm_y", 
+            color="stage", symbol="subtype", facet_col="type", 
+            hover_data=df_click.columns,
+            title="User Interaction (Click Size)")
 
-    cols[1].plotly_chart(fig, use_container_width=True)
+        cols[1].plotly_chart(fig, use_container_width=True)
 
-    # # group by lamella
-    df_click.sort_values("lamella", inplace=True)
-    df_click_lamella = df_click.groupby(["lamella", "stage", "type", ]).count().reset_index()
-    df_click_lamella.fillna(0, inplace=True)
+        # # group by lamella
+        df_click.sort_values("lamella", inplace=True)
+        df_click_lamella = df_click.groupby(["lamella", "stage", "type", ]).count().reset_index()
+        df_click_lamella.fillna(0, inplace=True)
 
-    # add total column
-    df_click_lamella["total"] = df_click_lamella.groupby(["lamella","stage",  "type"])["timestamp"].transform("sum")
+        # add total column
+        df_click_lamella["total"] = df_click_lamella.groupby(["lamella","stage",  "type"])["timestamp"].transform("sum")
 
 
-    # drop all other columns except lamella and total, stage
-    df_click_lamella = df_click_lamella[["lamella",  "stage", "type","total"]].drop_duplicates()
+        # drop all other columns except lamella and total, stage
+        df_click_lamella = df_click_lamella[["lamella",  "stage", "type","total"]].drop_duplicates()
 
-    # plot bar chart
-    fig = px.bar(df_click_lamella, x="lamella", y="total", color="stage",
-        hover_data=df_click_lamella.columns,
-        title="User Interaction Per Lamella (Click Count)")
-    
-    st.plotly_chart(fig, use_container_width=True)
-
+        # plot bar chart
+        fig = px.bar(df_click_lamella, x="lamella", y="total", color="stage",
+            hover_data=df_click_lamella.columns,
+            title="User Interaction Per Lamella (Click Count)")
+        
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("No interaction data available")
 
 
     ### ML
@@ -371,7 +380,7 @@ with tab_automation:
         # cols[1].image(mask, caption=caption, use_column_width=True) # TODO: show overlay
 
     else:
-        st.warning("No ML data available")
+        st.warning("No machine learning data available")
 
 with tab_stage:
     # Stage Analytics

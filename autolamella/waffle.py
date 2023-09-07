@@ -124,7 +124,7 @@ def mill_undercut(
     _set_images_ui(parent_ui, eb_image, ib_image)
 
     features = [LamellaCentre()] 
-    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.absolute_position)
 
     microscope.stable_move(
         settings, 
@@ -138,7 +138,7 @@ def mill_undercut(
     settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
 
     features = [LamellaCentre()] 
-    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.absolute_position)
     
     # align vertical
     microscope.eucentric_move(
@@ -510,7 +510,7 @@ def setup_lamella(
 
     stages =_validate_mill_ui(stages, parent_ui, 
         msg=f"Confirm the positions for the {lamella._petname} milling. Press Continue to Confirm.",
-        validate=True,
+        validate=validate,
         milling_enabled=False)
     
     from pprint import pprint
@@ -541,8 +541,8 @@ def setup_lamella(
         # mill the fiducial
         fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, Point.__from_dict__(lamella.protocol["fiducial"]["point"]))
         stages =_validate_mill_ui(fiducial_stage, parent_ui, 
-            msg=f"Milling Fiducial for {lamella._petname}.", 
-            validate=True)
+            msg=f"Press Run Milling to mill the fiducial for {lamella._petname}. Press Continue when done.", 
+            validate=validate)
     
         # set reduced area for fiducial alignment
         settings.image.reduced_area = lamella.fiducial_area
@@ -814,7 +814,7 @@ def _update_mill_stages_ui(
         time.sleep(0.5)
 
 def _validate_det_ui_v2(
-    microscope, settings, features, parent_ui, validate: bool, msg: str = "Lamella", point: Point = None,
+    microscope, settings, features, parent_ui, validate: bool, msg: str = "Lamella", position: FibsemStagePosition = None,
 ) -> DetectedFeatures:
     feat_str = ", ".join([f.name for f in features])
     _update_status_ui(parent_ui, f"{msg}: Detecting Features ({feat_str})...")
@@ -823,7 +823,7 @@ def _validate_det_ui_v2(
         microscope=microscope,
         settings=settings,
         features=features,
-        point=point,
+        point=position,
     )
 
     if validate:
