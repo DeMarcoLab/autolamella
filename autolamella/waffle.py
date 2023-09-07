@@ -73,8 +73,9 @@ def mill_trench(
     )
     
     # log the protocol
-    lamella.protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
-    lamella.protocol["trench"]["point"] = stages[0].pattern.point.__to_dict__()
+    lamella.protocol[lamella.state.stage.name] = deepcopy(patterning._get_protocol_from_stages(stages))
+    lamella.protocol[lamella.state.stage.name]["point"] = stages[0].pattern.point.__to_dict__()
+    
     
     # charge neutralisation
     log_status_message(lamella, "CHARGE_NEUTRALISATION")
@@ -155,7 +156,7 @@ def mill_undercut(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    lamella.protocol["undercut"] = deepcopy(settings.protocol["autolamella_undercut"])
+    lamella.protocol["undercut"] = deepcopy(settings.protocol["MillUndercut"])
     N_UNDERCUTS = int(lamella.protocol["undercut"].get("tilt_angle_step", 2))
     UNDERCUT_ANGLE_DEG = lamella.protocol["undercut"].get("tilt_angle", -5)
     _UNDERCUT_V_OFFSET = 1e-6
@@ -187,7 +188,7 @@ def mill_undercut(
 
         # move pattern
         if i > 0: # reduce the undercut height by half each time
-            lamella.protocol["undercut"]["height"] /= 2
+            lamella.protocol["undercut"]["height"] /= 2 # TODO: update to new undercut Protocol
         offset = lamella.protocol["undercut"].get("height", 10) / 2 + _UNDERCUT_V_OFFSET
         point = deepcopy(det.features[0].feature_m)     
         point.y += offset if np.isclose(scan_rotation, 0) else -offset

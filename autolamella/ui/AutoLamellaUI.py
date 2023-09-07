@@ -177,8 +177,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         elif self.settings.protocol["lamella"]["alignment_current"] in ["Milling Current","Milling"]:
             self.comboBox_current_alignment.setCurrentIndex(1)
 
-        self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["autolamella_undercut"]["tilt_angle"])
-        self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["autolamella_undercut"]["tilt_angle_step"])
+        self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["MillUndercut"]["tilt_angle"])
+        self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["MillUndercut"]["tilt_angle_step"])
 
         self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
 
@@ -208,8 +208,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["name"] = self.lineEdit_name.text()
         self.settings.protocol["lamella"]["beam_shift_attempts"] = self.beamshift_attempts.value()
         self.settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText()
-        self.settings.protocol["autolamella_undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
-        self.settings.protocol["autolamella_undercut"]["tilt_angle_step"] = self.doubleSpinBox_undercut_step.value()
+        self.settings.protocol["MillUndercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
+        self.settings.protocol["MillUndercut"]["tilt_angle_step"] = self.doubleSpinBox_undercut_step.value()
         self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
         self.settings.protocol["fiducial"]["enabled"] = bool(self.comboBox_alignment_with.currentIndex() == 0)
         self.settings.protocol["method"] = self.comboBox_method.currentText().lower()

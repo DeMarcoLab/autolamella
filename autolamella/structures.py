@@ -252,3 +252,81 @@ class Experiment:
             experiment.positions.append(lamella)
 
         return experiment
+    
+
+    def _create_protocol_dataframe(self) -> pd.DataFrame:
+        plist = []
+        for lamella in self.positions:
+            if lamella.protocol:
+                for k in lamella.protocol:
+
+                    
+                    if "stages" not in lamella.protocol[k]:
+                        continue # skip non milling stages
+                    #     ddict = lamella.protocol[k]
+                    #     if not isinstance(ddict, dict):
+                    #         ddict = {k: lamella.protocol[k], "key": k, "milling_stage": 0, "lamella": lamella._petname}
+                    #     ddict["milling_stage"] = 0
+                    #     ddict["stage"] = k
+                    #     ddict["lamella"] = lamella._petname
+                    #     plist.append(deepcopy(ddict))
+
+
+                    else:
+                        for i, ddict in enumerate(lamella.protocol[k]["stages"]):
+
+                            ddict["MillingStage"] = i
+                            ddict["WorkflowStage"] = k
+                            ddict["Lamella"] = lamella._petname
+
+                            plist.append(deepcopy(ddict))
+
+        df = pd.DataFrame(plist)
+
+        # re-order columns starting with lamella, WorkflowStage, MillingStage
+        cols = list(df.columns)
+        cols.remove("Lamella")
+        cols.remove("WorkflowStage")
+        cols.remove("MillingStage")
+        cols = ["Lamella", "WorkflowStage", "MillingStage"] + cols
+        df = df[cols]
+
+
+        return df
+    
+    def _convert_dataframe_to_protocol(self, df: pd.DataFrame) -> None:
+        """Convert a dataframe to a protocol."""
+
+        PROTOCOL_KEYS = ["trench", "MillUndercut", "fiducial", "notch", "MillRoughCut", "MillRegularCut", "MillPolishingCut", "microexpansion"]
+
+        df.sort_values(by=["MillingStage"], inplace=True)
+
+        for lamella in self.positions:
+            petname = lamella._petname
+            print("-"*50, petname, "-"*50)
+
+            df_petname = df[df["Lamella"]==petname].copy(deep=True)
+
+            for k in PROTOCOL_KEYS:
+                # convert data frame back to dict
+
+                # sort by milling_stage
+                df_filt = df_petname[df_petname["WorkflowStage"]==k].copy(deep=True)
+                
+                if df_filt.empty:
+                    continue 
+
+                # drop na columns
+                df_filt.dropna(axis=1, how="all", inplace=True)
+
+                # drop milling_stage, lamella, stage
+                df_filt.drop(columns=["MillingStage", "Lamella", "WorkflowStage"], inplace=True)
+
+                ddict = deepcopy(df_filt.to_dict(orient="records"))
+                
+                lamella.protocol[k]["stages"] = deepcopy(ddict)
+                
+                from pprint import pprint
+                print("KEY: ", k)
+                pprint(lamella.protocol[k]["stages"])
+                print('-'*100)
