@@ -33,7 +33,7 @@ lamella:
         cleaning_cross_section: true
         depth: 2.0e-06
         hfw: 8.0e-05
-        lamella_height: 5.0e-07
+        lamella_height: 6.5e-07
         lamella_width: 14.0e-6
         milling_current: 2.0e-09
         offset: 2.0e-06
@@ -45,7 +45,7 @@ lamella:
         cleaning_cross_section: true
         depth: 1.0e-06
         hfw: 8.0e-05
-        lamella_height: 5.0e-07
+        lamella_height: 6.5e-07
         lamella_width: 1.4e-05
         milling_current: 7.4e-10
         offset: 5.0e-07
@@ -57,7 +57,7 @@ lamella:
         cleaning_cross_section: true
         depth: 4.0e-07
         hfw: 8.0e-05
-        lamella_height: 4.5e-07
+        lamella_height: 6.5e-07
         lamella_width: 1.4e-05
         milling_current: 6.0e-11
         offset: 0.0
@@ -102,12 +102,12 @@ options:
     compucentric_x_offset: 50.0e-6
     compucentric_y_offset: 25.0e-6 
     supervise:
-        features: false
+        features: true
         setup_lamella: true
-        trench: false
+        trench: true
         undercut: true
-        mill_rough: false
-        mill_regular: false
+        mill_rough: true
+        mill_regular: true
         mill_polishing: true
 trench:
     application_file: autolamella

@@ -68,3 +68,7 @@ DEFAULT_PROTOCOL = {
     "distance": 10.e-6,
 }
 }
+
+
+####### FEATURE FLAGS
+_MINIMAP_VISUALISATION = True

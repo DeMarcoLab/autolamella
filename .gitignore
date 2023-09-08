@@ -24,3 +24,4 @@ waffle/*
 old_protocol/*.y*ml
 old_protocol/*
 dist/*
+autolamella/db/fibsem.db
