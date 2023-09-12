@@ -112,7 +112,7 @@ options:
 trench:
     application_file: autolamella
     cleaning_cross_section: false
-    depth: 3.0e-06
+    depth: 1.5e-06
     hfw: 0.00018
     lamella_height: 2.5e-05
     lamella_width: 2.2e-05

@@ -69,28 +69,31 @@ cols[3].metric(label="Polish", value=n_polish)
 # group by petname
 df_hist2 = deepcopy(df_history)
 
-# drop if stage == "ReadyTrench"
-df_hist2 = df_hist2[df_hist2["stage"] != "ReadyTrench"]
-df_hist2 = df_hist2[df_hist2["stage"] != "SetupTrench"]
-df_hist2 = df_hist2[df_hist2["stage"] != "Setup"]
+try:
+    # drop if stage == "ReadyTrench"
+    df_hist2 = df_hist2[df_hist2["stage"] != "ReadyTrench"]
+    df_hist2 = df_hist2[df_hist2["stage"] != "SetupTrench"]
+    df_hist2 = df_hist2[df_hist2["stage"] != "Setup"]
 
-df_group = df_hist2.groupby("petname").sum().reset_index()
-df_group["avg_duration"] = df_group["duration"].mean() / 60
-df_group["avg_duration"] = df_group["avg_duration"].round(2).astype(str) + " min"
-avg_duration = df_group["avg_duration"].iloc[0]
+    df_group = df_hist2.groupby("petname").sum().reset_index()
+    df_group["avg_duration"] = df_group["duration"].mean() / 60
+    df_group["avg_duration"] = df_group["avg_duration"].round(2).astype(str) + " min"
+    avg_duration = df_group["avg_duration"].iloc[0]
 
 
 
-# total duration
-total_duration = df_hist2["duration"].sum() / 60 / 60
-total_duration = str(total_duration.round(2)) + " hrs"
-longest_stage = df_hist2.groupby("stage").mean().sort_values("duration", ascending=False).iloc[0]
+    # total duration
+    total_duration = df_hist2["duration"].sum() / 60 / 60
+    total_duration = str(total_duration.round(2)) + " hrs"
+    longest_stage = df_hist2.groupby("stage").mean().sort_values("duration", ascending=False).iloc[0]
 
-# duration metrics
-cols[0].metric(label="Avg Duration (Per Lamella)", value=avg_duration)
-cols[1].metric(label="Total Duration (All Lamella)", value=total_duration)
-cols[2].metric(label="Longest Stage (Average)", value=f"{longest_stage.name} : {round(longest_stage.duration/60, 0)} min")
-# automation metrics
+    # duration metrics
+    cols[0].metric(label="Avg Duration (Per Lamella)", value=avg_duration)
+    cols[1].metric(label="Total Duration (All Lamella)", value=total_duration)
+    cols[2].metric(label="Longest Stage (Average)", value=f"{longest_stage.name}: {round(longest_stage.duration/60, 1)} min")
+    # automation metrics
+except:
+    pass
 
 # total clicks, avg click size
 total_clicks = len(df_click)
