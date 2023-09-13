@@ -44,13 +44,14 @@ _DEV_MODE = False
 DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBACK_01/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
-_AUTO_SYNC_MINIMAP = False
+_AUTO_SYNC_MINIMAP = True
 
 class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     ui_signal = pyqtSignal(dict)
     det_confirm_signal = pyqtSignal(bool)
     update_experiment_signal = pyqtSignal(Experiment)
     _run_milling_signal = pyqtSignal()
+    _minimap_signal = pyqtSignal(object)
     
     def __init__(self, viewer: napari.Viewer) -> None:
         super(AutoLamellaUI, self).__init__()
@@ -83,6 +84,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.image_widget: FibsemImageSettingsWidget = None
         self.movement_widget: FibsemMovementWidget = None
         self.milling_widget: FibsemMillingWidget = None
+        self.minimap_widget: FibsemMinimapWidget = None
 
         self.WAITING_FOR_USER_INTERACTION: bool = False
         self.USER_RESPONSE: bool = False
@@ -372,10 +374,27 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
         )
         self.minimap_widget._stage_position_moved.connect(self.movement_widget._stage_position_moved)
+
+        positions = [lamella.state.microscope_state.absolute_position for lamella in self.experiment.positions]
+
+        self.movement_widget.positions_signal.connect(self.minimap_connection)
+        self.movement_widget.move_signal.connect(self.minimap_connection)
+        self.minimap_connection(positions=positions)
+
+        # self.minimap_widget.positions = positions
+        # self.minimap_widget._update_position_info()
+        # self.minimap_widget._update_viewer()
+
         if _AUTO_SYNC_MINIMAP:
             self.minimap_widget._stage_position_added.connect(self._update_stage_positions)
         napari.run(max_loop_level=2)
 
+    def minimap_connection(self,positions=None):
+
+        if self.minimap_widget is None:
+            return
+        else:
+            self._minimap_signal.emit(positions)
 
     def _update_stage_positions(self, position: FibsemStagePosition):
         # add lamella to experiment from tile manager
@@ -790,6 +809,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if pos is not None:
             lamella.state.microscope_state.absolute_position = deepcopy(pos)
 
+            lamella.state.microscope_state.absolute_position.name = lamella._petname
+
         self.experiment.positions.append(deepcopy(lamella))
         
         self.experiment.save()
@@ -897,6 +918,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 _restore_state=False) 
 
             self.milling_widget._PATTERN_IS_MOVEABLE = True
+
+        lamella.state.microscope_state.absolute_position.name = lamella._petname
+
+
+        if self.minimap_widget is not None:
+            positions = [lamella.state.microscope_state.absolute_position for lamella in self.experiment.positions]
+            self.minimap_connection(positions=positions)
+
 
         self._update_lamella_combobox()
         self.update_ui()
