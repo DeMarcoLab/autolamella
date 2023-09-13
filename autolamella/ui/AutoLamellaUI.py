@@ -264,6 +264,18 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self.settings is not None:
             self.settings.image.save_path = self.experiment.path
 
+
+        # register metadata
+        if cfg._REGISTER_METADATA:
+            import autolamella
+            utils._register_metadata(
+                microscope=self.microscope,
+                parent_type="autolamella",
+                parent_version=autolamella.__version__,
+                parent_ui=self,
+                experiment_name = self.experiment.name,
+            )
+
         self._update_lamella_combobox()
         self.update_ui()
 
