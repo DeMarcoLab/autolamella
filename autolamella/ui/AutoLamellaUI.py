@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 import napari
+from napari.qt.threading import thread_worker
 import yaml
 from fibsem import utils
 from fibsem import patterning
@@ -34,8 +35,6 @@ from autolamella.structures import (
 )
 from autolamella.ui.qt import AutoLamellaUI
 from PyQt5.QtCore import pyqtSignal
-
-from napari.qt.threading import thread_worker
 from autolamella.ui import _stylesheets
 from collections import Counter
 
