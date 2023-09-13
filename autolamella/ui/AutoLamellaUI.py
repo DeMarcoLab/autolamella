@@ -374,6 +374,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.minimap_widget, area="right", add_vertical_stretch=False, name="OpenFIBSEM Minimap"
         )
         self.minimap_widget._stage_position_moved.connect(self.movement_widget._stage_position_moved)
+        self.minimap_widget._minimap_positions.connect(self.movement_widget.minimap_window_positions)
+        self.minimap_widget._minimap_positions.connect(self.update_experiment_positions)
+        
 
         positions = [lamella.state.microscope_state.absolute_position for lamella in self.experiment.positions]
 
@@ -389,6 +392,28 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.minimap_widget._stage_position_added.connect(self._update_stage_positions)
         napari.run(max_loop_level=2)
 
+    def update_experiment_positions(self,positions=None):
+
+        if positions is None:
+            return
+
+        if len(positions) < len(self.experiment.positions):
+            
+            idx = 0
+            position_names = [p.name for p in positions]
+            for name in self.experiment.positions:
+                if name not in position_names:
+                    break
+                idx += 1
+
+            self.experiment.positions.pop(idx)
+            self.experiment.save()
+            self._update_lamella_combobox()
+            self.update_ui()
+
+            
+
+
     def minimap_connection(self,positions=None):
 
         if self.minimap_widget is None:
@@ -403,6 +428,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             return
 
         self.add_lamella_ui(position)
+
+        positions = [lamella.state.microscope_state.absolute_position for lamella in self.experiment.positions]
+
+        self.minimap_connection(positions=positions)
 
     def _load_positions(self):
         
