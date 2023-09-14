@@ -146,3 +146,8 @@ print("Tescan Imported Successfully") if "tescanautomation" in sys.modules else 
 ```
 
 If the import or install is unsuccessful, check to see if all the packages have been copied to the right directory. 
+
+
+### Desktop Shortcut
+
+To create a desktop shortcut for Autolamella, simply run the shortcut.py file. 

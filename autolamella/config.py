@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
-
+import autolamella
 
 BASE_PATH: Path = os.path.dirname(__file__)
 LOG_PATH: Path = os.path.join(BASE_PATH, 'log')
 CONFIG_PATH: Path = os.path.join(BASE_PATH)
 PROTOCOL_PATH: Path = os.path.join(BASE_PATH, "protocol", "protocol.yaml")
 SYSTEM_PATH: Path = os.path.join(CONFIG_PATH, "system.yaml")
-
+DESKTOP_SHORTCUT_PATH= os.path.dirname(autolamella.__path__[0]) 
 
 EXPERIMENT_NAME = "AutoLamella"
 HFW_THRESHOLD = 0.005 # 0.5% of the image height
