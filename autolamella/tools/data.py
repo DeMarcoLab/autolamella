@@ -226,7 +226,7 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
  
     # sample
     if program == "autoliftout":
-        from liftout.structures import Experiment
+        from autolamella.liftout.structures import Experiment
     if program == "autolamella":
         from autolamella.structures import Experiment
         
@@ -464,7 +464,7 @@ def parse_log_v1(path: Path, program="autolamella", encoding: str = "cp1252"):
  
     # sample
     if program == "autoliftout":
-        from liftout.structures import Experiment
+        from autolamella.liftout.structures import Experiment
     if program == "autolamella":
         from autolamella.structures import Experiment
         

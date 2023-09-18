@@ -415,7 +415,7 @@ with tab_stage:
 
 
     if program == "autoliftout":
-        from liftout.structures import Experiment
+        from autolamella.liftout.structures import Experiment
         
     exp = Experiment.load(os.path.join(EXPERIMENT_PATH, "experiment.yaml"))
 

@@ -1,0 +1,199 @@
+flatten:
+    cleaning_cross_section: 1.0
+    depth: 1.0e-05
+    height: 2.5e-05
+    hfw: 8.0e-05
+    milling_current: 2.8e-08
+    rotation: 0.0
+    scan_direction: LeftToRight
+    width: 2.0e-06
+    application_file: "autolamella"
+    type: "Rectangle"
+horseshoe:
+    stages:
+    -   depth: 4.0e-6
+        hfw: 8.0e-05
+        lamella_height: 9.999999999999999e-06
+        lamella_width: 4.0e-05
+        milling_current: 2.8e-08
+        offset: 2.0e-06
+        rotation: 0.0
+        scan_direction: TopToBottom
+        side_offset: 0.0
+        side_width: 1.5e-05
+        size_ratio: 2.0
+        trench_height: 1.2e-05
+        application_file: "autolamella"
+        type: "Horseshoe"
+    -   depth: 3.0e-6
+        hfw: 8.0e-05
+        lamella_height: 9.999999999999999e-06
+        lamella_width: 4.0e-05
+        milling_current: 7.6e-09
+        offset: 0.0
+        rotation: 0.0
+        scan_direction: TopToBottom
+        side_offset: 1.5e-05
+        side_width: 5.0e-07
+        size_ratio: 1.0
+        trench_height: 2.4999999999999998e-06
+        application_file: "autolamella"
+        type: "Horseshoe"
+ml:
+    encoder: resnet34
+    num_classes: 3
+    checkpoint: openfibsem-baseline-34.pt
+name: autoliftout-base-protocol
+method: default
+options:
+    batch_mode: true
+    confirm_advance: true
+    landing_joining_method: Weld
+    liftout_joining_method: None
+    landing_post_x_offset: 0.75e-6
+    lamella_start_position: autoliftout-pre-tilt-35-deg-grid-01-lamella
+    landing_start_position: autoliftout-pre-tilt-35-deg-grid-02-landing
+    compucentric_x_offset: 50.0e-6
+    compucentric_y_offset: 25.0e-6 
+    supervise:
+        landing: true
+        liftout: true
+        reset: true
+        trench: false
+        undercut: true
+        setup_lamella: true
+        mill_rough: true
+        mill_regular: true
+        mill_polishing: true
+platinum:
+    application_file: cryo_Pt_dep
+    beam_current: 5.0e-11
+    dwell_time: 1.0e-06
+    gas: Pt dep
+    position: Electron Default
+    rate: 3.0e-10
+    spot_size: 3.0e-06
+    weld:
+        hfw: 0.0001
+        length: 1.5e-05
+        time: 30.0
+    whole_grid:
+        hfw: 3.0e-05
+        length: 7.0e-06
+        time: 30.0
+
+sever:
+    cleaning_cross_section: 0.0
+    depth: 3.0e-06
+    height: 1.8e-05
+    hfw: 8.0e-05
+    milling_current: 7.6e-09
+    rotation: 0.0
+    scan_direction: TopToBottom
+    width: 1.0e-06
+    application_file: "autolamella"
+    type: "Rectangle"
+sharpen:
+    bias: 2.5e-07
+    cleaning_cross_section: 0.0
+    depth: 9.999999999999999e-06
+    height: 2.0e-06
+    hfw: 0.00015
+    milling_current: 2.8e-08
+    needle_angle: 40.0
+    rotation: 0.0
+    scan_direction: TopToBottom
+    tip_angle: 35.0
+    width: 2.9999999999999997e-05
+    application_file: "autolamella"
+    type: "Rectangle"
+undercut:
+    cleaning_cross_section: 0.0
+    depth: 3.0e-06
+    h_offset: 4.0e-06
+    height: 9.0e-06
+    hfw: 8.0e-05
+    milling_current: 7.6e-09
+    rhs_height: 1.0e-05
+    rotation: 0.0
+    scan_direction: TopToBottom
+    trench_width: 2.0e-06
+    undercut_angle: 6.0
+    width: 2.5e-05
+    application_file: "autolamella"
+    type: "Undercut"
+weld:
+    height: 1.0e-6
+    width: 5.0e-6
+    depth: 0.5e-6
+    distance: 2.0e-6
+    number: 5
+    rotation: 0.0
+    passes: 1.0
+    milling_current: 0.74e-09
+    hfw: 8.0e-5
+    application_file: "autolamella"
+    scan_direction: "LeftToRight"
+    type: "SpotWeld"
+lamella:
+    resolution:
+    - 3072
+    - 2048
+    rotation_angle: 49.0
+    dwell_time: 2.0e-07
+    hfw: 8.0e-05
+    tilt_angle: 20.0
+    stages:
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 2.0e-06
+        hfw: 8.0e-05
+        lamella_height: 6.0e-07
+        lamella_width: 14.0e-6
+        milling_current: 2.0e-09
+        offset: 2.0e-06
+        preset: 30 keV; 2.5 nA
+        size_ratio: 2.0
+        trench_height: 1.0e-05
+        type: "Trench"
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 1.0e-06
+        hfw: 8.0e-05
+        lamella_height: 6.0e-07
+        lamella_width: 1.4e-05
+        milling_current: 7.4e-10
+        offset: 5.0e-07
+        preset: 30 keV; 1 nA
+        size_ratio: 1.0
+        trench_height: 2.0e-06
+        type: "Trench"
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 4.0e-07
+        hfw: 8.0e-05
+        lamella_height: 6.0e-07
+        lamella_width: 1.4e-05
+        milling_current: 6.0e-11
+        offset: 0.0
+        preset: 30 keV; 50 pA
+        size_ratio: 1.0
+        trench_height: 6.0e-07
+        type: "Trench"
+fiducial:
+    application_file: autolamella
+    cleaning_cross_section: false
+    depth: 4.0e-06
+    height: 1.0e-05
+    hfw: 8.0e-05
+    milling_current: 7.6e-09
+    passes: null
+    preset: 30 keV; 20 nA
+    rotation: 45
+    width: 1.0e-06
+    type: "Fiducial"
+
+# system
+# options
+# positions
+# milling

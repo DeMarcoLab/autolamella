@@ -7,7 +7,12 @@ contributions:
     - id: autolamella.viewer
       python_name: autolamella.ui.AutoLamellaUI:AutoLamellaUI
       title: AutoLamella UI
+    - id: autolamella.liftout.viewer
+      python_name: liftout.ui.AutoLiftoutUIv2:AutoLiftoutUIv2
+      title: AutoLiftout UI
 
   widgets:
     - command: autolamella.viewer
       display_name: AutoLamella UI
+    - command: autolamella.liftout.viewer
+      display_name: AutoLiftout UI
