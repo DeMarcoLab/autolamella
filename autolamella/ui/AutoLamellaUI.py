@@ -43,7 +43,7 @@ _DEV_MODE = False
 DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBACK_01/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
-_AUTO_SYNC_MINIMAP = True
+
 
 class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     ui_signal = pyqtSignal(dict)
@@ -399,8 +399,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # self.minimap_widget._update_position_info()
         # self.minimap_widget._update_viewer()
 
-        if _AUTO_SYNC_MINIMAP:
-            self.minimap_widget._stage_position_added.connect(self._update_stage_positions)
+        if cfg._AUTO_SYNC_MINIMAP:
+            self.minimap_widget._stage_position_added.connect(self._add_lamella_from_minimap)
         napari.run(max_loop_level=2)
 
     def update_experiment_positions(self,positions=None):
@@ -412,14 +412,22 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             
             idx = 0
             position_names = [p.name for p in positions]
-            for name in self.experiment.positions:
-                if name not in position_names:
+            # find index of missing position
+            for lamella in self.experiment.positions:
+                if lamella._petname not in position_names:
                     break
                 idx += 1
 
             self.experiment.positions.pop(idx)
             self.experiment.save()
             self._update_lamella_combobox()
+            self.update_ui()
+
+        # modify exisitng position
+        else:
+            for idx, pos in enumerate(positions):
+                self.experiment.positions[idx].state.microscope_state.absolute_position = pos
+            self.experiment.save()
             self.update_ui()
 
             
@@ -432,13 +440,19 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         else:
             self._minimap_signal.emit(positions)
 
-    def _update_stage_positions(self, position: FibsemStagePosition):
+    # add lmaella from minimap
+    def _add_lamella_from_minimap(self, position: FibsemStagePosition):
+
+        self.add_lamella_ui(position)
+
+        self._update_stage_positions()
+
+    def _update_stage_positions(self):
+        
         # add lamella to experiment from tile manager
         if self.experiment is None:
             logging.warning("No experiment loaded")
             return
-
-        self.add_lamella_ui(position)
 
         positions = [lamella.state.microscope_state.absolute_position for lamella in self.experiment.positions]
 
@@ -869,6 +883,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info("Lamella removed from experiment")
         self._update_lamella_combobox()
         self.update_ui()
+
+        self._update_stage_positions() # update the minimap
 
     def fail_lamella_ui(self):
         idx = self.comboBox_current_lamella.currentIndex()
