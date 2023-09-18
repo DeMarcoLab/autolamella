@@ -399,13 +399,13 @@ def land_lamella(
     
     return lamella
 
-from autolamella.liftout.autoliftout import setup_lamella, mill_lamella, mill_lamella_trench, mill_lamella_undercut
+from autolamella.liftout.autoliftout import setup_lamella, mill_lamella
 from autolamella.workflows.core import mill_trench, mill_undercut
 
 # serial workflow functions
 SERIAL_WORKFLOW_STAGES = {
     AutoLiftoutStage.MillTrench: mill_trench,
-    AutoLiftoutStage.MillUndercut: mill_lamella_undercut,
+    AutoLiftoutStage.MillUndercut: mill_undercut,
     AutoLiftoutStage.Liftout: liftout_lamella,
     AutoLiftoutStage.Landing: land_lamella,
     AutoLiftoutStage.SetupPolish: setup_lamella,

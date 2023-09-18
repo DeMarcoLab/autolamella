@@ -126,6 +126,12 @@ def mill_undercut(
     validate = settings.protocol["options"]["supervise"].get("undercut", True)
     settings.image.save_path = lamella.path
 
+    # optional undercut
+    _complete_undercut = settings.protocol["options"].get("complete_undercut", True)
+    if _complete_undercut is False:
+        logging.info("Skipping undercut")
+        return lamella
+
     # rotate flat to eb
     log_status_message(lamella, "MOVE_TO_UNDERCUT")
     _update_status_ui(parent_ui, f"{lamella.info} Moving to Undercut Position...")
@@ -138,6 +144,7 @@ def mill_undercut(
     
     # detect
     log_status_message(lamella, f"ALIGN_TRENCH")
+    _update_status_ui(parent_ui, f"{lamella.info} Aligning Trench (Rotated)...")
     settings.image.beam_type = BeamType.ELECTRON
     settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
     settings.image.label = f"ref_{lamella.state.stage.name}_trench_align_ml"
@@ -177,6 +184,8 @@ def mill_undercut(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
+
+    method = settings.protocol.get("method", "autolamella-waffle")
     lamella.protocol["undercut"] = deepcopy(settings.protocol["undercut"])
     N_UNDERCUTS = int(lamella.protocol["undercut"].get("tilt_angle_step", 1))
     UNDERCUT_ANGLE_DEG = lamella.protocol["undercut"].get("tilt_angle", -5)
@@ -210,7 +219,12 @@ def mill_undercut(
         # move pattern
         if i > 0: # reduce the undercut height by half each time
             lamella.protocol["undercut"]["height"] /= 2
-        offset = lamella.protocol["undercut"].get("height", 10) / 2 + _UNDERCUT_V_OFFSET
+
+        
+        if method == "autoliftout-default":
+            offset = lamella.protocol["undercut"].get("trench_width", 2e-6) / 2 + _UNDERCUT_V_OFFSET
+        else:         
+            offset = lamella.protocol["undercut"].get("height", 10) / 2 + _UNDERCUT_V_OFFSET
         point = deepcopy(det.features[0].feature_m)     
         point.y += offset if np.isclose(scan_rotation, 0) else -offset
 
@@ -227,7 +241,17 @@ def mill_undercut(
 
     # log undercut stages
     lamella.protocol["undercut"] = deepcopy(patterning._get_protocol_from_stages(undercut_stages))
-   
+    lamella.protocol["undercut"]["point"] = undercut_stages[0].pattern.point.__to_dict__()
+
+    # take reference images
+    log_status_message(lamella, "REFERENCE_IMAGES")
+    _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
+    settings.image.beam_type = BeamType.ION
+    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+    settings.image.save = True
+    settings.image.label=f"ref_{lamella.state.stage.name}_undercut"
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
 
     # optional return flat to electron beam (autoliftout)
     if settings.protocol["options"].get("return_to_eb_after_undercut", False):
@@ -248,9 +272,10 @@ def mill_undercut(
         dy=-det.features[0].feature_m.y,
     )
 
-
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
+    _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
+
     reference_images = acquire.take_set_of_reference_images(
         microscope=microscope,
         image_settings=settings.image,
