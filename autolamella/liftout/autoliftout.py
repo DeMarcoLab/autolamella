@@ -1329,10 +1329,11 @@ def run_setup_autoliftout(
 
     return experiment
 
+from autolamella.workflows.core import mill_trench, mill_undercut
 # autoliftout_workflow
 WORKFLOW_STAGES = {
     AutoLiftoutStage.Setup: run_setup_autoliftout, # TODO: split this further
-    AutoLiftoutStage.MillTrench: mill_lamella_trench,
+    AutoLiftoutStage.MillTrench: mill_trench,
     AutoLiftoutStage.MillUndercut: mill_lamella_undercut,
     AutoLiftoutStage.Liftout: liftout_lamella,
     AutoLiftoutStage.Landing: land_lamella,
