@@ -158,8 +158,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_go_to_lamella.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
 
         # comboboxes
-        self.comboBox_method.addItems(["Default", "Waffle"])
-        self.comboBox_stress_relief.addItems(["Notch","Microexpansion"])
+        self.comboBox_method.addItems(cfg.__AUTOLAMELLA_METHODS__)
+        self.comboBox_stress_relief.addItems(["Notch","Microexpansion"]) # TODO: dont make this an option, just base it off the method
         self.comboBox_alignment_with.addItems(["Fiducial", "No Fiducial"])
 
     def update_protocol_ui(self):
@@ -175,8 +175,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["undercut"]["tilt_angle_step"])
 
         self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
-
-        self.comboBox_method.setCurrentIndex(1) if self.settings.protocol["method"] == "waffle" else self.comboBox_method.setCurrentIndex(0)
+        
+        method = self.settings.protocol["method"]
+        self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title()))
 
         self.comboBox_alignment_with.setCurrentIndex(0) if self.settings.protocol["fiducial"]["enabled"] else self.comboBox_alignment_with.setCurrentIndex(1)
 
@@ -512,7 +513,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.comboBox_current_lamella.setVisible(_lamella_selected)
 
         if _protocol_loaded:
-            method = self.settings.protocol.get("method", "waffle")
+            method = self.settings.protocol.get("method", "autolamella-waffle")
             self.label_protocol_name.setText(
                 f"Protocol: {self.settings.protocol.get('name', 'protocol')} ({method.title()} Method)"
             )
@@ -535,7 +536,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if _experiment_loaded and _protocol_loaded:
             # workflow buttons
-            _WAFFLE_METHOD = self.settings.protocol.get("method", "waffle") == "waffle"
+            _WAFFLE_METHOD = self.settings.protocol.get("method", "autolamella-waffle") == "autolamella-waffle"
             _counter = Counter([p.state.stage.name for p in self.experiment.positions])
             
             _READY_TRENCH = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
@@ -650,9 +651,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # buttons
         if self._PROTOCOL_LOADED:
 
-            method = self.settings.protocol.get("method", "waffle")
-            SETUP_STAGES =  [AutoLamellaWaffleStage.SetupTrench] if method == "waffle" else [AutoLamellaWaffleStage.PreSetupLamella]
-            READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench] if method == "waffle" else [AutoLamellaWaffleStage.SetupLamella]
+            method = self.settings.protocol.get("method", "autolamella-waffle")
+            SETUP_STAGES =  [AutoLamellaWaffleStage.SetupTrench] if method == "autolamella-waffle" else [AutoLamellaWaffleStage.PreSetupLamella]
+            READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench] if method == "autolamella-waffle" else [AutoLamellaWaffleStage.SetupLamella]
             if lamella.state.stage in SETUP_STAGES:
                 self.pushButton_save_position.setText(f"Save Position")
                 self.pushButton_save_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
@@ -679,9 +680,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             if self._PROTOCOL_LOADED:
 
                 _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, False
-                method = self.settings.protocol.get("method", "waffle")
+                method = self.settings.protocol.get("method", "autolamella-waffle")
                 
-                if method == "waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+                if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
                     _DISPLAY_TRENCH = True
 
                 # show lamella and friends
@@ -749,7 +750,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info(f"Updating Lamella Pattern for {lamella.info}")
 
         # update the trench point
-        method = self.settings.protocol.get("method", "waffle")
+        method = self.settings.protocol.get("method", "autolamella-waffle")
         self._update_milling_protocol(idx=idx, method=method, stage=lamella.state.stage)
 
         self.experiment.save() 
@@ -857,8 +858,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def add_lamella_ui(self, pos:FibsemStagePosition=None):
 
-        method = self.settings.protocol.get("method", "waffle")
-        stage = AutoLamellaWaffleStage.SetupTrench if method == "waffle" else AutoLamellaWaffleStage.PreSetupLamella
+        method = self.settings.protocol.get("method", "autolamella-waffle")
+        stage = AutoLamellaWaffleStage.SetupTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.PreSetupLamella
 
         lamella = Lamella(
             path=self.experiment.path,
@@ -924,9 +925,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         idx = self.comboBox_current_lamella.currentIndex()
         # TOGGLE BETWEEN READY AND SETUP
 
-        method = self.settings.protocol.get("method", "waffle")
-        SETUP_STATE = AutoLamellaWaffleStage.SetupTrench if method == "waffle" else AutoLamellaWaffleStage.PreSetupLamella
-        READY_STATE = AutoLamellaWaffleStage.ReadyTrench if method == "waffle" else AutoLamellaWaffleStage.SetupLamella
+        method = self.settings.protocol.get("method", "autolamella-waffle")
+        SETUP_STATE = AutoLamellaWaffleStage.SetupTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.PreSetupLamella
+        READY_STATE = AutoLamellaWaffleStage.ReadyTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.SetupLamella
         
         # if waffle, but at setuplamella: 
         # SETUP_STATE = AutoLamellaWaffleStage.SetupLamella
@@ -1001,7 +1002,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def _update_milling_protocol(self, idx: int, method: str, stage: AutoLamellaWaffleStage):
 
         stages = deepcopy(self.milling_widget.get_milling_stages())
-        if method == "waffle" and stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+        if method == "autolamella-waffle" and stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
             self.experiment.positions[idx].protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
             self.experiment.positions[idx].protocol["trench"]["point"] = stages[0].pattern.point.__to_dict__()
         

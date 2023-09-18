@@ -1,6 +1,6 @@
 
 name: autolamella-chromatin-scan-rotation-0deg
-method: default # waffle or default
+method: autolamella-default # waffle or default
 
 options:
   supervise:

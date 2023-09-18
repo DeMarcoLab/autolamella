@@ -147,7 +147,7 @@ class Experiment:
 
         self.positions: list[Lamella] = []
         self.program = "AutoLamella"
-        self.method = "AutoLamella"
+        self.method = "autolamella-default"
 
     def __to_dict__(self) -> dict:
 
@@ -244,7 +244,7 @@ class Experiment:
         experiment._created_at = ddict.get("created_at", None)
         experiment._id = ddict.get("_id", "NULL")
         experiment.program = ddict.get("program", "AutoLamella")
-        experiment.method = ddict.get("method", "AutoLamella") 
+        experiment.method = ddict.get("method", "autoLamella-default") 
 
         # load lamella from dict
         for lamella_dict in ddict["positions"]:
