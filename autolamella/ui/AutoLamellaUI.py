@@ -116,10 +116,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_fail_lamella.clicked.connect(self.fail_lamella_ui)
         self.pushButton_revert_stage.clicked.connect(self.revert_stage)
 
-        self.pushButton_run_waffle_trench.clicked.connect(self._run_trench_workflow)
-        self.pushButton_run_autolamella.clicked.connect(self._run_lamella_workflow)
-        self.pushButton_run_waffle_undercut.clicked.connect(self._run_undercut_workflow)
-        self.pushButton_run_setup_autolamella.clicked.connect(self._run_setup_lamella_workflow)
+        self.pushButton_run_waffle_trench.clicked.connect(lambda: self._run_workflow(workflow="trench"))
+        self.pushButton_run_autolamella.clicked.connect(lambda: self._run_workflow(workflow="lamella"))
+        self.pushButton_run_waffle_undercut.clicked.connect(lambda: self._run_workflow(workflow="undercut"))
+        self.pushButton_run_setup_autolamella.clicked.connect(lambda: self._run_workflow(workflow="setup-lamella"))
 
         self.pushButton_run_waffle_trench.setVisible(False)
         self.pushButton_run_autolamella.setVisible(False)
@@ -929,10 +929,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         SETUP_STATE = AutoLamellaWaffleStage.SetupTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.PreSetupLamella
         READY_STATE = AutoLamellaWaffleStage.ReadyTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.SetupLamella
         
-        # if waffle, but at setuplamella: 
-        # SETUP_STATE = AutoLamellaWaffleStage.SetupLamella
-        # READY_STATE = AutoLamellaWaffleStage.ReadyLamella
-
         lamella: Lamella = self.experiment.positions[idx]
         from autolamella import waffle as wfl
 
@@ -1015,18 +1011,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             # feature
             _feature_name = "notch" if self.settings.protocol["notch"]["enabled"] else "microexpansion"
-            self.experiment.positions[idx].feature_position = stages[n_lamella].pattern.point
             self.experiment.positions[idx].protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella]))
             self.experiment.positions[idx].protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.__to_dict__()
 
             
             # fiducial (optional)
             if self.settings.protocol["fiducial"]["enabled"]:
-                self.experiment.positions[idx].fiducial_centre = stages[-1].pattern.point
                 self.experiment.positions[idx].protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-1]))
                 self.experiment.positions[idx].protocol["fiducial"]["point"] = stages[-1].pattern.point.__to_dict__()
-
-
 
     def _run_milling(self):
         self._MILLING_RUNNING = True
@@ -1039,49 +1031,17 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self.det_widget is not None:
             self.det_widget.confirm_button_clicked()
 
-    def _run_trench_workflow(self):
-        try:
-            self.milling_widget.milling_position_changed.disconnect()
-        except:
-            pass
-        
-        self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="trench",
-        )
-        self.worker.finished.connect(self._workflow_finished)
-        self.worker.start()
-
-    def _run_undercut_workflow(self):
-        try:
-            self.milling_widget.milling_position_changed.disconnect()
-        except:
-            pass
-        self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="undercut",
-        )
-        self.worker.finished.connect(self._workflow_finished)
-        self.worker.start()
-    
-    def _run_setup_lamella_workflow(self):
-        try:
-            self.milling_widget.milling_position_changed.disconnect()
-        except:
-            pass
-        self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="setup-lamella",
-        )
-        self.worker.finished.connect(self._workflow_finished)
-        self.worker.start()
-
-    # TODO: consolidate all these diff workflow functions
-    def _run_lamella_workflow(self): 
+    def _run_workflow(self, workflow: str) -> None:
         try:
             self.milling_widget.milling_position_changed.disconnect()
         except:
             pass 
 
         self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="lamella",
+            microscope=self.microscope, 
+            settings=self.settings, 
+            experiment=self.experiment, 
+            workflow=workflow,
         )
         self.worker.finished.connect(self._workflow_finished)
         self.worker.start()
