@@ -1,4 +1,4 @@
-autolamella_undercut:
+undercut:
     application_file: autolamella
     cleaning_cross_section: false
     depth: 2.5e-06

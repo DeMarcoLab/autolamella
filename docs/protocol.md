@@ -54,7 +54,7 @@ trench:
     preset: 30 keV; 2.5 nA
     size_ratio: 2.0
     trench_height: 3.2e-05
-autolamella_undercut:
+undercut:
     application_file: autolamella
     cleaning_cross_section: false
     depth: 1.0e-06

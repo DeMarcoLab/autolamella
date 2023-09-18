@@ -178,8 +178,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         elif self.settings.protocol["lamella"]["alignment_current"] in ["Milling Current","Milling"]:
             self.comboBox_current_alignment.setCurrentIndex(1)
 
-        self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["autolamella_undercut"]["tilt_angle"])
-        self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["autolamella_undercut"]["tilt_angle_step"])
+        self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["undercut"]["tilt_angle"])
+        self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["undercut"]["tilt_angle_step"])
 
         self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
 
@@ -209,8 +209,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["name"] = self.lineEdit_name.text()
         self.settings.protocol["lamella"]["beam_shift_attempts"] = self.beamshift_attempts.value()
         self.settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText()
-        self.settings.protocol["autolamella_undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
-        self.settings.protocol["autolamella_undercut"]["tilt_angle_step"] = self.doubleSpinBox_undercut_step.value()
+        self.settings.protocol["undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
+        self.settings.protocol["undercut"]["tilt_angle_step"] = self.doubleSpinBox_undercut_step.value()
         self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
         self.settings.protocol["fiducial"]["enabled"] = bool(self.comboBox_alignment_with.currentIndex() == 0)
         self.settings.protocol["method"] = self.comboBox_method.currentText().lower()
@@ -857,8 +857,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 microscope_state=self.microscope.get_current_microscope_state(),
                 start_timestamp = datetime.timestamp(datetime.now())
         ))
-        from autolamella import waffle as wfl
-        wfl.log_status_message(lamella, "STARTED")
+        from autolamella.workflows.core import log_status_message
+        log_status_message(lamella, "STARTED")
         
         if pos is not None:
             lamella.state.microscope_state.absolute_position = deepcopy(pos)
@@ -898,8 +898,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         
         self.experiment.positions[idx].state = deepcopy(self.experiment.positions[idx].history[hidx])
         self.experiment.positions[idx].state.start_timestamp = datetime.timestamp(datetime.now())
-        from autolamella import waffle as wfl
-        wfl.log_status_message(self.experiment.positions[idx], "STARTED")
+        from autolamella.workflows.core import log_status_message
+        log_status_message(self.experiment.positions[idx], "STARTED")
         # TODO: use start of stage update to restore the state properly
 
         self.update_ui()
@@ -1097,12 +1097,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if info["eb_image"] is not None:
             eb_image = info["eb_image"]
-            self.image_widget.update_viewer(eb_image.data, "ELECTRON")
             self.image_widget.eb_image = eb_image
+            self.image_widget.update_viewer(eb_image.data, "ELECTRON", _set_ui=True)
         if info["ib_image"] is not None:
             ib_image = info["ib_image"]
-            self.image_widget.update_viewer(ib_image.data, "ION")
             self.image_widget.ib_image = ib_image
+            self.image_widget.update_viewer(ib_image.data, "ION", _set_ui=True)
 
 
         if isinstance(stages, list):
