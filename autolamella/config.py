@@ -29,10 +29,9 @@ DEFAULT_PROTOCOL = {
 },
 
 "lamella_headers" : {
-    "beam_shift_attempts": 3,
+    "alignment_attempts": 3,
     "lamella_width": 10.e-6,
     "lamella_length": 10.e-6,
-    "alignment_current": "Imaging Current",
 },
 
 "protocol_stage_1" : {
@@ -72,5 +71,5 @@ DEFAULT_PROTOCOL = {
 
 ####### FEATURE FLAGS
 _MINIMAP_VISUALISATION = True
-_REGISTER_METADATA = False
 _AUTO_SYNC_MINIMAP = True
+_REGISTER_METADATA = False

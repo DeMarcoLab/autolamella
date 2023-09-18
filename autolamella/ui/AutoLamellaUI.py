@@ -160,7 +160,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # comboboxes
         self.comboBox_method.addItems(["Default", "Waffle"])
         self.comboBox_stress_relief.addItems(["Notch","Microexpansion"])
-        self.comboBox_current_alignment.addItems(["Imaging Current","Milling Current"])
         self.comboBox_alignment_with.addItems(["Fiducial", "No Fiducial"])
 
     def update_protocol_ui(self):
@@ -170,13 +169,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         
         self.lineEdit_name.setText(self.settings.protocol["name"])
 
-        self.beamshift_attempts.setValue(self.settings.protocol["lamella"]["beam_shift_attempts"])
-
-
-        if self.settings.protocol["lamella"]["alignment_current"] in ["Imaging Current","Imaging"]:
-            self.comboBox_current_alignment.setCurrentIndex(0)
-        elif self.settings.protocol["lamella"]["alignment_current"] in ["Milling Current","Milling"]:
-            self.comboBox_current_alignment.setCurrentIndex(1)
+        self.beamshift_attempts.setValue(self.settings.protocol["lamella"]["alignment_attempts"])
 
         self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["undercut"]["tilt_angle"])
         self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["undercut"]["tilt_angle_step"])
@@ -207,10 +200,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self._PROTOCOL_LOADED is False:
             return
         self.settings.protocol["name"] = self.lineEdit_name.text()
-        self.settings.protocol["lamella"]["beam_shift_attempts"] = self.beamshift_attempts.value()
-        self.settings.protocol["lamella"]["alignment_current"] = self.comboBox_current_alignment.currentText()
+        self.settings.protocol["lamella"]["alignment_attempts"] = int(self.beamshift_attempts.value())
         self.settings.protocol["undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
-        self.settings.protocol["undercut"]["tilt_angle_step"] = self.doubleSpinBox_undercut_step.value()
+        self.settings.protocol["undercut"]["tilt_angle_step"] = int(self.doubleSpinBox_undercut_step.value())
         self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
         self.settings.protocol["fiducial"]["enabled"] = bool(self.comboBox_alignment_with.currentIndex() == 0)
         self.settings.protocol["method"] = self.comboBox_method.currentText().lower()
@@ -268,7 +260,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
         # register metadata
-        if cfg._REGISTER_METADATA:
+        if cfg._REGISTER_METADATA and new_experiment:
             import autolamella
             utils._register_metadata(
                 microscope=self.microscope,
@@ -277,6 +269,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 parent_ui=self,
                 experiment_name = self.experiment.name,
             )
+
+        # automatically re-load protocol if available
+        if not new_experiment and self.settings is not None:
+            # try to load protocol from file
+            PROTOCOL_PATH = os.path.join(self.experiment.path, "protocol.yaml")
+            if os.path.exists(PROTOCOL_PATH):
+                self.settings.protocol = utils.load_protocol(protocol_path=PROTOCOL_PATH)
+                self._PROTOCOL_LOADED = True
+                self.update_protocol_ui()
 
         self._update_lamella_combobox()
         self.update_ui()
@@ -521,6 +522,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_remove_lamella.setEnabled(_lamella_selected)
         self.pushButton_save_position.setEnabled(_lamella_selected)
         self.pushButton_go_to_lamella.setEnabled(_lamella_selected)
+
+        # set visible if protocol loaded 
+        self.pushButton_add_lamella.setVisible(_protocol_loaded and _experiment_loaded)
+        self.pushButton_remove_lamella.setVisible(_protocol_loaded and _experiment_loaded)
+        self.pushButton_save_position.setVisible(_protocol_loaded and _experiment_loaded)
+        self.pushButton_go_to_lamella.setVisible(_protocol_loaded and _experiment_loaded)
+        self.label_current_lamella_header.setVisible(_protocol_loaded and _experiment_loaded)
+        self.comboBox_current_lamella.setVisible(_protocol_loaded and _experiment_loaded)
+        self.label_info.setVisible(_protocol_loaded and _experiment_loaded)
+        self.label_setup_header.setVisible(_protocol_loaded and _experiment_loaded)
 
         if _experiment_loaded and _protocol_loaded:
             # workflow buttons

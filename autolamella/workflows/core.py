@@ -180,7 +180,7 @@ def mill_undercut(
     lamella.protocol["undercut"] = deepcopy(settings.protocol["undercut"])
     N_UNDERCUTS = int(lamella.protocol["undercut"].get("tilt_angle_step", 1))
     UNDERCUT_ANGLE_DEG = lamella.protocol["undercut"].get("tilt_angle", -5)
-    _UNDERCUT_V_OFFSET = 1e-6
+    _UNDERCUT_V_OFFSET = lamella.protocol["undercut"].get("v_offset", 1e-6)
     undercut_stages = []
 
     for i in range(N_UNDERCUTS):
@@ -229,7 +229,7 @@ def mill_undercut(
     lamella.protocol["undercut"] = deepcopy(patterning._get_protocol_from_stages(undercut_stages))
    
 
-    # optional return flat to electron beam
+    # optional return flat to electron beam (autoliftout)
     if settings.protocol["options"].get("return_to_eb_after_undercut", False):
         microscope.move_flat_to_beam(settings, BeamType.ELECTRON, _safe=True)
 
@@ -288,11 +288,15 @@ def mill_feature(
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
     settings.image.beam_type = BeamType.ION
-    settings.image.label = f"alignment_target_{lamella.state.stage.name}"
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
-    alignment.beam_shift_alignment(microscope, settings.image, 
-                                    ref_image=ref_image,
-                                    reduced_area=lamella.fiducial_area)
+    _ALIGNMENT_ATTEMPTS = int(settings.protocol["lamella"].get("alignment_attempts", 1))
+
+    for i in range(_ALIGNMENT_ATTEMPTS):
+        settings.image.label = f"alignment_target_{lamella.state.stage.name}_{i:02d}"
+        settings.image.beam_type = BeamType.ION
+        alignment.beam_shift_alignment(microscope, settings.image, 
+                                        ref_image=ref_image,
+                                            reduced_area=lamella.fiducial_area)
     settings.image.reduced_area = None
 
 
@@ -338,8 +342,6 @@ def mill_lamella(
     validate = settings.protocol["options"]["supervise"].get("lamella", True)
     settings.image.save_path = lamella.path
 
-    # TODO: CHANGE_CURRENT_HERE
-
     # beam_shift alignment
     log_status_message(lamella, "ALIGN_LAMELLA")
     _update_status_ui(parent_ui, f"{lamella.info} Aligning Reference Images...")
@@ -352,16 +354,15 @@ def mill_lamella(
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
     settings.image.beam_type = BeamType.ION
-    settings.image.label = f"alignment_target_{lamella.state.stage.name}"
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
-    # for _ in range(
-    #             int(settings.protocol["lamella"]["beam_shift_attempts"])
-    #         ):
-        # settings.image.reduced_area = lamella.fiducial_area
-    settings.image.beam_type = BeamType.ION
-    alignment.beam_shift_alignment(microscope, settings.image, 
-                                    ref_image=ref_image,
-                                        reduced_area=lamella.fiducial_area)
+    _ALIGNMENT_ATTEMPTS = int(settings.protocol["lamella"].get("alignment_attempts", 1))
+
+    for i in range(_ALIGNMENT_ATTEMPTS):
+        settings.image.label = f"alignment_target_{lamella.state.stage.name}_{i:02d}"
+        settings.image.beam_type = BeamType.ION
+        alignment.beam_shift_alignment(microscope, settings.image, 
+                                        ref_image=ref_image,
+                                            reduced_area=lamella.fiducial_area)
 
     settings.image.reduced_area = None
 

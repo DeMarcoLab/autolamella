@@ -41,8 +41,7 @@ trench:
   cleaning_cross_section: false
 
 lamella:
-  beam_shift_attempts: 3.0
-  alignment_current: "Imaging"
+  alignment_attempts: 3.0
   lamella_width: 20.e-6
   lamella_height: 800.e-9
   stages:
