@@ -43,171 +43,6 @@ from autolamella.liftout.autoliftout import ask_user, _update_status_ui, _valida
 from pprint import pprint
 
 # serial workflow functions
-def mill_trench(
-    microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
-    lamella: Lamella,
-    parent_ui: AutoLiftoutUIv2 = None,
-) -> Lamella:
-
-    validate = settings.protocol["options"]["supervise"].get("trench", True)
-    settings.image.save_path = lamella.path
-    
-    log_status_message(lamella, "MILL_TRENCH")
-
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.label = f"ref_{lamella.state.stage.name}_start"
-    settings.image.save = True
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    _set_images_ui(parent_ui, eb_image, ib_image)
-    _update_status_ui(parent_ui, f"{lamella.info} Preparing Trench...")
-
-    # define horseshoe milling stage
-    settings.image.beam_type = BeamType.ION
-    stages = patterning._get_milling_stages("horseshoe", lamella.protocol, point=Point.__from_dict__(lamella.protocol["horseshoe"]["point"]))
-    stages = _validate_mill_ui(stages, parent_ui,
-        msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
-        validate=validate,
-    )
-    
-    # log the protocol
-    lamella.protocol["horseshoe"] = deepcopy(patterning._get_protocol_from_stages(stages))
-    lamella.protocol["horseshoe"]["point"] = stages[0].pattern.point.__to_dict__()
-    
-    # charge neutralisation
-    log_status_message(lamella, "CHARGE_NEUTRALISATION")
-    _update_status_ui(parent_ui, f"{lamella.info} Neutralising Sample Charge...")
-    settings.image.beam_type = BeamType.ELECTRON
-    calibration.auto_charge_neutralisation(microscope, settings.image)
-
-    # refernce images
-    log_status_message(lamella, "REFERENCE_IMAGES")
-    reference_images = acquire.take_set_of_reference_images(
-        microscope=microscope,
-        image_settings=settings.image,
-        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_MEDIUM],
-        label=f"ref_{lamella.state.stage.name}_final",
-    )
-    _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
-
-
-    return lamella
-
-
-
-def mill_undercut(
-    microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
-    lamella: Lamella,
-    parent_ui: AutoLiftoutUIv2,
-) -> Lamella:
-    # bookkeeping
-    validate = bool(settings.protocol["options"]["supervise"]["undercut"])
-    settings.image.save_path = lamella.path
-
-
-    msg = f"This stage is optional, depends on sample, we will just move to the position for now. No Milling"
-    response = ask_user(parent_ui, msg=msg, pos="OK")
-    
-    # MOVE TO UNDERCUT POSITION
-    log_status_message(lamella, "ALIGN_REF_TRENCH")
-
-    # reference images of milled trenches
-    settings.image.beam_type = BeamType.ELECTRON
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    calibration.auto_charge_neutralisation(microscope, settings.image)
-
-    hfws = [fcfg.REFERENCE_HFW_LOW, fcfg.REFERENCE_HFW_MEDIUM]
-    reference_images = acquire.take_set_of_reference_images(
-        microscope, settings.image, hfws=hfws, label="ref_trench_undercut"
-    )
-
-    # set ui images
-    eb_image, ib_image = reference_images.high_res_eb, reference_images.high_res_ib
-    _set_images_ui(parent_ui, eb_image, ib_image)
-    log_status_message(lamella, "MOVE_TO_UNDERCUT_POSITION")
-    _update_status_ui(
-        parent_ui, f"{lamella.info} Moving to Undercut Position..."
-    )
-
-    # move flat to electron beam
-    microscope.move_flat_to_beam(settings, beam_type=BeamType.ELECTRON)
-    
-    # OFFSET FOR COMPUCENTRIC ROTATION
-    X_OFFSET = settings.protocol["options"].get("compucentric_x_offset", 50e-6)
-    Y_OFFSET = settings.protocol["options"].get("compucentric_y_offset", 25e-6)
-    microscope.stable_move(settings, dx=X_OFFSET, dy=Y_OFFSET, beam_type=BeamType.ELECTRON)
-
-    log_status_message(lamella, "ALIGN_REF_TRENCH_ROTATE")
-    _update_status_ui(parent_ui, f"{lamella.info} Aligning Trench (Rotated)...")
-
-    # detect
-    log_status_message(lamella, f"ALIGN_TRENCH")
-    settings.image.beam_type = BeamType.ELECTRON
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.label = f"ref_{lamella.state.stage.name}_trench_align_ml"
-    settings.image.save = True
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    _set_images_ui(parent_ui, eb_image, ib_image)
-
-    features = [LamellaCentre()] 
-    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
-
-    microscope.stable_move(
-        settings, 
-        dx=det.features[0].feature_m.x,
-        dy=det.features[0].feature_m.y,
-        beam_type=settings.image.beam_type
-    )
-
-    # Align ion so it is coincident with the electron beam
-    settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-
-    features = [LamellaCentre()] 
-    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
-    
-    # align vertical
-    microscope.eucentric_move(
-        settings, 
-        dx=det.features[0].feature_m.x,
-        dy=-det.features[0].feature_m.y,
-    )
-
-    # align coincident with reference images #   FLAG_TEST
-    log_status_message(lamella, "ALIGN_REF_TRENCH_COINCIDENT")
-    _update_status_ui(
-        parent_ui, f"{lamella.info} Aligning Trench (Coincident)..."
-    )
-
-    settings.image.save = True
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.label = f"ref_{lamella.state.stage.name}_trench_align_coincident"
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    _set_images_ui(parent_ui, eb_image, ib_image)
-
-
-
-    # TILT
-    # ALIGN
-    # MILL_UNDERCUT
-    # TILT BACK
-    # ALIGN
-
-    # refernce images
-    log_status_message(lamella, "REFERENCE_IMAGES")
-    reference_images = acquire.take_set_of_reference_images(
-        microscope=microscope,
-        image_settings=settings.image,
-        hfws=[fcfg.REFERENCE_HFW_LOW, fcfg.REFERENCE_HFW_MEDIUM],
-        label=f"ref_{lamella.state.stage.name}_final",
-    )
-    _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
-
-
-
-    return lamella
-
 
 def liftout_lamella(
     microscope: FibsemMicroscope,
@@ -564,12 +399,12 @@ def land_lamella(
     
     return lamella
 
-from autolamella.liftout.autoliftout import setup_lamella, mill_lamella
+from autolamella.liftout.autoliftout import setup_lamella, mill_lamella, mill_lamella_trench, mill_lamella_undercut
 
 # serial workflow functions
 SERIAL_WORKFLOW_STAGES = {
-    AutoLiftoutStage.MillTrench: mill_trench,
-    AutoLiftoutStage.MillUndercut: mill_undercut,
+    AutoLiftoutStage.MillTrench: mill_lamella_trench,
+    AutoLiftoutStage.MillUndercut: mill_lamella_undercut,
     AutoLiftoutStage.Liftout: liftout_lamella,
     AutoLiftoutStage.Landing: land_lamella,
     AutoLiftoutStage.SetupPolish: setup_lamella,

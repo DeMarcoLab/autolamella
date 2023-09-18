@@ -9,7 +9,7 @@ flatten:
     width: 2.0e-06
     application_file: "autolamella"
     type: "Rectangle"
-horseshoe:
+trench:
     stages:
     -   depth: 4.0e-6
         hfw: 8.0e-05

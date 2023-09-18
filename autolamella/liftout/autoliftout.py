@@ -76,17 +76,17 @@ def mill_lamella_trench(
     _set_images_ui(parent_ui, eb_image, ib_image)
     _update_status_ui(parent_ui, f"{lamella.info} Preparing Trench...")
 
-    # define horseshoe milling stage
+    # define trench milling stage
     settings.image.beam_type = BeamType.ION
-    stages = patterning._get_milling_stages("horseshoe", lamella.protocol, point=Point.__from_dict__(lamella.protocol["horseshoe"]["point"]))
+    stages = patterning._get_milling_stages("trench", lamella.protocol, point=Point.__from_dict__(lamella.protocol["trench"]["point"]))
     stages = _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
     
     # log the protocol
-    lamella.protocol["horseshoe"] = deepcopy(patterning._get_protocol_from_stages(stages))
-    lamella.protocol["horseshoe"]["point"] = stages[0].pattern.point.__to_dict__()
+    lamella.protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
+    lamella.protocol["trench"]["point"] = stages[0].pattern.point.__to_dict__()
     
     # charge neutralisation
     log_status_message(lamella, "CHARGE_NEUTRALISATION")
@@ -120,22 +120,13 @@ def mill_lamella_undercut(
     settings.image.save_path = lamella.path
     settings.image.save = False
 
-    log_status_message(lamella, "ALIGN_REF_TRENCH")
+    # optional undercut
+    _complete_undercut = settings.protocol["options"].get("complete_undercut", True)
+    if _complete_undercut is False:
+        logging.info("Skipping undercut")
+        return lamella
 
-    # # align to ref_trench
-    # reference_images = lamella.get_reference_images("ref_trench")
-    # eb_image, ib_image = reference_images.high_res_eb, reference_images.high_res_ib
-    # _set_images_ui(parent_ui, eb_image, ib_image)
-    # _update_status_ui(parent_ui, f"{lamella.info} Aligning Trench...")
-    # alignment.correct_stage_drift(
-    #     microscope,
-    #     settings,
-    #     reference_images=reference_images,
-    #     alignment=(BeamType.ION, BeamType.ION),
-    #     rotate=False,
-    #     xcorr_limit=(100, 100),
-    #     constrain_vertical=False,
-    # )
+    log_status_message(lamella, "ALIGN_REF_TRENCH")
 
     # reference images of milled trenches
     settings.image.beam_type = BeamType.ELECTRON
@@ -1736,7 +1727,7 @@ def select_initial_lamella_positions(
     log_status_message(lamella, "STARTED")
 
     log_status_message(lamella, "SELECT_LAMELLA_POSITION")
-    stages = patterning._get_milling_stages("horseshoe", settings.protocol)
+    stages = patterning._get_milling_stages("trench", settings.protocol)
     stages = _validate_mill_ui(stages, parent_ui,
         msg=f"Select a position and milling pattern for {lamella._petname}. Press Continue when done.",
         validate=True,
@@ -1744,8 +1735,8 @@ def select_initial_lamella_positions(
     )
     
     # log the protocol
-    lamella.protocol["horseshoe"] = deepcopy(patterning._get_protocol_from_stages(stages))
-    lamella.protocol["horseshoe"]["point"] = stages[0].pattern.point.__to_dict__()
+    lamella.protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
+    lamella.protocol["trench"]["point"] = stages[0].pattern.point.__to_dict__()
     
     # need to set the imaging settings too?
     lamella.lamella_state = microscope.get_current_microscope_state()
