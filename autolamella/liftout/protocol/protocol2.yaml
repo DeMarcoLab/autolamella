@@ -129,7 +129,7 @@ undercut:
 weld:
     height: 1.0e-6
     width: 5.0e-6
-    depth: 0.5e-6
+    depth: 5.0e-6
     distance: 2.0e-6
     number: 5
     rotation: 0.0

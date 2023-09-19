@@ -111,21 +111,6 @@ class Lamella:
             _is_failure=data.get("_is_failure", False),
         )
     
-    # def update(self, stage: AutoLamellaWaffleStage):
-    #     """_summary_
-
-    #     Args:
-    #         stage (AutoLamellaWaffleStage): current stage of the lamella
-
-    #     Returns:
-    #         lamella: lamella with udpated stage and history
-    #     """
-    #     self.state.end_timestamp = datetime.timestamp(datetime.now())
-    #     self.history.append(deepcopy(self.state))
-    #     self.state.stage = AutoLamellaWaffleStage(stage)
-    #     self.state.start_timestamp = datetime.timestamp(datetime.now())
-    #     return self
-
 class Experiment: 
     def __init__(self, path: Path, name: str = "AutoLamella", method="autolamella-default") -> None:
 
