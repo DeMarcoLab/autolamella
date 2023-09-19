@@ -127,7 +127,7 @@ class Lamella:
     #     return self
 
 class Experiment: 
-    def __init__(self, path: Path, name: str = "AutoLamella") -> None:
+    def __init__(self, path: Path, name: str = "AutoLamella", method="autolamella-default") -> None:
 
         self.name: str = name
         self._id = str(uuid.uuid4())
@@ -139,7 +139,7 @@ class Experiment:
 
         self.positions: list[Lamella] = []
         self.program = "AutoLamella"
-        self.method = "autolamella-default"
+        self.method = method
 
     def __to_dict__(self) -> dict:
 

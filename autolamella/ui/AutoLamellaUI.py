@@ -263,12 +263,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if cfg._REGISTER_METADATA and new_experiment:
             import autolamella
             utils._register_metadata(
-                microscope=self.microscope,
-                parent_type="autolamella",
-                parent_version=autolamella.__version__,
-                parent_ui=self,
-                experiment_name = self.experiment.name,
-            )
+                microscope=self.microscope, 
+                application_software="autolamella",
+                application_software_version=autolamella.__version__,
+                experiment_name=self.experiment.name,
+                experiment_method = "null") # TODO: add method to experiment
 
         # automatically re-load protocol if available
         if not new_experiment and self.settings is not None:
