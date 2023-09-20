@@ -260,7 +260,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
         # register metadata
-        if cfg._REGISTER_METADATA and new_experiment:
+        if cfg._REGISTER_METADATA:
             import autolamella
             utils._register_metadata(
                 microscope=self.microscope, 

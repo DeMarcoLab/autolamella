@@ -12,7 +12,7 @@ DESKTOP_SHORTCUT_PATH= os.path.dirname(autolamella.__path__[0])
 EXPERIMENT_NAME = "AutoLamella"
 HFW_THRESHOLD = 0.005 # 0.5% of the image height
 
-__AUTOLAMELLA_METHODS__ = ["Autolamella-Default", "Autolamella-Waffle", "Autoliftout-Default", "Autoliftout-Serial-Liftout"]
+__AUTOLAMELLA_METHODS__ = ["Autolamella-Default", "Autolamella-Waffle"]#, "Autoliftout-Default", "Autoliftout-Serial-Liftout"]
 
 DEFAULT_PROTOCOL = {
 
