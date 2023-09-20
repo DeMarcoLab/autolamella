@@ -15,6 +15,10 @@ from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 
 
 # CORE UI FUNCTIONS -> PROBS SEPARATE FILE
+def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by user.") -> bool:
+    if parent_ui._ABORT_THREAD:
+        raise InterruptedError(msg)
+
 
 def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg, validate: bool,milling_enabled: bool = True):
     _update_mill_stages_ui(parent_ui, stages=stages)
