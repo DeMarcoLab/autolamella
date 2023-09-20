@@ -122,6 +122,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_setup_autolamella.clicked.connect(lambda: self._run_workflow(workflow="setup-lamella"))
 
         self.pushButton_stop_workflow_thread.clicked.connect(self._stop_workflow_thread)
+        self.pushButton_stop_workflow_thread.setVisible(False)
 
         self.pushButton_run_waffle_trench.setVisible(False)
         self.pushButton_run_autolamella.setVisible(False)
@@ -1064,6 +1065,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
         self.tabWidget.setCurrentIndex(0)
+        self.pushButton_stop_workflow_thread.setVisible(False)
 
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
@@ -1115,6 +1117,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.milling_widget._PATTERN_IS_MOVEABLE = True
         self.milling_widget._remove_all_stages()
         self.WAITING_FOR_USER_INTERACTION = False
+
+        self.pushButton_stop_workflow_thread.setVisible(True)
+        self.pushButton_stop_workflow_thread.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
 
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")

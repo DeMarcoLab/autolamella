@@ -507,7 +507,8 @@ def setup_lamella(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-
+    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    
     # load the default protocol unless in lamella protocol
     protocol = lamella.protocol if "lamella" in lamella.protocol else settings.protocol
     lamella_position = Point.__from_dict__(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
@@ -536,6 +537,8 @@ def setup_lamella(
         validate=validate,
         milling_enabled=False)
     
+    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    
     from pprint import pprint
     print("-"*80) 
     pprint(stages)
@@ -561,6 +564,8 @@ def setup_lamella(
             deepcopy(stages[-n_fiducial].pattern.point), 
             lamella.protocol["fiducial"]["stages"][0]["height"])
 
+        _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+
         # mill the fiducial
         fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, Point.__from_dict__(lamella.protocol["fiducial"]["point"]))
         stages =_validate_mill_ui(fiducial_stage, parent_ui, 
@@ -571,6 +576,8 @@ def setup_lamella(
         settings.image.reduced_area = lamella.fiducial_area
         print(f"REDUCED_AREA: ", lamella.fiducial_area)
 
+    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    
     # for alignment
     settings.image.beam_type = BeamType.ION
     settings.image.save = True
@@ -580,6 +587,8 @@ def setup_lamella(
     ib_image = acquire.new_image(microscope, settings.image)
     settings.image.reduced_area = None
 
+    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    
     log_status_message(lamella, "REFERENCE_IMAGES")
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
 
