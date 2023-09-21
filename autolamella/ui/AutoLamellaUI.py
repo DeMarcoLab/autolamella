@@ -176,7 +176,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
         
         method = self.settings.protocol["method"]
-        self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title()))
+        self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title())) # TODO: coerce this to be a supported method, alert the user if not
 
         self.comboBox_alignment_with.setCurrentIndex(0) if self.settings.protocol["fiducial"]["enabled"] else self.comboBox_alignment_with.setCurrentIndex(1)
 
@@ -261,7 +261,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # register metadata
         if cfg._REGISTER_METADATA:
-            import autolamella
+            import autolamella #NB: microscope needs to be connected beforehand
             utils._register_metadata(
                 microscope=self.microscope, 
                 application_software="autolamella",
@@ -1050,6 +1050,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
         self.tabWidget.setCurrentIndex(0)
+
+        # clear the image settings save settings etc
+        self.image_widget.checkBox_image_save_image.setChecked(False)
+        self.image_widget.lineEdit_image_path.setText(self.experiment.path)
+        self.image_widget.lineEdit_image_label.setText("default-image")
 
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
