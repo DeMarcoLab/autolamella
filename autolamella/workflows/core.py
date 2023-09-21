@@ -85,7 +85,7 @@ def mill_trench(
     _set_images_ui(parent_ui, eb_image, ib_image)
     _update_status_ui(parent_ui, f"{lamella.info} Preparing Trench...")
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # define trench milling stage
     settings.image.beam_type = BeamType.ION
@@ -95,7 +95,7 @@ def mill_trench(
         validate=validate,
     )
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # log the protocol
     lamella.protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
@@ -107,7 +107,7 @@ def mill_trench(
     settings.image.beam_type = BeamType.ELECTRON
     calibration.auto_charge_neutralisation(microscope, settings.image)
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # refernce images
     log_status_message(lamella, "REFERENCE_IMAGES")
@@ -143,14 +143,14 @@ def mill_undercut(
     _update_status_ui(parent_ui, f"{lamella.info} Moving to Undercut Position...")
     microscope.move_flat_to_beam(settings, BeamType.ELECTRON, _safe=True) # TODO: TEST UNSAFE MOVE
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # OFFSET FOR COMPUCENTRIC ROTATION
     X_OFFSET = settings.protocol["options"].get("compucentric_x_offset", 0)
     Y_OFFSET = settings.protocol["options"].get("compucentric_y_offset", 0)
     microscope.stable_move(settings, dx=X_OFFSET, dy=Y_OFFSET, beam_type=BeamType.ELECTRON)
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # detect
     log_status_message(lamella, f"ALIGN_TRENCH")
@@ -162,7 +162,7 @@ def mill_undercut(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     features = [LamellaCentre()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.absolute_position)
@@ -174,7 +174,7 @@ def mill_undercut(
         beam_type=settings.image.beam_type
     )
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # Align ion so it is coincident with the electron beam
     settings.image.beam_type = BeamType.ION
@@ -190,7 +190,7 @@ def mill_undercut(
         dy=-det.features[0].feature_m.y,
     )
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # lamella should now be centred in ion beam
 
@@ -200,7 +200,7 @@ def mill_undercut(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     method = settings.protocol.get("method", "autolamella-waffle")
     lamella.protocol["undercut"] = deepcopy(settings.protocol["undercut"])
@@ -218,7 +218,7 @@ def mill_undercut(
         _update_status_ui(parent_ui, f"{lamella.info} Tilting to Undercut Position...")
         microscope.move_stage_relative(FibsemStagePosition(t=np.deg2rad(UNDERCUT_ANGLE_DEG)))
 
-        _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+        # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
         # detect
         log_status_message(lamella, f"ALIGN_UNDERCUT_{_n}")
@@ -229,7 +229,7 @@ def mill_undercut(
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         _set_images_ui(parent_ui, eb_image, ib_image)
 
-        _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+        # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
         # get pattern
         scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
         features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge()]
@@ -257,7 +257,7 @@ def mill_undercut(
             validate=validate,
         )
         
-        _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+        # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
         undercut_stages.append(stages[0])
 
@@ -275,7 +275,7 @@ def mill_undercut(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # optional return flat to electron beam (autoliftout)
     if settings.protocol["options"].get("return_to_eb_after_undercut", False):
@@ -289,7 +289,7 @@ def mill_undercut(
     features = [LamellaCentre()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # align vertical
     microscope.eucentric_move(
@@ -298,7 +298,7 @@ def mill_undercut(
         dy=-det.features[0].feature_m.y,
     )
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
@@ -344,7 +344,7 @@ def mill_feature(
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
     _ALIGNMENT_ATTEMPTS = int(settings.protocol["lamella"].get("alignment_attempts", 1))
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     for i in range(_ALIGNMENT_ATTEMPTS):
         settings.image.label = f"alignment_target_{lamella.state.stage.name}_{i:02d}"
@@ -354,7 +354,7 @@ def mill_feature(
                                             reduced_area=lamella.fiducial_area)
     settings.image.reduced_area = None
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
     settings.image.label = f"ref_{lamella.state.stage.name}_start"
@@ -363,7 +363,7 @@ def mill_feature(
     _set_images_ui(parent_ui, eb_image, ib_image)
     _update_status_ui(parent_ui, f"{lamella.info} Preparing {_feature_name}...")
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # define notch/microexpansion
     log_status_message(lamella, "MILL_FEATURES")
@@ -373,7 +373,7 @@ def mill_feature(
         validate=validate,
     )
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # log feature stages
     lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages))
@@ -416,7 +416,7 @@ def mill_lamella(
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
     _ALIGNMENT_ATTEMPTS = int(settings.protocol["lamella"].get("alignment_attempts", 1))
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     for i in range(_ALIGNMENT_ATTEMPTS):
         settings.image.label = f"alignment_target_{lamella.state.stage.name}_{i:02d}"
@@ -427,7 +427,7 @@ def mill_lamella(
 
     settings.image.reduced_area = None
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # take reference images
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
@@ -435,7 +435,7 @@ def mill_lamella(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
     # define feature
     log_status_message(lamella, "MILL_LAMELLA")
@@ -470,7 +470,7 @@ def mill_lamella(
         validate=validate,
     )
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
     
     # TODO: refactor this so it is like the original protocol
     lamella.protocol[lamella.state.stage.name] = deepcopy(patterning._get_protocol_from_stages(stages))
@@ -525,7 +525,7 @@ def setup_lamella(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
     
     # load the default protocol unless in lamella protocol
     protocol = lamella.protocol if "lamella" in lamella.protocol else settings.protocol
@@ -556,7 +556,7 @@ def setup_lamella(
             validate=True, # always validate, until we fix milling issue
             milling_enabled=False)
     
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
     
     from pprint import pprint
     print("-"*80) 
@@ -583,7 +583,7 @@ def setup_lamella(
             deepcopy(stages[-n_fiducial].pattern.point), 
             lamella.protocol["fiducial"]["stages"][0]["height"])
 
-        _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+        # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
 
         # mill the fiducial
         fiducial_stage = patterning._get_milling_stages("fiducial", lamella.protocol, Point.__from_dict__(lamella.protocol["fiducial"]["point"]))
@@ -595,7 +595,7 @@ def setup_lamella(
         settings.image.reduced_area = lamella.fiducial_area
         print(f"REDUCED_AREA: ", lamella.fiducial_area)
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
     
     # for alignment
     settings.image.beam_type = BeamType.ION
@@ -606,7 +606,7 @@ def setup_lamella(
     ib_image = acquire.new_image(microscope, settings.image)
     settings.image.reduced_area = None
 
-    _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
+    # _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
     
     log_status_message(lamella, "REFERENCE_IMAGES")
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")

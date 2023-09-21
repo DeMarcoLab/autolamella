@@ -48,6 +48,8 @@ def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI
 def _update_mill_stages_ui(
     parent_ui: AutoLamellaUI, stages: list[FibsemMillingStage] = None
 ):
+    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+
     INFO = {
         "msg": "Updating Milling Stages",
         "pos": None,
@@ -100,6 +102,8 @@ def _set_images_ui(
     eb_image: FibsemImage = None,
     ib_image: FibsemImage = None,
 ):
+    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+
     INFO = {
         "msg": "Updating Images",
         "pos": None,
@@ -114,6 +118,9 @@ def _set_images_ui(
 
 
 def _update_status_ui(parent_ui: AutoLamellaUI, msg: str):
+
+    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+
     INFO = {
         "msg": msg,
         "pos": None,
