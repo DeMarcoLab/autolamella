@@ -43,8 +43,6 @@ _DEV_MODE = False
 DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBACK_01/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
-
-
 class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     ui_signal = pyqtSignal(dict)
     det_confirm_signal = pyqtSignal(bool)
@@ -77,6 +75,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             settings=self.settings,
             viewer=self.viewer,
             config_path=cfg.SYSTEM_PATH,
+            parent=self,
         )
         self.tabWidget.addTab(self.system_widget, "System")
 
@@ -180,7 +179,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
         
         method = self.settings.protocol["method"]
-        self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title()))
+        self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title())) # TODO: coerce this to be a supported method, alert the user if not
 
         self.comboBox_alignment_with.setCurrentIndex(0) if self.settings.protocol["fiducial"]["enabled"] else self.comboBox_alignment_with.setCurrentIndex(1)
 
@@ -264,15 +263,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
         # register metadata
-        if cfg._REGISTER_METADATA and new_experiment:
-            import autolamella
+        if cfg._REGISTER_METADATA:
+            import autolamella #NB: microscope needs to be connected beforehand
             utils._register_metadata(
-                microscope=self.microscope,
-                parent_type="autolamella",
-                parent_version=autolamella.__version__,
-                parent_ui=self,
-                experiment_name = self.experiment.name,
-            )
+                microscope=self.microscope, 
+                application_software="autolamella",
+                application_software_version=autolamella.__version__,
+                experiment_name=self.experiment.name,
+                experiment_method = "null") # TODO: add method to experiment
 
         # automatically re-load protocol if available
         if not new_experiment and self.settings is not None:
@@ -1066,6 +1064,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
         self.tabWidget.setCurrentIndex(0)
         self.pushButton_stop_workflow_thread.setVisible(False)
+
+        # clear the image settings save settings etc
+        self.image_widget.checkBox_image_save_image.setChecked(False)
+        self.image_widget.lineEdit_image_path.setText(self.experiment.path)
+        self.image_widget.lineEdit_image_label.setText("default-image")
 
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""

@@ -487,6 +487,21 @@ def mill_lamella(
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
+    if lamella.state.stage is AutoLamellaWaffleStage.MillPolishingCut:
+        log_status_message(lamella, "HIGH_QUALITY_REFERENCE_IMAGES")
+        _update_status_ui(parent_ui, f"{lamella.info} Acquiring High Quality Reference Images...")
+        settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+        settings.image.label = f"ref_{lamella.state.stage.name}_final_ultra"
+        settings.image.save = True
+        settings.image.resolution = fcfg.REFERENCE_RES_HIGH
+        settings.image.frame_integration = 16
+        settings.image.beam_type = BeamType.ELECTRON
+        eb_image = acquire.new_image(microscope, settings.image)
+        _set_images_ui(parent_ui, eb_image, ib_image)
+        settings.image.frame_integration = 1 # restore
+        settings.image.resolution = fcfg.REFERENCE_RES_MEDIUM
+
+
     return lamella
 
 
@@ -499,6 +514,9 @@ def setup_lamella(
 
     validate = settings.protocol["options"]["supervise"].get("setup_lamella", True)
     settings.image.save_path = lamella.path
+
+    # if settings.protocol.get("method", "autolamella-waffle") == "autolamella-waffle":
+        # lamella = _align_lamella_coincident(microscope, settings, lamella, parent_ui, validate)
 
     log_status_message(lamella, "SETUP_PATTERNS")
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
@@ -531,11 +549,12 @@ def setup_lamella(
         fiducial_position = Point.__from_dict__(protocol["fiducial"].get("point", {"x": 25e-6, "y": 0})) 
         fiducial_stage = patterning._get_milling_stages("fiducial", protocol, fiducial_position)
         stages += fiducial_stage
-
-    stages =_validate_mill_ui(stages, parent_ui, 
-        msg=f"Confirm the positions for the {lamella._petname} milling. Press Continue to Confirm.",
-        validate=validate,
-        milling_enabled=False)
+    
+    if validate:
+        stages =_validate_mill_ui(stages, parent_ui, 
+            msg=f"Confirm the positions for the {lamella._petname} milling. Press Continue to Confirm.",
+            validate=True, # always validate, until we fix milling issue
+            milling_enabled=False)
     
     _check_for_abort(parent_ui, msg = f"Aborted {lamella.info}")
     
@@ -653,6 +672,7 @@ def start_of_stage_update(
 
     return lamella
 
+# TODO: move to fibsem
 from fibsem import conversions
 def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->tuple[FibsemRectangle, bool]:
     pixelsize = image.metadata.pixel_size.x
@@ -684,3 +704,43 @@ def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fidu
     fiducial_area = FibsemRectangle(left, top, width, height)
 
     return fiducial_area, flag
+
+def _align_lamella_coincident(microscope: FibsemMicroscope, settings: MicroscopeSettings, lamella: Lamella, parent_ui: AutoLamellaUI, validate: bool, hfw: float = fcfg.REFERENCE_HFW_MEDIUM) -> Lamella:
+    """Align the lamella in the electron and ion beams"""
+
+    # update status
+    log_status_message(lamella, f"ALIGN_TRENCH")
+    _update_status_ui(parent_ui, f"{lamella.info} Aligning Trench (Rotated)...")
+    settings.image.beam_type = BeamType.ELECTRON
+    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+    settings.image.label = f"ref_{lamella.state.stage.name}_trench_align_ml"
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
+
+    # detect
+    features = [LamellaCentre()] 
+    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.absolute_position)
+
+    microscope.stable_move(
+        settings, 
+        dx=det.features[0].feature_m.x,
+        dy=det.features[0].feature_m.y,
+        beam_type=settings.image.beam_type
+    )
+
+    # Align ion so it is coincident with the electron beam
+    settings.image.beam_type = BeamType.ION
+    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+
+    features = [LamellaCentre()] 
+    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.absolute_position)
+    
+    # align vertical
+    microscope.eucentric_move(
+        settings, 
+        dx=det.features[0].feature_m.x,
+        dy=-det.features[0].feature_m.y,
+    )
+
+    return lamella
