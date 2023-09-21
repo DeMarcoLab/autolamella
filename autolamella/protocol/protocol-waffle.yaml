@@ -64,7 +64,7 @@ lamella:
         size_ratio: 1.0
         trench_height: 6.0e-07
         type: Trench
-method: Autolamella-Waffle
+method: autolamella-waffle
 microexpansion:
     application_file: autolamella
     cleaning_cross_section: false
