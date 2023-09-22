@@ -1056,7 +1056,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info(f'Workflow aborted.')
         self._WORKFLOW_RUNNING = False
         self._ABORT_THREAD = False
-        # napari.utils.notifications.show_error(f"Workflow aborted by user.")
+
+        for lamella in self.experiment.positions:
+            if lamella.state.stage is not  lamella.history[-1].stage:
+                lamella.state = lamella.history[-1]
+                logging.debug("restoring state for {}".format(lamella.info))
 
     def _workflow_finished(self):
         logging.info(f'Workflow finished.')
@@ -1069,6 +1073,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.image_widget.checkBox_image_save_image.setChecked(False)
         self.image_widget.lineEdit_image_path.setText(self.experiment.path)
         self.image_widget.lineEdit_image_label.setText("default-image")
+        self.update_ui()
 
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
