@@ -1,0 +1,528 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>450</width>
+    <height>819</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="label_title">
+      <property name="font">
+       <font>
+        <pointsize>16</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>AutoLiftout</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="0">
+     <widget class="QPushButton" name="pushButton_yes">
+      <property name="text">
+       <string>Yes</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="1">
+     <widget class="QPushButton" name="pushButton_no">
+      <property name="text">
+       <string>No</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0" colspan="2">
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <property name="documentMode">
+       <bool>false</bool>
+      </property>
+      <property name="tabsClosable">
+       <bool>false</bool>
+      </property>
+      <property name="tabBarAutoHide">
+       <bool>false</bool>
+      </property>
+      <widget class="QWidget" name="general">
+       <attribute name="title">
+        <string>General</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="7" column="0">
+         <widget class="QComboBox" name="comboBox_lamella_history"/>
+        </item>
+        <item row="8" column="0" colspan="2">
+         <widget class="QLabel" name="label_info">
+          <property name="text">
+           <string>No Lamella Selected</string>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="0" colspan="2">
+
+         <spacer name="verticalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="7" column="1">
+         <widget class="QPushButton" name="pushButton_revert_stage">
+          <property name="text">
+           <string>Time Travel To</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="2">
+         <widget class="QLabel" name="label_lamella_header">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_setup_autoliftout">
+
+          <property name="text">
+           <string>Setup AutoLiftout</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0" colspan="2">
+         <widget class="QLabel" name="label_lamella_detail">
+          <property name="text">
+           <string>TextLabel</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QLabel" name="label_protocol_name">
+          <property name="text">
+           <string>Protocol: </string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_polishing">
+          <property name="text">
+           <string>Run AutoLamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_autoliftout">
+
+          <property name="text">
+           <string>TextLabel</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0" colspan="2">
+         <spacer name="verticalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="3" column="1">
+         <widget class="QComboBox" name="comboBox_current_lamella"/>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_current_lamella">
+          <property name="text">
+           <string>Current Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="label_experiment_name">
+          <property name="text">
+           <string>Experiment:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QCheckBox" name="checkBox_current_lamella_landing_selected">
+          <property name="text">
+           <string>Landing Selected</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QCheckBox" name="checkBox_current_lamella_failure">
+          <property name="text">
+           <string>Failure</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_serial_liftout_landing">
+          <property name="text">
+           <string>Run Serial Liftout Landing</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tabProtocol">
+       <attribute name="title">
+        <string>Protocol</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="7" column="0">
+         <widget class="QLabel" name="label_options_landing_joining_method">
+          <property name="text">
+           <string>Landing Joining Method</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_options_lamella_start_position">
+          <property name="text">
+           <string>Lamella Start Position</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QCheckBox" name="checkBox_options_confirm_next_stage">
+          <property name="text">
+           <string>Confirm Next Stage</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QComboBox" name="comboBox_options_landing_joining_method"/>
+        </item>
+        <item row="10" column="0">
+         <widget class="QLabel" name="label_protocol_ml_checkpoint">
+          <property name="text">
+           <string>Checkpoint</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_options_landing_start_position">
+          <property name="text">
+           <string>Landing Start Position</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="1">
+         <widget class="QSpinBox" name="spinBox_protocol_ml_num_classes"/>
+        </item>
+        <item row="13" column="0">
+         <widget class="QCheckBox" name="checkBox_supervise_mill_trench">
+          <property name="text">
+           <string>Mill Trench</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="label_options_liftout_joining_method">
+          <property name="text">
+           <string>Liftout Joining Method</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="1">
+         <widget class="QCheckBox" name="checkBox_supervise_setup_lamella">
+          <property name="text">
+           <string>Setup Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="17" column="0">
+         <widget class="QCheckBox" name="checkBox_supervise_reset">
+          <property name="text">
+           <string>Reset Manipulator</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="2">
+         <widget class="QLabel" name="label_protocol_options_header">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Options</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="1">
+         <widget class="QCheckBox" name="checkBox_supervise_mill_regular">
+          <property name="text">
+           <string>Mill Regular Cut</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_update_protocol">
+          <property name="text">
+           <string>Update Protocol</string>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="1">
+         <widget class="QCheckBox" name="checkBox_supervise_mill_rough">
+          <property name="text">
+           <string>Mill Rough Cut</string>
+          </property>
+         </widget>
+        </item>
+        <item row="16" column="1">
+         <widget class="QCheckBox" name="checkBox_supervise_mill_polishing">
+          <property name="text">
+           <string>Mill Polishing Cut</string>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="1">
+         <widget class="QComboBox" name="comboBox_options_liftout_joining_method"/>
+        </item>
+        <item row="11" column="0">
+         <widget class="QLabel" name="label_protocol_ml_num_classes">
+          <property name="text">
+           <string>Number of Classes</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_protocol_name_2">
+          <property name="text">
+           <string>Name</string>
+          </property>
+         </widget>
+        </item>
+        <item row="16" column="0">
+         <widget class="QCheckBox" name="checkBox_supervise_landing">
+          <property name="text">
+           <string>Land Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QCheckBox" name="checkBox_options_batch_mode">
+          <property name="text">
+           <string>Batch Mode</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="19" column="0" colspan="2">
+         <spacer name="verticalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="6" column="1">
+         <widget class="QComboBox" name="comboBox_options_landing_start_position"/>
+        </item>
+        <item row="10" column="1">
+         <widget class="QLineEdit" name="lineEdit_protocol_ml_checkpoint"/>
+        </item>
+        <item row="9" column="1">
+         <widget class="QLineEdit" name="lineEdit_protocol_ml_encoder"/>
+        </item>
+        <item row="14" column="0">
+         <widget class="QCheckBox" name="checkBox_supervise_mill_undercut">
+          <property name="text">
+           <string>Mill Undercut</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0" colspan="2">
+         <widget class="QLabel" name="label_protocol_supervision_header">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Supervision</string>
+          </property>
+         </widget>
+        </item>
+        <item row="15" column="0">
+         <widget class="QCheckBox" name="checkBox_supervise_liftout">
+          <property name="text">
+           <string>Liftout Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_protocol_ml_header">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Machine Learning</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="0">
+         <widget class="QLabel" name="label_protocol_ml_header_2">
+          <property name="text">
+           <string>Encoder</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QComboBox" name="comboBox_options_lamella_start_position"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_protocol_method">
+          <property name="text">
+           <string>Method</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="lineEdit_protocol_name"/>
+        </item>
+        <item row="1" column="1">
+         <widget class="QComboBox" name="comboBox_protocol_method"/>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+    <item row="6" column="0" colspan="2">
+     <widget class="QLabel" name="label_instructions">
+      <property name="text">
+       <string>Instructions</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0" colspan="2">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>244</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>450</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionNew_Experiment"/>
+    <addaction name="actionLoad_Experiment"/>
+    <addaction name="actionLoad_Protocol"/>
+    <addaction name="actionSave_Protocol"/>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionCryo_Sputter"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuTools"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionNew_Experiment">
+   <property name="text">
+    <string>New Experiment</string>
+   </property>
+  </action>
+  <action name="actionLoad_Experiment">
+   <property name="text">
+    <string>Load Experiment</string>
+   </property>
+  </action>
+  <action name="actionLoad_Protocol">
+   <property name="text">
+    <string>Load Protocol</string>
+   </property>
+  </action>
+  <action name="actionEdit_Protocol">
+   <property name="text">
+    <string>Edit Protocol</string>
+   </property>
+  </action>
+  <action name="actionConnect_Microscope">
+   <property name="text">
+    <string>Connect Microscope</string>
+   </property>
+  </action>
+  <action name="actionSave_Protocol">
+   <property name="text">
+    <string>Save Protocol</string>
+   </property>
+  </action>
+  <action name="actionCryo_Sputter">
+   <property name="text">
+    <string>Cryo Sputter</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

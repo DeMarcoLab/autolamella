@@ -1,8 +1,5 @@
-CALL conda.bat create -n autolamella python=3.9 pip
-CALL activate autolamella
-cd ..
-cd fibsem
+CALL conda.bat create -n autolamella2 python=3.9 pip
+CALL activate autolamella2
+cd autolamella2
 pip install -e .
-cd ..
-cd autolamella
-pip install -e .
+python shortcut.py 
