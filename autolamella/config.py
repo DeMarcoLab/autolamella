@@ -12,6 +12,8 @@ DESKTOP_SHORTCUT_PATH= os.path.dirname(autolamella.__path__[0])
 EXPERIMENT_NAME = "AutoLamella"
 HFW_THRESHOLD = 0.005 # 0.5% of the image height
 
+__AUTOLAMELLA_METHODS__ = ["Autolamella-Default", "Autolamella-Waffle"]#, "Autoliftout-Default", "Autoliftout-Serial-Liftout"]
+
 DEFAULT_PROTOCOL = {
 
 "main_headers" : {
@@ -29,10 +31,9 @@ DEFAULT_PROTOCOL = {
 },
 
 "lamella_headers" : {
-    "beam_shift_attempts": 3,
+    "alignment_attempts": 3,
     "lamella_width": 10.e-6,
     "lamella_length": 10.e-6,
-    "alignment_current": "Imaging Current",
 },
 
 "protocol_stage_1" : {
@@ -72,4 +73,5 @@ DEFAULT_PROTOCOL = {
 
 ####### FEATURE FLAGS
 _MINIMAP_VISUALISATION = True
-_REGISTER_METADATA = False
+_AUTO_SYNC_MINIMAP = True
+_REGISTER_METADATA = True

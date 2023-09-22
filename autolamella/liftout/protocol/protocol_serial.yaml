@@ -10,7 +10,7 @@ flatten:
     application_file: "autolamella"
     type: "Rectangle"
     preset: "30 keV; 20 nA"
-horseshoe:
+trench:
     stages:
     -   depth: 25.0e-6
         hfw: 8.0e-05

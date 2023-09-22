@@ -9,7 +9,7 @@ flatten:
     width: 2.0e-06
     application_file: "autolamella"
     type: "Rectangle"
-horseshoe:
+trench:
     stages:
     -   depth: 4.0e-6
         hfw: 8.0e-05
@@ -55,6 +55,7 @@ options:
     landing_start_position: autoliftout-pre-tilt-35-deg-grid-02-landing
     compucentric_x_offset: 50.0e-6
     compucentric_y_offset: 25.0e-6 
+    return_to_eb_after_undercut: True
     supervise:
         landing: true
         liftout: true
@@ -119,13 +120,16 @@ undercut:
     scan_direction: TopToBottom
     trench_width: 2.0e-06
     undercut_angle: 6.0
+    tilt_angle: 6.0
+    tilt_angle_step: 1
+    v_offset: 1.0e-6
     width: 2.5e-05
     application_file: "autolamella"
     type: "Undercut"
 weld:
     height: 1.0e-6
     width: 5.0e-6
-    depth: 0.5e-6
+    depth: 5.0e-6
     distance: 2.0e-6
     number: 5
     rotation: 0.0

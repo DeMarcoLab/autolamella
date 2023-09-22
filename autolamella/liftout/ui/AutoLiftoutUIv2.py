@@ -31,8 +31,6 @@ from fibsem.ui import _stylesheets
 
 """
 TODO: 
-    - Auto connect and load last experiment, protocol  - DONE need to do properly for fibsem
-    - Microscope testing 
     - Redo setup. Add and select lamella on main screen, rather than walkthrough? then how to select landing positions
     - add more stages: LamellaSelected, LandingSelected
     - Stop workflow button? how to implement
@@ -671,12 +669,12 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         if info["eb_image"] is not None:
             eb_image = info["eb_image"]
-            self.image_widget.update_viewer(eb_image.data, "ELECTRON")
             self.image_widget.eb_image = eb_image
+            self.image_widget.update_viewer(eb_image.data, "ELECTRON", _set_ui=True)
         if info["ib_image"] is not None:
             ib_image = info["ib_image"]
-            self.image_widget.update_viewer(ib_image.data, "ION")
             self.image_widget.ib_image = ib_image
+            self.image_widget.update_viewer(ib_image.data, "ION", _set_ui=True)
 
 
         if isinstance(stages, list):

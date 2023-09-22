@@ -1,6 +1,6 @@
 
 name: autolamella-chromatin-scan-rotation-0deg
-method: default # waffle or default
+method: autolamella-default # waffle or default
 
 options:
   supervise:
@@ -41,8 +41,7 @@ trench:
   cleaning_cross_section: false
 
 lamella:
-  beam_shift_attempts: 3.0
-  alignment_current: "Imaging"
+  alignment_attempts: 3.0
   lamella_width: 20.e-6
   lamella_height: 800.e-9
   stages:
@@ -137,7 +136,7 @@ notch:
   application_file: autolamella
   cleaning_cross_section: false
 
-autolamella_undercut:
+undercut:
   width: 10.e-6
   height: 4.e-6
   depth: 2.0e-6

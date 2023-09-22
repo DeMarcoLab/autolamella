@@ -54,7 +54,7 @@ trench:
     preset: 30 keV; 2.5 nA
     size_ratio: 2.0
     trench_height: 3.2e-05
-autolamella_undercut:
+undercut:
     application_file: autolamella
     cleaning_cross_section: false
     depth: 1.0e-06
@@ -78,8 +78,7 @@ fiducial:
   rotation: 45
   width: 1.0e-06
 lamella:
-  alignment_current: Imaging Current
-    beam_shift_attempts: 3.0
+    alignment_attempts: 3.0
     lamella_height: 8.0e-07
     lamella_width: 1.0e-05
     stages:
