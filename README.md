@@ -10,64 +10,24 @@ AutoLamella is a python package for automated cryo-lamella preparation with focu
 
 ## Install
 
-### Install OpenFIBSEM
-Clone this repository: 
+### Recommended Installation Guide
 
+Create a new virtual environment from the Anaconda Prompt terminal:
 ```
-$ git clone https://github.com/DeMarcoLab/fibsem.git
-```
-
-Install dependencies and package
-```bash
-$ cd fibsem
-$ conda env create -f environment.yml
+$ conda create -n fibsem python=3.9 pip
 $ conda activate fibsem
-$ pip install -e .
+$ pip install autolamella 
+```
+### Running Autolammela
+
+Open the Anaconda Prompt terminal and run the following commands.
 
 ```
-### Install autolamella package
-Clone this repository: 
-
-```
-$ git clone https://github.com/DeMarcoLab/autolamella.git
-```
-
-Install dependencies and package
-```bash
 $ conda activate fibsem
-$ cd autolamella
-$ pip install -e .
-$ pip install pywin32==228
-$ conda install -c conda-forge petname
+$ autolamella_ui
 
 ```
-
-### Install AutoScript
-You will also need to install AutoScript 4.6+. 
-
-Please see the [Installation Guide](INSTALLATION.md) for detailed instructions.
-
-Copy AutoScript /into home/user/miniconda3/envs/fibsem/lib/python3.9/site-packages/
-
-### Install TESCAN Automation SDK
-
-Ideally, please install and set up the conda environment first before proceeding to install this SDK
-
-Run the Tescan-Automation-SDK-Installer-3.x.x.exe file
-
-When asked for the python interpretor, select the existing conda environment for FIBSEM, if this python interpretor is not available, see detailed installation guide for a work around
-
-See [Installation Guide](INSTALLATION.md) for full details
-
-
-### Getting started 
-To run autolamella:
-```bash
-$ conda activate autolamella
-$ autolamella
-```
-![UI](docs/img/ui.png)
-
+![ui_new](docs/img/ui_new.png)
 
 ## Citation
 If you find this useful, please cite our work.
