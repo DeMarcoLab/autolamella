@@ -1125,6 +1125,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.milling_widget._PATTERN_IS_MOVEABLE = True
         self.milling_widget._remove_all_stages()
         self.WAITING_FOR_USER_INTERACTION = False
+        self.pushButton_run_waffle_trench.setEnabled(False)
+        self.pushButton_run_waffle_undercut.setEnabled(False)
+        self.pushButton_run_setup_autolamella.setEnabled(False)
+        self.pushButton_run_autolamella.setEnabled(False)
+        self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
         self.pushButton_stop_workflow_thread.setVisible(True)
         self.pushButton_stop_workflow_thread.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
