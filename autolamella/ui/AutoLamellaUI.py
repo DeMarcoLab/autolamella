@@ -348,7 +348,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self._microscope_ui_loaded = True
             self.milling_widget.milling_position_changed.connect(self._update_milling_position)
             self.milling_widget._milling_finished.connect(self._milling_finished)
-
+            self.image_widget.picture_signal.connect(self.update_ui)
         else:
             if self.image_widget is None:
                 return
@@ -566,6 +566,27 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+
+            points = []
+            text = []
+            if self.image_widget.ib_image is not None:
+                fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
+                for lamella in self.experiment.positions:
+                    if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) 
+                    else:
+                        lamella_centre =  Point.__from_dict__(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
+                    visible, position = aui_utils.lamella_in_view(lamella, lamella_centre, self.image_widget.ib_image)
+                    if visible:
+                        current_position = self.microscope.get_stage_position()
+                        lamella_centre = Point(x=(position.x - current_position.x), y=(position.z -  current_position.z))
+                        napari_point = fui.convert_point_to_napari(self.image_widget.ib_image.metadata.image_settings.resolution, self.image_widget.ib_image.metadata.pixel_size.x, lamella_centre)
+                        napari_point.x = napari_point.x + self.image_widget.eb_image.metadata.image_settings.resolution[0]
+                        point = Point(x=napari_point.y, y=napari_point.x)
+                        points.append(point)
+                        text.append(lamella._petname)
+                    
+                self.viewer.add_points(points, text=text, size=10, symbol="x")
 
         # Current Lamella Status
         if _lamella_selected:
