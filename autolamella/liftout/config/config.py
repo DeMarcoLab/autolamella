@@ -12,7 +12,7 @@ LOG_PATH = os.path.join(BASE_PATH, "log")
 EXPERIMENT_NAME = "AutoLiftout"
 
 __AUTOLIFTOUT_METHODS__ = ["autoliftout-default", "autoliftout-serial-liftout"]
-__AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__ = ["None", "Weld", "Platinum"]
+__AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__ = ["None", "Weld"]
 __AUTOLIFTOUT_LANDING_JOIN_METHODS__ = ["Weld"]
 
 

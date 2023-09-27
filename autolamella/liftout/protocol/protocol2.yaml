@@ -50,6 +50,8 @@ options:
     confirm_advance: true
     landing_joining_method: Weld
     liftout_joining_method: None
+    liftout_contact_detection: True
+    liftout_contact_offset: 0.25e-6
     landing_post_x_offset: 0.75e-6
     lamella_start_position: autoliftout-pre-tilt-35-deg-grid-01-lamella
     landing_start_position: autoliftout-pre-tilt-35-deg-grid-02-landing
@@ -57,6 +59,8 @@ options:
     compucentric_y_offset: 25.0e-6 
     return_to_eb_after_undercut: True
     alignment_attempts: 3.0
+    liftout_charge_neutralisation_iterations: 35
+    landing_charge_neutralisation_iterations: 100
     supervise:
         landing: true
         liftout: true

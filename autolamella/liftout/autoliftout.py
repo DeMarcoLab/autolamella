@@ -7,7 +7,7 @@ from pathlib import Path
 import os
 import napari
 import numpy as np
-from fibsem import acquire, alignment, calibration, gis, milling, patterning
+from fibsem import acquire, alignment, calibration, patterning
 from fibsem import utils as fibsem_utils
 from fibsem import validation
 from fibsem.detection import detection
@@ -141,30 +141,6 @@ def liftout_lamella(
         lamella.protocol["join"] = deepcopy(patterning._get_protocol_from_stages(stages))
         lamella.protocol["join"]["point"] = stages[0].pattern.point.__to_dict__()
 
-    if (_JOINING_METHOD == "PLATINUM"):
-        # sputter platinum
-        if isinstance(microscope, ThermoMicroscope):
-            app_files = microscope.get_available_values(key="application_file")
-
-            if settings.protocol["platinum"]["application_file"] not in app_files:
-                if "Pt dep" in app_files:
-                    default_app_file = "Pt dep"
-                else:
-                    default_app_file = app_files[0]
-            else:
-                default_app_file = settings.protocol["platinum"]["application_file"]
-
-            settings.protocol["platinum"]["application_file"] = default_app_file
-
-        settings.protocol["platinum"]["hfw"] = settings.protocol["platinum"][
-            "whole_grid"
-        ]["hfw"]
-        gis.sputter_platinum(
-            microscope,
-            settings.protocol["platinum"],
-            default_application_file=settings.milling.application_file,
-        )
-
     logging.info(
         f"{lamella.state.stage.name}: lamella to needle joining complete."
     )
@@ -281,8 +257,6 @@ def land_needle_on_milled_lamella(
             microscope, settings, det, beam_type=settings.image.beam_type, move_x=False
         )
 
-        # _set_images_ui(parent_ui, None, det.image)
-
     # reference images
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
     settings.image.save = True
@@ -297,8 +271,6 @@ def land_needle_on_milled_lamella(
             pos="Continue",
         )
 
-    # take image
-
     # charge neutralisation  to charge lamella
     settings.image.beam_type = BeamType.ION
     n_iter = int(
@@ -306,7 +278,8 @@ def land_needle_on_milled_lamella(
     )
 
     calibration.auto_charge_neutralisation(
-        microscope, settings.image, 
+        microscope=microscope, 
+        image_settings=settings.image, 
         n_iterations=n_iter, 
         discharge_settings = ImageSettings(
             resolution=[768, 512],
@@ -319,6 +292,37 @@ def land_needle_on_milled_lamella(
             label=None,
         )
     )
+
+    X_LIFTOUT_CONTACT_OFFSET = settings.protocol["options"].get("liftout_contact_offset", 0.25e-6)
+    features = [NeedleTip(), LamellaLeftEdge()]
+    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    det._offset = Point(x=X_LIFTOUT_CONTACT_OFFSET, y=0)
+    detection.move_based_on_detection(microscope, settings, det, beam_type=settings.image.beam_type, move_y=False)
+
+    _USE_CONTACT_DETECTION = settings.protocol["options"].get("liftout_contact_detection", False)
+    if _USE_CONTACT_DETECTION:
+        lamella = _liftout_contact_detection(microscope, settings, lamella, parent_ui, validate=validate)
+                
+    # move needle up in z to prevent bottoming out
+    dz = 0.5e-6  # positive is away from sample (up)
+    microscope.move_manipulator_corrected(dx=0, dy=dz, beam_type=BeamType.ION)
+
+    # restore imaging settings
+    settings.image.gamma_enabled = True
+    settings.image.reduced_area = None
+
+    acquire.take_set_of_reference_images(
+        microscope,
+        settings.image,
+        hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
+        label=f"ref_{lamella.state.stage.name}_manipulator_landed",
+    )
+
+    return lamella
+
+def _liftout_contact_detection(microscope: FibsemMicroscope, settings: MicroscopeSettings, 
+                                lamella: Lamella, parent_ui: AutoLiftoutUIv2, validate: bool = True) -> Lamella:
+    
 
     # measure brightness
     BRIGHTNESS_FACTOR = 1.2
@@ -361,10 +365,6 @@ def land_needle_on_milled_lamella(
 
         above_brightness_threshold = brightness > mean_brightness * BRIGHTNESS_FACTOR
 
-
-        # TODO: optionally run detection
-
-
         if above_brightness_threshold and validate is False:
             break  # exit loop
 
@@ -385,22 +385,6 @@ def land_needle_on_milled_lamella(
         iteration_count += 1
         if iteration_count >= MAX_ITERATIONS:
             break
-
-    # move needle up in z to prevent bottoming out
-    dz = 0.5e-6  # positive is away from sample (up)
-    microscope.move_manipulator_corrected(dx=0, dy=dz, beam_type=BeamType.ION)
-
-    # restore imaging settings
-    settings.image.gamma_enabled = True
-    settings.image.reduced_area = None
-
-    acquire.take_set_of_reference_images(
-        microscope,
-        settings.image,
-        hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
-        label=f"ref_{lamella.state.stage.name}_manipulator_landed",
-    )
-
     return lamella
 
 
@@ -859,7 +843,6 @@ def run_autoliftout_workflow(
     parent_ui: AutoLiftoutUIv2,
 ) -> Experiment:
 
-    BATCH_MODE = bool(settings.protocol["options"]["batch_mode"])
     CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_advance"])
 
     _update_status_ui(parent_ui, "Starting AutoLiftout Workflow...")
@@ -872,10 +855,10 @@ def run_autoliftout_workflow(
 
     
     # batch mode workflow
-    if BATCH_MODE:
+    if True:
         for terminal_stage in [
             AutoLiftoutStage.MillTrench,
-            # AutoLiftoutStage.MillUndercut, # TODO: maybe add this to config?
+            AutoLiftoutStage.MillUndercut, # TODO: maybe add this to config?
         ]:
             lamella: Lamella
             for lamella in experiment.positions:

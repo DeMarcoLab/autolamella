@@ -28,15 +28,6 @@ from autolamella.liftout.ui.qt import AutoLiftoutUIv2
 from datetime import datetime
 from fibsem.ui import _stylesheets
 
-
-"""
-TODO: 
-    - Redo setup. Add and select lamella on main screen, rather than walkthrough? then how to select landing positions
-    - add more stages: LamellaSelected, LandingSelected
-    - Stop workflow button? how to implement
-
-"""
-
 _DEV_MODE = False
 DEV_MICROSCOPE = "Demo"
 DEV_EXP_PATH = r"C:\Users\pcle0002\Documents\repos\autoliftout\liftout\log\DEV-TEST-SERIAL-01\experiment.yaml"
