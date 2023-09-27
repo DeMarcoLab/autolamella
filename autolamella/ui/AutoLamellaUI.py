@@ -583,7 +583,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # Current Lamella Status
         if _lamella_selected:
             self.update_lamella_ui()
-
+        self.checkBox_show_lamella_in_view.setVisible(_lamella_selected)
+        
         # instructions# TODO: update with autolamella instructions
         INSTRUCTIONS = {"NOT_CONNECTED": "Please connect to the microscope (System -> Connect to Microscope).",
                         "NO_EXPERIMENT": "Please create or load an experiment (File -> Create / Load Experiment)",
