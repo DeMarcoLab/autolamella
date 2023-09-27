@@ -348,7 +348,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self._microscope_ui_loaded = True
             self.milling_widget.milling_position_changed.connect(self._update_milling_position)
             self.milling_widget._milling_finished.connect(self._milling_finished)
-            self.image_widget.picture_signal.connect(self.update_ui)
+            self.image_widget.picture_signal.connect(self.update_lamella_ui)
         else:
             if self.image_widget is None:
                 return
@@ -643,13 +643,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self.experiment.positions == []:
             return      
 
+        if self._WORKFLOW_RUNNING:
+            return
+
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
 
         logging.info(f"Updating Lamella UI for {lamella.info}")
-
-        
-
 
         # buttons
         if self._PROTOCOL_LOADED:
