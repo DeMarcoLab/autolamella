@@ -37,6 +37,7 @@ from autolamella.ui.qt import AutoLamellaUI
 from PyQt5.QtCore import pyqtSignal
 from autolamella.ui import _stylesheets
 from collections import Counter
+import numpy as np
 
 
 _DEV_MODE = False
@@ -711,7 +712,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     temp.name = points[i].name
                     points[i] = temp
                     text.append(points[i].name)
-                self.viewer.add_points(points, text=text, size=10, symbol="x")
+                position_text = {
+                    "string": text,
+                    "color": "lime",
+                    "translation": np.array([-25, 0])
+                }
+                self.viewer.add_points(points, text=position_text, size=10, symbol="x", face_color="lime", edge_color="white", name="lamella_positions")
 
         # update the milling widget
         if self._WORKFLOW_RUNNING:
