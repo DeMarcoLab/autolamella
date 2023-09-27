@@ -91,7 +91,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._MILLING_RUNNING: bool = False
         self._WORKFLOW_RUNNING: bool = False
         self._ABORT_THREAD: bool = False
-
+        self.checkBox_show_lamella_in_view.setChecked(True)
+        self.checkBox_show_lamella_in_view.stateChanged.connect(self.update_lamella_ui) 
 
         # setup connections
         self.setup_connections()
@@ -584,7 +585,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if _lamella_selected:
             self.update_lamella_ui()
         self.checkBox_show_lamella_in_view.setVisible(_lamella_selected)
-        
+
         # instructions# TODO: update with autolamella instructions
         INSTRUCTIONS = {"NOT_CONNECTED": "Please connect to the microscope (System -> Connect to Microscope).",
                         "NO_EXPERIMENT": "Please create or load an experiment (File -> Create / Load Experiment)",
@@ -720,7 +721,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     "translation": np.array([-25, 0])
                 }
                 self.viewer.add_points(points, text=position_text, size=10, symbol="x", face_color="lime", edge_color="white", name="lamella_positions")
-
+            else:
+                fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
         # update the milling widget
         if self._WORKFLOW_RUNNING:
             self.milling_widget._PATTERN_IS_MOVEABLE = True
