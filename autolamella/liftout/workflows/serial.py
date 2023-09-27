@@ -12,6 +12,7 @@ from fibsem.detection.detection import (
     LamellaRightEdge,
     NeedleTip,
     LandingPost,
+    LandingGridCentre,
     LamellaTopEdge,
     LamellaBottomEdge,
     CopperAdapterBottomEdge,
@@ -269,7 +270,7 @@ def land_lamella(
     _set_images_ui(parent_ui, eb_image, ib_image)
 
 
-    # DETECT LAMELLA BOTTOM EDGE, LANDINGPOST_TOP
+    # DETECT LAMELLA BOTTOM EDGE, LandingGridCentre_TOP
     # align manipulator to top of lamella
     log_status_message(lamella, "NEEDLE_IB_DETECTION")
     _update_status_ui(parent_ui, f"{lamella.info} Moving Lamella to Landing Post...")
@@ -284,7 +285,7 @@ def land_lamella(
 
         # DETECT COPPER ADAPTER, LAMELLA TOP
         scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
-        features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge(), LandingPost()]  # TODO: SCAN_ROTATION FOR LANDING_POST
+        features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
         # hover 25um above the post
@@ -303,7 +304,7 @@ def land_lamella(
     # settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
 
     # # DETECT COPPER ADAPTER, LAMELLA TOP
-    # features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge(), LandingPost()]  # TODO: SCAN_ROTATION FOR LANDING_POST
+    # features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
     # det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
     # # MOVE TO LANDING POST
