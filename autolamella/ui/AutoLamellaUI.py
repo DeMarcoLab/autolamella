@@ -1059,8 +1059,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         for lamella in self.experiment.positions:
             if lamella.state.stage is not  lamella.history[-1].stage:
-                lamella.state = lamella.history[-1]
-                logging.debug("restoring state for {}".format(lamella.info))
+                lamella.state = deepcopy(lamella.history[-1])
+                logging.info("restoring state for {}".format(lamella.info))
+        
 
     def _workflow_finished(self):
         logging.info(f'Workflow finished.')
