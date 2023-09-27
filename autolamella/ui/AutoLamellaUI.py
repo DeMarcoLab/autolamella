@@ -683,35 +683,36 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_save_position.setEnabled(False)
                 self.milling_widget._PATTERN_IS_MOVEABLE = True
 
-            lamellas = []
-            text = []
-            positions = deepcopy(self.experiment.positions)
-            if self.image_widget.ib_image is not None:
-                fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
-                for lamella in positions:
-                    if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
-                        lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
-                    else:
-                        lamella_centre =  Point.__from_dict__(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
-                   
-                    current_position = lamella.state.microscope_state.absolute_position
-                    lamella_position = self.microscope._calculate_new_position( 
-                                    settings=self.settings, 
-                                    dx=lamella_centre.x, dy=lamella_centre.y, 
-                                    beam_type=BeamType.ION, 
-                                    base_position=current_position)  
-                    lamella_position.name = lamella._petname
-                    lamellas.append(lamella_position)
+            if self.checkBox_show_lamella_in_view.isChecked():
+                lamellas = []
+                text = []
+                positions = deepcopy(self.experiment.positions)
+                if self.image_widget.ib_image is not None:
+                    fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
+                    for lamella in positions:
+                        if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
+                        else:
+                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
+                    
+                        current_position = lamella.state.microscope_state.absolute_position
+                        lamella_position = self.microscope._calculate_new_position( 
+                                        settings=self.settings, 
+                                        dx=lamella_centre.x, dy=lamella_centre.y, 
+                                        beam_type=BeamType.ION, 
+                                        base_position=current_position)  
+                        lamella_position.name = lamella._petname
+                        lamellas.append(lamella_position)
 
-                from fibsem.imaging._tile import _reproject_positions
-                points = _reproject_positions(self.image_widget.ib_image, lamellas, _bound = True)
-                for i in range(len(points)):
-                    temp = Point(x= points[i].y, y =points[i].x)
-                    temp.y += self.image_widget.eb_image.data.shape[1] #napari dimensions are swapped
-                    temp.name = points[i].name
-                    points[i] = temp
-                    text.append(points[i].name)
-                self.viewer.add_points(points, text=text, size=10, symbol="x")
+                    from fibsem.imaging._tile import _reproject_positions
+                    points = _reproject_positions(self.image_widget.ib_image, lamellas, _bound = True)
+                    for i in range(len(points)):
+                        temp = Point(x= points[i].y, y =points[i].x)
+                        temp.y += self.image_widget.eb_image.data.shape[1] #napari dimensions are swapped
+                        temp.name = points[i].name
+                        points[i] = temp
+                        text.append(points[i].name)
+                    self.viewer.add_points(points, text=text, size=10, symbol="x")
 
         # update the milling widget
         if self._WORKFLOW_RUNNING:
