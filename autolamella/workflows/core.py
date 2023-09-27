@@ -498,8 +498,8 @@ def setup_lamella(
     stages = deepcopy(lamella_stages)
 
     # feature 
-    if method == "autolamella-waffle":
-        _feature_name = "notch"
+    if "autolamella" in method:
+        _feature_name = "notch" if method == "autolamella-waffle" else "microexpansion"
         protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol
         NOTCH_H_OFFSET = 0.5e-6                     
         feature_position = Point.__from_dict__(protocol[_feature_name].get("point", 

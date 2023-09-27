@@ -48,6 +48,7 @@ from fibsem import config as fcfg
 
 
 from autolamella.workflows.core import log_status_message
+# from autolamella.workflows.ui import _validate_mill_ui, _update_status_ui, _set_images_ui, ask_user, _validate_det_ui_v2
 
 # autoliftout workflow functions
 
@@ -934,7 +935,7 @@ def run_autoliftout_workflow(
 
     return experiment
 
-
+# TODO: REMOVE THIS
 def end_of_stage_update(
     microscope: FibsemMicroscope, experiment: Experiment, lamella: Lamella, parent_ui: AutoLiftoutUIv2, _save_state: bool = True
 ) -> Experiment:
@@ -957,7 +958,7 @@ def end_of_stage_update(
 
     return experiment
 
-
+# TODO: REMOVE THIS
 def start_of_stage_update(
     microscope: FibsemMicroscope,
     lamella: Lamella,
@@ -1021,7 +1022,7 @@ def run_thinning_workflow(
     return experiment
 
 
-
+# TODO: START_HERE: remove ui function, use core ui
 def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLiftoutUIv2, msg:str, validate: bool, milling_enabled: bool = True):
 
     _update_mill_stages_ui(parent_ui, stages=stages)
@@ -1094,12 +1095,12 @@ def _validate_det_ui_v2(microscope, settings, features, parent_ui, validate:bool
         # I need this to happen in the parent thread for it to work correctly
         parent_ui.det_confirm_signal.emit(True)
     
-    image = acquire.last_image(microscope, settings.image.beam_type)
-    if settings.image.beam_type is BeamType.ELECTRON:
-        eb_image, ib_image = image, None
-    else:
-        eb_image, ib_image = None, image
-    _set_images_ui(parent_ui, eb_image=eb_image, ib_image=ib_image)
+    # image = acquire.last_image(microscope, settings.image.beam_type)
+    # if settings.image.beam_type is BeamType.ELECTRON:
+    #     eb_image, ib_image = image, None
+    # else:
+    #     eb_image, ib_image = None, image
+    # _set_images_ui(parent_ui, eb_image=eb_image, ib_image=ib_image)
 
     return det
 
@@ -1218,6 +1219,12 @@ def select_initial_lamella_positions(
     lamella_no = max(len(experiment.positions) + 1, 1)
     lamella = Lamella(experiment.path, lamella_no)
     log_status_message(lamella, "STARTED")
+
+    # reference images
+    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+    settings.image.save = False
+    eb_image,ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
 
     log_status_message(lamella, "SELECT_LAMELLA_POSITION")
     stages = patterning._get_milling_stages("trench", settings.protocol)
@@ -1359,14 +1366,11 @@ def select_lamella_positions(
     eb_image,ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-
     select_another = get_current_lamella(experiment, parent_ui)
 
     if select_another:
         lamella_start_position = fibsem_utils._get_position(settings.protocol["options"]["lamella_start_position"])
         microscope._safe_absolute_stage_movement(lamella_start_position)
-
-        ask_user(parent_ui, msg=f"Move to the next lamella.", pos="Continue")
 
     # allow the user to select additional lamella positions
     while select_another:

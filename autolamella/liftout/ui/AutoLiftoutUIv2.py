@@ -114,12 +114,10 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.comboBox_options_landing_start_position.addItems(_AVAILABLE_POSITIONS_)
 
         # workflow buttons
-        self.pushButton_setup_autoliftout.clicked.connect(self._run_workflow)
-        self.pushButton_run_autoliftout.clicked.connect(self._run_autoliftout_workflow)
-        self.pushButton_run_serial_liftout_landing.clicked.connect(self._run_serial_liftout_landing_workflow)
-        self.pushButton_run_polishing.clicked.connect(self._run_autolamella_workflow)
-
-
+        self.pushButton_setup_autoliftout.clicked.connect(lambda: self._run_workflow(workflow="setup"))
+        self.pushButton_run_autoliftout.clicked.connect(lambda: self._run_workflow(workflow="autoliftout"))
+        self.pushButton_run_serial_liftout_landing.clicked.connect(lambda: self._run_workflow(workflow="serial-liftout-landing"))
+        self.pushButton_run_polishing.clicked.connect(lambda: self._run_workflow(workflow="autolamella"))
 
         # interaction buttons
         self.pushButton_yes.clicked.connect(self.push_interaction_button)
@@ -398,8 +396,8 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         options = self.settings.protocol["options"]
         self.checkBox_options_batch_mode.setChecked(bool(options["batch_mode"]))
         self.checkBox_options_confirm_next_stage.setChecked(bool(options["confirm_advance"]))
-        self.comboBox_options_liftout_joining_method.setCurrentText(options["liftout_joining_method"])
-        self.comboBox_options_landing_joining_method.setCurrentText(options["landing_joining_method"])
+        self.comboBox_options_liftout_joining_method.setCurrentText(options.get("liftout_joining_method", "None"))
+        self.comboBox_options_landing_joining_method.setCurrentText(options.get("landing_joining_method", "Weld"))
 
         self.comboBox_options_lamella_start_position.setCurrentText(options["lamella_start_position"])
         self.comboBox_options_landing_start_position.setCurrentText(options["landing_start_position"])
@@ -428,8 +426,8 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.settings.protocol["name"] = self.lineEdit_protocol_name.text()
         self.settings.protocol["method"] = self.comboBox_protocol_method.currentText()
 
-        # TODO: milling?
-        self.settings.protocol["options"] = {
+        # TODO: fix this for both methods
+        self.settings.protocol["options"].update({
             "batch_mode": self.checkBox_options_batch_mode.isChecked(),
             "confirm_advance": self.checkBox_options_confirm_next_stage.isChecked(),
             "liftout_joining_method": self.comboBox_options_liftout_joining_method.currentText(),
@@ -446,8 +444,8 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                 "mill_rough": self.checkBox_supervise_mill_rough.isChecked(),
                 "mill_regular": self.checkBox_supervise_mill_regular.isChecked(),
                 "mill_polishing": self.checkBox_supervise_mill_polishing.isChecked()
-            }
-        }
+            }}
+        )
 
         self.settings.protocol["ml"] = {
             "encoder": self.lineEdit_protocol_ml_encoder.text(),
@@ -612,33 +610,11 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         if self.det_widget is not None:
             self.det_widget.confirm_button_clicked()
 
-    def _run_workflow(self):
+    def _run_workflow(self, workflow: str):
         self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="setup",
+            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow=workflow,
         )
         self.worker.finished.connect(self._workflow_finished)
-        self.worker.start()
-
-    def _run_autoliftout_workflow(self):
-        self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="autoliftout"
-        )
-        self.worker.finished.connect(self._workflow_finished)
-        self.worker.start()
-        
-    def _run_serial_liftout_landing_workflow(self):
-        self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="serial-landing"
-        )
-        self.worker.finished.connect(self._workflow_finished)
-        self.worker.start()
-    
-    def _run_autolamella_workflow(self):
-        self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="autolamella"
-        )
-        self.worker.finished.connect(self._workflow_finished)
-
         self.worker.start()
 
     def _workflow_finished(self):
