@@ -78,6 +78,9 @@ def lamella_in_view(lamella: Lamella, lamella_centre: Point, ib_image: FibsemIma
     lamella_offset = FibsemStagePosition(x = lamella_centre.x, y = lamella_centre.y, z = 0)
     lamella_position = lamella.state.microscope_state.absolute_position.__add__(lamella_offset)
 
+
+    
+
     # get image bounds
     x = ib_image.metadata.microscope_state.absolute_position.x
     z = ib_image.metadata.microscope_state.absolute_position.z

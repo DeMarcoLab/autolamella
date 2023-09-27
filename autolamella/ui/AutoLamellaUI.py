@@ -683,13 +683,21 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
                 for lamella in positions:
                     if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
-                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) 
+                        lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
                     else:
                         lamella_centre =  Point.__from_dict__(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
-                    visible, position = aui_utils.lamella_in_view(lamella, lamella_centre, self.image_widget.ib_image)
+                    visible, position = aui_utils.lamella_in_view(lamella, lamella_centre, self.image_widget.ib_image) 
+
+                    # _new_position = self.microscope._calculate_new_position( 
+                    #                 settings=self.settings, 
+                    #                 dx=point.x, dy=point.y, 
+                    #                 beam_type=self.image.metadata.image_settings.beam_type, 
+                    #                 base_position=self.image.metadata.microscope_state.absolute_position)  
+
+
                     if visible:
                         current_position = self.microscope.get_stage_position()
-                        lamella_centre = Point(x=(position.x - current_position.x), y=(position.z -  current_position.z))
+                        lamella_centre = Point(x=(position.x - current_position.x), y=(position.y -  current_position.y))
                         napari_point = fui.convert_point_to_napari(self.image_widget.ib_image.metadata.image_settings.resolution, self.image_widget.ib_image.metadata.pixel_size.x, lamella_centre)
                         napari_point.x = napari_point.x + self.image_widget.eb_image.metadata.image_settings.resolution[0]
                         point = Point(x=napari_point.y, y=napari_point.x)
