@@ -185,7 +185,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             _LAMELLA_UNDERCUT = _counter[AutoLiftoutStage.MillUndercut.name] > 0
             _LIFTOUT_FINISHED = _counter[AutoLiftoutStage.Liftout.name] > 0
             _LAMELLA_LANDED = _counter[AutoLiftoutStage.Landing.name] > 0
-            _AUTOLAMELLA_PROGRESS = (_counter[AutoLiftoutStage.SetupPolish.name]>0
+            _AUTOLAMELLA_PROGRESS = (_counter[AutoLiftoutStage.SetupLamella.name]>0
                 or _counter[AutoLiftoutStage.MillRoughCut.name] > 0 
                 or _counter[AutoLiftoutStage.MillRegularCut.name] > 0 
                 or _counter[AutoLiftoutStage.MillPolishingCut.name] > 0)

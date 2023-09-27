@@ -367,11 +367,6 @@ def mill_lamella(
     log_status_message(lamella, "ALIGN_LAMELLA")
     _update_status_ui(parent_ui, f"{lamella.info} Aligning Reference Images...")
 
-    # take reference image after milling fiducial
-    # use_fiducial = settings.protocol["fiducial"].get("enabled", True)
-    # if use_fiducial is False:
-    #     lamella.fiducial_area = None # TODO: make this better
-
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
     settings.image.beam_type = BeamType.ION

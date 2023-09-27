@@ -408,7 +408,7 @@ SERIAL_WORKFLOW_STAGES = {
     AutoLiftoutStage.MillUndercut: mill_undercut,
     AutoLiftoutStage.Liftout: liftout_lamella,
     AutoLiftoutStage.Landing: land_lamella,
-    AutoLiftoutStage.SetupPolish: setup_lamella,
+    AutoLiftoutStage.SetupLamella: setup_lamella,
     AutoLiftoutStage.MillRoughCut: mill_lamella,
     AutoLiftoutStage.MillRegularCut: mill_lamella,
     AutoLiftoutStage.MillPolishingCut: mill_lamella,
