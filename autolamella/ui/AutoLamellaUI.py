@@ -37,6 +37,7 @@ from autolamella.ui.qt import AutoLamellaUI
 from PyQt5.QtCore import pyqtSignal
 from autolamella.ui import _stylesheets
 from collections import Counter
+import numpy as np
 
 
 _DEV_MODE = False
@@ -704,15 +705,20 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         lamella_position.name = lamella._petname
                         lamellas.append(lamella_position)
 
-                    from fibsem.imaging._tile import _reproject_positions
-                    points = _reproject_positions(self.image_widget.ib_image, lamellas, _bound = True)
-                    for i in range(len(points)):
-                        temp = Point(x= points[i].y, y =points[i].x)
-                        temp.y += self.image_widget.eb_image.data.shape[1] #napari dimensions are swapped
-                        temp.name = points[i].name
-                        points[i] = temp
-                        text.append(points[i].name)
-                    self.viewer.add_points(points, text=text, size=10, symbol="x")
+                from fibsem.imaging._tile import _reproject_positions
+                points = _reproject_positions(self.image_widget.ib_image, lamellas, _bound = True)
+                for i in range(len(points)):
+                    temp = Point(x= points[i].y, y =points[i].x)
+                    temp.y += self.image_widget.eb_image.data.shape[1] #napari dimensions are swapped
+                    temp.name = points[i].name
+                    points[i] = temp
+                    text.append(points[i].name)
+                position_text = {
+                    "string": text,
+                    "color": "lime",
+                    "translation": np.array([-25, 0])
+                }
+                self.viewer.add_points(points, text=position_text, size=10, symbol="x", face_color="lime", edge_color="white", name="lamella_positions")
 
         # update the milling widget
         if self._WORKFLOW_RUNNING:
