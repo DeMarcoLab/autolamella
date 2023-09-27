@@ -38,7 +38,7 @@ from fibsem import config as fcfg
 from collections import Counter
 from autolamella.liftout.structures import Lamella, Experiment, AutoLiftoutState, AutoLiftoutStage
 from autolamella.liftout.autoliftout import log_status_message, start_of_stage_update, end_of_stage_update
-from autolamella.liftout.autoliftout import ask_user, _update_status_ui, _validate_det_ui_v2, _update_mill_stages_ui, _set_images_ui,  _validate_mill_ui
+from autolamella.workflows.ui import ask_user, _update_status_ui, _validate_det_ui_v2, _set_images_ui,  _validate_mill_ui
 
 from pprint import pprint
 
