@@ -12,7 +12,7 @@ from fibsem import patterning
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     MicroscopeSettings,
-    FibsemStagePosition, Point
+    FibsemStagePosition, Point, BeamType
 )
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
@@ -564,13 +564,20 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_run_autolamella.setVisible(True)
             self.pushButton_run_autolamella.setEnabled(_ENABLE_AUTOLAMELLA)
 
-
             self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
-            
+            if self._WORKFLOW_RUNNING:
+                self.pushButton_run_waffle_trench.setEnabled(False)
+                self.pushButton_run_waffle_undercut.setEnabled(False)
+                self.pushButton_run_setup_autolamella.setEnabled(False)
+                self.pushButton_run_autolamella.setEnabled(False)
+                self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
         # Current Lamella Status
         if _lamella_selected:
@@ -676,7 +683,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_save_position.setEnabled(False)
                 self.milling_widget._PATTERN_IS_MOVEABLE = True
 
-            points = []
+            lamellas = []
             text = []
             positions = deepcopy(self.experiment.positions)
             if self.image_widget.ib_image is not None:
@@ -686,24 +693,24 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
                     else:
                         lamella_centre =  Point.__from_dict__(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
-                    visible, position = aui_utils.lamella_in_view(lamella, lamella_centre, self.image_widget.ib_image) 
+                   
+                    current_position = lamella.state.microscope_state.absolute_position
+                    lamella_position = self.microscope._calculate_new_position( 
+                                    settings=self.settings, 
+                                    dx=lamella_centre.x, dy=lamella_centre.y, 
+                                    beam_type=BeamType.ION, 
+                                    base_position=current_position)  
+                    lamella_position.name = lamella._petname
+                    lamellas.append(lamella_position)
 
-                    # _new_position = self.microscope._calculate_new_position( 
-                    #                 settings=self.settings, 
-                    #                 dx=point.x, dy=point.y, 
-                    #                 beam_type=self.image.metadata.image_settings.beam_type, 
-                    #                 base_position=self.image.metadata.microscope_state.absolute_position)  
-
-
-                    if visible:
-                        current_position = self.microscope.get_stage_position()
-                        lamella_centre = Point(x=(position.x - current_position.x), y=(position.y -  current_position.y))
-                        napari_point = fui.convert_point_to_napari(self.image_widget.ib_image.metadata.image_settings.resolution, self.image_widget.ib_image.metadata.pixel_size.x, lamella_centre)
-                        napari_point.x = napari_point.x + self.image_widget.eb_image.metadata.image_settings.resolution[0]
-                        point = Point(x=napari_point.y, y=napari_point.x)
-                        points.append(point)
-                        text.append(lamella._petname)
-                    
+                from fibsem.imaging._tile import _reproject_positions
+                points = _reproject_positions(self.image_widget.ib_image, lamellas, _bound = True)
+                for i in range(len(points)):
+                    temp = Point(x= points[i].y, y =points[i].x)
+                    temp.y += self.image_widget.eb_image.data.shape[1] #napari dimensions are swapped
+                    temp.name = points[i].name
+                    points[i] = temp
+                    text.append(points[i].name)
                 self.viewer.add_points(points, text=text, size=10, symbol="x")
 
         # update the milling widget
