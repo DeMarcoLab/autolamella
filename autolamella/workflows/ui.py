@@ -23,7 +23,7 @@ def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI
         response = ask_user(parent_ui, msg=msg, pos="Continue", mill=milling_enabled)
         stages = deepcopy(parent_ui.milling_widget.get_milling_stages())
     else:
-        _update_status_ui(parent_ui, f"Milling {len(stages)} stages...")
+        _update_status_ui(parent_ui, f"Milling {len(stages)} stages...") # TODO: better feedback here, change to milling tab for progress bar
         parent_ui._MILLING_RUNNING = True
         parent_ui._run_milling_signal.emit()
         
