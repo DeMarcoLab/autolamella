@@ -567,26 +567,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
-            points = []
-            text = []
-            if self.image_widget.ib_image is not None:
-                fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
-                for lamella in self.experiment.positions:
-                    if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
-                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) 
-                    else:
-                        lamella_centre =  Point.__from_dict__(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
-                    visible, position = aui_utils.lamella_in_view(lamella, lamella_centre, self.image_widget.ib_image)
-                    if visible:
-                        current_position = self.microscope.get_stage_position()
-                        lamella_centre = Point(x=(position.x - current_position.x), y=(position.z -  current_position.z))
-                        napari_point = fui.convert_point_to_napari(self.image_widget.ib_image.metadata.image_settings.resolution, self.image_widget.ib_image.metadata.pixel_size.x, lamella_centre)
-                        napari_point.x = napari_point.x + self.image_widget.eb_image.metadata.image_settings.resolution[0]
-                        point = Point(x=napari_point.y, y=napari_point.x)
-                        points.append(point)
-                        text.append(lamella._petname)
-                    
-                self.viewer.add_points(points, text=text, size=10, symbol="x")
+            
 
         # Current Lamella Status
         if _lamella_selected:
@@ -667,6 +648,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         logging.info(f"Updating Lamella UI for {lamella.info}")
 
+        
+
+
         # buttons
         if self._PROTOCOL_LOADED:
 
@@ -688,6 +672,28 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_save_position.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
                 self.pushButton_save_position.setEnabled(False)
                 self.milling_widget._PATTERN_IS_MOVEABLE = True
+
+            points = []
+            text = []
+            positions = deepcopy(self.experiment.positions)
+            if self.image_widget.ib_image is not None:
+                fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
+                for lamella in positions:
+                    if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) 
+                    else:
+                        lamella_centre =  Point.__from_dict__(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
+                    visible, position = aui_utils.lamella_in_view(lamella, lamella_centre, self.image_widget.ib_image)
+                    if visible:
+                        current_position = self.microscope.get_stage_position()
+                        lamella_centre = Point(x=(position.x - current_position.x), y=(position.z -  current_position.z))
+                        napari_point = fui.convert_point_to_napari(self.image_widget.ib_image.metadata.image_settings.resolution, self.image_widget.ib_image.metadata.pixel_size.x, lamella_centre)
+                        napari_point.x = napari_point.x + self.image_widget.eb_image.metadata.image_settings.resolution[0]
+                        point = Point(x=napari_point.y, y=napari_point.x)
+                        points.append(point)
+                        text.append(lamella._petname)
+                    
+                self.viewer.add_points(points, text=text, size=10, symbol="x")
 
         # update the milling widget
         if self._WORKFLOW_RUNNING:
@@ -1127,6 +1133,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.milling_widget._PATTERN_IS_MOVEABLE = True
         self.milling_widget._remove_all_stages()
         self.WAITING_FOR_USER_INTERACTION = False
+        fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
 
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
