@@ -94,6 +94,13 @@ def _validate_det_ui_v2(
         # I need this to happen in the parent thread for it to work correctly
         parent_ui.det_confirm_signal.emit(True)
 
+#     # image = acquire.last_image(microscope, settings.image.beam_type)
+#     # if settings.image.beam_type is BeamType.ELECTRON:
+#     #     eb_image, ib_image = image, None
+#     # else:
+#     #     eb_image, ib_image = None, image
+#     # _set_images_ui(parent_ui, eb_image=eb_image, ib_image=ib_image)
+
     return det
 
 
@@ -114,8 +121,12 @@ def _set_images_ui(
         "movement": None,
         "mill": None,
     }
+    parent_ui.WAITING_FOR_UI_UPDATE = True
     parent_ui.ui_signal.emit(INFO)
 
+    logging.info(f"WAITING FOR UI UPDATE... ")
+    while parent_ui.WAITING_FOR_UI_UPDATE:
+        time.sleep(0.5)
 
 def _update_status_ui(parent_ui: AutoLamellaUI, msg: str):
 

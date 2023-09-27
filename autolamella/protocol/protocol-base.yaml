@@ -3,6 +3,7 @@ name: autolamella-base-scan-rotation-0deg
 method: autolamella-default # waffle or default
 
 options:
+  alignment_attempts: 3.0
   supervise:
     trench: false
     undercut: true
@@ -41,7 +42,6 @@ trench:
   cleaning_cross_section: false
 
 lamella:
-  alignment_attempts: 3.0
   lamella_width: 20.e-6
   lamella_height: 800.e-9
   stages:

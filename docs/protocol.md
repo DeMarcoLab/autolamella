@@ -36,6 +36,8 @@ ml: # machine learning parameters
     num_classes: 3
     checkpoint: model4.pt #model4.pt
 options:
+    return_to_eb_after_undercut: True
+    alignment_attempts: 3
     supervise:
         features: false
         lamella: true
@@ -78,7 +80,6 @@ fiducial:
   rotation: 45
   width: 1.0e-06
 lamella:
-    alignment_attempts: 3.0
     lamella_height: 8.0e-07
     lamella_width: 1.0e-05
     stages:

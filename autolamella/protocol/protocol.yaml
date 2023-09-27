@@ -24,7 +24,6 @@ fiducial:
     width: 1.0e-06
     type: Fiducial
 lamella:
-    alignment_attempts: 3.0
     lamella_height: 8.0e-07
     lamella_width: 1.0e-05
     stages:
@@ -98,6 +97,8 @@ notch:
     vwidth: 2.0e-07
     type: WaffleNotch
 options:
+    alignment_attempts: 3.0
+    return_to_eb_after_undercut: False
     compucentric_x_offset: 50.0e-6
     compucentric_y_offset: 25.0e-6 
     supervise:

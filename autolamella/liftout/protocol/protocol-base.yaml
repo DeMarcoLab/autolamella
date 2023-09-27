@@ -44,18 +44,23 @@ ml:
     num_classes: 3
     checkpoint: openfibsem-baseline-34.pt
 name: autoliftout-base-protocol
-method: default
+method: autoliftout-default
 options:
     batch_mode: true
     confirm_advance: true
     landing_joining_method: Weld
     liftout_joining_method: None
+    liftout_contact_detection: True
+    liftout_contact_offset: 0.25e-6
     landing_post_x_offset: 0.75e-6
     lamella_start_position: autoliftout-pre-tilt-35-deg-grid-01-lamella
     landing_start_position: autoliftout-pre-tilt-35-deg-grid-02-landing
     compucentric_x_offset: 50.0e-6
     compucentric_y_offset: 25.0e-6 
     return_to_eb_after_undercut: True
+    alignment_attempts: 3.0
+    liftout_charge_neutralisation_iterations: 35
+    landing_charge_neutralisation_iterations: 100
     supervise:
         landing: true
         liftout: true
@@ -82,7 +87,6 @@ platinum:
         hfw: 3.0e-05
         length: 7.0e-06
         time: 30.0
-
 sever:
     cleaning_cross_section: 0.0
     depth: 3.0e-06
