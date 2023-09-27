@@ -29,7 +29,7 @@ ml:
     num_classes: 3
     checkpoint: openfibsem-baseline-34.pt
 name: autoliftout-serial-protocol
-method: serial-liftout
+method: autoliftout-serial-liftout
 options:
     batch_mode: true
     confirm_advance: true

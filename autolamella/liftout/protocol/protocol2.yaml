@@ -44,7 +44,7 @@ ml:
     num_classes: 3
     checkpoint: openfibsem-baseline-34.pt
 name: autoliftout-base-protocol
-method: default
+method: autoliftout-default
 options:
     batch_mode: true
     confirm_advance: true
@@ -56,6 +56,7 @@ options:
     compucentric_x_offset: 50.0e-6
     compucentric_y_offset: 25.0e-6 
     return_to_eb_after_undercut: True
+    alignment_attempts: 3.0
     supervise:
         landing: true
         liftout: true
@@ -82,7 +83,6 @@ platinum:
         hfw: 3.0e-05
         length: 7.0e-06
         time: 30.0
-
 sever:
     cleaning_cross_section: 0.0
     depth: 3.0e-06

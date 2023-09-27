@@ -87,6 +87,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.USER_RESPONSE: bool = False
         self.WAITING_FOR_UI_UPDATE: bool = False
         self._WORKFLOW_RUNNING: bool = False
+        self._ABORT_THREAD: bool = False
 
         # setup connections
         self.setup_connections()
@@ -184,14 +185,15 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             _LAMELLA_UNDERCUT = _counter[AutoLiftoutStage.MillUndercut.name] > 0
             _LIFTOUT_FINISHED = _counter[AutoLiftoutStage.Liftout.name] > 0
             _LAMELLA_LANDED = _counter[AutoLiftoutStage.Landing.name] > 0
-            _AUTOLAMELLA_PROGRESS = (_counter[AutoLiftoutStage.MillRoughCut.name] > 0 
+            _AUTOLAMELLA_PROGRESS = (_counter[AutoLiftoutStage.SetupPolish.name]>0
+                or _counter[AutoLiftoutStage.MillRoughCut.name] > 0 
                 or _counter[AutoLiftoutStage.MillRegularCut.name] > 0 
                 or _counter[AutoLiftoutStage.MillPolishingCut.name] > 0)
 
         # setup experiment -> connect to microscope -> select lamella -> run autoliftout -> run polishing
 
         # METHOD 
-        _METHOD = self.settings.protocol.get("method", "default") if _protocol_loaded else "default"
+        _METHOD = self.settings.protocol.get("method", "autoliftout-default") if _protocol_loaded else "autoliftout-default"
 
         # experiment loaded
         self.actionConnect_Microscope.setVisible(_experiment_loaded)
@@ -201,14 +203,14 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # workflow buttons
         _SETUP_ENABLED = _microscope_connected and _protocol_loaded
-        _AUTOLIFTOUT_ENABLED = (_LAMELLA_SETUP or _LAMELLA_TRENCH or _LAMELLA_UNDERCUT or (_LIFTOUT_FINISHED and _METHOD=="default")) and _microscope_connected and _protocol_loaded
+        _AUTOLIFTOUT_ENABLED = (_LAMELLA_SETUP or _LAMELLA_TRENCH or _LAMELLA_UNDERCUT or (_LIFTOUT_FINISHED and _METHOD=="autoliftout-default")) and _microscope_connected and _protocol_loaded
         _SERIAL_LIFTOUT_LANDING_ENABLED = _LIFTOUT_FINISHED and _microscope_connected and _protocol_loaded
         _AUTOLAMELLA_ENABLED = (_LAMELLA_LANDED or _AUTOLAMELLA_PROGRESS) and _microscope_connected and _protocol_loaded
 
         self.pushButton_setup_autoliftout.setEnabled(_SETUP_ENABLED)
         self.pushButton_run_autoliftout.setEnabled(_AUTOLIFTOUT_ENABLED)
         self.pushButton_run_serial_liftout_landing.setEnabled(_SERIAL_LIFTOUT_LANDING_ENABLED)
-        self.pushButton_run_serial_liftout_landing.setVisible(_METHOD=="serial-liftout")
+        self.pushButton_run_serial_liftout_landing.setVisible(_METHOD=="autoliftout-serial-liftout")
         self.pushButton_run_polishing.setEnabled(_AUTOLAMELLA_ENABLED)
 
         # set stylesheets
@@ -398,7 +400,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # meta
         self.lineEdit_protocol_name.setText(self.settings.protocol.get("name", "autoliftout"))
-        self.comboBox_protocol_method.setCurrentText(self.settings.protocol.get("method", "default"))
+        self.comboBox_protocol_method.setCurrentText(self.settings.protocol.get("method", "autoliftout-default"))
 
         
         # options
@@ -715,16 +717,16 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             )
         elif workflow == "autoliftout":
 
-            _METHOD = self.settings.protocol.get("method", "default")
+            _METHOD = self.settings.protocol.get("method", "autoliftout-default")
             
-            if _METHOD == "default":
+            if _METHOD == "autoliftout-default":
                 self.experiment = autoliftout.run_autoliftout_workflow(
                     microscope=microscope,
                     settings=settings,
                     experiment=experiment,
                     parent_ui=self,
                 )
-            if _METHOD == "serial-liftout":
+            if _METHOD == "autoliftout-serial-liftout":
                 from autolamella.liftout.workflows import serial as serial_workflow
                 self.experiment = serial_workflow.run_serial_liftout_workflow(
                     microscope=microscope,

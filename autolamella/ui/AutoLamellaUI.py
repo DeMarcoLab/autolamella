@@ -171,7 +171,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         
         self.lineEdit_name.setText(self.settings.protocol["name"])
 
-        self.beamshift_attempts.setValue(self.settings.protocol["lamella"]["alignment_attempts"])
+        self.beamshift_attempts.setValue(self.settings.protocol["options"].get("alignment_attempts", 3))
 
         self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["undercut"]["tilt_angle"])
         self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["undercut"]["tilt_angle_step"])
@@ -203,7 +203,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self._PROTOCOL_LOADED is False:
             return
         self.settings.protocol["name"] = self.lineEdit_name.text()
-        self.settings.protocol["lamella"]["alignment_attempts"] = int(self.beamshift_attempts.value())
+        self.settings.protocol["options"]["alignment_attempts"] = int(self.beamshift_attempts.value())
         self.settings.protocol["undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
         self.settings.protocol["undercut"]["tilt_angle_step"] = int(self.doubleSpinBox_undercut_step.value())
         self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
