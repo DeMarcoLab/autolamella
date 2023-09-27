@@ -33,14 +33,14 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="2" column="0">
+    <item row="3" column="0">
      <widget class="QLabel" name="label_instructions">
       <property name="text">
        <string>Instructions</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="0" colspan="2">
+    <item row="2" column="0" colspan="2">
      <spacer name="verticalSpacer_4">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
@@ -52,20 +52,6 @@
        </size>
       </property>
      </spacer>
-    </item>
-    <item row="3" column="1">
-     <widget class="QPushButton" name="pushButton_no">
-      <property name="text">
-       <string>No</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0">
-     <widget class="QPushButton" name="pushButton_yes">
-      <property name="text">
-       <string>Yes</string>
-      </property>
-     </widget>
     </item>
     <item row="0" column="0" colspan="2">
      <widget class="QTabWidget" name="tabWidget">
@@ -931,6 +917,27 @@
       </widget>
      </widget>
     </item>
+    <item row="4" column="0">
+     <widget class="QPushButton" name="pushButton_yes">
+      <property name="text">
+       <string>Yes</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QPushButton" name="pushButton_no">
+      <property name="text">
+       <string>No</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0" colspan="2">
+     <widget class="QPushButton" name="pushButton_stop_workflow_thread">
+      <property name="text">
+       <string>Stop Workflow</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -939,7 +946,7 @@
      <x>0</x>
      <y>0</y>
      <width>521</width>
-     <height>20</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAutoLamella">

@@ -89,7 +89,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.WAITING_FOR_UI_UPDATE: bool = False
         self._MILLING_RUNNING: bool = False
         self._WORKFLOW_RUNNING: bool = False
-
+        self._ABORT_THREAD: bool = False
 
 
         # setup connections
@@ -119,6 +119,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_autolamella.clicked.connect(lambda: self._run_workflow(workflow="lamella"))
         self.pushButton_run_waffle_undercut.clicked.connect(lambda: self._run_workflow(workflow="undercut"))
         self.pushButton_run_setup_autolamella.clicked.connect(lambda: self._run_workflow(workflow="setup-lamella"))
+
+        self.pushButton_stop_workflow_thread.clicked.connect(self._stop_workflow_thread)
+        self.pushButton_stop_workflow_thread.setVisible(False)
 
         self.pushButton_run_waffle_trench.setVisible(False)
         self.pushButton_run_autolamella.setVisible(False)
@@ -1029,12 +1032,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self.det_widget is not None:
             self.det_widget.confirm_button_clicked()
 
+    def _stop_workflow_thread(self):
+        self._ABORT_THREAD = True
+        napari.utils.notifications.show_error("Abort requested")
+
     def _run_workflow(self, workflow: str) -> None:
         try:
             self.milling_widget.milling_position_changed.disconnect()
         except:
             pass 
-
+        
         self.worker = self._threaded_worker(
             microscope=self.microscope, 
             settings=self.settings, 
@@ -1042,19 +1049,32 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             workflow=workflow,
         )
         self.worker.finished.connect(self._workflow_finished)
+        self.worker.errored.connect(self._workflow_aborted)
         self.worker.start()
 
+    def _workflow_aborted(self):
+        logging.info(f'Workflow aborted.')
+        self._WORKFLOW_RUNNING = False
+        self._ABORT_THREAD = False
+
+        for lamella in self.experiment.positions:
+            if lamella.state.stage is not  lamella.history[-1].stage:
+                lamella.state = deepcopy(lamella.history[-1])
+                logging.info("restoring state for {}".format(lamella.info))
+        
 
     def _workflow_finished(self):
         logging.info(f'Workflow finished.')
         self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
         self.tabWidget.setCurrentIndex(0)
+        self.pushButton_stop_workflow_thread.setVisible(False)
 
         # clear the image settings save settings etc
         self.image_widget.checkBox_image_save_image.setChecked(False)
         self.image_widget.lineEdit_image_path.setText(self.experiment.path)
         self.image_widget.lineEdit_image_label.setText("default-image")
+        self.update_ui()
 
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
@@ -1101,11 +1121,22 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     @thread_worker
     def _threaded_worker(self, microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment, workflow: str="trench"):
-        
+        self._ABORT_THREAD = False
         self._WORKFLOW_RUNNING = True
         self.milling_widget._PATTERN_IS_MOVEABLE = True
         self.milling_widget._remove_all_stages()
         self.WAITING_FOR_USER_INTERACTION = False
+        self.pushButton_run_waffle_trench.setEnabled(False)
+        self.pushButton_run_waffle_undercut.setEnabled(False)
+        self.pushButton_run_setup_autolamella.setEnabled(False)
+        self.pushButton_run_autolamella.setEnabled(False)
+        self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+
+        self.pushButton_stop_workflow_thread.setVisible(True)
+        self.pushButton_stop_workflow_thread.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
 
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
