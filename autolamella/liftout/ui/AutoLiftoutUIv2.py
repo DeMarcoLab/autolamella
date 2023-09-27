@@ -701,7 +701,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                     experiment=experiment,
                     parent_ui=self,
                 )
-        elif workflow == "serial-landing":
+        elif workflow == "serial-liftout-landing":
 
             from autolamella.liftout.workflows import serial as serial_workflow
             self.experiment = serial_workflow.run_serial_liftout_landing(
