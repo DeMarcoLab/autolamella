@@ -690,6 +690,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 lamellas = []
                 text = []
                 positions = deepcopy(self.experiment.positions)
+
+                # TODO: we can wrap this up a bit, for re-use
                 if self.image_widget.ib_image is not None:
                     fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
                     for lamella in positions:
