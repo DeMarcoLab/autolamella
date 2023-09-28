@@ -170,10 +170,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def update_protocol_ui(self, _load: bool=True):
 
-        if self._PROTOCOL_LOADED is False:
-            return
-
-        if self._UPDATING_PROTOCOL_UI:
+        if not self._PROTOCOL_LOADED or self._UPDATING_PROTOCOL_UI:
             return
 
         self._UPDATING_PROTOCOL_UI = True
@@ -527,6 +524,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         _microscope_connected = bool(self.microscope is not None)
         _protocol_loaded = bool(self.settings is not None) and self._PROTOCOL_LOADED
         _lamella_selected = bool(self.experiment.positions) if _experiment_loaded else False
+
+        # force order: connect -> experiment -> protocol
+        self.tabWidget.setTabVisible(0, _microscope_connected)
+        self.tabWidget.setTabVisible(1, _protocol_loaded)
+        self.actionNew_Experiment.setVisible(_microscope_connected)
 
         # setup experiment -> connect to microscope -> select lamella -> run autolamella
         self.pushButton_fail_lamella.setVisible(_lamella_selected)
