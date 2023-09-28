@@ -286,10 +286,6 @@ def mill_undercut(
 
     return lamella
 
-
-
-
-
 def mill_lamella(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
@@ -299,6 +295,15 @@ def mill_lamella(
     validate = settings.protocol["options"]["supervise"].get("lamella", True)
     settings.image.save_path = lamella.path
     method = settings.protocol.get("method", "autolamella-waffle")
+
+
+    _take_reference_images = bool(
+        lamella.state.stage is AutoLamellaWaffleStage.MillRoughCut 
+        or settings.protocol["options"].get("take_final_reference_images", True))
+    _take_high_quality_ref =  bool(
+        lamella.state.stage is AutoLamellaWaffleStage.MillPolishingCut 
+        and settings.protocol["options"].get("take_final_high_quality_reference_images", False)
+        )
 
     # beam_shift alignment
     log_status_message(lamella, "ALIGN_LAMELLA")
@@ -375,18 +380,19 @@ def mill_lamella(
     lamella.protocol[lamella.state.stage.name] = deepcopy(patterning._get_protocol_from_stages(stages))
     lamella.protocol[lamella.state.stage.name]["point"] = stages[0].pattern.point.__to_dict__()
 
-    # take reference images
-    log_status_message(lamella, "REFERENCE_IMAGES")
-    _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
-    reference_images = acquire.take_set_of_reference_images(
-        microscope=microscope,
-        image_settings=settings.image,
-        hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
-        label=f"ref_{lamella.state.stage.name}_final",
-    )
-    _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
+    if _take_reference_images:
+        # take reference images
+        log_status_message(lamella, "REFERENCE_IMAGES")
+        _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
+        reference_images = acquire.take_set_of_reference_images(
+            microscope=microscope,
+            image_settings=settings.image,
+            hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
+            label=f"ref_{lamella.state.stage.name}_final",
+        )
+        _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
-    if lamella.state.stage is AutoLamellaWaffleStage.MillPolishingCut and settings.protocol["options"].get("take_high_quality_reference_images", False):
+    if _take_high_quality_ref:
         log_status_message(lamella, "HIGH_QUALITY_REFERENCE_IMAGES")
         _update_status_ui(parent_ui, f"{lamella.info} Acquiring High Quality Reference Images...")
         settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
@@ -396,7 +402,7 @@ def mill_lamella(
         settings.image.frame_integration = 4
         settings.image.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(microscope, settings.image)
-        _set_images_ui(parent_ui, eb_image, ib_image)
+        # _set_images_ui(parent_ui, eb_image, ib_image)
         settings.image.frame_integration = 1 # restore
         settings.image.resolution = fcfg.REFERENCE_RES_MEDIUM
 
