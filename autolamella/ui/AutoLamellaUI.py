@@ -12,7 +12,7 @@ from fibsem import patterning
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     MicroscopeSettings,
-    FibsemStagePosition, Point
+    FibsemStagePosition, Point, BeamType
 )
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
@@ -37,6 +37,7 @@ from autolamella.ui.qt import AutoLamellaUI
 from PyQt5.QtCore import pyqtSignal
 from autolamella.ui import _stylesheets
 from collections import Counter
+import numpy as np
 
 
 _DEV_MODE = False
@@ -90,7 +91,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._MILLING_RUNNING: bool = False
         self._WORKFLOW_RUNNING: bool = False
         self._ABORT_THREAD: bool = False
-
+        self.checkBox_show_lamella_in_view.setChecked(True)
+        self.checkBox_show_lamella_in_view.stateChanged.connect(self.update_lamella_ui) 
 
         # setup connections
         self.setup_connections()
@@ -351,7 +353,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self._microscope_ui_loaded = True
             self.milling_widget.milling_position_changed.connect(self._update_milling_position)
             self.milling_widget._milling_finished.connect(self._milling_finished)
-
+            self.image_widget.picture_signal.connect(self.update_lamella_ui)
         else:
             if self.image_widget is None:
                 return
@@ -564,15 +566,25 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_run_autolamella.setVisible(True)
             self.pushButton_run_autolamella.setEnabled(_ENABLE_AUTOLAMELLA)
 
-
             self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
+            if self._WORKFLOW_RUNNING:
+                self.pushButton_run_waffle_trench.setEnabled(False)
+                self.pushButton_run_waffle_undercut.setEnabled(False)
+                self.pushButton_run_setup_autolamella.setEnabled(False)
+                self.pushButton_run_autolamella.setEnabled(False)
+                self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+
         # Current Lamella Status
         if _lamella_selected:
             self.update_lamella_ui()
+        self.checkBox_show_lamella_in_view.setVisible(_lamella_selected)
 
         # instructions# TODO: update with autolamella instructions
         INSTRUCTIONS = {"NOT_CONNECTED": "Please connect to the microscope (System -> Connect to Microscope).",
@@ -644,6 +656,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self.experiment.positions == []:
             return      
 
+        if self._WORKFLOW_RUNNING:
+            return
+
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
 
@@ -671,6 +686,43 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_save_position.setEnabled(False)
                 self.milling_widget._PATTERN_IS_MOVEABLE = True
 
+            if self.checkBox_show_lamella_in_view.isChecked():
+                lamellas = []
+                text = []
+                positions = deepcopy(self.experiment.positions)
+                if self.image_widget.ib_image is not None:
+                    fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
+                    for lamella in positions:
+                        if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
+                        else:
+                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
+                    
+                        current_position = lamella.state.microscope_state.absolute_position
+                        lamella_position = self.microscope._calculate_new_position( 
+                                        settings=self.settings, 
+                                        dx=lamella_centre.x, dy=lamella_centre.y, 
+                                        beam_type=BeamType.ION, 
+                                        base_position=current_position)  
+                        lamella_position.name = lamella._petname
+                        lamellas.append(lamella_position)
+
+                from fibsem.imaging._tile import _reproject_positions
+                points = _reproject_positions(self.image_widget.ib_image, lamellas, _bound = True)
+                for i in range(len(points)):
+                    temp = Point(x= points[i].y, y =points[i].x)
+                    temp.y += self.image_widget.eb_image.data.shape[1] #napari dimensions are swapped
+                    temp.name = points[i].name
+                    points[i] = temp
+                    text.append(points[i].name)
+                position_text = {
+                    "string": text,
+                    "color": "lime",
+                    "translation": np.array([-25, 0])
+                }
+                self.viewer.add_points(points, text=position_text, size=10, symbol="x", face_color="lime", edge_color="white", name="lamella_positions")
+            else:
+                fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
         # update the milling widget
         if self._WORKFLOW_RUNNING:
             self.milling_widget._PATTERN_IS_MOVEABLE = True
@@ -1126,6 +1178,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.milling_widget._PATTERN_IS_MOVEABLE = True
         self.milling_widget._remove_all_stages()
         self.WAITING_FOR_USER_INTERACTION = False
+        fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
         self.pushButton_run_waffle_trench.setEnabled(False)
         self.pushButton_run_waffle_undercut.setEnabled(False)
         self.pushButton_run_setup_autolamella.setEnabled(False)
