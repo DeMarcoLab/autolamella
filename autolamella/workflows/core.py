@@ -289,70 +289,6 @@ def mill_undercut(
 
 
 
-def mill_feature(
-    microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
-    lamella: Lamella,
-    parent_ui: AutoLamellaUI = None,
-) -> Lamella:
-
-    validate = settings.protocol["options"]["supervise"].get("features", True)
-    settings.image.save_path = lamella.path
-    method = settings.protocol.get("method", "autolamella-waffle")
-    
-    # check if using notch or microexpansion
-    _feature_name = "notch" if method == "autolamella-waffle" else "microexpansion"
-
-    stages = patterning._get_milling_stages(
-        _feature_name, lamella.protocol, point=Point.__from_dict__(lamella.protocol[_feature_name]["point"])
-    )
-
-    log_status_message(lamella, "ALIGN_REFERENCE")
-    settings.image.save = True
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
-    settings.image.beam_type = BeamType.ION
-    ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
-    _ALIGNMENT_ATTEMPTS = int(settings.protocol["options"].get("alignment_attempts", 3))
-    
-    for i in range(_ALIGNMENT_ATTEMPTS):
-        settings.image.label = f"alignment_target_{lamella.state.stage.name}_{i:02d}"
-        settings.image.beam_type = BeamType.ION
-        alignment.beam_shift_alignment(microscope, settings.image, 
-                                        ref_image=ref_image,
-                                            reduced_area=lamella.fiducial_area)
-    settings.image.reduced_area = None
-
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
-    settings.image.label = f"ref_{lamella.state.stage.name}_start"
-    settings.image.save = True
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    _set_images_ui(parent_ui, eb_image, ib_image)
-    _update_status_ui(parent_ui, f"{lamella.info} Preparing {_feature_name}...")
-
-    # define notch/microexpansion
-    log_status_message(lamella, "MILL_FEATURES")
-
-    stages = _validate_mill_ui(stages, parent_ui,
-        msg=f"Press Run Milling to mill the {_feature_name} for {lamella._petname}. Press Continue when done.",
-        validate=validate,
-    )
-
-    # log feature stages
-    lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages))
-    lamella.protocol[_feature_name]["point"] = stages[0].pattern.point.__to_dict__()
-
-    # take reference images
-    log_status_message(lamella, "REFERENCE_IMAGES")
-    reference_images = acquire.take_set_of_reference_images(
-        microscope=microscope,
-        image_settings=settings.image,
-        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_SUPER],
-        label=f"ref_{lamella.state.stage.name}_final",
-    )
-    _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
-
-    return lamella
-
 
 def mill_lamella(
     microscope: FibsemMicroscope,
@@ -362,6 +298,7 @@ def mill_lamella(
 ) -> Lamella:
     validate = settings.protocol["options"]["supervise"].get("lamella", True)
     settings.image.save_path = lamella.path
+    method = settings.protocol.get("method", "autolamella-waffle")
 
     # beam_shift alignment
     log_status_message(lamella, "ALIGN_LAMELLA")
@@ -382,7 +319,6 @@ def mill_lamella(
 
     settings.image.reduced_area = None
 
-
     # take reference images
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
     settings.image.label = f"ref_{lamella.state.stage.name}_start"
@@ -390,34 +326,46 @@ def mill_lamella(
     _set_images_ui(parent_ui, eb_image, ib_image)
 
 
-    # define feature
-    log_status_message(lamella, "MILL_LAMELLA")
-    stages = patterning._get_milling_stages(
-        "lamella", lamella.protocol, point=Point.__from_dict__(lamella.protocol["lamella"]["point"])
-    )
-
-    # filter stage based on the current stage
-    stage_map = {
-        AutoLamellaWaffleStage.MillRoughCut.name: 0,
-        AutoLamellaWaffleStage.MillRegularCut.name: 1,
-        AutoLamellaWaffleStage.MillPolishingCut.name: 2,
-    }
-
     supervise_map = {
         AutoLamellaWaffleStage.MillRoughCut.name: "mill_rough",
-        AutoLamellaWaffleStage.MillRegularCut.name: "mill_regular",
         AutoLamellaWaffleStage.MillPolishingCut.name: "mill_polishing",
     }
     validate = settings.protocol["options"]["supervise"].get(supervise_map[lamella.state.stage.name], True)
-
-    idx = stage_map[lamella.state.stage.name]
-    if idx in [0, 1]:
-        stages = [stages[idx]]
-    else:
-        stages = stages[idx:]
-        if not isinstance(stages, list):
-            stages = [stages]
     
+    # define feature
+    _MILL_FEATURES = bool("autolamella" in method)
+    if _MILL_FEATURES and lamella.state.stage.name == AutoLamellaWaffleStage.MillRoughCut.name:
+        log_status_message(lamella, "MILL_FEATURE")
+
+        # check if using notch or microexpansion
+        _feature_name = "notch" if method == "autolamella-waffle" else "microexpansion"
+
+        stages = patterning._get_milling_stages(
+            _feature_name, lamella.protocol, point=Point.__from_dict__(lamella.protocol[_feature_name]["point"])
+        )
+
+        stages = _validate_mill_ui(stages, parent_ui,
+            msg=f"Press Run Milling to mill the {_feature_name} for {lamella._petname}. Press Continue when done.",
+            validate=validate,
+        )
+
+        # log feature stages
+        lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages))
+        lamella.protocol[_feature_name]["point"] = stages[0].pattern.point.__to_dict__()
+
+    # mill lamella trenches
+    log_status_message(lamella, "MILL_LAMELLA")
+    stages = patterning._get_milling_stages("lamella", lamella.protocol, 
+                        point=Point.__from_dict__(lamella.protocol["lamella"]["point"]))
+
+    if lamella.state.stage.name == AutoLamellaWaffleStage.MillPolishingCut.name:
+        stages = stages[-1]
+    else:
+        stages = stages[:-1]
+
+    if not isinstance(stages, list):
+        stages = [stages]
+
     stages = _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
@@ -426,7 +374,7 @@ def mill_lamella(
     # TODO: refactor this so it is like the original protocol
     lamella.protocol[lamella.state.stage.name] = deepcopy(patterning._get_protocol_from_stages(stages))
     lamella.protocol[lamella.state.stage.name]["point"] = stages[0].pattern.point.__to_dict__()
-    
+
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
     _update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
@@ -438,14 +386,14 @@ def mill_lamella(
     )
     _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
-    if lamella.state.stage is AutoLamellaWaffleStage.MillPolishingCut:
+    if lamella.state.stage is AutoLamellaWaffleStage.MillPolishingCut and settings.protocol["options"].get("take_high_quality_reference_images", False):
         log_status_message(lamella, "HIGH_QUALITY_REFERENCE_IMAGES")
         _update_status_ui(parent_ui, f"{lamella.info} Acquiring High Quality Reference Images...")
         settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
         settings.image.label = f"ref_{lamella.state.stage.name}_final_ultra"
         settings.image.save = True
         settings.image.resolution = fcfg.REFERENCE_RES_HIGH
-        settings.image.frame_integration = 16
+        settings.image.frame_integration = 4
         settings.image.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(microscope, settings.image)
         _set_images_ui(parent_ui, eb_image, ib_image)

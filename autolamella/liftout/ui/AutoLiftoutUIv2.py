@@ -176,7 +176,6 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             _LAMELLA_LANDED = _counter[AutoLiftoutStage.Landing.name] > 0
             _AUTOLAMELLA_PROGRESS = (_counter[AutoLiftoutStage.SetupLamella.name]>0
                 or _counter[AutoLiftoutStage.MillRoughCut.name] > 0 
-                or _counter[AutoLiftoutStage.MillRegularCut.name] > 0 
                 or _counter[AutoLiftoutStage.MillPolishingCut.name] > 0)
 
         # setup experiment -> connect to microscope -> select lamella -> run autoliftout -> run polishing

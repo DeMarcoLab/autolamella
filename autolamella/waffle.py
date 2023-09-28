@@ -5,15 +5,13 @@ from autolamella.structures import (
     Experiment,
 )
 from autolamella.ui.AutoLamellaUI import AutoLamellaUI
-from autolamella.workflows.core import ( log_status_message, mill_trench, mill_undercut, mill_feature, mill_lamella, setup_lamella, start_of_stage_update, end_of_stage_update)
+from autolamella.workflows.core import ( log_status_message, mill_trench, mill_undercut, mill_lamella, setup_lamella, start_of_stage_update, end_of_stage_update)
 
 WORKFLOW_STAGES = {
     AutoLamellaWaffleStage.MillTrench: mill_trench,
     AutoLamellaWaffleStage.MillUndercut: mill_undercut,
     AutoLamellaWaffleStage.ReadyLamella: setup_lamella,
-    AutoLamellaWaffleStage.MillFeatures: mill_feature,
     AutoLamellaWaffleStage.MillRoughCut: mill_lamella,
-    AutoLamellaWaffleStage.MillRegularCut: mill_lamella,
     AutoLamellaWaffleStage.MillPolishingCut: mill_lamella,
 }
 
@@ -110,9 +108,7 @@ def run_lamella_milling(
 
 
     stages = [
-        AutoLamellaWaffleStage.MillFeatures,
         AutoLamellaWaffleStage.MillRoughCut,
-        AutoLamellaWaffleStage.MillRegularCut,
         AutoLamellaWaffleStage.MillPolishingCut,
     ]
     for stage in stages:

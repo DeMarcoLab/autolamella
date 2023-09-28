@@ -24,7 +24,6 @@ class AutoLiftoutStage(Enum):
     Landing = auto()
     SetupLamella = auto()
     MillRoughCut = auto()
-    MillRegularCut = auto()
     MillPolishingCut = auto()
     Finished = auto()
     

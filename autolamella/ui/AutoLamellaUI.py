@@ -546,10 +546,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _READY_UNDERCUT = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
             _READY_LAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
             _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
-            _READY_FEATURES = _counter[AutoLamellaWaffleStage.MillFeatures.name] > 0
             _READY_ROUGH = _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0
-            _READY_REGULAR = _counter[AutoLamellaWaffleStage.MillRegularCut.name] > 0
-            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_FEATURES or _READY_ROUGH or _READY_REGULAR
+            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_ROUGH
 
             _ENABLE_TRENCH = _WAFFLE_METHOD and _READY_TRENCH
             _ENABLE_UNDERCUT = _WAFFLE_METHOD and _READY_UNDERCUT

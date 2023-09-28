@@ -832,7 +832,6 @@ WORKFLOW_STAGES = {
     AutoLiftoutStage.Landing: land_lamella,
     AutoLiftoutStage.SetupLamella: setup_lamella,
     AutoLiftoutStage.MillRoughCut: mill_lamella,
-    AutoLiftoutStage.MillRegularCut: mill_lamella,
     AutoLiftoutStage.MillPolishingCut: mill_lamella,
 }
 
@@ -946,7 +945,6 @@ def run_thinning_workflow(
     for next_stage in [
         AutoLiftoutStage.SetupLamella,
         AutoLiftoutStage.MillRoughCut,
-        AutoLiftoutStage.MillRegularCut,
         AutoLiftoutStage.MillPolishingCut,
     ]:
         for lamella in experiment.positions:
