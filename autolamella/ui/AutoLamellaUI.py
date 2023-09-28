@@ -64,6 +64,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self._PROTOCOL_LOADED = False
         self._microscope_ui_loaded = False
+        self._UPDATING_PROTOCOL_UI = False
 
         self.experiment: Experiment = None
         self.worker = None
@@ -91,8 +92,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._MILLING_RUNNING: bool = False
         self._WORKFLOW_RUNNING: bool = False
         self._ABORT_THREAD: bool = False
-        self.checkBox_show_lamella_in_view.setChecked(True)
-        self.checkBox_show_lamella_in_view.stateChanged.connect(self.update_lamella_ui) 
+
 
         # setup connections
         self.setup_connections()
@@ -131,6 +131,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_setup_autolamella.setVisible(False)
 
         self.pushButton_update_protocol.clicked.connect(self.export_protocol_ui)
+
+        self.checkBox_show_lamella_in_view.setChecked(True)
+        self.checkBox_show_lamella_in_view.stateChanged.connect(self.update_lamella_ui) 
   
         # system widget
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
@@ -163,68 +166,103 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # comboboxes
         self.comboBox_method.addItems(cfg.__AUTOLAMELLA_METHODS__)
-        self.comboBox_stress_relief.addItems(["Notch","Microexpansion"]) # TODO: dont make this an option, just base it off the method
-        self.comboBox_alignment_with.addItems(["Fiducial", "No Fiducial"])
+        self.comboBox_method.currentIndexChanged.connect(lambda: self.update_protocol_ui(False))
 
-    def update_protocol_ui(self):
+    def update_protocol_ui(self, _load: bool=True):
 
         if self._PROTOCOL_LOADED is False:
             return
-        
-        self.lineEdit_name.setText(self.settings.protocol["name"])
 
+        if self._UPDATING_PROTOCOL_UI:
+            return
+
+        self._UPDATING_PROTOCOL_UI = True
+        
+        if _load:
+            method = self.settings.protocol["method"]
+            self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title())) # TODO: coerce this to be a supported method, alert the user if not
+        else:
+            method = self.comboBox_method.currentText().lower()
+
+        self.lineEdit_name.setText(self.settings.protocol.get("name", "autolamella-protocol"))
+
+        # options
         self.beamshift_attempts.setValue(self.settings.protocol["options"].get("alignment_attempts", 3))
+        self.checkBox_align_at_milling_current.setChecked(self.settings.protocol["options"].get("alignment_at_milling_current", True))
 
-        self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["undercut"]["tilt_angle"])
-        self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["undercut"]["tilt_angle_step"])
-
-        self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
-        
-        method = self.settings.protocol["method"]
-        self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title())) # TODO: coerce this to be a supported method, alert the user if not
-
-        self.comboBox_alignment_with.setCurrentIndex(0) if self.settings.protocol["fiducial"]["enabled"] else self.comboBox_alignment_with.setCurrentIndex(1)
+        self.checkBox_take_final_reference_images.setChecked(self.settings.protocol["options"].get("take_final_reference_images", True))
+        self.checkBox_take_final_high_quality_reference.setChecked(self.settings.protocol["options"].get("take_final_high_quality_reference_images", False))
 
         # supervision
+        self.checkBox_setup.setChecked(self.settings.protocol["options"]["supervise"].get("setup_lamella", True))
+        self.checkBox_supervise_mill_rough.setChecked(self.settings.protocol["options"]["supervise"].get("mill_rough", True))
+        self.checkBox_supervise_mill_polishing.setChecked(self.settings.protocol["options"]["supervise"].get("mill_polishing", True))
 
-        self.checkBox_trench.setChecked(self.settings.protocol["options"]["supervise"]["trench"])
-        self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"]["undercut"])
-        self.checkBox_setup.setChecked(self.settings.protocol["options"]["supervise"]["setup_lamella"])
-        self.checkBox_features.setChecked(self.settings.protocol["options"]["supervise"]["features"])
-        self.checkBox_supervise_mill_rough.setChecked(self.settings.protocol["options"]["supervise"]["mill_rough"])
-        self.checkBox_supervise_mill_regular.setChecked(self.settings.protocol["options"]["supervise"]["mill_regular"])
-        self.checkBox_supervise_mill_polishing.setChecked(self.settings.protocol["options"]["supervise"]["mill_polishing"])
+        # WAFFLE ONLY
+        _WAFFLE_METHOD = method == "autolamella-waffle"
+        if _WAFFLE_METHOD:
+            # supervision
+            self.checkBox_trench.setChecked(self.settings.protocol["options"]["supervise"].get("trench", True))
+            self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"].get("undercut", True))
 
-        # machine learning
-        self.lineEdit_ml_checkpoint.setText(self.settings.protocol["ml"]["checkpoint"])
-        self.lineEdit_ml_encoder.setText(self.settings.protocol["ml"]["encoder"])
+            # machine learning
+            self.lineEdit_ml_checkpoint.setText(self.settings.protocol.get("ml", {}).get("checkpoint", "autolamella-05-34.pt"))
+            self.lineEdit_ml_encoder.setText(self.settings.protocol.get("ml", {}).get("encoder", "resnet34"))
+            self.spinBox_ml_num_classes.setValue(self.settings.protocol.get("ml", {}).get("num_classes", 3))  
 
+            # undercut
+            self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol.get("undercut", {}).get("tilt_angle", -5))
+            self.doubleSpinBox_undercut_step.setValue(self.settings.protocol.get("undercut", {}).get("tilt_angle_step", 2))
+        
+        self.checkBox_trench.setVisible(_WAFFLE_METHOD)
+        self.checkBox_undercut.setVisible(_WAFFLE_METHOD)
+
+        self.label_ml_header.setVisible(_WAFFLE_METHOD)
+        self.label_ml_checkpoint.setVisible(_WAFFLE_METHOD)
+        self.label_ml_num_classes.setVisible(_WAFFLE_METHOD)
+        self.label_ml_encoder.setVisible(_WAFFLE_METHOD)
+        self.lineEdit_ml_checkpoint.setVisible(_WAFFLE_METHOD)
+        self.lineEdit_ml_encoder.setVisible(_WAFFLE_METHOD)
+        self.spinBox_ml_num_classes.setVisible(_WAFFLE_METHOD)
+
+        self.doubleSpinBox_undercut_tilt.setVisible(_WAFFLE_METHOD)
+        self.doubleSpinBox_undercut_step.setVisible(_WAFFLE_METHOD)
+        self.label_protocol_undercut_tilt_angle.setVisible(_WAFFLE_METHOD)
+        self.label_protocol_undercut_tilt_step.setVisible(_WAFFLE_METHOD)
+
+        self._UPDATING_PROTOCOL_UI = False
 
     def export_protocol_ui(self):
 
         if self._PROTOCOL_LOADED is False:
             return
         self.settings.protocol["name"] = self.lineEdit_name.text()
-        self.settings.protocol["options"]["alignment_attempts"] = int(self.beamshift_attempts.value())
-        self.settings.protocol["undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
-        self.settings.protocol["undercut"]["tilt_angle_step"] = int(self.doubleSpinBox_undercut_step.value())
-        self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
-        self.settings.protocol["fiducial"]["enabled"] = bool(self.comboBox_alignment_with.currentIndex() == 0)
         self.settings.protocol["method"] = self.comboBox_method.currentText().lower()
+        
+        # options
+        self.settings.protocol["options"]["alignment_attempts"] = int(self.beamshift_attempts.value())
+        self.settings.protocol["options"]["alignment_at_milling_current"] = self.checkBox_align_at_milling_current.isChecked()
+        self.settings.protocol["options"]["take_final_reference_images"] = self.checkBox_take_final_reference_images.isChecked()
+        self.settings.protocol["options"]["take_final_high_quality_reference_images"] = self.checkBox_take_final_high_quality_reference.isChecked()
 
         # supervision
-
-        self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
-        self.settings.protocol["options"]["supervise"]["undercut"] = self.checkBox_undercut.isChecked()
         self.settings.protocol["options"]["supervise"]["setup_lamella"] = self.checkBox_setup.isChecked()
-        self.settings.protocol["options"]["supervise"]["features"] = self.checkBox_features.isChecked()
         self.settings.protocol["options"]["supervise"]["mill_rough"] = self.checkBox_supervise_mill_rough.isChecked()
-        self.settings.protocol["options"]["supervise"]["mill_regular"] = self.checkBox_supervise_mill_regular.isChecked()
         self.settings.protocol["options"]["supervise"]["mill_polishing"] = self.checkBox_supervise_mill_polishing.isChecked()
 
         # machine learning
-        self.settings.protocol["ml"]["checkpoint"] = self.lineEdit_ml_checkpoint.text()
-        self.settings.protocol["ml"]["encoder"] = self.lineEdit_ml_encoder.text()
+        if self.settings.protocol["method"] == "autolamella-waffle":
+
+            self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
+            self.settings.protocol["options"]["supervise"]["undercut"] = self.checkBox_undercut.isChecked()
+
+            self.settings.protocol["ml"]["checkpoint"] = self.lineEdit_ml_checkpoint.text()
+            self.settings.protocol["ml"]["encoder"] = self.lineEdit_ml_encoder.text()
+            self.settings.protocol["ml"]["num_classes"] = self.spinBox_ml_num_classes.value()
+
+            # undercut
+            self.settings.protocol["undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
+            self.settings.protocol["undercut"]["tilt_angle_step"] = int(self.doubleSpinBox_undercut_step.value())
 
         if self.sender() == self.actionSave_Protocol:
             path = fui._get_save_file_ui(msg='Save protocol',
@@ -281,7 +319,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             if os.path.exists(PROTOCOL_PATH):
                 self.settings.protocol = utils.load_protocol(protocol_path=PROTOCOL_PATH)
                 self._PROTOCOL_LOADED = True
-                self.update_protocol_ui()
+                self.update_protocol_ui(_load=True)
 
         self._update_lamella_combobox()
         self.update_ui()
@@ -829,7 +867,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.settings.protocol = utils.load_protocol(protocol_path=PATH)
         self._PROTOCOL_LOADED = True
-        self.update_protocol_ui()
+        self.update_protocol_ui(_load=True)
         napari.utils.notifications.show_info(
             f"Loaded Protocol from {os.path.basename(PATH)}"
         )
@@ -894,7 +932,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # load protocol
         self.settings.protocol = utils.load_protocol(protocol_path=DEV_PROTOCOL_PATH)
         self._PROTOCOL_LOADED = True
-        self.update_protocol_ui()
+        self.update_protocol_ui(_load=True)
 
         self.update_ui()
         return 
