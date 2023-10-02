@@ -793,7 +793,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     lamella_position = Point.__from_dict__(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
                     stages = patterning._get_milling_stages("lamella", protocol, lamella_position)
                     
-                    _feature_name = "notch" if self.settings.protocol["notch"]["enabled"]  else "microexpansion"
+                    _feature_name = "notch" if method == "autolamella-waffle"  else "microexpansion"
                     protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol
                     
                     NOTCH_H_OFFSET = 0.5e-6                     
@@ -1103,7 +1103,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.experiment.positions[idx].protocol["lamella"]["point"] = stages[0].pattern.point.__to_dict__()
 
             # feature
-            _feature_name = "notch" if self.settings.protocol["notch"]["enabled"] else "microexpansion"
+            _feature_name = "notch" if method == "autolamella-waffle" else "microexpansion"
             self.experiment.positions[idx].protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella]))
             self.experiment.positions[idx].protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.__to_dict__()
 

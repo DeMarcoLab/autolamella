@@ -297,6 +297,13 @@ def mill_lamella(
     method = settings.protocol.get("method", "autolamella-waffle")
 
 
+    supervise_map = {
+        AutoLamellaWaffleStage.MillRoughCut.name: "mill_rough",
+        AutoLamellaWaffleStage.MillPolishingCut.name: "mill_polishing",
+    }
+    validate = settings.protocol["options"]["supervise"].get(supervise_map[lamella.state.stage.name], True)
+    
+    _align_at_milling_current = bool(settings.protocol["options"].get("alignment_at_milling_current", True))
     _take_reference_images = bool(
         lamella.state.stage is AutoLamellaWaffleStage.MillRoughCut 
         or settings.protocol["options"].get("take_final_reference_images", True))
@@ -304,6 +311,18 @@ def mill_lamella(
         lamella.state.stage is AutoLamellaWaffleStage.MillPolishingCut 
         and settings.protocol["options"].get("take_final_high_quality_reference_images", False)
         )
+
+    # milling stages
+    stages = patterning._get_milling_stages("lamella", lamella.protocol, 
+                    point=Point.__from_dict__(lamella.protocol["lamella"]["point"]))
+
+    if lamella.state.stage.name == AutoLamellaWaffleStage.MillPolishingCut.name:
+        stages = stages[-1]
+    else:
+        stages = stages[:-1]
+
+    if not isinstance(stages, list):
+        stages = [stages]
 
     # beam_shift alignment
     log_status_message(lamella, "ALIGN_LAMELLA")
@@ -315,12 +334,15 @@ def mill_lamella(
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
     _ALIGNMENT_ATTEMPTS = int(settings.protocol["options"].get("alignment_attempts", 1))
 
-    for i in range(_ALIGNMENT_ATTEMPTS):
-        settings.image.label = f"alignment_target_{lamella.state.stage.name}_{i:02d}"
-        settings.image.beam_type = BeamType.ION
-        alignment.beam_shift_alignment(microscope, settings.image, 
-                                        ref_image=ref_image,
-                                            reduced_area=lamella.fiducial_area)
+    # beam alignment
+    alignment_current = stages[0].milling.milling_current if _align_at_milling_current else None
+    settings.image.label = f"alignment_target_{lamella.state.stage.name}"
+    _multi_step_alignment(microscope=microscope, 
+        image_settings=settings.image, 
+        ref_image=ref_image, 
+        reduced_area=lamella.fiducial_area, 
+        alignment_current=alignment_current, 
+        steps=_ALIGNMENT_ATTEMPTS)
 
     settings.image.reduced_area = None
 
@@ -331,12 +353,6 @@ def mill_lamella(
     _set_images_ui(parent_ui, eb_image, ib_image)
 
 
-    supervise_map = {
-        AutoLamellaWaffleStage.MillRoughCut.name: "mill_rough",
-        AutoLamellaWaffleStage.MillPolishingCut.name: "mill_polishing",
-    }
-    validate = settings.protocol["options"]["supervise"].get(supervise_map[lamella.state.stage.name], True)
-    
     # define feature
     _MILL_FEATURES = bool("autolamella" in method)
     if _MILL_FEATURES and lamella.state.stage.name == AutoLamellaWaffleStage.MillRoughCut.name:
@@ -345,31 +361,21 @@ def mill_lamella(
         # check if using notch or microexpansion
         _feature_name = "notch" if method == "autolamella-waffle" else "microexpansion"
 
-        stages = patterning._get_milling_stages(
+        feature_stages = patterning._get_milling_stages(
             _feature_name, lamella.protocol, point=Point.__from_dict__(lamella.protocol[_feature_name]["point"])
         )
 
-        stages = _validate_mill_ui(stages, parent_ui,
+        feature_stages = _validate_mill_ui(feature_stages, parent_ui,
             msg=f"Press Run Milling to mill the {_feature_name} for {lamella._petname}. Press Continue when done.",
             validate=validate,
         )
 
         # log feature stages
-        lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages))
-        lamella.protocol[_feature_name]["point"] = stages[0].pattern.point.__to_dict__()
+        lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(feature_stages))
+        lamella.protocol[_feature_name]["point"] = feature_stages[0].pattern.point.__to_dict__()
 
     # mill lamella trenches
     log_status_message(lamella, "MILL_LAMELLA")
-    stages = patterning._get_milling_stages("lamella", lamella.protocol, 
-                        point=Point.__from_dict__(lamella.protocol["lamella"]["point"]))
-
-    if lamella.state.stage.name == AutoLamellaWaffleStage.MillPolishingCut.name:
-        stages = stages[-1]
-    else:
-        stages = stages[:-1]
-
-    if not isinstance(stages, list):
-        stages = [stages]
 
     stages = _validate_mill_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
@@ -490,15 +496,11 @@ def setup_lamella(
 #     # TODO: integrate this style
 #     # lamella.protocol[AutoLiftoutStage.MillRoughCut.name] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
 #     # lamella.protocol[AutoLiftoutStage.MillRoughCut.name]["point"] = stages[0].pattern.point.__to_dict__()
-
-#     # lamella.protocol[AutoLiftoutStage.MillRegularCut.name] = deepcopy(patterning._get_protocol_from_stages(stages[1]))
-#     # lamella.protocol[AutoLiftoutStage.MillRegularCut.name]["point"] = stages[1].pattern.point.__to_dict__()
-
 #     # lamella.protocol[AutoLiftoutStage.MillPolishingCut.name] = deepcopy(patterning._get_protocol_from_stages(stages[2]))
 #     # lamella.protocol[AutoLiftoutStage.MillPolishingCut.name]["point"] = stages[2].pattern.point.__to_dict__()
 
     # feature
-    if method == "autolamella-waffle":
+    if "autolamella" in method:
         n_features = len(feature_stage)
         lamella.protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella:n_lamella+n_features]))
         lamella.protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.__to_dict__()
@@ -668,3 +670,24 @@ def _align_lamella_coincident(microscope: FibsemMicroscope, settings: Microscope
     )
 
     return lamella
+
+# TODO: move to fibsem
+from fibsem.structures import ImageSettings
+def _multi_step_alignment(microscope: FibsemMicroscope, image_settings: ImageSettings, 
+    ref_image: FibsemImage, reduced_area: FibsemRectangle, alignment_current: float, steps:int = 3) -> None:
+    
+    # set alignment current
+    if alignment_current is not None:
+        initial_current = microscope.get("current", image_settings.beam_type)
+        microscope.set("current", alignment_current, image_settings.beam_type)
+
+    base_label = image_settings.label
+    for i in range(steps):
+        image_settings.label = f"{base_label}_{i:02d}"
+        image_settings.beam_type = BeamType.ION
+        alignment.beam_shift_alignment(microscope, image_settings, 
+                                        ref_image=ref_image,
+                                            reduced_area=reduced_area)
+    # reset beam current
+    if alignment_current is not None:
+        microscope.set("current", initial_current, image_settings.beam_type)
