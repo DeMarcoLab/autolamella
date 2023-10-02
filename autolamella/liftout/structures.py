@@ -42,7 +42,6 @@ class Experiment:
 
         # TODO: user/data management (e.g. user, sample, id, etc.)
 
-        self.state = None
         self.positions: list[Lamella] = []
 
         self.program = program
@@ -64,9 +63,6 @@ class Experiment:
 
         return state_dict
 
-    def update(self, lamella: 'Lamella') -> None:
-        self.save()
-
     def save(self) -> None:
         """Save the experiment data to yaml file"""
 
@@ -77,7 +73,6 @@ class Experiment:
 
         return f"""Experiment: 
         Path: {self.path}
-        State: {self.state}
         Lamella: {len(self.positions)}
         """
     
