@@ -227,6 +227,32 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.label_protocol_undercut_tilt_angle.setVisible(_WAFFLE_METHOD)
         self.label_protocol_undercut_tilt_step.setVisible(_WAFFLE_METHOD)
 
+
+        # autoliftout components
+        _AUTOLIFTOUT_METHOD = "autoliftout" in method
+        self.checkBox_options_confirm_next_stage.setVisible(_AUTOLIFTOUT_METHOD)
+        self.label_options_lamella_start_position.setVisible(_AUTOLIFTOUT_METHOD)
+        self.label_options_liftout_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
+        self.label_options_landing_start_position.setVisible(_AUTOLIFTOUT_METHOD)
+        self.label_options_landing_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
+        self.comboBox_options_lamella_start_position.setVisible(_AUTOLIFTOUT_METHOD)
+        self.comboBox_options_liftout_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
+        self.comboBox_options_landing_start_position.setVisible(_AUTOLIFTOUT_METHOD)
+        self.comboBox_options_landing_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
+        self.checkBox_supervise_liftout.setVisible(_AUTOLIFTOUT_METHOD)
+        self.checkBox_supervise_landing.setVisible(_AUTOLIFTOUT_METHOD)
+        if _AUTOLIFTOUT_METHOD:
+            self.checkBox_options_confirm_next_stage.setChecked(self.settings.protocol["options"].get("confirm_next_stage", True))
+            self.comboBox_options_liftout_joining_method.setCurrentText(self.settings.protocol["options"].get("liftout_joining_method", "None"))
+            self.comboBox_options_landing_joining_method.setCurrentText(self.settings.protocol["options"].get("landing_joining_method", "Weld"))
+
+            self.comboBox_options_lamella_start_position.setCurrentText(self.settings.protocol["options"]["lamella_start_position"])
+            self.comboBox_options_landing_start_position.setCurrentText(self.settings.protocol["options"]["landing_start_position"])
+
+            # supervision
+            self.checkBox_supervise_liftout.setChecked(bool(self.settings.protocol["options"]["supervise"].get("liftout", True)))
+            self.checkBox_supervise_landing.setChecked(bool(self.settings.protocol["options"]["supervise"].get("landing", True)))
+
         self._UPDATING_PROTOCOL_UI = False
 
     def export_protocol_ui(self):
@@ -247,12 +273,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["options"]["supervise"]["mill_rough"] = self.checkBox_supervise_mill_rough.isChecked()
         self.settings.protocol["options"]["supervise"]["mill_polishing"] = self.checkBox_supervise_mill_polishing.isChecked()
 
-        # machine learning
-        if self.settings.protocol["method"] == "autolamella-waffle":
+        if self.settings.protocol["method"] in ["autolamella-waffle", "autoliftout-default", "autoliftout-serial-liftout"]:
 
+            # supervision
             self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
             self.settings.protocol["options"]["supervise"]["undercut"] = self.checkBox_undercut.isChecked()
 
+            # machine learning
             self.settings.protocol["ml"]["checkpoint"] = self.lineEdit_ml_checkpoint.text()
             self.settings.protocol["ml"]["encoder"] = self.lineEdit_ml_encoder.text()
             self.settings.protocol["ml"]["num_classes"] = self.spinBox_ml_num_classes.value()
@@ -260,6 +287,21 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # undercut
             self.settings.protocol["undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
             self.settings.protocol["undercut"]["tilt_angle_step"] = int(self.doubleSpinBox_undercut_step.value())
+
+        if self.settings.protocol["method"] in ["autoliftout-default", "autoliftout-serial-liftout"]:
+            
+            # supervision
+            self.settings.protocol["options"]["confirm_next_stage"] = self.checkBox_options_confirm_next_stage.isChecked()
+            self.settings.protocol["options"]["supervise"]["liftout"] = self.checkBox_supervise_liftout.isChecked()
+            self.settings.protocol["options"]["supervise"]["landing"] = self.checkBox_supervise_landing.isChecked()
+
+            # joining methods
+            self.settings.protocol["options"]["liftout_joining_method"] = self.comboBox_options_liftout_joining_method.currentText()
+            self.settings.protocol["options"]["landing_joining_method"] = self.comboBox_options_landing_joining_method.currentText()
+
+            # start positions
+            self.settings.protocol["options"]["lamella_start_position"] = self.comboBox_options_lamella_start_position.currentText()
+            self.settings.protocol["options"]["landing_start_position"] = self.comboBox_options_landing_start_position.currentText()
 
         if self.sender() == self.actionSave_Protocol:
             path = fui._get_save_file_ui(msg='Save protocol',

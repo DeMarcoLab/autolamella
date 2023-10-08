@@ -422,7 +422,7 @@ def run_serial_liftout_workflow(
 ) -> Experiment:
     """Run the serial AutoLiftout workflow for a given experiment. """
     BATCH_MODE = bool(settings.protocol["options"]["batch_mode"])
-    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_advance"])
+    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_next_stage"])
 
     _update_status_ui(parent_ui, "Starting AutoLiftout Workflow...")
     logging.info(
@@ -486,7 +486,7 @@ def run_serial_liftout_landing(
 ) -> Experiment:
     """Run the serial AutoLiftout workflow for landing a given experiment. """
     BATCH_MODE = bool(settings.protocol["options"]["batch_mode"])
-    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_advance"])
+    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_next_stage"])
 
     _update_status_ui(parent_ui, "Starting Serial Liftout (Landing) Workflow...")
     logging.info(

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>450</width>
-    <height>819</height>
+    <width>470</width>
+    <height>855</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,34 +62,17 @@
         <string>General</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="7" column="0">
-         <widget class="QComboBox" name="comboBox_lamella_history"/>
-        </item>
-        <item row="8" column="0" colspan="2">
-         <widget class="QLabel" name="label_info">
+        <item row="6" column="0">
+         <widget class="QCheckBox" name="checkBox_current_lamella_landing_selected">
           <property name="text">
-           <string>No Lamella Selected</string>
+           <string>Landing Selected</string>
           </property>
          </widget>
         </item>
-        <item row="14" column="0" colspan="2">
-
-         <spacer name="verticalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="7" column="1">
-         <widget class="QPushButton" name="pushButton_revert_stage">
+        <item row="5" column="0" colspan="2">
+         <widget class="QLabel" name="label_lamella_detail">
           <property name="text">
-           <string>Time Travel To</string>
+           <string>TextLabel</string>
           </property>
          </widget>
         </item>
@@ -106,18 +89,27 @@
           </property>
          </widget>
         </item>
-        <item row="10" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_setup_autoliftout">
-
+        <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="label_experiment_name">
           <property name="text">
-           <string>Setup AutoLiftout</string>
+           <string>Experiment:</string>
           </property>
          </widget>
         </item>
-        <item row="5" column="0" colspan="2">
-         <widget class="QLabel" name="label_lamella_detail">
+        <item row="3" column="1">
+         <widget class="QComboBox" name="comboBox_current_lamella"/>
+        </item>
+        <item row="8" column="0" colspan="2">
+         <widget class="QLabel" name="label_info">
           <property name="text">
-           <string>TextLabel</string>
+           <string>No Lamella Selected</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QPushButton" name="pushButton_revert_stage">
+          <property name="text">
+           <string>Time Travel To</string>
           </property>
          </widget>
         </item>
@@ -135,11 +127,34 @@
           </property>
          </widget>
         </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="label_current_lamella">
+          <property name="text">
+           <string>Current Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QComboBox" name="comboBox_lamella_history"/>
+        </item>
+        <item row="10" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_setup_autoliftout">
+          <property name="text">
+           <string>Setup AutoLiftout</string>
+          </property>
+         </widget>
+        </item>
         <item row="11" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_autoliftout">
-
           <property name="text">
-           <string>TextLabel</string>
+           <string>Run AutoLiftout</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QCheckBox" name="checkBox_current_lamella_failure">
+          <property name="text">
+           <string>Failure</string>
           </property>
          </widget>
         </item>
@@ -156,37 +171,6 @@
           </property>
          </spacer>
         </item>
-        <item row="3" column="1">
-         <widget class="QComboBox" name="comboBox_current_lamella"/>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="label_current_lamella">
-          <property name="text">
-           <string>Current Lamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0" colspan="2">
-         <widget class="QLabel" name="label_experiment_name">
-          <property name="text">
-           <string>Experiment:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QCheckBox" name="checkBox_current_lamella_landing_selected">
-          <property name="text">
-           <string>Landing Selected</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="QCheckBox" name="checkBox_current_lamella_failure">
-          <property name="text">
-           <string>Failure</string>
-          </property>
-         </widget>
-        </item>
         <item row="12" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_serial_liftout_landing">
           <property name="text">
@@ -201,75 +185,30 @@
         <string>Protocol</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
+        <item row="7" column="1">
+         <widget class="QComboBox" name="comboBox_options_landing_joining_method"/>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label_protocol_name_2">
+          <property name="text">
+           <string>Name</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="1">
+         <widget class="QLineEdit" name="lineEdit_protocol_ml_checkpoint"/>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_protocol_method">
+          <property name="text">
+           <string>Method</string>
+          </property>
+         </widget>
+        </item>
         <item row="7" column="0">
          <widget class="QLabel" name="label_options_landing_joining_method">
           <property name="text">
            <string>Landing Joining Method</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="label_options_lamella_start_position">
-          <property name="text">
-           <string>Lamella Start Position</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QCheckBox" name="checkBox_options_confirm_next_stage">
-          <property name="text">
-           <string>Confirm Next Stage</string>
-          </property>
-          <property name="checked">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="1">
-         <widget class="QComboBox" name="comboBox_options_landing_joining_method"/>
-        </item>
-        <item row="10" column="0">
-         <widget class="QLabel" name="label_protocol_ml_checkpoint">
-          <property name="text">
-           <string>Checkpoint</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QLabel" name="label_options_landing_start_position">
-          <property name="text">
-           <string>Landing Start Position</string>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="1">
-         <widget class="QSpinBox" name="spinBox_protocol_ml_num_classes"/>
-        </item>
-        <item row="13" column="0">
-         <widget class="QCheckBox" name="checkBox_supervise_mill_trench">
-          <property name="text">
-           <string>Mill Trench</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="label_options_liftout_joining_method">
-          <property name="text">
-           <string>Liftout Joining Method</string>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="1">
-         <widget class="QCheckBox" name="checkBox_supervise_setup_lamella">
-          <property name="text">
-           <string>Setup Lamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="17" column="0">
-         <widget class="QCheckBox" name="checkBox_supervise_reset">
-          <property name="text">
-           <string>Reset Manipulator</string>
           </property>
          </widget>
         </item>
@@ -286,17 +225,10 @@
           </property>
          </widget>
         </item>
-        <item row="15" column="1">
-         <widget class="QCheckBox" name="checkBox_supervise_mill_regular">
+        <item row="9" column="0">
+         <widget class="QLabel" name="label_protocol_ml_header_2">
           <property name="text">
-           <string>Mill Regular Cut</string>
-          </property>
-         </widget>
-        </item>
-        <item row="18" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_update_protocol">
-          <property name="text">
-           <string>Update Protocol</string>
+           <string>Encoder</string>
           </property>
          </widget>
         </item>
@@ -307,34 +239,39 @@
           </property>
          </widget>
         </item>
-        <item row="16" column="1">
-         <widget class="QCheckBox" name="checkBox_supervise_mill_polishing">
+        <item row="16" column="0">
+         <widget class="QCheckBox" name="checkBox_supervise_landing">
           <property name="text">
-           <string>Mill Polishing Cut</string>
+           <string>Land Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="1">
+         <widget class="QSpinBox" name="spinBox_protocol_ml_num_classes"/>
+        </item>
+        <item row="15" column="0">
+         <widget class="QCheckBox" name="checkBox_supervise_liftout">
+          <property name="text">
+           <string>Liftout Lamella</string>
           </property>
          </widget>
         </item>
         <item row="5" column="1">
          <widget class="QComboBox" name="comboBox_options_liftout_joining_method"/>
         </item>
-        <item row="11" column="0">
-         <widget class="QLabel" name="label_protocol_ml_num_classes">
-          <property name="text">
-           <string>Number of Classes</string>
-          </property>
-         </widget>
+        <item row="4" column="1">
+         <widget class="QComboBox" name="comboBox_options_lamella_start_position"/>
         </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_protocol_name_2">
-          <property name="text">
-           <string>Name</string>
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_protocol_ml_header">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
           </property>
-         </widget>
-        </item>
-        <item row="16" column="0">
-         <widget class="QCheckBox" name="checkBox_supervise_landing">
           <property name="text">
-           <string>Land Lamella</string>
+           <string>Machine Learning</string>
           </property>
          </widget>
         </item>
@@ -348,32 +285,27 @@
           </property>
          </widget>
         </item>
-        <item row="19" column="0" colspan="2">
-         <spacer name="verticalSpacer_5">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
+        <item row="6" column="0">
+         <widget class="QLabel" name="label_options_landing_start_position">
+          <property name="text">
+           <string>Landing Start Position</string>
           </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="6" column="1">
-         <widget class="QComboBox" name="comboBox_options_landing_start_position"/>
-        </item>
-        <item row="10" column="1">
-         <widget class="QLineEdit" name="lineEdit_protocol_ml_checkpoint"/>
-        </item>
-        <item row="9" column="1">
-         <widget class="QLineEdit" name="lineEdit_protocol_ml_encoder"/>
+         </widget>
         </item>
         <item row="14" column="0">
          <widget class="QCheckBox" name="checkBox_supervise_mill_undercut">
           <property name="text">
            <string>Mill Undercut</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QComboBox" name="comboBox_options_landing_start_position"/>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_options_lamella_start_position">
+          <property name="text">
+           <string>Lamella Start Position</string>
           </property>
          </widget>
         </item>
@@ -390,48 +322,86 @@
           </property>
          </widget>
         </item>
-        <item row="15" column="0">
-         <widget class="QCheckBox" name="checkBox_supervise_liftout">
+        <item row="13" column="0">
+         <widget class="QCheckBox" name="checkBox_supervise_mill_trench">
           <property name="text">
-           <string>Liftout Lamella</string>
+           <string>Mill Trench</string>
           </property>
          </widget>
         </item>
-        <item row="8" column="0">
-         <widget class="QLabel" name="label_protocol_ml_header">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
+        <item row="13" column="1">
+         <widget class="QCheckBox" name="checkBox_supervise_setup_lamella">
           <property name="text">
-           <string>Machine Learning</string>
+           <string>Setup Lamella</string>
           </property>
          </widget>
         </item>
-        <item row="9" column="0">
-         <widget class="QLabel" name="label_protocol_ml_header_2">
+        <item row="18" column="0" colspan="2">
+         <spacer name="verticalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="17" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_update_protocol">
           <property name="text">
-           <string>Encoder</string>
+           <string>Update Protocol</string>
           </property>
          </widget>
         </item>
-        <item row="4" column="1">
-         <widget class="QComboBox" name="comboBox_options_lamella_start_position"/>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_protocol_method">
+        <item row="11" column="0">
+         <widget class="QLabel" name="label_protocol_ml_num_classes">
           <property name="text">
-           <string>Method</string>
+           <string>Number of Classes</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QCheckBox" name="checkBox_options_confirm_next_stage">
+          <property name="text">
+           <string>Confirm Next Stage</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="0">
+         <widget class="QLabel" name="label_options_liftout_joining_method">
+          <property name="text">
+           <string>Liftout Joining Method</string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
          <widget class="QLineEdit" name="lineEdit_protocol_name"/>
         </item>
+        <item row="10" column="0">
+         <widget class="QLabel" name="label_protocol_ml_checkpoint">
+          <property name="text">
+           <string>Checkpoint</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="1">
+         <widget class="QLineEdit" name="lineEdit_protocol_ml_encoder"/>
+        </item>
         <item row="1" column="1">
          <widget class="QComboBox" name="comboBox_protocol_method"/>
+        </item>
+        <item row="15" column="1">
+         <widget class="QCheckBox" name="checkBox_supervise_mill_polishing">
+          <property name="text">
+           <string>Mill Polishing Cut</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -464,7 +434,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>450</width>
+     <width>470</width>
      <height>21</height>
     </rect>
    </property>

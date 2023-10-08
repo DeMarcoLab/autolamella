@@ -68,12 +68,10 @@ options:
     supervise:
         landing: true
         liftout: true
-        reset: true
         trench: false
         undercut: true
         setup_lamella: true
         mill_rough: true
-        mill_regular: true
         mill_polishing: true
 platinum:
     application_file: cryo_Pt_dep

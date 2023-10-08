@@ -394,7 +394,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         # options
         options = self.settings.protocol["options"]
         self.checkBox_options_batch_mode.setChecked(bool(options["batch_mode"]))
-        self.checkBox_options_confirm_next_stage.setChecked(bool(options["confirm_advance"]))
+        self.checkBox_options_confirm_next_stage.setChecked(bool(options["confirm_next_stage"]))
         self.comboBox_options_liftout_joining_method.setCurrentText(options.get("liftout_joining_method", "None"))
         self.comboBox_options_landing_joining_method.setCurrentText(options.get("landing_joining_method", "Weld"))
 
@@ -406,10 +406,8 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.checkBox_supervise_mill_undercut.setChecked(bool(options["supervise"]["undercut"]))
         self.checkBox_supervise_liftout.setChecked(bool(options["supervise"]["liftout"]))
         self.checkBox_supervise_landing.setChecked(bool(options["supervise"]["landing"]))
-        self.checkBox_supervise_reset.setChecked(bool(options["supervise"]["reset"]))
         self.checkBox_supervise_setup_lamella.setChecked(bool(options["supervise"]["setup_lamella"]))
         self.checkBox_supervise_mill_rough.setChecked(bool(options["supervise"]["mill_rough"]))
-        self.checkBox_supervise_mill_regular.setChecked(bool(options["supervise"]["mill_regular"]))
         self.checkBox_supervise_mill_polishing.setChecked(bool(options["supervise"]["mill_polishing"]))
 
         # ml
@@ -428,7 +426,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         # TODO: fix this for both methods
         self.settings.protocol["options"].update({
             "batch_mode": self.checkBox_options_batch_mode.isChecked(),
-            "confirm_advance": self.checkBox_options_confirm_next_stage.isChecked(),
+            "confirm_next_stage": self.checkBox_options_confirm_next_stage.isChecked(),
             "liftout_joining_method": self.comboBox_options_liftout_joining_method.currentText(),
             "landing_joining_method": self.comboBox_options_landing_joining_method.currentText(),
             "lamella_start_position": self.comboBox_options_lamella_start_position.currentText(),
@@ -438,10 +436,8 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                 "undercut": self.checkBox_supervise_mill_undercut.isChecked(),
                 "liftout": self.checkBox_supervise_liftout.isChecked(),
                 "landing": self.checkBox_supervise_landing.isChecked(),
-                "reset": self.checkBox_supervise_reset.isChecked(),
                 "setup_lamella": self.checkBox_supervise_setup_lamella.isChecked(),
                 "mill_rough": self.checkBox_supervise_mill_rough.isChecked(),
-                "mill_regular": self.checkBox_supervise_mill_regular.isChecked(),
                 "mill_polishing": self.checkBox_supervise_mill_polishing.isChecked()
             }}
         )
