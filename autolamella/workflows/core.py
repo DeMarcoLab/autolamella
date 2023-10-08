@@ -337,7 +337,7 @@ def mill_lamella(
     # beam alignment
     alignment_current = stages[0].milling.milling_current if _align_at_milling_current else None
     settings.image.label = f"alignment_target_{lamella.state.stage.name}"
-    _multi_step_alignment(microscope=microscope, 
+    alignment._multi_step_alignment(microscope=microscope, 
         image_settings=settings.image, 
         ref_image=ref_image, 
         reduced_area=lamella.fiducial_area, 
@@ -670,24 +670,3 @@ def _align_lamella_coincident(microscope: FibsemMicroscope, settings: Microscope
     )
 
     return lamella
-
-# TODO: move to fibsem
-from fibsem.structures import ImageSettings
-def _multi_step_alignment(microscope: FibsemMicroscope, image_settings: ImageSettings, 
-    ref_image: FibsemImage, reduced_area: FibsemRectangle, alignment_current: float, steps:int = 3) -> None:
-    
-    # set alignment current
-    if alignment_current is not None:
-        initial_current = microscope.get("current", image_settings.beam_type)
-        microscope.set("current", alignment_current, image_settings.beam_type)
-
-    base_label = image_settings.label
-    for i in range(steps):
-        image_settings.label = f"{base_label}_{i:02d}"
-        image_settings.beam_type = BeamType.ION
-        alignment.beam_shift_alignment(microscope, image_settings, 
-                                        ref_image=ref_image,
-                                            reduced_area=reduced_area)
-    # reset beam current
-    if alignment_current is not None:
-        microscope.set("current", initial_current, image_settings.beam_type)
