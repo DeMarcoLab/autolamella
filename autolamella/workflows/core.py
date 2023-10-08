@@ -171,7 +171,7 @@ def mill_undercut(
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.absolute_position)
     
     # align vertical
-    microscope.eucentric_move(
+    microscope.vertical_move(
         settings, 
         dx=det.features[0].feature_m.x,
         dy=-det.features[0].feature_m.y,
@@ -266,7 +266,7 @@ def mill_undercut(
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
     
     # align vertical
-    microscope.eucentric_move(
+    microscope.vertical_move(
         settings, 
         dx=det.features[0].feature_m.x,
         dy=-det.features[0].feature_m.y,
@@ -663,7 +663,7 @@ def _align_lamella_coincident(microscope: FibsemMicroscope, settings: Microscope
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.absolute_position)
     
     # align vertical
-    microscope.eucentric_move(
+    microscope.vertical_move(
         settings, 
         dx=det.features[0].feature_m.x,
         dy=-det.features[0].feature_m.y,
