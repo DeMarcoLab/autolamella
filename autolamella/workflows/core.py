@@ -65,6 +65,16 @@ from autolamella.workflows.ui import (_set_images_ui, _update_status_ui, _valida
 def log_status_message(lamella: Lamella, step: str):
     logging.debug(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | {step}")
 
+
+def pass_through_stage(
+    microscope: FibsemMicroscope,
+    settings: MicroscopeSettings,
+    lamella: Lamella,
+    parent_ui: AutoLamellaUI = None,
+) -> Lamella:
+    # pass through stage
+    return lamella 
+
 # mill trench
 def mill_trench(
     microscope: FibsemMicroscope,

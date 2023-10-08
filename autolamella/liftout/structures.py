@@ -14,19 +14,8 @@ from fibsem.structures import (FibsemImage, FibsemState, MicroscopeState,
                                ReferenceImages, Point)
 
 from autolamella.liftout.config import config as cfg
-
-
-class AutoLiftoutStage(Enum):
-    Setup = auto()
-    MillTrench = auto()
-    MillUndercut = auto()
-    Liftout = auto()
-    Landing = auto()
-    SetupLamella = auto()
-    MillRoughCut = auto()
-    MillPolishingCut = auto()
-    Finished = auto()
-    
+from autolamella.structures import AutoLamellaWaffleStage
+   
 class Experiment: 
     def __init__(self, path: Path = None, name: str = cfg.EXPERIMENT_NAME, program: str = "AutoLiftout", method: str = "AutoLiftout") -> None:
 
@@ -214,7 +203,7 @@ class Lamella:
         state_dict = {
             "id": str(self._id),
             "petname": self._petname,
-            "number": self._number,
+            "_number": self._number,
             "base_path": self.base_path,
             "path": self.path,
             "landing_selected": self.landing_selected,
@@ -286,7 +275,7 @@ class Lamella:
 
 @dataclass
 class AutoLiftoutState(FibsemState):
-    stage: AutoLiftoutStage = AutoLiftoutStage.Setup
+    stage: AutoLamellaWaffleStage = AutoLamellaWaffleStage.SetupTrench
     microscope_state: MicroscopeState = MicroscopeState()
     start_timestamp: float = datetime.timestamp(datetime.now())
     end_timestamp: float = None
@@ -306,7 +295,7 @@ class AutoLiftoutState(FibsemState):
     def __from_dict__(self, state_dict: dict) -> 'AutoLiftoutState':
 
         autoliftout_state = AutoLiftoutState(
-            stage=AutoLiftoutStage[state_dict["stage"]],
+            stage=AutoLamellaWaffleStage[state_dict["stage"]],
             microscope_state=MicroscopeState.__from_dict__(state_dict["microscope_state"]),
             start_timestamp=state_dict["start_timestamp"],
             end_timestamp=state_dict["end_timestamp"],
@@ -329,7 +318,7 @@ class AutoLiftoutState(FibsemState):
 #   lamella_ref_images: ReferenceImages
 #   landing_ref_images: ReferenceImages
 #   state: AutoLiftoutState
-#       stage: AutoLiftoutStage
+#       stage: AutoLamellaWaffleStage
 #       microscope_state: MicroscopeState
 #           eb_settings: BeamSettings
 #           ib_settings: BeamSettings

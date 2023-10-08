@@ -41,7 +41,7 @@ from fibsem.structures import (
 from fibsem.ui import windows as fibsem_ui_windows
 
 from autolamella.liftout import actions
-from autolamella.liftout.structures import AutoLiftoutStage, Experiment, Lamella
+from autolamella.liftout.structures import AutoLamellaWaffleStage, Experiment, Lamella
 from autolamella.liftout.ui.AutoLiftoutUIv2 import AutoLiftoutUIv2
 from fibsem import config as fcfg
 
@@ -208,7 +208,7 @@ def land_needle_on_milled_lamella(
     settings: MicroscopeSettings,
     lamella: Lamella,
     validate: bool,
-    parent_ui: AutoLiftoutStage,
+    parent_ui: AutoLamellaWaffleStage,
 ) -> Lamella:
     # bookkeeping
     settings.image.save_path = lamella.path
@@ -815,24 +815,25 @@ def run_setup_autoliftout(
     experiment: Experiment,	
     parent_ui: AutoLiftoutUIv2,	
 ) -> Experiment:
-    logging.info(f"INIT | {AutoLiftoutStage.Setup.name} | STARTED")
+    logging.info(f"INIT | {AutoLamellaWaffleStage.SetupTrench.name} | STARTED")
 
     # select the lamella and landing positions
     experiment = select_lamella_positions(microscope, settings, experiment, parent_ui)
 
     return experiment
 
-from autolamella.workflows.core import mill_trench, mill_undercut, mill_lamella, setup_lamella
+from autolamella.workflows.core import mill_trench, mill_undercut, mill_lamella, setup_lamella, pass_through_stage
 # autoliftout_workflow
 WORKFLOW_STAGES = {
-    AutoLiftoutStage.Setup: run_setup_autoliftout, # TODO: split this further
-    AutoLiftoutStage.MillTrench: mill_trench,
-    AutoLiftoutStage.MillUndercut: mill_undercut,
-    AutoLiftoutStage.Liftout: liftout_lamella,
-    AutoLiftoutStage.Landing: land_lamella,
-    AutoLiftoutStage.SetupLamella: setup_lamella,
-    AutoLiftoutStage.MillRoughCut: mill_lamella,
-    AutoLiftoutStage.MillPolishingCut: mill_lamella,
+    AutoLamellaWaffleStage.SetupTrench: run_setup_autoliftout, # TODO: split this further
+    AutoLamellaWaffleStage.MillTrench: mill_trench,
+    AutoLamellaWaffleStage.MillUndercut: mill_undercut,
+    AutoLamellaWaffleStage.LiftoutLamella: liftout_lamella,
+    AutoLamellaWaffleStage.LandLamella: land_lamella,
+    AutoLamellaWaffleStage.SetupLamella: setup_lamella,
+    AutoLamellaWaffleStage.ReadyLamella: pass_through_stage,
+    AutoLamellaWaffleStage.MillRoughCut: mill_lamella,
+    AutoLamellaWaffleStage.MillPolishingCut: mill_lamella,
 }
 
 def run_autoliftout_workflow(
@@ -856,8 +857,8 @@ def run_autoliftout_workflow(
     # batch mode workflow
     if True:
         for terminal_stage in [
-            AutoLiftoutStage.MillTrench,
-            AutoLiftoutStage.MillUndercut, # TODO: maybe add this to config?
+            AutoLamellaWaffleStage.MillTrench,
+            AutoLamellaWaffleStage.MillUndercut, # TODO: maybe add this to config?
         ]:
             lamella: Lamella
             for lamella in experiment.positions:
@@ -865,7 +866,7 @@ def run_autoliftout_workflow(
                     continue  # skip failures
 
                 while lamella.state.stage.value < terminal_stage.value:
-                    next_stage = AutoLiftoutStage(lamella.state.stage.value + 1)
+                    next_stage = AutoLamellaWaffleStage(lamella.state.stage.value + 1)
 
                     # update image settings (save in correct directory)
                     settings.image.save_path = lamella.path
@@ -894,9 +895,9 @@ def run_autoliftout_workflow(
         if lamella.is_failure:
             continue  # skip failures
 
-        while lamella.state.stage.value < AutoLiftoutStage.Landing.value:
+        while lamella.state.stage.value < AutoLamellaWaffleStage.LandLamella.value:
 
-            next_stage = AutoLiftoutStage(lamella.state.stage.value + 1)
+            next_stage = AutoLamellaWaffleStage(lamella.state.stage.value + 1)
             if CONFIRM_WORKFLOW_ADVANCE:
                 msg = (
                     f"""Continue Lamella {(lamella._petname)} from {next_stage.name}?"""
@@ -933,6 +934,7 @@ def run_autoliftout_workflow(
 
     return experiment
 
+# TODO: separate the _run_setup_lamella_workflow so we dont have to do sily passthrough step
 def run_thinning_workflow(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
@@ -943,25 +945,32 @@ def run_thinning_workflow(
     _update_status_ui(parent_ui, "Starting MillRoughCut Workflow...")
     lamella: Lamella
     for next_stage in [
-        AutoLiftoutStage.SetupLamella,
-        AutoLiftoutStage.MillRoughCut,
-        AutoLiftoutStage.MillPolishingCut,
+        AutoLamellaWaffleStage.SetupLamella,
+        AutoLamellaWaffleStage.ReadyLamella,
+        AutoLamellaWaffleStage.MillRoughCut,
+        AutoLamellaWaffleStage.MillPolishingCut,
     ]:
         for lamella in experiment.positions:
             if lamella.is_failure:
                 continue
 
             if lamella.state.stage.value == next_stage.value - 1:
+
+                _restore_state = next_stage != AutoLamellaWaffleStage.ReadyLamella
+                _save_state = next_stage != AutoLamellaWaffleStage.ReadyLamella
+
                 lamella = start_of_stage_update(
-                    microscope, lamella, next_stage=next_stage, parent_ui=parent_ui
+                    microscope, lamella, next_stage=next_stage, parent_ui=parent_ui, 
+                    _restore_state=_restore_state
                 )
                 WORKFLOW_STAGES[next_stage](microscope, settings, lamella,parent_ui)
-                experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
+                experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, 
+                                                 _save_state=_save_state)
 
     # finish the experiment
     for lamella in experiment.positions:
-        if lamella.state.stage == AutoLiftoutStage.MillPolishingCut:
-            lamella = start_of_stage_update(microscope, lamella, next_stage=AutoLiftoutStage.Finished, parent_ui=parent_ui, _restore_state=False)
+        if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut:
+            lamella = start_of_stage_update(microscope, lamella, next_stage=AutoLamellaWaffleStage.Finished, parent_ui=parent_ui, _restore_state=False)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
 
 
@@ -1181,11 +1190,17 @@ def finish_setup_autoliftout(
     parent_ui._set_instructions(msg="Ready for AutoLiftout", pos=None, neg=None)
 
     for lamella in experiment.positions:
-        if lamella.state.stage == AutoLiftoutStage.Setup:
+        if lamella.state.stage == AutoLamellaWaffleStage.SetupTrench:
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
 
+            # administrative details        
+            lamella = start_of_stage_update(microscope, lamella, next_stage=AutoLamellaWaffleStage.ReadyTrench, parent_ui=parent_ui, _restore_state=False)
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
+
+        
+
     logging.info(f"Selected {len(experiment.positions)} lamella for autoliftout.")
-    logging.info(f"INIT | {AutoLiftoutStage.Setup.name} | FINISHED")
+    logging.info(f"INIT | {AutoLamellaWaffleStage.SetupTrench.name} | FINISHED")
 
 
 

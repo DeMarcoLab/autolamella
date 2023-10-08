@@ -21,7 +21,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
 from autolamella.liftout.config import config as cfg
-from autolamella.liftout.structures import AutoLiftoutStage, Experiment, Lamella
+from autolamella.liftout.structures import AutoLamellaWaffleStage, Experiment, Lamella
 from autolamella.liftout.ui import utils as ui_utils
 from autolamella.liftout.ui.qt import AutoLiftoutUIv2
 
@@ -169,14 +169,14 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         _AUTOLAMELLA_PROGRESS = False
         if self.experiment is not None:
             _counter = Counter([p.state.stage.name for p in self.experiment.positions])
-            _LAMELLA_SETUP = _counter[AutoLiftoutStage.Setup.name] > 0
-            _LAMELLA_TRENCH = _counter[AutoLiftoutStage.MillTrench.name] > 0
-            _LAMELLA_UNDERCUT = _counter[AutoLiftoutStage.MillUndercut.name] > 0
-            _LIFTOUT_FINISHED = _counter[AutoLiftoutStage.Liftout.name] > 0
-            _LAMELLA_LANDED = _counter[AutoLiftoutStage.Landing.name] > 0
-            _AUTOLAMELLA_PROGRESS = (_counter[AutoLiftoutStage.SetupLamella.name]>0
-                or _counter[AutoLiftoutStage.MillRoughCut.name] > 0 
-                or _counter[AutoLiftoutStage.MillPolishingCut.name] > 0)
+            _LAMELLA_SETUP = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
+            _LAMELLA_TRENCH = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
+            _LAMELLA_UNDERCUT = _counter[AutoLamellaWaffleStage.MillUndercut.name] > 0
+            _LIFTOUT_FINISHED = _counter[AutoLamellaWaffleStage.LiftoutLamella.name] > 0
+            _LAMELLA_LANDED = _counter[AutoLamellaWaffleStage.LandLamella.name] > 0
+            _AUTOLAMELLA_PROGRESS = (_counter[AutoLamellaWaffleStage.SetupLamella.name]>0
+                or _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0 
+                or _counter[AutoLamellaWaffleStage.MillPolishingCut.name] > 0)
 
         # setup experiment -> connect to microscope -> select lamella -> run autoliftout -> run polishing
 

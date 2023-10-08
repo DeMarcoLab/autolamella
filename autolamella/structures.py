@@ -18,14 +18,15 @@ class AutoLamellaWaffleStage(Enum):
     ReadyTrench = auto()
     MillTrench = auto()
     MillUndercut = auto()
+    LiftoutLamella = auto()
+    LandLamella = auto()
     SetupLamella = auto()
     ReadyLamella = auto()
     MillRoughCut = auto()
     MillPolishingCut = auto()
     Finished = auto()
     PreSetupLamella = auto()
-    LiftoutLamella = auto()
-    LandLamella = auto()
+
 
 
 
@@ -101,14 +102,17 @@ class Lamella:
     @classmethod
     def __from_dict__(cls, data):
         state = LamellaState().__from_dict__(data["state"])
-        fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
+        if data.get("fiducial_area", None) is None:
+            fiducial_area = None
+        else:
+            fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
         return cls(
             _petname=data["petname"],
             state=state,
             path=data["path"],
             fiducial_area=fiducial_area,
             protocol=data.get("protocol", {}),
-            _number=data["_number"],
+            _number=data.get("_number", data.get("number", 0)),
             history=[LamellaState().__from_dict__(state) for state in data["history"]],
             _is_failure=data.get("_is_failure", False),
         )
