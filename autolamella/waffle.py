@@ -29,7 +29,7 @@ def run_trench_milling(
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
-                AutoLamellaWaffleStage(lamella.state.stage.value + 1), 
+                AutoLamellaWaffleStage.MillTrench, 
                 parent_ui=parent_ui
             )
 
@@ -84,7 +84,7 @@ def run_setup_lamella(
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
-                AutoLamellaWaffleStage(lamella.state.stage.value + 1),
+                AutoLamellaWaffleStage.ReadyLamella,
                 parent_ui=parent_ui
             )
 

@@ -494,10 +494,10 @@ def setup_lamella(
     lamella.protocol["lamella"]["point"] = stages[0].pattern.point.__to_dict__()
 
 #     # TODO: integrate this style
-#     # lamella.protocol[AutoLiftoutStage.MillRoughCut.name] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
-#     # lamella.protocol[AutoLiftoutStage.MillRoughCut.name]["point"] = stages[0].pattern.point.__to_dict__()
-#     # lamella.protocol[AutoLiftoutStage.MillPolishingCut.name] = deepcopy(patterning._get_protocol_from_stages(stages[2]))
-#     # lamella.protocol[AutoLiftoutStage.MillPolishingCut.name]["point"] = stages[2].pattern.point.__to_dict__()
+#     # lamella.protocol[AutoLamellaWaffleStage.MillRoughCut.name] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
+#     # lamella.protocol[AutoLamellaWaffleStage.MillRoughCut.name]["point"] = stages[0].pattern.point.__to_dict__()
+#     # lamella.protocol[AutoLamellaWaffleStage.MillPolishingCut.name] = deepcopy(patterning._get_protocol_from_stages(stages[2]))
+#     # lamella.protocol[AutoLamellaWaffleStage.MillPolishingCut.name]["point"] = stages[2].pattern.point.__to_dict__()
 
     # feature
     if "autolamella" in method:
