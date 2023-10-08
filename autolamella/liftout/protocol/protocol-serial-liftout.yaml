@@ -32,7 +32,7 @@ name: autoliftout-serial-protocol
 method: autoliftout-serial-liftout
 options:
     batch_mode: true
-    confirm_advance: true
+    confirm_next_stage: true
     complete_undercut: False
     lamella_start_position: autoliftout-serial-pre-tilt-35-deg-grid-01-lamella
     landing_start_position: autoliftout-serial-pre-tilt-35-deg-grid-02-landing

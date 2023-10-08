@@ -47,7 +47,7 @@ name: autoliftout-base-protocol
 method: autoliftout-default
 options:
     batch_mode: true
-    confirm_advance: true
+    confirm_next_stage: true
     lamella_start_position: autoliftout-pre-tilt-35-deg-grid-01-lamella
     liftout_joining_method: None
     liftout_contact_detection: True
