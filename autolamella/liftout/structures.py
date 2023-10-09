@@ -10,7 +10,7 @@ import pandas as pd
 import petname
 import yaml
 from fibsem import utils as fibsem_utils
-from fibsem.structures import (FibsemImage, FibsemState, MicroscopeState,
+from fibsem.structures import (FibsemImage,MicroscopeState,
                                ReferenceImages, Point)
 
 from autolamella.liftout.config import config as cfg
