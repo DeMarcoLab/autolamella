@@ -9,8 +9,9 @@ import fibsem.utils as utils
 import pandas as pd
 import petname
 import yaml
-from fibsem.structures import FibsemRectangle, MicroscopeState
+from fibsem.structures import FibsemRectangle, MicroscopeState, FibsemImage, ReferenceImages
 import uuid
+from autolamella import config as cfg
 
 
 class AutoLamellaWaffleStage(Enum):
@@ -66,8 +67,8 @@ class Lamella:
     _petname: str = None
     protocol: dict = None    
     _is_failure: bool = False
-    lamella_state: MicroscopeState = None
-    landing_state: MicroscopeState = None
+    lamella_state: MicroscopeState = MicroscopeState()
+    landing_state: MicroscopeState = MicroscopeState()
     landing_selected: bool = False
     _id: str = None
 
@@ -93,6 +94,10 @@ class Lamella:
             "_number": self._number,
             "history": [state.__to_dict__() for state in self.history] if self.history is not False else [],
             "_is_failure": self._is_failure,
+            "lamella_state": self.lamella_state.__to_dict__(),
+            "landing_state": self.landing_state.__to_dict__(),
+            "landing_selected": self.landing_selected,
+            "id": str(self._id),
         }
 
     @property
@@ -106,19 +111,51 @@ class Lamella:
             fiducial_area = None
         else:
             fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
+               
         return cls(
             _petname=data["petname"],
+            _id=data.get("id", None),
             state=state,
             path=data["path"],
             fiducial_area=fiducial_area,
             protocol=data.get("protocol", {}),
             _number=data.get("_number", data.get("number", 0)),
             history=[LamellaState().__from_dict__(state) for state in data["history"]],
-            _is_failure=data.get("_is_failure", False),
+            _is_failure=data.get("_is_failure", data.get("is_failure", False)),
+            lamella_state = MicroscopeState.__from_dict__(data.get("lamella_state", MicroscopeState().__to_dict__())), # tmp solution
+            landing_state = MicroscopeState.__from_dict__(data.get("landing_state", MicroscopeState().__to_dict__())), # tmp solution
+            landing_selected = bool(data.get("landing_selected", False)),
         )
     
+
+    def load_reference_image(self, fname) -> FibsemImage:
+        """Load a specific reference image for this lamella from disk
+        Args:
+            fname: str
+                the filename of the reference image to load
+        Returns:
+            adorned_img: AdornedImage
+                the reference image loaded as an AdornedImage
+        """
+
+        adorned_img = FibsemImage.load(os.path.join(self.path, f"{fname}.tif"))
+
+        return adorned_img
+
+    # convert to method
+    def get_reference_images(self, label: str) -> ReferenceImages:
+        reference_images = ReferenceImages(
+            low_res_eb=self.load_reference_image(f"{label}_low_res_eb"),
+            high_res_eb=self.load_reference_image(f"{label}_high_res_eb"),
+            low_res_ib=self.load_reference_image(f"{label}_low_res_ib"),
+            high_res_ib=self.load_reference_image(f"{label}_high_res_ib"),
+        )
+
+        return reference_images
+    
 class Experiment: 
-    def __init__(self, path: Path, name: str = "AutoLamella", method="autolamella-default") -> None:
+    def __init__(self, path: Path = None, name: str = cfg.EXPERIMENT_NAME, program: str = "AutoLiftout", method: str = "AutoLiftout") -> None:
+
 
         self.name: str = name
         self._id = str(uuid.uuid4())
@@ -129,7 +166,8 @@ class Experiment:
         self._created_at: float = datetime.timestamp(datetime.now())
 
         self.positions: list[Lamella] = []
-        self.program = "AutoLamella"
+
+        self.program = program
         self.method = method
 
     def __to_dict__(self) -> dict:
@@ -183,7 +221,20 @@ class Experiment:
                 "lamella.r": lamella.state.microscope_state.absolute_position.r,
                 "lamella.t": lamella.state.microscope_state.absolute_position.t,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
+                "current_stage": lamella.state.stage.name,
             }
+
+            if "autoliftout" in self.method:
+                ldict.update({
+                    "landing.x": lamella.landing_state.absolute_position.x,
+                    "landing.y": lamella.landing_state.absolute_position.y,
+                    "landing.z": lamella.landing_state.absolute_position.z,
+                    "landing.r": lamella.landing_state.absolute_position.r,
+                    "landing.t": lamella.landing_state.absolute_position.t,
+                    "landing.coordinate_system": lamella.landing_state.absolute_position.coordinate_system,
+                    "landing_selected": lamella.landing_selected,
+                    "history: ": len(lamella.history),}
+                )
 
             exp_data.append(ldict)
 

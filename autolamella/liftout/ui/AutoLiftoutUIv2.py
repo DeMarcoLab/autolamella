@@ -214,7 +214,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
-                failure_msg = f" (Failure)" if lamella.is_failure else f" (Active)"
+                failure_msg = f" (Failure)" if lamella._is_failure else f" (Active)"
                 msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \t{failure_msg} \n"
             self.label_info.setText(msg)
 
@@ -274,10 +274,10 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         
         msg = ""
         msg += f"{lamella.info}"
-        msg += f" (Failure)" if lamella.is_failure else f" (Active)"
+        msg += f" (Failure)" if lamella._is_failure else f" (Active)"
         self.label_lamella_detail.setText(msg)
         self.checkBox_current_lamella_landing_selected.setChecked(lamella.landing_selected)
-        self.checkBox_current_lamella_failure.setChecked(lamella.is_failure)
+        self.checkBox_current_lamella_failure.setChecked(lamella._is_failure)
 
         def _to_str(state):
             return f"{state.stage.name} ({datetime.fromtimestamp(state.end_timestamp).strftime('%I:%M%p')})"
@@ -293,7 +293,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         # TODO: add a failure note here
         lamella = self.experiment.positions[self.comboBox_current_lamella.currentIndex()]
         lamella.landing_selected = self.checkBox_current_lamella_landing_selected.isChecked()
-        lamella.is_failure = self.checkBox_current_lamella_failure.isChecked()
+        lamella._is_failure = self.checkBox_current_lamella_failure.isChecked()
 
         self.experiment.save()
         self._update_lamella_ui()

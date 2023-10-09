@@ -200,7 +200,7 @@ def get_completion_stats(experiment: Experiment) -> tuple:
     for lam in experiment.positions:
 
         # dont count failure
-        if lam.is_failure or lam.state.stage.value == 99:
+        if lam._is_failure or lam.state.stage.value == 99:
             continue
 
         active_lam += 1

@@ -435,7 +435,7 @@ def run_serial_liftout_workflow(
     # standard workflow
     lamella: Lamella
     for lamella in experiment.positions:
-        if lamella.is_failure:
+        if lamella._is_failure:
             logging.info(f"Skipping {lamella._petname} due to failure.")
             continue  # skip failures
 

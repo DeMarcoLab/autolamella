@@ -862,7 +862,7 @@ def run_autoliftout_workflow(
         ]:
             lamella: Lamella
             for lamella in experiment.positions:
-                if lamella.is_failure:
+                if lamella._is_failure:
                     continue  # skip failures
 
                 while lamella.state.stage.value < terminal_stage.value:
@@ -892,7 +892,7 @@ def run_autoliftout_workflow(
     # standard workflow
     lamella: Lamella
     for lamella in experiment.positions:
-        if lamella.is_failure:
+        if lamella._is_failure:
             continue  # skip failures
 
         while lamella.state.stage.value < AutoLamellaWaffleStage.LandLamella.value:
@@ -951,7 +951,7 @@ def run_thinning_workflow(
         AutoLamellaWaffleStage.MillPolishingCut,
     ]:
         for lamella in experiment.positions:
-            if lamella.is_failure:
+            if lamella._is_failure:
                 continue
 
             if lamella.state.stage.value == next_stage.value - 1:
