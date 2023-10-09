@@ -14,7 +14,7 @@ from fibsem.structures import (FibsemImage, FibsemState, MicroscopeState,
                                ReferenceImages, Point)
 
 from autolamella.liftout.config import config as cfg
-from autolamella.structures import AutoLamellaWaffleStage
+from autolamella.structures import AutoLamellaWaffleStage, LamellaState
    
 class Experiment: 
     def __init__(self, path: Path = None, name: str = cfg.EXPERIMENT_NAME, program: str = "AutoLiftout", method: str = "AutoLiftout") -> None:
@@ -179,10 +179,10 @@ class Lamella:
         self.protocol: dict = {}
 
 
-        self.state: AutoLiftoutState = AutoLiftoutState()
+        self.state: LamellaState = LamellaState()
 
         # state history
-        self.history: list[AutoLiftoutState] = []
+        self.history: list[LamellaState] = []
 
     def __repr__(self) -> str:
 
@@ -236,7 +236,7 @@ class Lamella:
     def __from_dict__(path: str, lamella_dict: dict) -> 'Lamella':
 
         lamella = Lamella(
-            path=path, number=lamella_dict["number"], _petname=lamella_dict["petname"]
+            path=path, number=lamella_dict.get("number", lamella_dict.get("_number", 0)), _petname=lamella_dict["petname"]
         )
 
         lamella._petname = lamella_dict["petname"]
@@ -252,11 +252,11 @@ class Lamella:
         lamella.protocol = deepcopy(lamella_dict.get("protocol", {}))
 
         # load current state
-        lamella.state = AutoLiftoutState.__from_dict__(lamella_dict["state"])
+        lamella.state = LamellaState.__from_dict__(lamella_dict["state"])
 
         # load history
         lamella.history = [
-            AutoLiftoutState.__from_dict__(state_dict)
+            LamellaState.__from_dict__(state_dict)
             for state_dict in lamella_dict["history"]
         ]
 
@@ -272,84 +272,3 @@ class Lamella:
         )
 
         return reference_images
-
-@dataclass
-class AutoLiftoutState(FibsemState):
-    stage: AutoLamellaWaffleStage = AutoLamellaWaffleStage.SetupTrench
-    microscope_state: MicroscopeState = MicroscopeState()
-    start_timestamp: float = datetime.timestamp(datetime.now())
-    end_timestamp: float = None
-
-    def __to_dict__(self) -> dict:
-
-        state_dict = {
-            "stage": self.stage.name,
-            "microscope_state": self.microscope_state.__to_dict__(),
-            "start_timestamp": self.start_timestamp,
-            "end_timestamp": self.end_timestamp,
-        }
-
-        return state_dict
-
-    @classmethod
-    def __from_dict__(self, state_dict: dict) -> 'AutoLiftoutState':
-
-        autoliftout_state = AutoLiftoutState(
-            stage=AutoLamellaWaffleStage[state_dict["stage"]],
-            microscope_state=MicroscopeState.__from_dict__(state_dict["microscope_state"]),
-            start_timestamp=state_dict["start_timestamp"],
-            end_timestamp=state_dict["end_timestamp"],
-        )
-
-        return autoliftout_state
-
-
-
-
-
-# Experiment:
-#   data_path: Path
-#
-#   positions: [Lamella, Lamella, Lamella]
-
-# Lamella
-#   lamella_state: MicroscopeState
-#   landing_state: MicroscopeState
-#   lamella_ref_images: ReferenceImages
-#   landing_ref_images: ReferenceImages
-#   state: AutoLiftoutState
-#       stage: AutoLamellaWaffleStage
-#       microscope_state: MicroscopeState
-#           eb_settings: BeamSettings
-#           ib_settings: BeamSettings
-#           absolute_position: StagePosition
-
-
-######################## UTIL ########################
-
-
-def create_experiment(experiment_name: str, path: Path = None):
-
-    # create unique experiment name
-    exp_name = f"{experiment_name}-{fibsem_utils.current_timestamp()}"
-
-    # create experiment data struture
-    experiment = Experiment(path=path, name=exp_name)
-
-    # save experiment to disk
-    experiment.save()
-
-    return experiment
-
-
-def load_experiment(path: Path) -> Experiment:
-
-    sample_fname = os.path.join(path, "experiment.yaml")
-
-    if not os.path.exists(sample_fname):
-        raise ValueError(f"No experiment file found for this path: {path}")
-
-    return Experiment.load(fname=sample_fname)
-
-
-

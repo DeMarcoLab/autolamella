@@ -66,10 +66,10 @@ class Lamella:
     _petname: str = None
     protocol: dict = None    
     _is_failure: bool = False
-    # lamella_state: MicroscopeState = None
-    # landing_state: MicroscopeState = None
-    # landing_selected: bool = False
-    # _id: str = None
+    lamella_state: MicroscopeState = None
+    landing_state: MicroscopeState = None
+    landing_selected: bool = False
+    _id: str = None
 
     
     def __post_init__(self):
