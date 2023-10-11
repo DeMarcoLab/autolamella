@@ -11,7 +11,7 @@ flatten:
     type: "Rectangle"
 trench:
     stages:
-    -   depth: 4.0e-6
+    -   depth: 2.0e-6
         hfw: 8.0e-05
         lamella_height: 9.999999999999999e-06
         lamella_width: 4.0e-05
@@ -25,7 +25,7 @@ trench:
         trench_height: 1.2e-05
         application_file: "autolamella"
         type: "Horseshoe"
-    -   depth: 3.0e-6
+    -   depth: 2.0e-6
         hfw: 8.0e-05
         lamella_height: 9.999999999999999e-06
         lamella_width: 4.0e-05
