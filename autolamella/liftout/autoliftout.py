@@ -1002,7 +1002,7 @@ def select_initial_lamella_positions(
 
     # create lamella
     lamella_no = max(len(experiment.positions) + 1, 1)
-    lamella = Lamella(experiment.path, lamella_no)
+    lamella = Lamella(path=experiment.path, _number=lamella_no)
     log_status_message(lamella, "STARTED")
 
     # reference images
