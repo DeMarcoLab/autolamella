@@ -41,8 +41,8 @@ trench:
         type: "Horseshoe"
 ml:
     encoder: resnet34
-    num_classes: 3
-    checkpoint: openfibsem-baseline-34.pt
+    num_classes: 5
+    checkpoint: autolamella-mega-01-nc5-34.pt
 name: autoliftout-base-protocol
 method: autoliftout-default
 options:

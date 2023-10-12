@@ -682,6 +682,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             _METHOD = self.settings.protocol.get("method", "autoliftout-default")
             
             if _METHOD == "autoliftout-default":
+                settings.image.gamma_enabled = True
                 self.experiment = autoliftout.run_autoliftout_workflow(
                     microscope=microscope,
                     settings=settings,
