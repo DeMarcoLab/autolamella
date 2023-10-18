@@ -15,6 +15,10 @@ from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 
 
 # CORE UI FUNCTIONS -> PROBS SEPARATE FILE
+def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by user.") -> bool:
+    if parent_ui._ABORT_THREAD:
+        raise InterruptedError(msg)
+
 
 def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg, validate: bool,milling_enabled: bool = True):
     _update_mill_stages_ui(parent_ui, stages=stages)
@@ -23,7 +27,7 @@ def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI
         response = ask_user(parent_ui, msg=msg, pos="Continue", mill=milling_enabled)
         stages = deepcopy(parent_ui.milling_widget.get_milling_stages())
     else:
-        _update_status_ui(parent_ui, f"Milling {len(stages)} stages...")
+        _update_status_ui(parent_ui, f"Milling {len(stages)} stages...") # TODO: better feedback here, change to milling tab for progress bar
         parent_ui._MILLING_RUNNING = True
         parent_ui._run_milling_signal.emit()
         
@@ -44,6 +48,8 @@ def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI
 def _update_mill_stages_ui(
     parent_ui: AutoLamellaUI, stages: list[FibsemMillingStage] = None
 ):
+    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+
     INFO = {
         "msg": "Updating Milling Stages",
         "pos": None,
@@ -88,6 +94,13 @@ def _validate_det_ui_v2(
         # I need this to happen in the parent thread for it to work correctly
         parent_ui.det_confirm_signal.emit(True)
 
+#     # image = acquire.last_image(microscope, settings.image.beam_type)
+#     # if settings.image.beam_type is BeamType.ELECTRON:
+#     #     eb_image, ib_image = image, None
+#     # else:
+#     #     eb_image, ib_image = None, image
+#     # _set_images_ui(parent_ui, eb_image=eb_image, ib_image=ib_image)
+
     return det
 
 
@@ -96,6 +109,8 @@ def _set_images_ui(
     eb_image: FibsemImage = None,
     ib_image: FibsemImage = None,
 ):
+    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+
     INFO = {
         "msg": "Updating Images",
         "pos": None,
@@ -106,10 +121,17 @@ def _set_images_ui(
         "movement": None,
         "mill": None,
     }
+    parent_ui.WAITING_FOR_UI_UPDATE = True
     parent_ui.ui_signal.emit(INFO)
 
+    logging.info(f"WAITING FOR UI UPDATE... ")
+    while parent_ui.WAITING_FOR_UI_UPDATE:
+        time.sleep(0.5)
 
 def _update_status_ui(parent_ui: AutoLamellaUI, msg: str):
+
+    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+
     INFO = {
         "msg": msg,
         "pos": None,

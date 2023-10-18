@@ -2,17 +2,18 @@ import os
 
 import autolamella.liftout as liftout
 
-BASE_PATH = os.path.dirname(liftout.__file__) # TODO: fix this to be the root directory of the project
-config_path = os.path.join(BASE_PATH, "config")
-protocol_path = os.path.join(BASE_PATH, "protocol", "protocol.yaml")
-CONFIG_PATH = os.path.join(BASE_PATH, "config")
-SYSTEM_PATH = os.path.join(CONFIG_PATH, "system.yaml")
-PROTOCOL_PATH = os.path.join(BASE_PATH, "protocol", "protocol.yaml")
-LOG_PATH = os.path.join(BASE_PATH, "log")
+from autolamella.config import BASE_PATH, CONFIG_PATH, SYSTEM_PATH, PROTOCOL_PATH, LOG_PATH
+
+
+# BASE_PATH = os.path.dirname(liftout.__file__) # TODO: fix this to be the root directory of the project
+# CONFIG_PATH = os.path.join(BASE_PATH, "config")
+# SYSTEM_PATH = os.path.join(CONFIG_PATH, "system.yaml")
+# PROTOCOL_PATH = os.path.join(BASE_PATH, "protocol", "protocol.yaml")
+# LOG_PATH = os.path.join(BASE_PATH, "log")
 EXPERIMENT_NAME = "AutoLiftout"
 
-__AUTOLIFTOUT_METHODS__ = ["default", "serial-liftout"]
-__AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__ = ["None", "Weld", "Platinum"]
+__AUTOLIFTOUT_METHODS__ = ["autoliftout-default", "autoliftout-serial-liftout"]
+__AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__ = ["None", "Weld"]
 __AUTOLIFTOUT_LANDING_JOIN_METHODS__ = ["Weld"]
 
 

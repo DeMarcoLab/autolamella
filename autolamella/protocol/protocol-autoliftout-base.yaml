@@ -11,7 +11,7 @@ flatten:
     type: "Rectangle"
 trench:
     stages:
-    -   depth: 4.0e-6
+    -   depth: 2.0e-6
         hfw: 8.0e-05
         lamella_height: 9.999999999999999e-06
         lamella_width: 4.0e-05
@@ -25,7 +25,7 @@ trench:
         trench_height: 1.2e-05
         application_file: "autolamella"
         type: "Horseshoe"
-    -   depth: 3.0e-6
+    -   depth: 2.0e-6
         hfw: 8.0e-05
         lamella_height: 9.999999999999999e-06
         lamella_width: 4.0e-05
@@ -41,30 +41,37 @@ trench:
         type: "Horseshoe"
 ml:
     encoder: resnet34
-    num_classes: 3
-    checkpoint: openfibsem-baseline-34.pt
+    num_classes: 5
+    checkpoint: autolamella-mega-latest.pt
 name: autoliftout-base-protocol
-method: default
+method: autoliftout-default
 options:
     batch_mode: true
-    confirm_advance: true
-    landing_joining_method: Weld
-    liftout_joining_method: None
-    landing_post_x_offset: 0.75e-6
+    confirm_next_stage: true
     lamella_start_position: autoliftout-pre-tilt-35-deg-grid-01-lamella
+    liftout_joining_method: None
+    liftout_contact_detection: True
+    liftout_contact_offset: 0.25e-6
+    liftout_charge_neutralisation_iterations: 35
     landing_start_position: autoliftout-pre-tilt-35-deg-grid-02-landing
+    landing_joining_method: Weld
+    landing_post_x_offset: 0.75e-6
+    landing_charge_neutralisation_iterations: 100
     compucentric_x_offset: 50.0e-6
     compucentric_y_offset: 25.0e-6 
     return_to_eb_after_undercut: True
+    alignment_attempts: 3.0
+    alignment_at_milling_current: true
+    take_final_reference_images: true
+    take_final_high_quality_reference_images: true
+    take_final_overview_image: true
     supervise:
         landing: true
         liftout: true
-        reset: true
         trench: false
         undercut: true
         setup_lamella: true
         mill_rough: true
-        mill_regular: true
         mill_polishing: true
 platinum:
     application_file: cryo_Pt_dep
@@ -82,7 +89,6 @@ platinum:
         hfw: 3.0e-05
         length: 7.0e-06
         time: 30.0
-
 sever:
     cleaning_cross_section: 0.0
     depth: 3.0e-06

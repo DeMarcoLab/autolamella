@@ -1,8 +1,13 @@
 
 name: autolamella-base-scan-rotation-0deg
-method: autolamella-default # waffle or default
+method: autolamella-default # autolamella-waffle or autolamella-default
 
 options:
+  alignment_attempts: 3.0
+  alignment_at_milling_current: true
+  take_final_reference_images: false 
+  take_final_high_quality_reference_images: false
+  take_final_overview_image: true
   supervise:
     trench: false
     undercut: true
@@ -12,6 +17,11 @@ options:
     mill_rough: true
     mill_regular: true
     mill_polishing: true
+
+ml:
+    encoder: resnet34
+    num_classes: 3
+    checkpoint: autolamella-05-34.pt
 
 fiducial:
   enabled: true
@@ -27,30 +37,14 @@ fiducial:
   hfw: 80.e-6
 
 
-trench:
-  lamella_width: 22.e-6
-  lamella_height: 30.0e-6
-  milling_current: 28.0e-9
-  trench_height: 32.e-6
-  depth: 2.5e-6
-  offset: 0.0e-6
-  size_ratio: 2.0
-  preset: "30 keV; 2.5 nA" # TESCAN only
-  hfw: 180.0e-6
-  application_file: autolamella
-  cleaning_cross_section: false
-
 lamella:
-  alignment_attempts: 3.0
-  lamella_width: 20.e-6
-  lamella_height: 800.e-9
   stages:
     -   application_file: autolamella
         cleaning_cross_section: false
         depth: 6.5e-07
         dwell_time: 1.0e-06
         hfw: 7.999999999999999e-05
-        lamella_height: 8.0e-07
+        lamella_height: 6.0e-07
         lamella_width: 6.0e-06
         milling_current: 7.4e-10
         offset: 2.0e-06
@@ -65,7 +59,7 @@ lamella:
         depth: 6.5e-07
         dwell_time: 1.0e-06
         hfw: 7.999999999999999e-05
-        lamella_height: 8.0e-07
+        lamella_height: 6.0e-07
         lamella_width: 6.0e-06
         milling_current: 2.0e-10
         offset: 5.0e-07
@@ -103,37 +97,3 @@ microexpansion:
   application_file: autolamella
   cleaning_cross_section: false
   lamella_width: 10.e-6
-
-
-
-notch:
-  enabled: false
-  vheight: 2.0e-6
-  vwidth: 0.2e-6
-  hwidth: 2.0e-6
-  hheight: 0.2e-6
-  depth: 5.0e-6
-  distance: 5.0e-6
-  flip: 0
-  milling_current: 2.e-9
-  preset: "30 keV; 2.5 nA" # TESCAN only
-  hfw: 80e-6
-  application_file: autolamella
-  cleaning_cross_section: false
-
-undercut:
-  width: 10.e-6
-  height: 4.e-6
-  depth: 2.0e-6
-  milling_current: 7.6e-9
-  preset: "30 keV; 2.5 nA" # TESCAN only
-  hfw: 80.0e-6
-  application_file: autolamella
-  tilt_angle: -10
-  tilt_angle_step: 2
-  cleaning_cross_section: false
-
-ml:
-    encoder: resnet34
-    num_classes: 3
-    checkpoint: autolamella-05-34.pt

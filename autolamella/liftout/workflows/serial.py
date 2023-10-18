@@ -12,6 +12,7 @@ from fibsem.detection.detection import (
     LamellaRightEdge,
     NeedleTip,
     LandingPost,
+    LandingGridCentre,
     LamellaTopEdge,
     LamellaBottomEdge,
     CopperAdapterBottomEdge,
@@ -31,14 +32,14 @@ from fibsem.structures import (
 )
 import numpy as np
 from autolamella.liftout import actions
-from autolamella.liftout.structures import AutoLiftoutStage, Experiment, Lamella
+from autolamella.liftout.structures import AutoLamellaWaffleStage, Experiment, Lamella
 from autolamella.liftout.ui.AutoLiftoutUIv2 import AutoLiftoutUIv2
 from fibsem import config as fcfg
 
 from collections import Counter
-from autolamella.liftout.structures import Lamella, Experiment, AutoLiftoutState, AutoLiftoutStage
+from autolamella.liftout.structures import Lamella, Experiment, LamellaState, AutoLamellaWaffleStage
 from autolamella.liftout.autoliftout import log_status_message, start_of_stage_update, end_of_stage_update
-from autolamella.liftout.autoliftout import ask_user, _update_status_ui, _validate_det_ui_v2, _update_mill_stages_ui, _set_images_ui,  _validate_mill_ui
+from autolamella.workflows.ui import ask_user, _update_status_ui, _validate_det_ui_v2, _set_images_ui,  _validate_mill_ui
 
 from pprint import pprint
 
@@ -90,7 +91,7 @@ def liftout_lamella(
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
     
     # align vertical
-    microscope.eucentric_move(
+    microscope.vertical_move(
         settings, 
         dx=det.features[0].feature_m.x,
         dy=-det.features[0].feature_m.y,
@@ -269,7 +270,7 @@ def land_lamella(
     _set_images_ui(parent_ui, eb_image, ib_image)
 
 
-    # DETECT LAMELLA BOTTOM EDGE, LANDINGPOST_TOP
+    # DETECT LAMELLA BOTTOM EDGE, LandingGridCentre_TOP
     # align manipulator to top of lamella
     log_status_message(lamella, "NEEDLE_IB_DETECTION")
     _update_status_ui(parent_ui, f"{lamella.info} Moving Lamella to Landing Post...")
@@ -284,7 +285,7 @@ def land_lamella(
 
         # DETECT COPPER ADAPTER, LAMELLA TOP
         scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
-        features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge(), LandingPost()]  # TODO: SCAN_ROTATION FOR LANDING_POST
+        features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
         # hover 25um above the post
@@ -303,7 +304,7 @@ def land_lamella(
     # settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
 
     # # DETECT COPPER ADAPTER, LAMELLA TOP
-    # features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge(), LandingPost()]  # TODO: SCAN_ROTATION FOR LANDING_POST
+    # features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
     # det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
     # # MOVE TO LANDING POST
@@ -404,14 +405,13 @@ from autolamella.workflows.core import mill_trench, mill_undercut
 
 # serial workflow functions
 SERIAL_WORKFLOW_STAGES = {
-    AutoLiftoutStage.MillTrench: mill_trench,
-    AutoLiftoutStage.MillUndercut: mill_undercut,
-    AutoLiftoutStage.Liftout: liftout_lamella,
-    AutoLiftoutStage.Landing: land_lamella,
-    AutoLiftoutStage.SetupPolish: setup_lamella,
-    AutoLiftoutStage.MillRoughCut: mill_lamella,
-    AutoLiftoutStage.MillRegularCut: mill_lamella,
-    AutoLiftoutStage.MillPolishingCut: mill_lamella,
+    AutoLamellaWaffleStage.MillTrench: mill_trench,
+    AutoLamellaWaffleStage.MillUndercut: mill_undercut,
+    AutoLamellaWaffleStage.LiftoutLamella: liftout_lamella,
+    AutoLamellaWaffleStage.LandLamella: land_lamella,
+    AutoLamellaWaffleStage.SetupLamella: setup_lamella,
+    AutoLamellaWaffleStage.MillRoughCut: mill_lamella,
+    AutoLamellaWaffleStage.MillPolishingCut: mill_lamella,
 }
 
 def run_serial_liftout_workflow(
@@ -422,7 +422,7 @@ def run_serial_liftout_workflow(
 ) -> Experiment:
     """Run the serial AutoLiftout workflow for a given experiment. """
     BATCH_MODE = bool(settings.protocol["options"]["batch_mode"])
-    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_advance"])
+    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_next_stage"])
 
     _update_status_ui(parent_ui, "Starting AutoLiftout Workflow...")
     logging.info(
@@ -435,12 +435,12 @@ def run_serial_liftout_workflow(
     # standard workflow
     lamella: Lamella
     for lamella in experiment.positions:
-        if lamella.is_failure:
+        if lamella._is_failure:
             logging.info(f"Skipping {lamella._petname} due to failure.")
             continue  # skip failures
 
-        while lamella.state.stage.value < AutoLiftoutStage.Liftout.value:
-            next_stage = AutoLiftoutStage(lamella.state.stage.value + 1)
+        while lamella.state.stage.value < AutoLamellaWaffleStage.LiftoutLamella.value:
+            next_stage = AutoLamellaWaffleStage(lamella.state.stage.value + 1)
             if CONFIRM_WORKFLOW_ADVANCE:
                 msg = (
                     f"""Continue Lamella {(lamella._petname)} from {next_stage.name}?"""
@@ -486,7 +486,7 @@ def run_serial_liftout_landing(
 ) -> Experiment:
     """Run the serial AutoLiftout workflow for landing a given experiment. """
     BATCH_MODE = bool(settings.protocol["options"]["batch_mode"])
-    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_advance"])
+    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_next_stage"])
 
     _update_status_ui(parent_ui, "Starting Serial Liftout (Landing) Workflow...")
     logging.info(
@@ -518,9 +518,9 @@ def run_serial_liftout_landing(
 
     # see where we are in the workflow
     _counter = Counter([p.state.stage.name for p in experiment.positions])
-    land_idx = _counter[AutoLiftoutStage.Landing.name]
+    land_idx = _counter[AutoLamellaWaffleStage.LandLamella.name]
     # count how many at finished
-    finished_idx = _counter[AutoLiftoutStage.Finished.name]
+    finished_idx = _counter[AutoLamellaWaffleStage.Finished.name]
 
     # start of workflow
     response = ask_user(parent_ui, msg=f"Land Another Lamella? ({land_idx} Lamella Landed, {finished_idx} Lamella Finished)", pos="Continue", neg="Finish")
@@ -534,10 +534,10 @@ def run_serial_liftout_landing(
 
         # advance workflow
         lamella = start_of_stage_update(microscope, lamella, 
-            next_stage=AutoLiftoutStage.Landing, parent_ui=parent_ui)
+            next_stage=AutoLamellaWaffleStage.LandLamella, parent_ui=parent_ui)
 
         # run the next workflow stage
-        lamella = SERIAL_WORKFLOW_STAGES[AutoLiftoutStage.Landing](
+        lamella = SERIAL_WORKFLOW_STAGES[AutoLamellaWaffleStage.LandLamella](
             microscope=microscope,
             settings=settings,
             lamella=lamella,
@@ -552,7 +552,7 @@ def run_serial_liftout_landing(
 
         # land another lamella?
         _counter = Counter([p.state.stage.name for p in experiment.positions])
-        land_idx = _counter[AutoLiftoutStage.Landing.name]
+        land_idx = _counter[AutoLamellaWaffleStage.LandLamella.name]
         response = ask_user(parent_ui, msg=f"Land Another Lamella? ({land_idx} Lamella Landed), {finished_idx} Lamella Finished)", 
             pos="Continue", neg="Finish")
 
@@ -564,7 +564,7 @@ def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positi
 
     # create a new lamella for landing
     _counter = Counter([p.state.stage.name for p in experiment.positions])
-    land_idx = _counter[AutoLiftoutStage.Landing.name]
+    land_idx = _counter[AutoLamellaWaffleStage.LandLamella.name]
 
     print("COUNTER: ", _counter, land_idx)
 
@@ -573,7 +573,7 @@ def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positi
     log_status_message(lamella, "CREATION")
 
     # set state
-    lamella.state.stage = AutoLiftoutStage.Liftout
+    lamella.state.stage = AutoLamellaWaffleStage.LiftoutLamella
     lamella.state.microscope_state = microscope.get_current_microscope_state()
     lamella.state.microscope_state.absolute_position = deepcopy(positions[land_idx])
     lamella.landing_state = deepcopy(lamella.state.microscope_state)

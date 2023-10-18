@@ -21,21 +21,12 @@ from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
 from autolamella.liftout.config import config as cfg
-from autolamella.liftout.structures import AutoLiftoutStage, Experiment, Lamella
+from autolamella.liftout.structures import AutoLamellaWaffleStage, Experiment, Lamella
 from autolamella.liftout.ui import utils as ui_utils
 from autolamella.liftout.ui.qt import AutoLiftoutUIv2
 
 from datetime import datetime
 from fibsem.ui import _stylesheets
-
-
-"""
-TODO: 
-    - Redo setup. Add and select lamella on main screen, rather than walkthrough? then how to select landing positions
-    - add more stages: LamellaSelected, LandingSelected
-    - Stop workflow button? how to implement
-
-"""
 
 _DEV_MODE = False
 DEV_MICROSCOPE = "Demo"
@@ -87,6 +78,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.USER_RESPONSE: bool = False
         self.WAITING_FOR_UI_UPDATE: bool = False
         self._WORKFLOW_RUNNING: bool = False
+        self._ABORT_THREAD: bool = False
 
         # setup connections
         self.setup_connections()
@@ -110,7 +102,9 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
         self.actionSave_Protocol.triggered.connect(self.update_protocol_from_ui)
         self.actionCryo_Sputter.triggered.connect(self._cryo_sputter)
-        
+        self.actionCalibrate_Manipulator.triggered.connect(lambda: self._run_workflow(workflow="calibrate-manipulator"))
+        self.actionPrepare_Manipulator.triggered.connect(lambda: self._run_workflow(workflow="prepare-manipulator"))
+
         # protocol
         self.pushButton_update_protocol.clicked.connect(self.update_protocol_from_ui)
         self.comboBox_protocol_method.addItems(cfg.__AUTOLIFTOUT_METHODS__)
@@ -122,12 +116,10 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.comboBox_options_landing_start_position.addItems(_AVAILABLE_POSITIONS_)
 
         # workflow buttons
-        self.pushButton_setup_autoliftout.clicked.connect(self._run_workflow)
-        self.pushButton_run_autoliftout.clicked.connect(self._run_autoliftout_workflow)
-        self.pushButton_run_serial_liftout_landing.clicked.connect(self._run_serial_liftout_landing_workflow)
-        self.pushButton_run_polishing.clicked.connect(self._run_autolamella_workflow)
-
-
+        self.pushButton_setup_autoliftout.clicked.connect(lambda: self._run_workflow(workflow="setup"))
+        self.pushButton_run_autoliftout.clicked.connect(lambda: self._run_workflow(workflow="autoliftout"))
+        self.pushButton_run_serial_liftout_landing.clicked.connect(lambda: self._run_workflow(workflow="serial-liftout-landing"))
+        self.pushButton_run_polishing.clicked.connect(lambda: self._run_workflow(workflow="autolamella"))
 
         # interaction buttons
         self.pushButton_yes.clicked.connect(self.push_interaction_button)
@@ -179,36 +171,38 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         _AUTOLAMELLA_PROGRESS = False
         if self.experiment is not None:
             _counter = Counter([p.state.stage.name for p in self.experiment.positions])
-            _LAMELLA_SETUP = _counter[AutoLiftoutStage.Setup.name] > 0
-            _LAMELLA_TRENCH = _counter[AutoLiftoutStage.MillTrench.name] > 0
-            _LAMELLA_UNDERCUT = _counter[AutoLiftoutStage.MillUndercut.name] > 0
-            _LIFTOUT_FINISHED = _counter[AutoLiftoutStage.Liftout.name] > 0
-            _LAMELLA_LANDED = _counter[AutoLiftoutStage.Landing.name] > 0
-            _AUTOLAMELLA_PROGRESS = (_counter[AutoLiftoutStage.MillRoughCut.name] > 0 
-                or _counter[AutoLiftoutStage.MillRegularCut.name] > 0 
-                or _counter[AutoLiftoutStage.MillPolishingCut.name] > 0)
+            _LAMELLA_SETUP = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
+            _LAMELLA_TRENCH = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
+            _LAMELLA_UNDERCUT = _counter[AutoLamellaWaffleStage.MillUndercut.name] > 0
+            _LIFTOUT_FINISHED = _counter[AutoLamellaWaffleStage.LiftoutLamella.name] > 0
+            _LAMELLA_LANDED = _counter[AutoLamellaWaffleStage.LandLamella.name] > 0
+            _AUTOLAMELLA_PROGRESS = (_counter[AutoLamellaWaffleStage.SetupLamella.name]>0
+                or _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0 
+                or _counter[AutoLamellaWaffleStage.MillPolishingCut.name] > 0)
 
         # setup experiment -> connect to microscope -> select lamella -> run autoliftout -> run polishing
 
         # METHOD 
-        _METHOD = self.settings.protocol.get("method", "default") if _protocol_loaded else "default"
+        _METHOD = self.settings.protocol.get("method", "autoliftout-default") if _protocol_loaded else "autoliftout-default"
 
         # experiment loaded
         self.actionConnect_Microscope.setVisible(_experiment_loaded)
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
         self.actionSave_Protocol.setVisible(_protocol_loaded)
         self.actionCryo_Sputter.setVisible(_protocol_loaded)
+        self.actionCalibrate_Manipulator.setVisible(_protocol_loaded)
+        self.actionPrepare_Manipulator.setVisible(_protocol_loaded)
 
         # workflow buttons
         _SETUP_ENABLED = _microscope_connected and _protocol_loaded
-        _AUTOLIFTOUT_ENABLED = (_LAMELLA_SETUP or _LAMELLA_TRENCH or _LAMELLA_UNDERCUT or (_LIFTOUT_FINISHED and _METHOD=="default")) and _microscope_connected and _protocol_loaded
+        _AUTOLIFTOUT_ENABLED = (_LAMELLA_SETUP or _LAMELLA_TRENCH or _LAMELLA_UNDERCUT or (_LIFTOUT_FINISHED and _METHOD=="autoliftout-default")) and _microscope_connected and _protocol_loaded
         _SERIAL_LIFTOUT_LANDING_ENABLED = _LIFTOUT_FINISHED and _microscope_connected and _protocol_loaded
         _AUTOLAMELLA_ENABLED = (_LAMELLA_LANDED or _AUTOLAMELLA_PROGRESS) and _microscope_connected and _protocol_loaded
 
         self.pushButton_setup_autoliftout.setEnabled(_SETUP_ENABLED)
         self.pushButton_run_autoliftout.setEnabled(_AUTOLIFTOUT_ENABLED)
         self.pushButton_run_serial_liftout_landing.setEnabled(_SERIAL_LIFTOUT_LANDING_ENABLED)
-        self.pushButton_run_serial_liftout_landing.setVisible(_METHOD=="serial-liftout")
+        self.pushButton_run_serial_liftout_landing.setVisible(_METHOD=="autoliftout-serial-liftout")
         self.pushButton_run_polishing.setEnabled(_AUTOLAMELLA_ENABLED)
 
         # set stylesheets
@@ -224,7 +218,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
-                failure_msg = f" (Failure)" if lamella.is_failure else f" (Active)"
+                failure_msg = f" (Failure)" if lamella._is_failure else f" (Active)"
                 msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} \t{failure_msg} \n"
             self.label_info.setText(msg)
 
@@ -284,10 +278,10 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         
         msg = ""
         msg += f"{lamella.info}"
-        msg += f" (Failure)" if lamella.is_failure else f" (Active)"
+        msg += f" (Failure)" if lamella._is_failure else f" (Active)"
         self.label_lamella_detail.setText(msg)
         self.checkBox_current_lamella_landing_selected.setChecked(lamella.landing_selected)
-        self.checkBox_current_lamella_failure.setChecked(lamella.is_failure)
+        self.checkBox_current_lamella_failure.setChecked(lamella._is_failure)
 
         def _to_str(state):
             return f"{state.stage.name} ({datetime.fromtimestamp(state.end_timestamp).strftime('%I:%M%p')})"
@@ -303,7 +297,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         # TODO: add a failure note here
         lamella = self.experiment.positions[self.comboBox_current_lamella.currentIndex()]
         lamella.landing_selected = self.checkBox_current_lamella_landing_selected.isChecked()
-        lamella.is_failure = self.checkBox_current_lamella_failure.isChecked()
+        lamella._is_failure = self.checkBox_current_lamella_failure.isChecked()
 
         self.experiment.save()
         self._update_lamella_ui()
@@ -398,15 +392,15 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # meta
         self.lineEdit_protocol_name.setText(self.settings.protocol.get("name", "autoliftout"))
-        self.comboBox_protocol_method.setCurrentText(self.settings.protocol.get("method", "default"))
+        self.comboBox_protocol_method.setCurrentText(self.settings.protocol.get("method", "autoliftout-default"))
 
         
         # options
         options = self.settings.protocol["options"]
         self.checkBox_options_batch_mode.setChecked(bool(options["batch_mode"]))
-        self.checkBox_options_confirm_next_stage.setChecked(bool(options["confirm_advance"]))
-        self.comboBox_options_liftout_joining_method.setCurrentText(options["liftout_joining_method"])
-        self.comboBox_options_landing_joining_method.setCurrentText(options["landing_joining_method"])
+        self.checkBox_options_confirm_next_stage.setChecked(bool(options["confirm_next_stage"]))
+        self.comboBox_options_liftout_joining_method.setCurrentText(options.get("liftout_joining_method", "None"))
+        self.comboBox_options_landing_joining_method.setCurrentText(options.get("landing_joining_method", "Weld"))
 
         self.comboBox_options_lamella_start_position.setCurrentText(options["lamella_start_position"])
         self.comboBox_options_landing_start_position.setCurrentText(options["landing_start_position"])
@@ -416,10 +410,8 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.checkBox_supervise_mill_undercut.setChecked(bool(options["supervise"]["undercut"]))
         self.checkBox_supervise_liftout.setChecked(bool(options["supervise"]["liftout"]))
         self.checkBox_supervise_landing.setChecked(bool(options["supervise"]["landing"]))
-        self.checkBox_supervise_reset.setChecked(bool(options["supervise"]["reset"]))
         self.checkBox_supervise_setup_lamella.setChecked(bool(options["supervise"]["setup_lamella"]))
         self.checkBox_supervise_mill_rough.setChecked(bool(options["supervise"]["mill_rough"]))
-        self.checkBox_supervise_mill_regular.setChecked(bool(options["supervise"]["mill_regular"]))
         self.checkBox_supervise_mill_polishing.setChecked(bool(options["supervise"]["mill_polishing"]))
 
         # ml
@@ -435,10 +427,10 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.settings.protocol["name"] = self.lineEdit_protocol_name.text()
         self.settings.protocol["method"] = self.comboBox_protocol_method.currentText()
 
-        # TODO: milling?
-        self.settings.protocol["options"] = {
+        # TODO: fix this for both methods
+        self.settings.protocol["options"].update({
             "batch_mode": self.checkBox_options_batch_mode.isChecked(),
-            "confirm_advance": self.checkBox_options_confirm_next_stage.isChecked(),
+            "confirm_next_stage": self.checkBox_options_confirm_next_stage.isChecked(),
             "liftout_joining_method": self.comboBox_options_liftout_joining_method.currentText(),
             "landing_joining_method": self.comboBox_options_landing_joining_method.currentText(),
             "lamella_start_position": self.comboBox_options_lamella_start_position.currentText(),
@@ -448,13 +440,11 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                 "undercut": self.checkBox_supervise_mill_undercut.isChecked(),
                 "liftout": self.checkBox_supervise_liftout.isChecked(),
                 "landing": self.checkBox_supervise_landing.isChecked(),
-                "reset": self.checkBox_supervise_reset.isChecked(),
                 "setup_lamella": self.checkBox_supervise_setup_lamella.isChecked(),
                 "mill_rough": self.checkBox_supervise_mill_rough.isChecked(),
-                "mill_regular": self.checkBox_supervise_mill_regular.isChecked(),
                 "mill_polishing": self.checkBox_supervise_mill_polishing.isChecked()
-            }
-        }
+            }}
+        )
 
         self.settings.protocol["ml"] = {
             "encoder": self.lineEdit_protocol_ml_encoder.text(),
@@ -516,6 +506,28 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         napari.utils.notifications.show_info(
             f"Experiment {self.experiment.name} loaded."
         )
+
+        # TODO: enable this
+        # register metadata
+        # if fcfg._REGISTER_METADATA:
+        #     import autolamella #NB: microscope needs to be connected beforehand
+        #     futils._register_metadata(
+        #         microscope=self.microscope, 
+        #         application_software="autolamella",
+        #         application_software_version=autolamella.__version__,
+        #         experiment_name=self.experiment.name,
+        #         experiment_method = "autoliftout") # TODO: add method to experiment
+
+        # # automatically re-load protocol if available
+        if not new_experiment and self.settings is not None:
+            # try to load protocol from file
+            PROTOCOL_PATH = os.path.join(self.experiment.path, "protocol.yaml")
+            if os.path.exists(PROTOCOL_PATH):
+                self.settings.protocol = futils.load_protocol(protocol_path=PROTOCOL_PATH)
+                self._PROTOCOL_LOADED = True
+                self.update_ui_from_protocol(self.settings.protocol)
+
+
         self.update_ui()
 
     def load_protocol(self):
@@ -619,33 +631,11 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         if self.det_widget is not None:
             self.det_widget.confirm_button_clicked()
 
-    def _run_workflow(self):
+    def _run_workflow(self, workflow: str):
         self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="setup",
+            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow=workflow,
         )
         self.worker.finished.connect(self._workflow_finished)
-        self.worker.start()
-
-    def _run_autoliftout_workflow(self):
-        self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="autoliftout"
-        )
-        self.worker.finished.connect(self._workflow_finished)
-        self.worker.start()
-        
-    def _run_serial_liftout_landing_workflow(self):
-        self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="serial-landing"
-        )
-        self.worker.finished.connect(self._workflow_finished)
-        self.worker.start()
-    
-    def _run_autolamella_workflow(self):
-        self.worker = self._threaded_worker(
-            microscope=self.microscope, settings=self.settings, experiment=self.experiment, workflow="autolamella"
-        )
-        self.worker.finished.connect(self._workflow_finished)
-
         self.worker.start()
 
     def _workflow_finished(self):
@@ -715,16 +705,17 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             )
         elif workflow == "autoliftout":
 
-            _METHOD = self.settings.protocol.get("method", "default")
+            _METHOD = self.settings.protocol.get("method", "autoliftout-default")
             
-            if _METHOD == "default":
+            if _METHOD == "autoliftout-default":
+                settings.image.gamma_enabled = True
                 self.experiment = autoliftout.run_autoliftout_workflow(
                     microscope=microscope,
                     settings=settings,
                     experiment=experiment,
                     parent_ui=self,
                 )
-            if _METHOD == "serial-liftout":
+            if _METHOD == "autoliftout-serial-liftout":
                 from autolamella.liftout.workflows import serial as serial_workflow
                 self.experiment = serial_workflow.run_serial_liftout_workflow(
                     microscope=microscope,
@@ -732,7 +723,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                     experiment=experiment,
                     parent_ui=self,
                 )
-        elif workflow == "serial-landing":
+        elif workflow == "serial-liftout-landing":
 
             from autolamella.liftout.workflows import serial as serial_workflow
             self.experiment = serial_workflow.run_serial_liftout_landing(
@@ -750,6 +741,17 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                 experiment=experiment,
                 parent_ui=self,
             )
+        elif workflow == "calibrate-manipulator":
+            from fibsem import calibration
+            calibration._calibrate_manipulator_thermo(microscope = microscope, settings = settings, parent_ui = self)
+
+            napari.utils.notification.show_info(f"Calibrated Manipulator")
+
+        elif workflow == "prepare-manipulator":
+
+            _METHOD = self.settings.protocol.get("method", "autoliftout-default")
+            napari.utils.notification.show_warning(f"Prepare Manipulator ({_METHOD}) is Not Yet Implemented")
+
         else:
             raise ValueError(f"Unknown workflow: {workflow}")
         

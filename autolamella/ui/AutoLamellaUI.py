@@ -12,7 +12,7 @@ from fibsem import patterning
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     MicroscopeSettings,
-    FibsemStagePosition, Point
+    FibsemStagePosition, Point, BeamType
 )
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
@@ -37,6 +37,7 @@ from autolamella.ui.qt import AutoLamellaUI
 from PyQt5.QtCore import pyqtSignal
 from autolamella.ui import _stylesheets
 from collections import Counter
+import numpy as np
 
 
 _DEV_MODE = False
@@ -63,6 +64,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self._PROTOCOL_LOADED = False
         self._microscope_ui_loaded = False
+        self._UPDATING_PROTOCOL_UI = False
 
         self.experiment: Experiment = None
         self.worker = None
@@ -89,7 +91,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.WAITING_FOR_UI_UPDATE: bool = False
         self._MILLING_RUNNING: bool = False
         self._WORKFLOW_RUNNING: bool = False
-
+        self._ABORT_THREAD: bool = False
 
 
         # setup connections
@@ -120,12 +122,18 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_undercut.clicked.connect(lambda: self._run_workflow(workflow="undercut"))
         self.pushButton_run_setup_autolamella.clicked.connect(lambda: self._run_workflow(workflow="setup-lamella"))
 
+        self.pushButton_stop_workflow_thread.clicked.connect(self._stop_workflow_thread)
+        self.pushButton_stop_workflow_thread.setVisible(False)
+
         self.pushButton_run_waffle_trench.setVisible(False)
         self.pushButton_run_autolamella.setVisible(False)
         self.pushButton_run_waffle_undercut.setVisible(False)
         self.pushButton_run_setup_autolamella.setVisible(False)
 
         self.pushButton_update_protocol.clicked.connect(self.export_protocol_ui)
+
+        self.checkBox_show_lamella_in_view.setChecked(True)
+        self.checkBox_show_lamella_in_view.stateChanged.connect(self.update_lamella_ui) 
   
         # system widget
         self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
@@ -158,68 +166,142 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # comboboxes
         self.comboBox_method.addItems(cfg.__AUTOLAMELLA_METHODS__)
-        self.comboBox_stress_relief.addItems(["Notch","Microexpansion"]) # TODO: dont make this an option, just base it off the method
-        self.comboBox_alignment_with.addItems(["Fiducial", "No Fiducial"])
+        self.comboBox_method.currentIndexChanged.connect(lambda: self.update_protocol_ui(False))
 
-    def update_protocol_ui(self):
+    def update_protocol_ui(self, _load: bool=True):
 
-        if self._PROTOCOL_LOADED is False:
+        if not self._PROTOCOL_LOADED or self._UPDATING_PROTOCOL_UI:
             return
+
+        self._UPDATING_PROTOCOL_UI = True
         
-        self.lineEdit_name.setText(self.settings.protocol["name"])
+        if _load:
+            method = self.settings.protocol["method"]
+            self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title())) # TODO: coerce this to be a supported method, alert the user if not
+        else:
+            method = self.comboBox_method.currentText().lower()
 
-        self.beamshift_attempts.setValue(self.settings.protocol["lamella"]["alignment_attempts"])
+        self.lineEdit_name.setText(self.settings.protocol.get("name", "autolamella-protocol"))
 
-        self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["undercut"]["tilt_angle"])
-        self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["undercut"]["tilt_angle_step"])
+        # options
+        self.beamshift_attempts.setValue(self.settings.protocol["options"].get("alignment_attempts", 3))
+        self.checkBox_align_at_milling_current.setChecked(self.settings.protocol["options"].get("alignment_at_milling_current", True))
 
-        self.comboBox_stress_relief.setCurrentIndex(0) if self.settings.protocol["notch"]["enabled"] else self.comboBox_stress_relief.setCurrentIndex(1)
-        
-        method = self.settings.protocol["method"]
-        self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title())) # TODO: coerce this to be a supported method, alert the user if not
-
-        self.comboBox_alignment_with.setCurrentIndex(0) if self.settings.protocol["fiducial"]["enabled"] else self.comboBox_alignment_with.setCurrentIndex(1)
+        self.checkBox_take_final_reference_images.setChecked(self.settings.protocol["options"].get("take_final_reference_images", True))
+        self.checkBox_take_final_high_quality_reference.setChecked(self.settings.protocol["options"].get("take_final_high_quality_reference_images", False))
 
         # supervision
+        self.checkBox_setup.setChecked(self.settings.protocol["options"]["supervise"].get("setup_lamella", True))
+        self.checkBox_supervise_mill_rough.setChecked(self.settings.protocol["options"]["supervise"].get("mill_rough", True))
+        self.checkBox_supervise_mill_polishing.setChecked(self.settings.protocol["options"]["supervise"].get("mill_polishing", True))
 
-        self.checkBox_trench.setChecked(self.settings.protocol["options"]["supervise"]["trench"])
-        self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"]["undercut"])
-        self.checkBox_setup.setChecked(self.settings.protocol["options"]["supervise"]["setup_lamella"])
-        self.checkBox_features.setChecked(self.settings.protocol["options"]["supervise"]["features"])
-        self.checkBox_supervise_mill_rough.setChecked(self.settings.protocol["options"]["supervise"]["mill_rough"])
-        self.checkBox_supervise_mill_regular.setChecked(self.settings.protocol["options"]["supervise"]["mill_regular"])
-        self.checkBox_supervise_mill_polishing.setChecked(self.settings.protocol["options"]["supervise"]["mill_polishing"])
+        # WAFFLE ONLY
+        _WAFFLE_METHOD = method == "autolamella-waffle"
+        if _WAFFLE_METHOD:
+            # supervision
+            self.checkBox_trench.setChecked(self.settings.protocol["options"]["supervise"].get("trench", True))
+            self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"].get("undercut", True))
 
-        # machine learning
-        self.lineEdit_ml_checkpoint.setText(self.settings.protocol["ml"]["checkpoint"])
-        self.lineEdit_ml_encoder.setText(self.settings.protocol["ml"]["encoder"])
+            # machine learning
+            self.lineEdit_ml_checkpoint.setText(self.settings.protocol.get("ml", {}).get("checkpoint", "autolamella-05-34.pt"))
+            self.lineEdit_ml_encoder.setText(self.settings.protocol.get("ml", {}).get("encoder", "resnet34"))
+            self.spinBox_ml_num_classes.setValue(self.settings.protocol.get("ml", {}).get("num_classes", 3))  
 
+            # undercut
+            self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol.get("undercut", {}).get("tilt_angle", -5))
+            self.doubleSpinBox_undercut_step.setValue(self.settings.protocol.get("undercut", {}).get("tilt_angle_step", 2))
+        
+        self.checkBox_trench.setVisible(_WAFFLE_METHOD)
+        self.checkBox_undercut.setVisible(_WAFFLE_METHOD)
+
+        self.label_ml_header.setVisible(_WAFFLE_METHOD)
+        self.label_ml_checkpoint.setVisible(_WAFFLE_METHOD)
+        self.label_ml_num_classes.setVisible(_WAFFLE_METHOD)
+        self.label_ml_encoder.setVisible(_WAFFLE_METHOD)
+        self.lineEdit_ml_checkpoint.setVisible(_WAFFLE_METHOD)
+        self.lineEdit_ml_encoder.setVisible(_WAFFLE_METHOD)
+        self.spinBox_ml_num_classes.setVisible(_WAFFLE_METHOD)
+
+        self.doubleSpinBox_undercut_tilt.setVisible(_WAFFLE_METHOD)
+        self.doubleSpinBox_undercut_step.setVisible(_WAFFLE_METHOD)
+        self.label_protocol_undercut_tilt_angle.setVisible(_WAFFLE_METHOD)
+        self.label_protocol_undercut_tilt_step.setVisible(_WAFFLE_METHOD)
+
+
+        # autoliftout components
+        _AUTOLIFTOUT_METHOD = "autoliftout" in method
+        self.checkBox_options_confirm_next_stage.setVisible(_AUTOLIFTOUT_METHOD)
+        self.label_options_lamella_start_position.setVisible(_AUTOLIFTOUT_METHOD)
+        self.label_options_liftout_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
+        self.label_options_landing_start_position.setVisible(_AUTOLIFTOUT_METHOD)
+        self.label_options_landing_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
+        self.comboBox_options_lamella_start_position.setVisible(_AUTOLIFTOUT_METHOD)
+        self.comboBox_options_liftout_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
+        self.comboBox_options_landing_start_position.setVisible(_AUTOLIFTOUT_METHOD)
+        self.comboBox_options_landing_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
+        self.checkBox_supervise_liftout.setVisible(_AUTOLIFTOUT_METHOD)
+        self.checkBox_supervise_landing.setVisible(_AUTOLIFTOUT_METHOD)
+        if _AUTOLIFTOUT_METHOD:
+            self.checkBox_options_confirm_next_stage.setChecked(self.settings.protocol["options"].get("confirm_next_stage", True))
+            self.comboBox_options_liftout_joining_method.setCurrentText(self.settings.protocol["options"].get("liftout_joining_method", "None"))
+            self.comboBox_options_landing_joining_method.setCurrentText(self.settings.protocol["options"].get("landing_joining_method", "Weld"))
+
+            self.comboBox_options_lamella_start_position.setCurrentText(self.settings.protocol["options"]["lamella_start_position"])
+            self.comboBox_options_landing_start_position.setCurrentText(self.settings.protocol["options"]["landing_start_position"])
+
+            # supervision
+            self.checkBox_supervise_liftout.setChecked(bool(self.settings.protocol["options"]["supervise"].get("liftout", True)))
+            self.checkBox_supervise_landing.setChecked(bool(self.settings.protocol["options"]["supervise"].get("landing", True)))
+
+        self._UPDATING_PROTOCOL_UI = False
 
     def export_protocol_ui(self):
 
         if self._PROTOCOL_LOADED is False:
             return
         self.settings.protocol["name"] = self.lineEdit_name.text()
-        self.settings.protocol["lamella"]["alignment_attempts"] = int(self.beamshift_attempts.value())
-        self.settings.protocol["undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
-        self.settings.protocol["undercut"]["tilt_angle_step"] = int(self.doubleSpinBox_undercut_step.value())
-        self.settings.protocol["notch"]["enabled"] = bool(self.comboBox_stress_relief.currentIndex() == 0)
-        self.settings.protocol["fiducial"]["enabled"] = bool(self.comboBox_alignment_with.currentIndex() == 0)
         self.settings.protocol["method"] = self.comboBox_method.currentText().lower()
+        
+        # options
+        self.settings.protocol["options"]["alignment_attempts"] = int(self.beamshift_attempts.value())
+        self.settings.protocol["options"]["alignment_at_milling_current"] = self.checkBox_align_at_milling_current.isChecked()
+        self.settings.protocol["options"]["take_final_reference_images"] = self.checkBox_take_final_reference_images.isChecked()
+        self.settings.protocol["options"]["take_final_high_quality_reference_images"] = self.checkBox_take_final_high_quality_reference.isChecked()
 
         # supervision
-
-        self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
-        self.settings.protocol["options"]["supervise"]["undercut"] = self.checkBox_undercut.isChecked()
         self.settings.protocol["options"]["supervise"]["setup_lamella"] = self.checkBox_setup.isChecked()
-        self.settings.protocol["options"]["supervise"]["features"] = self.checkBox_features.isChecked()
         self.settings.protocol["options"]["supervise"]["mill_rough"] = self.checkBox_supervise_mill_rough.isChecked()
-        self.settings.protocol["options"]["supervise"]["mill_regular"] = self.checkBox_supervise_mill_regular.isChecked()
         self.settings.protocol["options"]["supervise"]["mill_polishing"] = self.checkBox_supervise_mill_polishing.isChecked()
 
-        # machine learning
-        self.settings.protocol["ml"]["checkpoint"] = self.lineEdit_ml_checkpoint.text()
-        self.settings.protocol["ml"]["encoder"] = self.lineEdit_ml_encoder.text()
+        if self.settings.protocol["method"] in ["autolamella-waffle", "autoliftout-default", "autoliftout-serial-liftout"]:
+
+            # supervision
+            self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
+            self.settings.protocol["options"]["supervise"]["undercut"] = self.checkBox_undercut.isChecked()
+
+            # machine learning
+            self.settings.protocol["ml"]["checkpoint"] = self.lineEdit_ml_checkpoint.text()
+            self.settings.protocol["ml"]["encoder"] = self.lineEdit_ml_encoder.text()
+            self.settings.protocol["ml"]["num_classes"] = self.spinBox_ml_num_classes.value()
+
+            # undercut
+            self.settings.protocol["undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
+            self.settings.protocol["undercut"]["tilt_angle_step"] = int(self.doubleSpinBox_undercut_step.value())
+
+        if self.settings.protocol["method"] in ["autoliftout-default", "autoliftout-serial-liftout"]:
+            
+            # supervision
+            self.settings.protocol["options"]["confirm_next_stage"] = self.checkBox_options_confirm_next_stage.isChecked()
+            self.settings.protocol["options"]["supervise"]["liftout"] = self.checkBox_supervise_liftout.isChecked()
+            self.settings.protocol["options"]["supervise"]["landing"] = self.checkBox_supervise_landing.isChecked()
+
+            # joining methods
+            self.settings.protocol["options"]["liftout_joining_method"] = self.comboBox_options_liftout_joining_method.currentText()
+            self.settings.protocol["options"]["landing_joining_method"] = self.comboBox_options_landing_joining_method.currentText()
+
+            # start positions
+            self.settings.protocol["options"]["lamella_start_position"] = self.comboBox_options_lamella_start_position.currentText()
+            self.settings.protocol["options"]["landing_start_position"] = self.comboBox_options_landing_start_position.currentText()
 
         if self.sender() == self.actionSave_Protocol:
             path = fui._get_save_file_ui(msg='Save protocol',
@@ -276,7 +358,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             if os.path.exists(PROTOCOL_PATH):
                 self.settings.protocol = utils.load_protocol(protocol_path=PROTOCOL_PATH)
                 self._PROTOCOL_LOADED = True
-                self.update_protocol_ui()
+                self.update_protocol_ui(_load=True)
 
         self._update_lamella_combobox()
         self.update_ui()
@@ -348,7 +430,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self._microscope_ui_loaded = True
             self.milling_widget.milling_position_changed.connect(self._update_milling_position)
             self.milling_widget._milling_finished.connect(self._milling_finished)
-
+            self.image_widget.picture_signal.connect(self.update_lamella_ui)
         else:
             if self.image_widget is None:
                 return
@@ -485,6 +567,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         _protocol_loaded = bool(self.settings is not None) and self._PROTOCOL_LOADED
         _lamella_selected = bool(self.experiment.positions) if _experiment_loaded else False
 
+        # force order: connect -> experiment -> protocol
+        self.tabWidget.setTabVisible(0, _microscope_connected)
+        self.tabWidget.setTabVisible(1, _protocol_loaded)
+        self.actionNew_Experiment.setVisible(_microscope_connected)
+
         # setup experiment -> connect to microscope -> select lamella -> run autolamella
         self.pushButton_fail_lamella.setVisible(_lamella_selected)
         self.pushButton_revert_stage.setVisible(_lamella_selected)
@@ -541,10 +628,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _READY_UNDERCUT = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
             _READY_LAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
             _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
-            _READY_FEATURES = _counter[AutoLamellaWaffleStage.MillFeatures.name] > 0
             _READY_ROUGH = _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0
-            _READY_REGULAR = _counter[AutoLamellaWaffleStage.MillRegularCut.name] > 0
-            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_FEATURES or _READY_ROUGH or _READY_REGULAR
+            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_ROUGH
 
             _ENABLE_TRENCH = _WAFFLE_METHOD and _READY_TRENCH
             _ENABLE_UNDERCUT = _WAFFLE_METHOD and _READY_UNDERCUT
@@ -561,15 +646,25 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_run_autolamella.setVisible(True)
             self.pushButton_run_autolamella.setEnabled(_ENABLE_AUTOLAMELLA)
 
-
             self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
+            if self._WORKFLOW_RUNNING:
+                self.pushButton_run_waffle_trench.setEnabled(False)
+                self.pushButton_run_waffle_undercut.setEnabled(False)
+                self.pushButton_run_setup_autolamella.setEnabled(False)
+                self.pushButton_run_autolamella.setEnabled(False)
+                self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+
         # Current Lamella Status
         if _lamella_selected:
             self.update_lamella_ui()
+        self.checkBox_show_lamella_in_view.setVisible(_lamella_selected)
 
         # instructions# TODO: update with autolamella instructions
         INSTRUCTIONS = {"NOT_CONNECTED": "Please connect to the microscope (System -> Connect to Microscope).",
@@ -641,6 +736,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self.experiment.positions == []:
             return      
 
+        if self._WORKFLOW_RUNNING:
+            return
+
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
 
@@ -668,6 +766,45 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_save_position.setEnabled(False)
                 self.milling_widget._PATTERN_IS_MOVEABLE = True
 
+            if self.checkBox_show_lamella_in_view.isChecked():
+                lamellas = []
+                text = []
+                positions = deepcopy(self.experiment.positions)
+
+                # TODO: we can wrap this up a bit, for re-use
+                if self.image_widget.ib_image is not None:
+                    fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
+                    for lamella in positions:
+                        if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
+                        else:
+                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
+                    
+                        current_position = lamella.state.microscope_state.absolute_position
+                        lamella_position = self.microscope._calculate_new_position( 
+                                        settings=self.settings, 
+                                        dx=lamella_centre.x, dy=lamella_centre.y, 
+                                        beam_type=BeamType.ION, 
+                                        base_position=current_position)  
+                        lamella_position.name = lamella._petname
+                        lamellas.append(lamella_position)
+
+                from fibsem.imaging._tile import _reproject_positions
+                points = _reproject_positions(self.image_widget.ib_image, lamellas, _bound = True)
+                for i in range(len(points)):
+                    temp = Point(x= points[i].y, y =points[i].x)
+                    temp.y += self.image_widget.eb_image.data.shape[1] #napari dimensions are swapped
+                    temp.name = points[i].name
+                    points[i] = temp
+                    text.append(points[i].name)
+                position_text = {
+                    "string": text,
+                    "color": "lime",
+                    "translation": np.array([-25, 0])
+                }
+                self.viewer.add_points(points, text=position_text, size=10, symbol="x", face_color="lime", edge_color="white", name="lamella_positions")
+            else:
+                fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
         # update the milling widget
         if self._WORKFLOW_RUNNING:
             self.milling_widget._PATTERN_IS_MOVEABLE = True
@@ -698,7 +835,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     lamella_position = Point.__from_dict__(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
                     stages = patterning._get_milling_stages("lamella", protocol, lamella_position)
                     
-                    _feature_name = "notch" if self.settings.protocol["notch"]["enabled"]  else "microexpansion"
+                    _feature_name = "notch" if method == "autolamella-waffle"  else "microexpansion"
                     protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol
                     
                     NOTCH_H_OFFSET = 0.5e-6                     
@@ -774,7 +911,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.settings.protocol = utils.load_protocol(protocol_path=PATH)
         self._PROTOCOL_LOADED = True
-        self.update_protocol_ui()
+        self.update_protocol_ui(_load=True)
         napari.utils.notifications.show_info(
             f"Loaded Protocol from {os.path.basename(PATH)}"
         )
@@ -839,7 +976,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # load protocol
         self.settings.protocol = utils.load_protocol(protocol_path=DEV_PROTOCOL_PATH)
         self._PROTOCOL_LOADED = True
-        self.update_protocol_ui()
+        self.update_protocol_ui(_load=True)
 
         self.update_ui()
         return 
@@ -1008,7 +1145,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.experiment.positions[idx].protocol["lamella"]["point"] = stages[0].pattern.point.__to_dict__()
 
             # feature
-            _feature_name = "notch" if self.settings.protocol["notch"]["enabled"] else "microexpansion"
+            _feature_name = "notch" if method == "autolamella-waffle" else "microexpansion"
             self.experiment.positions[idx].protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella]))
             self.experiment.positions[idx].protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.__to_dict__()
 
@@ -1029,12 +1166,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self.det_widget is not None:
             self.det_widget.confirm_button_clicked()
 
+    def _stop_workflow_thread(self):
+        self._ABORT_THREAD = True
+        napari.utils.notifications.show_error("Abort requested")
+
     def _run_workflow(self, workflow: str) -> None:
         try:
             self.milling_widget.milling_position_changed.disconnect()
         except:
             pass 
-
+        
         self.worker = self._threaded_worker(
             microscope=self.microscope, 
             settings=self.settings, 
@@ -1042,19 +1183,32 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             workflow=workflow,
         )
         self.worker.finished.connect(self._workflow_finished)
+        self.worker.errored.connect(self._workflow_aborted)
         self.worker.start()
 
+    def _workflow_aborted(self):
+        logging.info(f'Workflow aborted.')
+        self._WORKFLOW_RUNNING = False
+        self._ABORT_THREAD = False
+
+        for lamella in self.experiment.positions:
+            if lamella.state.stage is not  lamella.history[-1].stage:
+                lamella.state = deepcopy(lamella.history[-1])
+                logging.info("restoring state for {}".format(lamella.info))
+        
 
     def _workflow_finished(self):
         logging.info(f'Workflow finished.')
         self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
         self.tabWidget.setCurrentIndex(0)
+        self.pushButton_stop_workflow_thread.setVisible(False)
 
         # clear the image settings save settings etc
         self.image_widget.checkBox_image_save_image.setChecked(False)
         self.image_widget.lineEdit_image_path.setText(self.experiment.path)
         self.image_widget.lineEdit_image_label.setText("default-image")
+        self.update_ui()
 
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
@@ -1101,11 +1255,23 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     @thread_worker
     def _threaded_worker(self, microscope: FibsemMicroscope, settings: MicroscopeSettings, experiment: Experiment, workflow: str="trench"):
-        
+        self._ABORT_THREAD = False
         self._WORKFLOW_RUNNING = True
         self.milling_widget._PATTERN_IS_MOVEABLE = True
         self.milling_widget._remove_all_stages()
         self.WAITING_FOR_USER_INTERACTION = False
+        fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
+        self.pushButton_run_waffle_trench.setEnabled(False)
+        self.pushButton_run_waffle_undercut.setEnabled(False)
+        self.pushButton_run_setup_autolamella.setEnabled(False)
+        self.pushButton_run_autolamella.setEnabled(False)
+        self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+
+        self.pushButton_stop_workflow_thread.setVisible(True)
+        self.pushButton_stop_workflow_thread.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
 
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
