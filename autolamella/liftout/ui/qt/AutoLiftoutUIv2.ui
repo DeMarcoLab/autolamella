@@ -452,6 +452,8 @@
      <string>Tools</string>
     </property>
     <addaction name="actionCryo_Sputter"/>
+    <addaction name="actionCalibrate_Manipulator"/>
+    <addaction name="actionPrepare_Manipulator"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuTools"/>
@@ -490,6 +492,16 @@
   <action name="actionCryo_Sputter">
    <property name="text">
     <string>Cryo Sputter</string>
+   </property>
+  </action>
+  <action name="actionCalibrate_Manipulator">
+   <property name="text">
+    <string>Calibrate Manipulator</string>
+   </property>
+  </action>
+  <action name="actionPrepare_Manipulator">
+   <property name="text">
+    <string>Prepare Manipulator</string>
    </property>
   </action>
  </widget>

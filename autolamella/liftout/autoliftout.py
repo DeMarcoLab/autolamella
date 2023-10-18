@@ -1219,36 +1219,30 @@ def validate_needle_insertion(
 
 
 
+# 
 
 
-# TODO: MOVE TO FIBSEM
-def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->tuple[FibsemRectangle, bool]:
-    pixelsize = image.metadata.pixel_size.x
-    
-    fiducial_centre.y = -fiducial_centre.y
-    fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
-        fiducial_centre, pixelsize
-    )
+def _prepare_manipulator_autoliftout(microscope: FibsemMicroscope, settings: MicroscopeSettings, parent_ui: AutoLiftoutUIv2):
 
-    rcx = fiducial_centre_px.x / image.metadata.image_settings.resolution[0] + 0.5
-    rcy = fiducial_centre_px.y / image.metadata.image_settings.resolution[1] + 0.5
+    # tilt stage flat
 
-    fiducial_length_px = (
-        conversions.convert_metres_to_pixels(fiducial_length, pixelsize) * 1.5 # SCALE_FACTOR
-    )
-    h_offset = fiducial_length_px / image.metadata.image_settings.resolution[0] / 2
-    v_offset = fiducial_length_px / image.metadata.image_settings.resolution[1] / 2
+    # move needle to the centre
 
-    left = rcx - h_offset
-    top = rcy - v_offset
-    width = 2 * h_offset
-    height = 2 * v_offset
+    # detect tip
 
-    if left < 0 or (left + width) > 1 or top < 0 or (top + height) > 1:
-        flag = True
-    else:
-        flag = False
+    # create rectangle pattern at tip
 
-    fiducial_area = FibsemRectangle(left, top, width, height)
+    # mill
 
-    return fiducial_area, flag
+    return
+
+
+def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: MicroscopeSettings, parent_ui: AutoLiftoutUIv2):
+
+    return 
+
+PREPARE_MANIPULATOR_WORKFLOW = {
+    "autoliftout": _prepare_manipulator_autoliftout,
+    "serial-lfitout": _prepare_manipulator_serial_liftout
+}
+

@@ -102,7 +102,9 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
         self.actionSave_Protocol.triggered.connect(self.update_protocol_from_ui)
         self.actionCryo_Sputter.triggered.connect(self._cryo_sputter)
-        
+        self.actionCalibrate_Manipulator.triggered.connect(lambda: self._run_workflow(workflow="calibrate-manipulator"))
+        self.actionPrepare_Manipulator.triggered.connect(lambda: self._run_workflow(workflow="prepare-manipulator"))
+
         # protocol
         self.pushButton_update_protocol.clicked.connect(self.update_protocol_from_ui)
         self.comboBox_protocol_method.addItems(cfg.__AUTOLIFTOUT_METHODS__)
@@ -188,6 +190,8 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
         self.actionSave_Protocol.setVisible(_protocol_loaded)
         self.actionCryo_Sputter.setVisible(_protocol_loaded)
+        self.actionCalibrate_Manipulator.setVisible(_protocol_loaded)
+        self.actionPrepare_Manipulator.setVisible(_protocol_loaded)
 
         # workflow buttons
         _SETUP_ENABLED = _microscope_connected and _protocol_loaded
@@ -502,6 +506,28 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         napari.utils.notifications.show_info(
             f"Experiment {self.experiment.name} loaded."
         )
+
+        # TODO: enable this
+        # register metadata
+        # if fcfg._REGISTER_METADATA:
+        #     import autolamella #NB: microscope needs to be connected beforehand
+        #     futils._register_metadata(
+        #         microscope=self.microscope, 
+        #         application_software="autolamella",
+        #         application_software_version=autolamella.__version__,
+        #         experiment_name=self.experiment.name,
+        #         experiment_method = "autoliftout") # TODO: add method to experiment
+
+        # # automatically re-load protocol if available
+        if not new_experiment and self.settings is not None:
+            # try to load protocol from file
+            PROTOCOL_PATH = os.path.join(self.experiment.path, "protocol.yaml")
+            if os.path.exists(PROTOCOL_PATH):
+                self.settings.protocol = futils.load_protocol(protocol_path=PROTOCOL_PATH)
+                self._PROTOCOL_LOADED = True
+                self.update_ui_from_protocol(self.settings.protocol)
+
+
         self.update_ui()
 
     def load_protocol(self):
@@ -715,6 +741,17 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                 experiment=experiment,
                 parent_ui=self,
             )
+        elif workflow == "calibrate-manipulator":
+            from fibsem import calibration
+            calibration._calibrate_manipulator_thermo(microscope = microscope, settings = settings, parent_ui = self)
+
+            napari.utils.notification.show_info(f"Calibrated Manipulator")
+
+        elif workflow == "prepare-manipulator":
+
+            _METHOD = self.settings.protocol.get("method", "autoliftout-default")
+            napari.utils.notification.show_warning(f"Prepare Manipulator ({_METHOD}) is Not Yet Implemented")
+
         else:
             raise ValueError(f"Unknown workflow: {workflow}")
         
