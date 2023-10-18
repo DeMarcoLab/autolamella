@@ -1,0 +1,516 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../walkthrough/">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.6">
+    
+    
+      
+        <title>AutoLamella Protocol - AutoLamella</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.35e1ed30.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#autolamella-protocol" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="AutoLamella" class="md-header__button md-logo" aria-label="AutoLamella" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AutoLamella
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              AutoLamella Protocol
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="AutoLamella" class="md-nav__button md-logo" aria-label="AutoLamella" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    AutoLamella
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INSTALLATION/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../walkthrough/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Walkthrough
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    AutoLamella Protocol
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    AutoLamella Protocol
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#waffle-method" class="md-nav__link">
+    Waffle Method
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-new-lamella-protocol-format" class="md-nav__link">
+    The new lamella protocol format
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-convert-to-the-new-protocol-format" class="md-nav__link">
+    How to convert to the new protocol format
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#waffle-method" class="md-nav__link">
+    Waffle Method
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-new-lamella-protocol-format" class="md-nav__link">
+    The new lamella protocol format
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-convert-to-the-new-protocol-format" class="md-nav__link">
+    How to convert to the new protocol format
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+<h1 id="autolamella-protocol">AutoLamella Protocol</h1>
+<p>The new AutoLamella program utilises the OpenFIBSEM code package to build a more streamlined and robust automated lamella workflow that includes a new user interface. This updated AutoLamella program also includes a more intuitive system for the lamella protocol. AutoLamella protocol's should now be easier to make, without requiring any calculations. </p>
+<h2 id="waffle-method">Waffle Method</h2>
+<p>The waffle method is a new method of milling lamellae that allows for undercuts to be performed. The waffle method involves milling trenches in a way to allow for undercuts to be performed. Once the trenches are milled, the undercuts are performed and the lamellae are milled in the same fashion as the default method.</p>
+<p>The lamella height and width are specified in the protocol, as well as the height and width of the rectangles that make up the waffle pattern. The protocol also includes the milling current/preset to be used when milling, as well as the size ratio of the trenches.</p>
+<p>The undercuts are defined as rectangle patterns of a given height and width. The tilt angles are also specified. </p>
+<h2 id="the-new-lamella-protocol-format">The new lamella protocol format</h2>
+<p><img alt="New Protocol Format" src="../img/NewProtocolFormat.bmp" /></p>
+<p>Each of the colours indicates a different protocol stage. In this case there are three: Rough Cut in yellow, Regular Cut in blue, and Polishing Cut in magenta. Additionally the optional microexpansion joints are indicated in yellow as they are milled during the Rough Cut stage if the user opts to use them. </p>
+<p>The Lamella width and height are indicated at the centre, and must be input for each protocol stage. The placement of each trench is based on two factors: the offset, and the trench height. For example, the Polishing Cut (magenta) has an offset of 0 as it is situated directly above and below the Lamella, and in our default protocol example, has a trench height of 1e-6m. The Regular Cut (blue) has an offset of 1e-6m, and a trench height of 2e-6m. Finally, the offset of the Rough Cut (yellow) is the cumulative trench height of the previous stages, 3e-6m; and has a trench height of 10e-6m. It should be mentioned that in practice the order of the protocol stages would be the reverse, as the stages are milled sequentially, it is just easier to explain in this manner. Additionally, if you would like overlap between stages, the offset of the stage simply needs to be less than the cumulative trench heights of the other stages.</p>
+<p>As previously mentioned the microexpansion joints are optional and can be enabled/disabled in within the UI. If they are enabled they must have the height, width, and distance from the Lamella within the protocol. The distance does NOT include the Lamella width itself, and is accounted for when milling.</p>
+<p>If running the waffle method, a notch is used instead of microexpansion joints. The protocol specifies all the milling settings, as well as the dimensions of the patterns: height and width for the vertical rectangles and for the horizontal ones. The distance between the rectangles is also specified. The distance is the distance between the centre of the notch and the centre of the lamella, and does not include the width of the rectangles themselves. The distance is accounted for when milling.</p>
+<p>Optionally, a fiducal mark can be used for beam alignment during the lamella milling process.
+The fiducial requires the width and height of a rectangle, which will then be rotated +/- 45 degrees to create the 'X'.  </p>
+<p>Additionally, the number of attempts the program should make when attempting to align the imaging beam to the fiducial should be stored within the Lamella section of the protocol. You can also specify whether to align at the imaging current or the milling current of each stage.</p>
+<p>Finally, here is what a completed protocol in the new format might look like as a .yaml file:</p>
+<pre><code class="language-yaml">name: autolamella_demo
+application_file: Si # Thermo only
+method: waffle
+ml: # machine learning parameters 
+    encoder: resnet34
+    num_classes: 3
+    checkpoint: model4.pt #model4.pt
+options:
+    return_to_eb_after_undercut: True
+    alignment_attempts: 3
+    supervise:
+        features: false
+        lamella: true
+        setup_lamella: true
+        trench: true
+        undercut: true
+trench:
+    application_file: autolamella
+    cleaning_cross_section: false
+    depth: 1.0e-06
+    hfw: 0.00018
+    lamella_height: 2.5e-05
+    lamella_width: 2.2e-05
+    milling_current: 7.6e-09
+    offset: 0.0
+    preset: 30 keV; 2.5 nA
+    size_ratio: 2.0
+    trench_height: 3.2e-05
+undercut:
+    application_file: autolamella
+    cleaning_cross_section: false
+    depth: 1.0e-06
+    height: 8.0e-06
+    hfw: 8.0e-05
+    milling_current: 7.6e-09
+    preset: 30 keV; 2.5 nA
+    tilt_angle: -5.0
+    tilt_angle_step: 2.0
+    width: 22.0e-6
+fiducial:
+  application_file: autolamella
+  cleaning_cross_section: false
+  depth: 1.0e-06
+  enabled: true
+  height: 1.0e-05
+  hfw: 8.0e-05
+  milling_current: 2.0e-09
+  passes: null
+  preset: 30 keV; 20 nA
+  rotation: 45
+  width: 1.0e-06
+lamella:
+    lamella_height: 8.0e-07
+    lamella_width: 1.0e-05
+    stages:
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 2.0e-06
+        hfw: 8.0e-05
+        lamella_height: 8.0e-07
+        lamella_width: 14.0e-6
+        milling_current: 2.0e-09
+        offset: 2.0e-06
+        preset: 30 keV; 2.5 nA
+        size_ratio: 2.0
+        trench_height: 1.0e-05
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 1.0e-06
+        hfw: 8.0e-05
+        lamella_height: 8.0e-07
+        lamella_width: 1.4e-05
+        milling_current: 7.4e-10
+        offset: 5.0e-07
+        preset: 30 keV; 1 nA
+        size_ratio: 1.0
+        trench_height: 2.0e-06
+    -   application_file: autolamella
+        cleaning_cross_section: true
+        depth: 4.0e-07
+        hfw: 8.0e-05
+        lamella_height: 6.0e-07
+        lamella_width: 1.4e-05
+        milling_current: 6.0e-11
+        offset: 0.0
+        preset: 30 keV; 50 pA
+        size_ratio: 1.0
+        trench_height: 5.0e-07
+microexpansion:
+  application_file: autolamella
+  cleaning_cross_section: false
+  depth: 1.0e-06
+  distance: 1.0e-05
+  height: 1.8e-05
+  hfw: 200e-6
+  lamella_width: 1.0e-05
+  milling_current: 2.0e-09
+  preset: 30 keV; 2.5 nA
+  width: 5.0e-07
+</code></pre>
+<h2 id="how-to-convert-to-the-new-protocol-format">How to convert to the new protocol format</h2>
+<p>A tool has been created to automatically convert an old protocol file to the new format. </p>
+<p>Simply navigate to the autolamella folder that contains protocol_converter.py in a terminal and write the following:</p>
+<pre><code class="language-shellscript">python protocol_converter.py(&quot;path/old_protocol.yaml&quot;, &quot;path/new_protocol.yaml&quot;)
+</code></pre>
+<p>The first argument refers to the curent file path of the old protocol yaml file. The second location indicates the file location you would like the converted protocol yaml file saved to.</p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.aecac24b.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,493 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.6">
+    
+    
+      
+        <title>Extras - AutoLamella</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.35e1ed30.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#installing-microscope-hardware-apis" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="AutoLamella" class="md-header__button md-logo" aria-label="AutoLamella" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AutoLamella
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Extras
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="AutoLamella" class="md-nav__button md-logo" aria-label="AutoLamella" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    AutoLamella
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../INSTALLATION/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../walkthrough/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Walkthrough
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../protocol/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AutoLamella Protocol
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installing-microscope-hardware-apis" class="md-nav__link">
+    Installing Microscope Hardware APIs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installing-autoscript" class="md-nav__link">
+    Installing Autoscript
+  </a>
+  
+    <nav class="md-nav" aria-label="Installing Autoscript">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add-the-autoscript-python-packages-to-your-site-packages" class="md-nav__link">
+    Add the autoscript python packages to your site-packages
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#having-problems" class="md-nav__link">
+    Having problems?
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installing-tescanautomation" class="md-nav__link">
+    Installing Tescanautomation
+  </a>
+  
+    <nav class="md-nav" aria-label="Installing Tescanautomation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    Prerequisites
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#installing-the-sdk" class="md-nav__link">
+    Installing the SDK
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#common-issue-with-python-interpreter" class="md-nav__link">
+    Common Issue with Python Interpreter
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checking-install" class="md-nav__link">
+    Checking Install
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#desktop-shortcut" class="md-nav__link">
+    Desktop Shortcut
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>Extras</h1>
+
+<h2 id="installing-microscope-hardware-apis">Installing Microscope Hardware APIs</h2>
+<h2 id="installing-autoscript">Installing Autoscript</h2>
+<p>Autoscript provides an API (application programming interface) for scripting
+control of compatible FEI microscope systems.
+This is a commercial product by Thermo Fisher FEI, please visit their website
+at https://www.thermofisher.com/au/en/home/electron-microscopy.html for information on pricing and installation.</p>
+<p>We use Autoscript version 4.6.+</p>
+<p>The version numbers of the python packages Autoscript installs were:
+* autoscript-core 5.12.0
+* autoscript-sdb-microscope-client 4.6.0
+* autoscript-sdb-microscope-client-tests 4.6.0
+* autoscript-toolkit 4.6.0
+* thermoscientific-logging 5.12.0</p>
+<h4 id="add-the-autoscript-python-packages-to-your-site-packages">Add the autoscript python packages to your <code>site-packages</code></h4>
+<p>To add the AutoScript python packages to your new conda environment, follow these three steps:</p>
+<ol>
+<li>Find the python environment that was created with your AutoScript installation.
+Typically, you can expect the environment is named 'Autoscript', and its installed packages should be found at:
+<code>C:\Program Files\Python35\envs\AutoScript\Lib\site-packages\</code></li>
+</ol>
+<p><em><strong>Troubleshooting:</strong> If you're having trouble finding the location AutoScript chose to install its python packages into,</em>
+<em>you can open the </em>default terminal<em> on your machine (eg: <code>cmd</code> for Windows) and type <code>where python</code> (Windows) or <code>which python</code> (Unix).</em>
+<em>The result will be something like <code>C:\Program Files\Python35\envs\AutoScript\python.exe</code>.</em>
+<em>Navigate to the environment location (in the example here, that's <code>C:\Program Files\Python35\envs\AutoScript\</code> *
+</em>then change directories into <code>Lib</code>, and then the <code>site-packages</code> directory. This is where the python packages live.*</p>
+<ol>
+<li>Find the conda environment location you just made called <code>fibsem</code>.
+<code>...conda/envs/fibsem/Lib/site-packages/</code></li>
+</ol>
+<p><em><strong>Troubleshooting:</strong> If you're having trouble finding the conda environment location for <code>fibsem</code></em>
+<em>you can open the </em>Anaconda terminal<em> on your machine and type <code>where python</code> (Windows) or <code>which python</code> (Unix).</em>
+<em>The result will be something like <code>C:\Users\yourusername\.conda\envs\fibsem\python.exe</code></em>
+<em>Navigate to the environment location (in the example here, that's <code>C:\Users\yourusername\.conda\envs\fibsem\</code> *
+</em>then change directories into <code>Lib</code>, and then the <code>site-packages</code> directory.<em>
+</em>This is where you want to add copies of the AutoScript python packages.*</p>
+<ol>
+<li>
+<p>Make a copy of the relevant AutoScript python packages into the conda environment.
+You will need to copy:</p>
+</li>
+<li>
+<p>autoscript_core</p>
+</li>
+<li>autoscript_core-5.12.0.dist-info</li>
+<li>autoscript_sdb_microscope_client</li>
+<li>autoscript_sdb_microscope_client_tests</li>
+<li>autoscript_sdb_microscope_client_tests-4.6.0.dist-info</li>
+<li>autoscript_sdb_microscope_client-4.6.0.dist-info</li>
+<li>autoscript_toolkit</li>
+<li>autoscript_toolkit-4.6.0.dist-info</li>
+<li>thermoscientific_logging</li>
+<li>thermoscientific_logging-5.12.1.dist-info</li>
+</ol>
+<h4 id="having-problems">Having problems?</h4>
+<ul>
+<li>Check to see if Autoscript is correctly installed and configured.</li>
+<li>Check to see if your python environment contains all packages listed in
+the requirements.txt</li>
+<li>Check that when you call python from the terminal, you get the python
+environment containing the dependencies listed above
+(i.e. you are not using a different python environment)</li>
+<li>Try cloning the repository and running the unit tests,
+you may want to try installing from the source code.</li>
+</ul>
+<h2 id="installing-tescanautomation">Installing Tescanautomation</h2>
+<p>Tescanautomation is a hardware API for controlling TESCAN microscopes. This is a commercially available product from TESCAN. The SDK is available in an .exe file format</p>
+<h3 id="prerequisites">Prerequisites</h3>
+<p>Before beginning this install, please ensure the following</p>
+<ul>
+<li>FIBSEM conda environment is installed and setup</li>
+<li>tescan-automation-sdk-install exe file is ready to go</li>
+</ul>
+<h3 id="installing-the-sdk">Installing the SDK</h3>
+<p>Run the installer exe file. When it asks for the python interpreter, select the one that is on the conda environment and proceed with the install.</p>
+<p>The package should now be installed successfully</p>
+<h3 id="common-issue-with-python-interpreter"><strong><em>Common Issue with Python Interpreter</em></strong></h3>
+<p>If the conda python interpreter cannot be selected from the drop down options, proceed with the install and take note of the path of installed python interpreter. </p>
+<p>(If no python interpreter can be found in the drop down, install python 3.9+ seperately and run the installation exe again)</p>
+<p>Once the installation has been completed, navigate to where python is installed on which the SDK has been installed.</p>
+<p>In there, navigate to</p>
+<p><code>...\python\lib\site-packages</code></p>
+<p>from this folder, find and copy the following folders:</p>
+<ul>
+<li>All folders beginning with <code>PySide6</code></li>
+<li>All folders beginning with <code>shiboken</code></li>
+<li>All folders beginning with <code>tescan</code></li>
+</ul>
+<p>Copy these into the python folder that is set up in the conda environment</p>
+<p><code>...\Anaconda3\envs\fibsem\lib\site-packages</code></p>
+<p>The package should now be installed successfully</p>
+<h3 id="checking-install">Checking Install</h3>
+<p>To check if the module has been installed properly and can be imported, run the following python code in FIBSEM:</p>
+<pre><code class="language-python">import sys
+from tescanautomation import Automation
+
+print(&quot;Tescan Imported Successfully&quot;) if &quot;tescanautomation&quot; in sys.modules else print(&quot;Tescan Import was unsuccessful&quot;)
+
+</code></pre>
+<p>If the import or install is unsuccessful, check to see if all the packages have been copied to the right directory. </p>
+<h3 id="desktop-shortcut">Desktop Shortcut</h3>
+<p>To create a desktop shortcut for Autolamella, simply run the shortcut.py file. </p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.aecac24b.min.js"></script>
+      
+    
+  </body>
+</html>
