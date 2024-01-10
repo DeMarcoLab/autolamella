@@ -136,7 +136,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.checkBox_show_lamella_in_view.stateChanged.connect(self.update_lamella_ui) 
   
         # system widget
-        self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
 

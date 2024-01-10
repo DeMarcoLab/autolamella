@@ -92,7 +92,6 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def setup_connections(self):
         # system widget
-        self.system_widget.set_stage_signal.connect(self.set_stage_parameters)
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
 
