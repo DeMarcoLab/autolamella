@@ -641,7 +641,11 @@ def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fidu
 
     return fiducial_area, flag
 
-def _align_lamella_coincident(microscope: FibsemMicroscope, settings: MicroscopeSettings, lamella: Lamella, parent_ui: AutoLamellaUI, validate: bool, hfw: float = fcfg.REFERENCE_HFW_MEDIUM) -> Lamella:
+def _align_lamella_coincident(microscope: FibsemMicroscope, settings: MicroscopeSettings, 
+                              lamella: Lamella, parent_ui: AutoLamellaUI, 
+                              validate: bool, 
+                              hfw: float = fcfg.REFERENCE_HFW_MEDIUM,
+                              features: list = [LamellaCentre()]) -> Lamella:
     """Align the lamella in the electron and ion beams"""
 
     # update status
@@ -655,7 +659,6 @@ def _align_lamella_coincident(microscope: FibsemMicroscope, settings: Microscope
     _set_images_ui(parent_ui, eb_image, ib_image)
 
     # detect
-    features = [LamellaCentre()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.absolute_position)
 
     microscope.stable_move(
@@ -669,7 +672,6 @@ def _align_lamella_coincident(microscope: FibsemMicroscope, settings: Microscope
     settings.image.beam_type = BeamType.ION
     settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
 
-    features = [LamellaCentre()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.absolute_position)
     
     # align vertical
