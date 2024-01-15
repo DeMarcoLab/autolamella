@@ -65,7 +65,7 @@ method: autolamella-waffle
 ml:
     encoder: resnet34
     num_classes: 3
-    checkpoint: autolamella-05-34.pt
+    checkpoint: autolamella-waffle-20240107.pt
 name: autolamella-waffle-scan-rotation-0deg
 notch:
     application_file: autolamella

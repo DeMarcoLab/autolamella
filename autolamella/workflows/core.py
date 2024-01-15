@@ -63,7 +63,8 @@ from autolamella.workflows.ui import (_set_images_ui, _update_status_ui, _valida
 
 # CORE WORKFLOW STEPS
 def log_status_message(lamella: Lamella, step: str):
-    logging.debug(f"STATUS | {lamella._petname} | {lamella.state.stage.name} | {step}")
+    msgd = {"msg": "status", "petname": lamella._petname, "stage": lamella.state.stage.name, "step": step}
+    logging.debug(f"{msgd}")
 
 
 def pass_through_stage(

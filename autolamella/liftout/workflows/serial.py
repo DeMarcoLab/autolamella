@@ -568,8 +568,8 @@ def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positi
 
     print("COUNTER: ", _counter, land_idx)
 
-    lamella_no = max(len(experiment.positions) + 1, 1)
-    lamella = Lamella(experiment.path, lamella_no)
+    num = max(len(experiment.positions) + 1, 1)
+    lamella = Lamella(path=experiment.path, _number=num)
     log_status_message(lamella, "CREATION")
 
     # set state

@@ -27,7 +27,7 @@ trench:
 ml:
     encoder: resnet34
     num_classes: 5
-    checkpoint: autolamella-mega-latest.pt
+    checkpoint: autolamella-serial-liftout-20240107.pt
 name: autoliftout-serial-protocol
 method: autoliftout-serial-liftout
 options:

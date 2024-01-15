@@ -1,21 +1,13 @@
 import os
-import sys
-from autolamella.structures import Lamella, Experiment, LamellaState 
-from fibsem.structures import Point
-from copy import deepcopy
-import pandas as pd
-import yaml
+import json
 import datetime
+
+import pandas as pd
+
+from copy import deepcopy
 from pathlib import Path
-
-def load_experiment(path):
-    
-    directory_name = os.path.basename(os.path.normpath(path))
-    full_path = os.path.join(path, "experiment.yaml")
-    experiment = Experiment.load(full_path) 
-
-    return experiment
-    
+from autolamella.structures import Lamella, Experiment, LamellaState 
+  
 
 def create_history_dataframe(experiment: Experiment) -> pd.DataFrame:
     history = []
@@ -42,6 +34,40 @@ def create_history_dataframe(experiment: Experiment) -> pd.DataFrame:
 
     return df_stage_history
 
+def parse_msg(msg: str):
+    """parse message json"""
+    # turn this into a loop
+    # keywords = []
+
+    return json.loads(msg.replace("'", '"').replace("None", '"None"').replace("True", '"True"').replace("False", '"False"'))
+
+def get_timestamp(line: str) -> float:
+    """get timestamp from line"""
+    ts = line.split("—")[0].split(",")[0].strip()
+    tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
+    return tsd
+
+def get_function(line: str) -> str:
+    """get the function name from the line"""
+    return line.split("—")[-2].strip()
+
+def get_message(line) -> str:
+    """get the message from the line"""
+    msg = line.split("—")[
+        -1
+    ].strip()  # should just be the message # TODO: need to check the delimeter character...
+    return msg 
+
+def parse_line(line: str) -> tuple[str, str, str]:
+    """parse a line from the log file into a tuple of timestamp, function, and message"""
+
+    tsd = get_timestamp(line)
+    func = get_function(line)
+    msg = get_message(line)
+
+    return tsd, func, msg
+
+
 def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: str = "cp1252"):
 
     fname = os.path.join(path, "logfile.log")
@@ -54,12 +80,11 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
     
     state_data = []
     stage_data = []
-    move_data = []
     det_data = []
     click_data = []
 
-
     print("-" * 80)
+    print(f"Parsing {fname}")
     # encoding = "cp1252" if "nt" in os.name else "cp1252" # TODO: this depends on the OS it was logged on, usually windows, need to make this more robust.
     with open(fname, encoding=encoding) as f:
         # Note: need to check the encoding as this is required for em dash (long dash) # TODO: change this delimiter so this isnt required.
@@ -69,405 +94,133 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
             if line == "":
                 continue
             try:
-                msg = line.split("—")[
-                    -1
-                ].strip()  # should just be the message # TODO: need to check the delimeter character...
-                func = line.split("—")[-2].strip()
-                ts = line.split("—")[0].split(",")[0].strip()
-                tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
                 
-                # MOVEMENT
-                if "get_" in func:
-                    import json
-                    if "get_current_microscope_state" in func:
-                        state_dict = str(msg.split("|")[1].strip()).replace("'", '"').replace("None", '"None"')
-                        state_dict = json.loads(state_dict)
+                # get timestamp, function, and message from log line
+                tsd, func, msg = parse_line(line)
 
-                        state_data.append(deepcopy(state_dict))
-                        
-                    if "get_stage_position" in func:
-                        stage_dict = str(msg.split("|")[1].strip()).replace("'", '"').replace("None", '"None"')
-                        stage_dict = json.loads(stage_dict)
-                        stage_dict["timestamp"] = tsd
-                        stage_dict["lamella"] = current_lamella
-                        stage_dict["stage"] = current_stage
-                        stage_dict["step"] = current_step
+                # TELEMETRY -> depcrecated in favour of manufacturer telemetry
+                if "get_current_microscope_state" in func:
+                    msgd = parse_msg(msg)
+
+                    state_data.append(deepcopy(msgd["state"]))
                     
-                        stage_data.append(deepcopy(stage_dict))
+                if "get_stage_position" in func:
+                    msgd = parse_msg(msg)
+                    staged = msgd["stage"]
+                    staged["timestamp"] = tsd
+                    staged["lamella"] = current_lamella
+                    staged["stage"] = current_stage
+                    staged["step"] = current_step
+                
+                    stage_data.append(deepcopy(staged))
 
+                if "log_status_message" in func:
+                    if "STATUS" in msg:
+                        continue        # skip old status messages 
+                    
+                    # global data
+                    tsd = get_timestamp(line)
+                    msgd = parse_msg(msg)
+                    current_lamella = msgd["petname"]
+                    current_stage = msgd["stage"]
+                    current_step = msgd["step"]
 
-                if "STATUS" in msg:
-                    if "Widget" in msg:
-                        continue
-                    # print(msg)
-                    current_lamella = msg.split("|")[1].strip()
-                    current_stage = msg.split("|")[2].strip().split(".")[-1].strip()
-                    current_step = msg.split("|")[3].strip()
-
-                    # datetime string to timestamp int
-                    ts = line.split("—")[0].split(",")[0].strip()
-                    tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
-                    step_d = {"lamella": current_lamella, "stage": current_stage, "step": current_step, "timestamp": tsd, "step_n": step_n}
+                    # step data                    
+                    step_d = deepcopy(msgd)
+                    step_d["lamella"] = current_lamella
+                    step_d["timestamp"] = tsd
+                    step_d["step_n"] = step_n
                     step_n += 1
                     steps_data.append(deepcopy(step_d))
-                    # print(step_d)
+
                 
                 if "beam_shift" in func:
-                    beam_type, shiftx, shifty = msg.split("|")[-3:]
-                    beam_type = beam_type.strip()
-                    if beam_type.upper() in ["ELECTRON", "ION", "PHOTON"]:
-                        gamma_d = {
-                            "beam_type": beam_type,
-                            "shift.x": float(shiftx),
-                            "shift.y": float(shifty),
-                            "lamella": current_lamella,
-                            "stage": current_stage,
-                            "step": current_step,
-                        }
-                        df_beam_shift.append(deepcopy(gamma_d))
+                    msgd = parse_msg(msg)
+                    msgd["timestamp"] = tsd
+                    msgd["lamella"] = current_lamella
+                    msgd["stage"] = current_stage
+                    msgd["step"] = current_step
+                    df_beam_shift.append(deepcopy(msgd))
 
-                if "confirm_button" in func: # DETECTION
 
-                    feat = msg.split("|")[0].strip()
-                    dpx = str(msg.split("|")[1].strip()).replace("'", '"').replace("None", '"None"')
-                    dpx = json.loads(dpx)
-                                        
-                    dm = str(msg.split("|")[2].strip()).replace("'", '"').replace("None", '"None"')
-                    dm = json.loads(dm)
+                if "confirm_button" in func: # DETECTION INTERACTION
+                    # log detection data
+                    msgd = parse_msg(msg)
+                    detd = deepcopy(msgd)
 
-                    _is_correct = msg.split("|")[3].strip()
-                    beam_type = msg.split("|")[4].split(".")[-1].strip().upper()
-                    fname = msg.split("|")[5].strip()
+                    detd["px_x"] = msgd["px"]["x"]
+                    detd["px_y"] = msgd["px"]["y"]
+                    detd["dpx_x"] = msgd["dpx"]["x"]
+                    detd["dpx_y"] = msgd["dpx"]["y"]
+                    detd["dm_x"] = msgd["dm"]["x"]
+                    detd["dm_y"] = msgd["dm"]["y"]
                     
-                    try:
-                        px = str(msg.split("|")[6].strip()).replace("'", '"').replace("None", '"None"')
-                        px = json.loads(dm)
-                    except:
-                        px = {"x": 0, "y": 0}
+                    del detd["dpx"]
+                    del detd["dm"]
+                    del detd["px"]
 
-                    detd = {
-                        "lamella": current_lamella,
-                        "stage": current_stage,
-                        "step": current_step,
-                        "feature": feat,
-                        "dpx_x": dpx["x"],
-                        "dpx_y": dpx["y"],
-                        "dm_x": dm["x"],
-                        "dm_y": dm["y"],
-                        "is_correct": _is_correct,
-                        "timestamp": tsd,
-                        "beam_type": beam_type,
-                        "fname": fname,
-                        "px_x": px["x"],
-                        "px_y": px["y"],
-                    }
-
+                    detd["timestamp"] = tsd
+                    detd["lamella"] = current_lamella
+                    detd["stage"] = current_stage
+                    detd["step"] = current_step
                     det_data.append(deepcopy(detd))
 
-                    
-                    if _is_correct == "False":
+                    # log detection interaction
+                    if detd["is_correct"] == "False":
                         click_d = {
-                            "lamella": current_lamella,
-                            "stage": current_stage,
-                            "step": current_step,
+                            "lamella": detd["lamella"],
+                            "stage": detd["stage"],
+                            "step": detd["step"],
                             "type": "DET",
-                            "subtype": feat,
-                            "dm_x": dm["x"],
-                            "dm_y": dm["y"],
-                            "beam_type": beam_type,
-                            "timestamp": tsd,
+                            "subtype": detd["feature"],
+                            "dm_x": detd["dm_x"],
+                            "dm_y": detd["dm_y"],
+                            "beam_type": detd["beam_type"],
+                            "timestamp": detd["timestamp"],
                         }
-                        click_data.append(deepcopy(click_d))
+                        click_data.append(deepcopy(click_d))    
 
-                if "_single_click" in func: # MILLING
+                if "_single_click" in func: # MILLING INTERACTION
+                    # log milling interaction
+                    msgd = parse_msg(msg)
+                    
+                    clickd = {}
+                    clickd["timestamp"] = tsd
+                    clickd["lamella"] = current_lamella
+                    clickd["stage"] = current_stage
+                    clickd["step"] = current_step
+                    
+                    clickd["dm_x"] = msgd["dm"]["x"]
+                    clickd["dm_y"] = msgd["dm"]["y"]
+                    clickd["type"] = "MILL"
+                    clickd["subtype"] = msgd["pattern"]
+                    clickd["beam_type"] = msgd["beam_type"]
 
-                    ctype = msg.split("|")[0].strip()
-                    subtype = msg.split("|")[1].strip()
-                    dm = str(msg.split("|")[2].strip()).replace("'", '"').replace("None", '"None"')
-                    dm = json.loads(dm)
+                    click_data.append(deepcopy(clickd))
 
-                    click_d = {
-                        "lamella": current_lamella,
-                        "stage": current_stage,
-                        "step": current_step,
-                        "type": ctype,
-                        "subtype": subtype,
-                        "dm_x": dm["x"],
-                        "dm_y": dm["y"],
-                        "beam_type": "ION",
-                        "timestamp": tsd,
+                if "_double_click" in func: # MOVEMENT INTERACTION
+                    
+                    # log movement interaction
+                    msgd = parse_msg(msg)
+                    clickd = {}
+                    clickd["timestamp"] = tsd
+                    clickd["lamella"] = current_lamella
+                    clickd["stage"] = current_stage
+                    clickd["step"] = current_step
 
-                    }
-                    click_data.append(deepcopy(click_d))
+                    clickd["dm_x"] = msgd["dm"]["x"]
+                    clickd["dm_y"] = msgd["dm"]["y"]
+                    clickd["type"] = "MOVE"
+                    clickd["subtype"] = msgd["movement_mode"]
+                    clickd["beam_type"] = msgd["beam_type"]
 
-                if "_double_click" in func: # MOVEMENT
-                    ctype = "MOVE"
-                    subtype = msg.split("|")[0].split(":")[-1].strip().upper()
-                    dm = str(msg.split("|")[2].strip()).replace("'", '"').replace("None", '"None"')
-                    dm = json.loads(dm)
-                    beam_type = msg.split("|")[-1].split(".")[-1].strip().upper()
-                    click_d = {
-                        "lamella": current_lamella,
-                        "stage": current_stage,
-                        "step": current_step,
-                        "type": ctype,
-                        "subtype": subtype,
-                        "dm_x": dm["x"],
-                        "dm_y": dm["y"],
-                        "beam_type": beam_type,
-                        "timestamp": tsd,
-                    }
-                    click_data.append(deepcopy(click_d))
-
+                    click_data.append(deepcopy(clickd))
 
             except Exception as e:
                 # print(e, " | ", line)
                 pass
  
-    # sample
-    if program == "autoliftout":
-        from autolamella.liftout.structures import Experiment
-    if program == "autolamella":
-        from autolamella.structures import Experiment
-        
-    experiment = Experiment.load(os.path.join(path, "experiment.yaml"))
-    df_experiment = experiment.__to_dataframe__()
-    df_history = create_history_dataframe(experiment)
-    df_steps = pd.DataFrame(steps_data)
-    df_stage = pd.DataFrame(stage_data)
-    df_det = pd.DataFrame(det_data)
-    df_beam_shift = pd.DataFrame.from_dict(df_beam_shift)
-    df_click = pd.DataFrame(click_data)
-    
-    df_steps["duration"] = df_steps["timestamp"].diff() # TODO: fix this duration
-    df_steps["duration"] = df_steps["duration"].shift(-1)
-
-
-    # add date and name to all dataframes
-    df_experiment["exp_name"] = experiment.name
-    df_history["exp_name"] = experiment.name
-    df_beam_shift["exp_name"] = experiment.name
-    df_steps["exp_name"] = experiment.name
-    df_stage["exp_name"] = experiment.name
-    df_det["exp_name"] = experiment.name
-    df_click["exp_name"] = experiment.name
-
-    # add experiment id to all df
-    df_history["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
-    df_beam_shift["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
-    df_steps["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
-    df_stage["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
-    df_det["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
-    df_click["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
-
-    # write dataframes to csv, overwrite
-    filename = os.path.join(path, 'history.csv')
-    df_history.to_csv(filename, mode='w', header=True, index=False)
-    filename = os.path.join(path, 'beam_shift.csv')
-    df_beam_shift.to_csv(filename, mode='w', header=True, index=False)
-    filename = os.path.join(path, 'experiment.csv')
-    df_experiment.to_csv(filename, mode='w', header=True, index=False)
-    filename = os.path.join(path, 'steps.csv')
-    df_steps.to_csv(filename, mode='w', header=True, index=False)
-    filename = os.path.join(path, 'stage.csv')
-    df_stage.to_csv(filename, mode='w', header=True, index=False)
-    filename = os.path.join(path, 'det.csv')
-    df_det.to_csv(filename, mode='w', header=True, index=False)
-    filename = os.path.join(path, 'click.csv')
-    df_click.to_csv(filename, mode='w', header=True, index=False)
-
-
-    return df_experiment, df_history, df_beam_shift, df_steps, df_stage, df_det, df_click
-
-
-
-
-def parse_log_v1(path: Path, program="autolamella", encoding: str = "cp1252"):
-
-    fname = os.path.join(path, "logfile.log")
-    df_beam_shift = []
-    current_lamella = "NULL" 
-    current_stage = "SystemSetup"
-    current_step = "SystemSetup"
-    step_n = 0 
-    steps_data = []
-    
-    state_data = []
-    stage_data = []
-    move_data = []
-    det_data = []
-    click_data = []
-
-
-    print("-" * 80)
-    # encoding = "cp1252" if "nt" in os.name else "cp1252" # TODO: this depends on the OS it was logged on, usually windows, need to make this more robust.
-    with open(fname, encoding=encoding) as f:
-        # Note: need to check the encoding as this is required for em dash (long dash) # TODO: change this delimiter so this isnt required.
-        lines = f.read().splitlines()
-        for i, line in enumerate(lines):
-
-            if line == "":
-                continue
-            try:
-                msg = line.split("—")[
-                    -1
-                ].strip()  # should just be the message # TODO: need to check the delimeter character...
-                func = line.split("—")[-2].strip()
-                ts = line.split("—")[0].split(",")[0].strip()
-                tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
-                
-                # MOVEMENT
-                if "get_" in func:
-                    import json
-                    if "get_current_microscope_state" in func:
-                        state_dict = str(msg.split("|")[1].strip()).replace("'", '"').replace("None", '"None"')
-                        state_dict = json.loads(state_dict)
-
-                        state_data.append(deepcopy(state_dict))
-
-                        # print("STATE: ", state_dict)
-                        
-                    if "get_stage_position" in func:
-                        stage_dict = str(msg.split("|")[1].strip()).replace("'", '"').replace("None", '"None"')
-                        stage_dict = json.loads(stage_dict)
-                        stage_dict["timestamp"] = tsd
-                        stage_dict["lamella"] = current_lamella
-                        stage_dict["stage"] = current_stage
-                        stage_dict["step"] = current_step
-                    
-                        stage_data.append(deepcopy(stage_dict))
-
-
-                if "STATUS" in msg:
-                    if "Widget" in msg:
-                        continue
-                    # print(msg)
-                    current_lamella = msg.split("|")[1].strip()
-                    current_stage = msg.split("|")[2].strip().split(".")[-1].strip()
-                    current_step = msg.split("|")[3].strip()
-
-                    # datetime string to timestamp int
-                    ts = line.split("—")[0].split(",")[0].strip()
-                    tsd = datetime.datetime.timestamp(datetime.datetime.strptime(ts, "%Y-%m-%d %H:%M:%S"))
-                    step_d = {"lamella": current_lamella, "stage": current_stage, "step": current_step, "timestamp": tsd, "step_n": step_n}
-                    step_n += 1
-                    steps_data.append(deepcopy(step_d))
-                    # print(step_d)
-                
-                if "beam_shift" in func:
-                    beam_type, shiftx, shifty = msg.split("|")[-3:]
-                    beam_type = beam_type.strip()
-                    if beam_type.upper() in ["ELECTRON", "ION", "PHOTON"]:
-                        gamma_d = {
-                            "beam_type": beam_type,
-                            "shift.x": float(shiftx),
-                            "shift.y": float(shifty),
-                            "lamella": current_lamella,
-                            "stage": current_stage,
-                            "step": current_step,
-                        }
-                        df_beam_shift.append(deepcopy(gamma_d))
-
-                if "confirm_button" in func: # DETECTION
-
-                    feat = msg.split("|")[0].strip()
-                    dpx = msg.split("|")[1].split("=")
-                    dpx_x = int(dpx[1].split(",")[0].strip())
-                    dpx_y = int(dpx[-1].split(")")[0].strip())
-                    
-                    dm =  msg.split("|")[2].split("=") 
-                    dm_x = float(dm[1].split(",")[0].strip())
-                    dm_y = float(dm[-1].split(")")[0].strip())
-
-                    _is_correct = msg.split("|")[3].strip()
-                    beam_type = msg.split("|")[4].split(".")[-1].strip().upper()
-                    fname = msg.split("|")[5].strip()
-
-                    detd = {
-                        "lamella": current_lamella,
-                        "stage": current_stage,
-                        "step": current_step,
-                        "feature": feat,
-                        "dpx_x": dpx_x,
-                        "dpx_y": dpx_y,
-                        "dm_x": dm_x,
-                        "dm_y": dm_y,
-                        "is_correct": _is_correct,
-                        "timestamp": tsd,
-                        "beam_type": beam_type,
-                        "fname": fname,
-                    }
-                    det_data.append(deepcopy(detd))
-                    
-                    if _is_correct == "False":
-                        click_d = {
-                            "lamella": current_lamella,
-                            "stage": current_stage,
-                            "step": current_step,
-                            "type": "DET",
-                            "subtype": feat,
-                            "dm_x": dm_x,
-                            "dm_y": dm_y,
-                            "beam_type": beam_type,
-                            "timestamp": tsd,
-                        }
-                        click_data.append(deepcopy(click_d))
-
-                if "_single_click" in func: # MILLING
-
-                    ctype = msg.split("|")[0].strip()
-                    subtype = msg.split("|")[1].strip()
-                    dm = msg.split("|")[2].split("=")
-                    dm_x = float(dm[1].split(",")[0].strip())
-                    dm_y = float(dm[-1].split(")")[0].strip())
-
-                    click_d = {
-                        "lamella": current_lamella,
-                        "stage": current_stage,
-                        "step": current_step,
-                        "type": ctype,
-                        "subtype": subtype,
-                        "dm_x": dm_x,
-                        "dm_y": dm_y,
-                        "beam_type": "ION",
-                        "timestamp": tsd,
-
-                    }
-                    click_data.append(deepcopy(click_d))
-
-                if "_double_click" in func: # MOVEMENT
-
-                    ctype = "MOVE"
-                    subtype = msg.split("|")[0].split(":")[-1].strip().upper()
-                    dm = msg.split("|")[2].split(",")
-                    dm_x = float(dm[0].split(" ")[-1])
-                    dm_y = float(dm[-1].strip())
-                    beam_type = msg.split("|")[-1].split(".")[-1].strip().upper()
-                    click_d = {
-                        "lamella": current_lamella,
-                        "stage": current_stage,
-                        "step": current_step,
-                        "type": ctype,
-                        "subtype": subtype,
-                        "dm_x": dm_x,
-                        "dm_y": dm_y,
-                        "beam_type": beam_type,
-                        "timestamp": tsd,
-                    }
-                    
-                    click_data.append(deepcopy(click_d))
-
-
-            except Exception as e:
-                # print(e, " | ", line)
-                pass
- 
-    # sample
-    if program == "autoliftout":
-        from autolamella.liftout.structures import Experiment
-    if program == "autolamella":
-        from autolamella.structures import Experiment
-        
+    # experiment
     experiment = Experiment.load(os.path.join(path, "experiment.yaml"))
     df_experiment = experiment.__to_dataframe__()
     df_history = create_history_dataframe(experiment)
