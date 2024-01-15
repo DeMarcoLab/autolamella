@@ -435,7 +435,7 @@
      <x>0</x>
      <y>0</y>
      <width>470</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -451,7 +451,7 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="actionCryo_Sputter"/>
+    <addaction name="actionCryo_Deposition"/>
     <addaction name="actionCalibrate_Manipulator"/>
     <addaction name="actionPrepare_Manipulator"/>
    </widget>
@@ -489,9 +489,9 @@
     <string>Save Protocol</string>
    </property>
   </action>
-  <action name="actionCryo_Sputter">
+  <action name="actionCryo_Deposition">
    <property name="text">
-    <string>Cryo Sputter</string>
+    <string>Cryo Deposition</string>
    </property>
   </action>
   <action name="actionCalibrate_Manipulator">

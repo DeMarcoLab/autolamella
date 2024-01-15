@@ -74,10 +74,11 @@ platinum:
         time: 30.0
 liftout_sever:
     cleaning_cross_section: 0.0
-    depth: 25.0e-06
-    height: 5.0e-06
+    depth: 10.0e-06
+    height: 0.5e-06
     hfw: 400.0e-6
-    milling_current: 28.0e-09
+    milling_voltage: 30.0e+3
+    milling_current: 1.0e-9
     rotation: 0.0
     scan_direction: TopToBottom
     width: 50.0e-06
@@ -98,28 +99,30 @@ undercut:
     scan_direction: TopToBottom
     type: Rectangle
 liftout_weld:
-    height: 5.0e-6
+    height: 2.5e-6
     width: 0.5e-6
-    depth: 5.0e-6
-    distance: 2.0e-6
-    number: 5
+    depth: 4.0e-6
+    distance: 0.25e-6
+    number: 10
     rotation: 0.0
     passes: 1.0
-    milling_current: 0.74e-09
+    milling_voltage: 30.0e+3
+    milling_current: 300.0e-12
     hfw: 150.0e-6
     application_file: "autolamella"
-    scan_direction: "TopToBottom"
+    scan_direction: "BottomToTop"
     type: "SpotWeldVertical"
     preset: "30 keV; 2.5 nA"
 adapter_weld:
-    height: 5.0e-6
+    height: 2.5e-6
     width: 0.5e-6
-    depth: 5.0e-6
-    distance: 2.0e-6
-    number: 5
+    depth: 4.0e-6
+    distance: 0.25e-6
+    number: 10
     rotation: 0.0
     passes: 1.0
-    milling_current: 0.74e-09
+    milling_voltage: 30.0e+3
+    milling_current: 1.0e-09
     hfw: 150.0e-6
     application_file: "autolamella"
     scan_direction: "TopToBottom"

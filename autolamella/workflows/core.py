@@ -46,6 +46,7 @@ from autolamella.structures import (
 )
 from fibsem.detection import detection
 from fibsem.detection.detection import (
+    Feature,
     ImageCentre,
     LamellaCentre,
     LamellaLeftEdge,
@@ -452,7 +453,7 @@ def setup_lamella(
         microscope.stable_move(settings, dx=X_OFFSET, dy=Y_OFFSET, beam_type=BeamType.ELECTRON)
 
     if method != "autolamella-default":
-        lamella = _align_lamella_coincident(microscope, settings, lamella, parent_ui, validate)
+        lamella = align_feature_coincident(microscope, settings, lamella, parent_ui, validate)
 
     log_status_message(lamella, "SETUP_PATTERNS")
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
@@ -642,19 +643,22 @@ def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fidu
 
     return fiducial_area, flag
 
-def _align_lamella_coincident(microscope: FibsemMicroscope, settings: MicroscopeSettings, 
+def align_feature_coincident(microscope: FibsemMicroscope, settings: MicroscopeSettings, 
                               lamella: Lamella, parent_ui: AutoLamellaUI, 
                               validate: bool, 
                               hfw: float = fcfg.REFERENCE_HFW_MEDIUM,
-                              features: list = [LamellaCentre()]) -> Lamella:
-    """Align the lamella in the electron and ion beams"""
+                              feature: Feature = LamellaCentre()) -> Lamella:
+    """Align the feature in the electron and ion beams to be coincident."""
+
+    # bookkeeping
+    features = [feature]
 
     # update status
-    log_status_message(lamella, f"ALIGN_TRENCH")
-    _update_status_ui(parent_ui, f"{lamella.info} Aligning Trench (Rotated)...")
+    log_status_message(lamella, f"ALIGN_FEATURE_COINCIDENT")
+    _update_status_ui(parent_ui, f"{lamella.info} Aligning Feature Coincident({feature.name})...")
     settings.image.beam_type = BeamType.ELECTRON
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.label = f"ref_{lamella.state.stage.name}_trench_align_ml"
+    settings.image.hfw = hfw
+    settings.image.label = f"ref_{lamella.state.stage.name}_{feature.name}_align_coincident_ml"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
@@ -671,7 +675,7 @@ def _align_lamella_coincident(microscope: FibsemMicroscope, settings: Microscope
 
     # Align ion so it is coincident with the electron beam
     settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+    settings.image.hfw = hfw
 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.absolute_position)
     
@@ -681,5 +685,12 @@ def _align_lamella_coincident(microscope: FibsemMicroscope, settings: Microscope
         dx=det.features[0].feature_m.x,
         dy=-det.features[0].feature_m.y,
     )
+
+    # reference images
+    settings.image.save = True
+    settings.image.hfw = hfw
+    settings.image.label = f"ref_{lamella.state.stage.name}_{feature.name}_align_coincident_final"
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
 
     return lamella

@@ -19,7 +19,7 @@ from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
-from fibsem.ui.FibsemCryoSputterWidget import FibsemCryoSputterWidget
+from fibsem.ui.FibsemCryoDepositionWidget import FibsemCryoDepositionWidget
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui import utils as fui
 from fibsem.imaging._tile import _minimap 
@@ -144,7 +144,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionLoad_Experiment.triggered.connect(self.setup_experiment)
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
         self.actionSave_Protocol.triggered.connect(self.export_protocol_ui)
-        self.actionCryo_Sputter.triggered.connect(self._cryo_sputter)
+        self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
         self.actionLoad_Minimap_Image.triggered.connect(self.load_minimap_image)
@@ -579,7 +579,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # experiment loaded
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
         self.actionSave_Protocol.setVisible(_protocol_loaded)
-        self.actionCryo_Sputter.setVisible(_protocol_loaded)
+        self.actionCryo_Deposition.setVisible(_protocol_loaded)
         self.actionOpen_Minimap.setVisible(_protocol_loaded)
         self.actionLoad_Minimap_Image.setVisible(_protocol_loaded and cfg._MINIMAP_VISUALISATION)
         self.actionLoad_Positions.setVisible(_protocol_loaded)
@@ -921,10 +921,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.update_ui()
 
-    def _cryo_sputter(self):
+    def cryo_deposition(self):
 
-        cryo_sputter_widget = FibsemCryoSputterWidget(self.microscope, self.settings)
-        cryo_sputter_widget.exec_()
+        cryo_deposition_widget = FibsemCryoDepositionWidget(self.microscope, self.settings)
+        cryo_deposition_widget.exec_()
 
     def save_protocol(self):
         fname = fui._get_save_file_ui(msg="Select protocol file", path=cfg.LOG_PATH)

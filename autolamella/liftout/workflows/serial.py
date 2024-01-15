@@ -17,6 +17,13 @@ from fibsem.detection.detection import (
     LamellaBottomEdge,
     CopperAdapterBottomEdge,
     CopperAdapterTopEdge,
+    VolumeBlockCentre,
+    VolumeBlockTopEdge,
+    VolumeBlockBottomEdge,
+    VolumeBlockTopLeftCorner,
+    VolumeBlockTopRightCorner,
+    VolumeBlockBottomLeftCorner,
+    VolumeBlockBottomRightCorner,
 )
 
 from fibsem.microscope import FibsemMicroscope
@@ -40,7 +47,7 @@ from collections import Counter
 from autolamella.liftout.structures import Lamella, Experiment, LamellaState, AutoLamellaWaffleStage
 from autolamella.liftout.autoliftout import log_status_message, start_of_stage_update, end_of_stage_update
 from autolamella.workflows.ui import ask_user, _update_status_ui, _validate_det_ui_v2, _set_images_ui,  _validate_mill_ui
-
+from autolamella.workflows.core import align_feature_coincident
 from pprint import pprint
 
 # serial workflow functions
@@ -60,55 +67,28 @@ def liftout_lamella(
     log_status_message(lamella, "MOVE_TO_LIFTOUT_POSITION")
     _update_status_ui(parent_ui, f"{lamella.info} Moving to Liftout Position...")
 
-    # TODO: set true tilt angle here
-
-    # ALIGN LAMELLA TOP
-    log_status_message(lamella, f"ALIGN_TRENCH")
-    _update_status_ui(parent_ui, f"{lamella.info} Aligning to Trench...")
-    settings.image.beam_type = BeamType.ELECTRON
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.label = f"ref_{lamella.state.stage.name}_trench_align_ml"
-    settings.image.save = True
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    _set_images_ui(parent_ui, eb_image, ib_image)
-
-    scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
-    features = [LamellaBottomEdge() if np.isclose(scan_rotation, 0) else LamellaTopEdge()] 
-    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
-
-    microscope.stable_move(
-        settings, 
-        dx=det.features[0].feature_m.x,
-        dy=det.features[0].feature_m.y,
-        beam_type=settings.image.beam_type
-    )
-
-    # Align ion so it is coincident with the electron beam
-    settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-
-    features = [LamellaBottomEdge() if np.isclose(scan_rotation, 0) else LamellaTopEdge()] 
-    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    # move the stage flat to ion beam
+    microscope.move_flat_to_beam(
+        settings=settings,
+        beam_type=BeamType.ION,
+    )    
     
-    # align vertical
-    microscope.vertical_move(
-        settings, 
-        dx=det.features[0].feature_m.x,
-        dy=-det.features[0].feature_m.y,
-    )
+    # get alignment feature
+    scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
+    feature = VolumeBlockBottomEdge() if np.isclose(scan_rotation, 0) else VolumeBlockTopEdge()
 
-    # reference images
-    settings.image.save = True
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.label = f"ref_{lamella.state.stage.name}_trench_align_coincident"
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    _set_images_ui(parent_ui, eb_image, ib_image)
+    # align feature so beams are coincident
+    lamella = align_feature_coincident(microscope=microscope, 
+                             settings=settings, 
+                              lamella=lamella, 
+                              parent_ui=parent_ui, 
+                              validate=validate, 
+                              hfw=fcfg.REFERENCE_HFW_MEDIUM,
+                              feature=feature)
 
-    # INSER MANIPUALTOR TO PARK
+    # insert the manipulator for liftout
     log_status_message(lamella, "INSERT_MANIPULATOR")
     _update_status_ui(parent_ui, f"{lamella.info} Inserting Manipulator...")
-
-    # insert the needle for liftout
     actions.move_needle_to_liftout_position(microscope, dx=0.0e-6, dz=25.0e-6)
 
     # reference images
@@ -118,10 +98,28 @@ def liftout_lamella(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     _set_images_ui(parent_ui, eb_image, ib_image)
 
-    # align manipulator to top of lamella
-    HFWS = [fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER]
+    # align manipulator to top of lamella in electron
 
-    # TODO: we can move the needle closer initially, dont need to start so far away
+    log_status_message(lamella, f"NEEDLE_EB_DETECTION_0")
+    _update_status_ui(parent_ui, f"{lamella.info} Moving Manipulator to Lamella...")
+
+    settings.image.beam_type = BeamType.ELECTRON
+    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+
+    # DETECT COPPER ADAPTER, VOLUME TOP
+    scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
+    features = [CopperAdapterTopEdge(), VolumeBlockBottomEdge()] if np.isclose(scan_rotation, 0) else [CopperAdapterBottomEdge(), VolumeBlockTopEdge()]
+    
+    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+
+    # MOVE TO VOLUME BLOCK TOP
+    detection.move_based_on_detection(
+        microscope, settings, det, beam_type=settings.image.beam_type, move_x=True,
+         _move_system="manipulator"
+    )
+
+    # align manipulator to top of lamella in ion x2
+    HFWS = [fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER]
 
     for i, hfw in enumerate(HFWS):
 
@@ -133,13 +131,14 @@ def liftout_lamella(
 
         # DETECT COPPER ADAPTER, LAMELLA TOP
         scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
-        features = [CopperAdapterTopEdge(), LamellaBottomEdge()] if np.isclose(scan_rotation, 0) else [CopperAdapterBottomEdge(), LamellaTopEdge()]
+        features = [CopperAdapterTopEdge(), VolumeBlockBottomEdge()] if np.isclose(scan_rotation, 0) else [CopperAdapterBottomEdge(), VolumeBlockTopEdge()]
         
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
-        # MOVE TO LAMELLA TOP
+        # MOVE TO VOLUME BLOCK TOP
         detection.move_based_on_detection(
-            microscope, settings, det, beam_type=settings.image.beam_type, move_x=True
+            microscope, settings, det, beam_type=settings.image.beam_type, move_x=True, 
+            _move_system="manipulator"
         )
 
     # reference images
@@ -150,17 +149,18 @@ def liftout_lamella(
     _set_images_ui(parent_ui, eb_image, ib_image)
 
     # WELD
-    log_status_message(lamella, "WELD_LAMELLA_TO_COPPER")
+    log_status_message(lamella, "WELD_VOLUME_TO_COPPER")
 
     settings.image.beam_type = BeamType.ION
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
 
-    features = [LamellaBottomEdge() if np.isclose(scan_rotation, 0) else LamellaTopEdge()] 
+    features = [VolumeBlockBottomEdge() if np.isclose(scan_rotation, 0) else VolumeBlockTopEdge()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
-    _V_OFFSET = 1e-6
+    # move the pattern to the top of the volume (i.e up by half the height of the pattern)
+    _V_OFFSET = 0.0e-6 # TODO: make this a parameter
     point = det.features[0].feature_m 
-    point.y += settings.protocol["liftout_weld"].get("height", 5e-6) / 2 + 1e-6 # TODO: make this a parameter
+    point.y += settings.protocol["liftout_weld"].get("height", 5e-6) / 2 + _V_OFFSET 
 
     stages = _get_milling_stages("liftout_weld", settings.protocol, point)
     stages = _validate_mill_ui(stages, parent_ui, 
@@ -183,7 +183,7 @@ def liftout_lamella(
     settings.image.beam_type = BeamType.ION
     settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
 
-    features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge()] 
+    features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge()] 
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
     point = det.features[0].feature_m 
@@ -207,8 +207,16 @@ def liftout_lamella(
     log_status_message(lamella, "RETRACT_MANIPULATOR")
     _update_status_ui(parent_ui, f"{lamella.info} Retracting Manipulator...")
 
+    # retract slowly at first
+    for i in range(10):
+        microscope.move_manipulator_corrected(dx=0, dy=1e-6, beam_type=BeamType.ION)
+        settings.image.label = f"ref_{lamella.state.stage.name}_manipulator_removal_slow_{i:02d}"
+        acquire.take_reference_images(microscope, settings.image)
+        time.sleep(1)
+
+    # then retract quickly
     for i in range(3):
-        microscope.move_manipulator_corrected(dx=0, dy=10e-6, beam_type=BeamType.ION)
+        microscope.move_manipulator_corrected(dx=0, dy=20e-6, beam_type=BeamType.ION)
         settings.image.label = f"ref_{lamella.state.stage.name}_manipulator_removal_{i:02d}"
         acquire.take_reference_images(microscope, settings.image)
         time.sleep(1)
@@ -259,7 +267,7 @@ def land_lamella(
     log_status_message(lamella, "INSERT_MANIPULATOR")
     _update_status_ui(parent_ui, f"{lamella.info} Inserting Manipulator...")
 
-    # insert the needle for liftout
+    # insert the needle for landing
     actions.move_needle_to_park_position(microscope)
 
     # reference images
@@ -273,7 +281,7 @@ def land_lamella(
     # DETECT LAMELLA BOTTOM EDGE, LandingGridCentre_TOP
     # align manipulator to top of lamella
     log_status_message(lamella, "NEEDLE_IB_DETECTION")
-    _update_status_ui(parent_ui, f"{lamella.info} Moving Lamella to Landing Post...")
+    _update_status_ui(parent_ui, f"{lamella.info} Moving Volume to Landing Grid...")
 
     HFWS = [fcfg.REFERENCE_HFW_LOW, fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH]
     for i, hfw in enumerate(HFWS):
@@ -285,32 +293,62 @@ def land_lamella(
 
         # DETECT COPPER ADAPTER, LAMELLA TOP
         scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
-        features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
+        features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
-        # hover 25um above the post
-        # det._offset = Point(0, -15e-6) 
+        # offset above the grid
+        det._offset = Point(0, -15e-6) 
 
         # MOVE TO LANDING POST
         detection.move_based_on_detection(
-            microscope, settings, det, beam_type=settings.image.beam_type, move_x=True
+            microscope, settings, det, beam_type=settings.image.beam_type, move_x=True, 
+            _move_system="manipulator"
         )
 
-    # LAND LAMELLA ONTO LANDING POST 2
-    # align manipulator to top of lamella
-    # log_status_message(lamella, "NEEDLE_IB_DETECTION_2")
+        log_status_message(lamella, "NEEDLE_IB_DETECTION")
 
-    # settings.image.beam_type = BeamType.ION
-    # settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+    # align in electron beam
+    log_status_message(lamella, f"NEEDLE_EB_DETECTION_FINAL")
+    _update_status_ui(parent_ui, f"{lamella.info} Moving Volume to Landing Grid...")
 
-    # # DETECT COPPER ADAPTER, LAMELLA TOP
-    # features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
-    # det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    settings.image.beam_type = BeamType.ELECTRON
+    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
 
-    # # MOVE TO LANDING POST
-    # detection.move_based_on_detection(
-    #     microscope, settings, det, beam_type=settings.image.beam_type, move_x=False
-    # )
+    # DETECT COPPER ADAPTER, LAMELLA TOP
+    scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
+    features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
+    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+
+    # MOVE TO LANDING GRID
+    detection.move_based_on_detection(
+        microscope, settings, det, 
+        beam_type=settings.image.beam_type, 
+        _move_system="manipulator"
+    )
+
+    # TODO: check if the volume is wider than the landing grid
+    # mill away excess width
+
+
+    # align in ion beam
+    log_status_message(lamella, f"NEEDLE_IB_DETECTION_FINAL")
+    _update_status_ui(parent_ui, f"{lamella.info} Moving Volume to Landing Grid...")
+
+    settings.image.beam_type = BeamType.ION
+    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+
+    # DETECT COPPER ADAPTER, LAMELLA TOP
+    scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
+    features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
+    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+
+    # MOVE TO LANDING GRID
+    detection.move_based_on_detection(
+        microscope, settings, det, 
+        beam_type=settings.image.beam_type, 
+        move_x=False,
+        _move_system="manipulator"
+    )
 
     # WELD BOTH SIDES
     log_status_message(lamella, "WELD_LAMELLA_TO_POST")
@@ -318,13 +356,20 @@ def land_lamella(
     settings.image.beam_type = BeamType.ION
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
 
-    features = [LamellaLeftEdge(), LamellaRightEdge()]
+    features = [VolumeBlockTopLeftCorner(), VolumeBlockTopRightCorner()] if np.isclose(scan_rotation, 0) else [VolumeBlockBottomLeftCorner(), VolumeBlockBottomRightCorner()]
     det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
-    left_point = det.features[0].feature_m 
-    right_point = det.features[1].feature_m
+    # get the points
+    left_corner = det.features[0].feature_m 
+    right_corner = det.features[1].feature_m
 
-    stages = _get_milling_stages("weld", settings.protocol, [left_point, right_point])
+    # add some offset in y
+    v_offset = 2e-6  # half of recommended 4um height
+    left_corner.y  +=  v_offset
+    right_corner.y +=  v_offset
+
+    # mill welds
+    stages = _get_milling_stages("weld", settings.protocol, [left_corner, right_corner])
     stages = _validate_mill_ui(stages, parent_ui, 
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
@@ -335,55 +380,33 @@ def land_lamella(
     # reference images
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
     settings.image.save = True
-    settings.image.label = f"ref_{lamella.state.stage.name}_weld_lamella_to_post"
+    settings.image.label = f"ref_{lamella.state.stage.name}_weld_volume_to_post"
     acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
 
+
+    ########################
+    # move manipulator up 50-100 nm to create strain
+    dy = 100e-9
+    microscope.move_manipulator_corrected(dx=0, dy=dy, beam_type=BeamType.ION)
 
     ######################### 
 
     # SEVER
-    log_status_message(lamella, "SEVER_LAMELLA_BLOCK")
-    _update_status_ui(parent_ui, f"{lamella.info} Severing Lamella Block...")
-
-    settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
-
-    features = [LamellaTopEdge() if np.isclose(scan_rotation, 0) else LamellaBottomEdge()]  
-    det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
-
-    _LAMELLA_THICKNESS = 10e-6 / 2  # TODO: make this a parameter
-    _V_OFFSET = settings.protocol["landing_sever"].get("height", 2e-6) / 2 + _LAMELLA_THICKNESS
-    
-    if np.isclose(scan_rotation, 0):
-        _V_OFFSET *= -1
-    
-    point = det.features[0].feature_m
-    point.y += _V_OFFSET
-
-    stages = _get_milling_stages("landing_sever", settings.protocol, point)
-    stages = _validate_mill_ui(stages, parent_ui, 
-        msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
-        validate=validate)
-    
-    lamella.protocol["landing_sever"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
-    lamella.protocol["landing_sever"]["point"] = stages[0].pattern.point.__to_dict__()
-
-    # reference images
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.save = True
-    settings.image.label = f"ref_{lamella.state.stage.name}_sever_lamella_block"
-    acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
-
+    lamella = sever_lamella_block(microscope, settings, lamella, parent_ui, validate)
 
     # RETRACT MANIPULATOR
     log_status_message(lamella, "RETRACT_MANIPULATOR")
     _update_status_ui(parent_ui, f"{lamella.info} Retracting Manipulator...")
 
-    for i in range(3):
-        microscope.move_manipulator_corrected(dx=0, dy=10e-6, beam_type=BeamType.ION)
-        settings.image.label = f"ref_{lamella.state.stage.name}_manipulator_removal_{i:02d}"
+    # move up slowly at first
+    for i in range(20):
+        microscope.move_manipulator_corrected(dx=0, dy=100e-9, beam_type=BeamType.ION)
+        settings.image.label = f"ref_{lamella.state.stage.name}_manipulator_removal_slow{i:02d}"
         acquire.take_reference_images(microscope, settings.image)
         time.sleep(1)
+    
+    # move manipulator up
+    microscope.move_manipulator_corrected(dx=0, dy=100e-6, beam_type=BeamType.ION)
 
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
@@ -399,6 +422,82 @@ def land_lamella(
     microscope.retract_manipulator()  # retracted needle not supported on tescan
     
     return lamella
+
+def sever_lamella_block(microscope: FibsemMicroscope,
+    settings: MicroscopeSettings,
+    lamella: Lamella,
+    parent_ui: AutoLiftoutUIv2,
+    validate: bool = True) -> Lamella:
+
+    # bookkeeping
+    scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
+
+    # SEVER
+    confirm_severed = False
+    i = 0
+    while confirm_severed is False:
+        log_status_message(lamella, f"SEVER_LAMELLA_BLOCK_{i:02d}")
+        _update_status_ui(parent_ui, f"{lamella.info} Severing Lamella Block...")
+
+        settings.image.beam_type = BeamType.ION
+        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+
+        features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge()]  
+        det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+
+        _LAMELLA_THICKNESS = 4e-6 / 2  # TODO: make this a parameter
+        _V_OFFSET = settings.protocol["landing_sever"].get("height", 2e-6) / 2 + _LAMELLA_THICKNESS
+        
+        if np.isclose(scan_rotation, 0):
+            _V_OFFSET *= -1
+        
+        point = det.features[0].feature_m
+        point.y += _V_OFFSET
+
+        stages = _get_milling_stages("landing_sever", settings.protocol, point)
+        stages = _validate_mill_ui(stages, parent_ui, 
+            msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
+            validate=validate)
+        
+        lamella.protocol["landing_sever"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
+        lamella.protocol["landing_sever"]["point"] = stages[0].pattern.point.__to_dict__()
+
+        # reference images
+        settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+        settings.image.save = True
+        settings.image.label = f"ref_{lamella.state.stage.name}_sever_volume_block"
+        acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
+
+        # move up slowly at first
+        for i in range(3):
+            microscope.move_manipulator_corrected(dx=0, dy=50e-9, beam_type=BeamType.ION)
+            settings.image.label = f"ref_{lamella.state.stage.name}_manipulator_removal_check{i:02d}"
+            acquire.take_reference_images(microscope, settings.image)
+            time.sleep(1)
+
+        # confirm that the lamella is free     
+        log_status_message(lamella, f"CONFIRM_LAMELLA_SEVER_{i:02d}")
+        _update_status_ui(parent_ui, f"{lamella.info} Confirming Lamella has been Severed...")
+
+        settings.image.beam_type = BeamType.ION
+        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+
+        features = [VolumeBlockTopEdge(), LamellaBottomEdge()] if np.isclose(scan_rotation, 0) else [VolumeBlockBottomEdge(), LamellaTopEdge()]  
+        det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+
+        # if the distance is less than the threshold, then the lamella is not severed
+        threshold = settings.protocol["landing_sever"].get("threshold", 0.5e-6)
+        if abs(det.distance.y) < threshold:
+            logging.info(f"Lamella Not Severed: {det.distance} < {threshold}")
+            confirm_severed = False
+        
+        # check with the user
+        if validate:
+            response = ask_user(parent_ui, msg=f"Confirm Lamella has been severed for {lamella._petname}.", pos="Confirm", neg="Retry")
+            confirm_severed = response
+
+    return lamella
+
 
 from autolamella.liftout.autoliftout import setup_lamella, mill_lamella
 from autolamella.workflows.core import mill_trench, mill_undercut

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>521</width>
-    <height>857</height>
+    <width>563</width>
+    <height>1002</height>
    </rect>
   </property>
   <property name="baseSize">
@@ -1037,8 +1037,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>521</width>
-     <height>21</height>
+     <width>563</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAutoLamella">
@@ -1055,7 +1055,7 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="actionCryo_Sputter"/>
+    <addaction name="actionCryo_Deposition"/>
     <addaction name="separator"/>
     <addaction name="actionLoad_Positions"/>
     <addaction name="actionOpen_Minimap"/>
@@ -1075,9 +1075,9 @@
     <string>Load Experiment</string>
    </property>
   </action>
-  <action name="actionCryo_Sputter">
+  <action name="actionCryo_Deposition">
    <property name="text">
-    <string>Cryo Sputter</string>
+    <string>Cryo Deposition</string>
    </property>
   </action>
   <action name="actionLoad_Protocol">

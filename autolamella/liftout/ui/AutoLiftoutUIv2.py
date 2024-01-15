@@ -14,7 +14,7 @@ from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
 from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
-from fibsem.ui.FibsemCryoSputterWidget import FibsemCryoSputterWidget
+from fibsem.ui.FibsemCryoDepositionWidget import FibsemCryoDepositionWidget
 from napari.qt.threading import thread_worker
 from napari.utils import notifications
 from PyQt5 import QtWidgets
@@ -100,7 +100,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Experiment.triggered.connect(self.setup_experiment)
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
         self.actionSave_Protocol.triggered.connect(self.update_protocol_from_ui)
-        self.actionCryo_Sputter.triggered.connect(self._cryo_sputter)
+        self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
         self.actionCalibrate_Manipulator.triggered.connect(lambda: self._run_workflow(workflow="calibrate-manipulator"))
         self.actionPrepare_Manipulator.triggered.connect(lambda: self._run_workflow(workflow="prepare-manipulator"))
 
@@ -188,7 +188,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionConnect_Microscope.setVisible(_experiment_loaded)
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
         self.actionSave_Protocol.setVisible(_protocol_loaded)
-        self.actionCryo_Sputter.setVisible(_protocol_loaded)
+        self.actionCryo_Deposition.setVisible(_protocol_loaded)
         self.actionCalibrate_Manipulator.setVisible(_protocol_loaded)
         self.actionPrepare_Manipulator.setVisible(_protocol_loaded)
 
@@ -577,10 +577,10 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             f"Saved Protocol to {os.path.basename(PATH)}"
         )
     
-    def _cryo_sputter(self):
+    def cryo_deposition(self):
 
-        cryo_sputter_widget = FibsemCryoSputterWidget(self.microscope, self.settings)
-        cryo_sputter_widget.exec_()
+        cryo_deposition_widget = FibsemCryoDepositionWidget(self.microscope, self.settings)
+        cryo_deposition_widget.exec_()
 
 
     def closeEvent(self, event):
