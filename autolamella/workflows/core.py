@@ -349,6 +349,7 @@ def mill_lamella(
     # beam alignment
     alignment_current = stages[0].milling.milling_current if _align_at_milling_current else None
     settings.image.label = f"alignment_target_{lamella.state.stage.name}"
+    settings.image.autocontrast = False
     alignment._multi_step_alignment(microscope=microscope, 
         image_settings=settings.image, 
         ref_image=ref_image, 
@@ -356,6 +357,7 @@ def mill_lamella(
         alignment_current=alignment_current, 
         steps=_ALIGNMENT_ATTEMPTS)
 
+    settings.image.autocontrast = True
     settings.image.reduced_area = None
 
     # take reference images
