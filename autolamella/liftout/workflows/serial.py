@@ -160,15 +160,15 @@ def liftout_lamella(
     # move the pattern to the top of the volume (i.e up by half the height of the pattern)
     _V_OFFSET = 0.0e-6 # TODO: make this a parameter
     point = det.features[0].feature_m 
-    point.y += settings.protocol["liftout_weld"].get("height", 5e-6) / 2 + _V_OFFSET 
+    point.y += settings.protocol["liftout-weld"].get("height", 5e-6) / 2 + _V_OFFSET 
 
-    stages = _get_milling_stages("liftout_weld", settings.protocol, point)
+    stages = _get_milling_stages("liftout-weld", settings.protocol, point)
     stages = _validate_mill_ui(stages, parent_ui, 
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
     
-    lamella.protocol["liftout_weld"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
-    lamella.protocol["liftout_weld"]["point"] = stages[0].pattern.point.__to_dict__()
+    lamella.protocol["liftout-weld"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
+    lamella.protocol["liftout-weld"]["point"] = stages[0].pattern.point.__to_dict__()
 
     # reference images
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
@@ -188,13 +188,13 @@ def liftout_lamella(
 
     point = det.features[0].feature_m 
 
-    stages = _get_milling_stages("liftout_sever", settings.protocol, point)
+    stages = _get_milling_stages("liftout-sever", settings.protocol, point)
     stages = _validate_mill_ui(stages, parent_ui, 
         msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
         validate=validate)
     
-    lamella.protocol["liftout_sever"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
-    lamella.protocol["liftout_sever"]["point"] = stages[0].pattern.point.__to_dict__()
+    lamella.protocol["liftout-sever"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
+    lamella.protocol["liftout-sever"]["point"] = stages[0].pattern.point.__to_dict__()
 
     # reference images
     settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
@@ -369,13 +369,13 @@ def land_lamella(
     right_corner.y +=  v_offset
 
     # mill welds
-    stages = _get_milling_stages("weld", settings.protocol, [left_corner, right_corner])
+    stages = _get_milling_stages("landing-weld", settings.protocol, [left_corner, right_corner])
     stages = _validate_mill_ui(stages, parent_ui, 
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
     
-    lamella.protocol["liftout_weld"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
-    lamella.protocol["liftout_weld"]["point"] = stages[0].pattern.point.__to_dict__()
+    lamella.protocol["landing-weld"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
+    lamella.protocol["landing-weld"]["point"] = stages[0].pattern.point.__to_dict__()
 
     # reference images
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
@@ -446,7 +446,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
         _LAMELLA_THICKNESS = 4e-6 / 2  # TODO: make this a parameter
-        _V_OFFSET = settings.protocol["landing_sever"].get("height", 2e-6) / 2 + _LAMELLA_THICKNESS
+        _V_OFFSET = settings.protocol["landing-sever"].get("height", 2e-6) / 2 + _LAMELLA_THICKNESS
         
         if np.isclose(scan_rotation, 0):
             _V_OFFSET *= -1
@@ -454,13 +454,13 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         point = det.features[0].feature_m
         point.y += _V_OFFSET
 
-        stages = _get_milling_stages("landing_sever", settings.protocol, point)
+        stages = _get_milling_stages("landing-sever", settings.protocol, point)
         stages = _validate_mill_ui(stages, parent_ui, 
             msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
             validate=validate)
         
-        lamella.protocol["landing_sever"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
-        lamella.protocol["landing_sever"]["point"] = stages[0].pattern.point.__to_dict__()
+        lamella.protocol["landing-sever"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
+        lamella.protocol["landing-sever"]["point"] = stages[0].pattern.point.__to_dict__()
 
         # reference images
         settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
@@ -486,7 +486,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
         # if the distance is less than the threshold, then the lamella is not severed
-        threshold = settings.protocol["landing_sever"].get("threshold", 0.5e-6)
+        threshold = settings.protocol["landing-sever"].get("threshold", 0.5e-6)
         if abs(det.distance.y) < threshold:
             logging.info(f"Lamella Not Severed: {det.distance} < {threshold}")
             confirm_severed = False

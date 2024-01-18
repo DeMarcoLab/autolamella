@@ -72,7 +72,7 @@ platinum:
         hfw: 3.0e-05
         length: 7.0e-06
         time: 30.0
-liftout_sever:
+liftout-sever:
     cleaning_cross_section: 0.0
     depth: 10.0e-06
     height: 0.5e-06
@@ -98,7 +98,7 @@ undercut:
     width: 45.0e-6
     scan_direction: TopToBottom
     type: Rectangle
-liftout_weld:
+liftout-weld:
     height: 2.5e-6
     width: 0.5e-6
     depth: 4.0e-6
@@ -113,7 +113,7 @@ liftout_weld:
     scan_direction: "BottomToTop"
     type: "SpotWeldVertical"
     preset: "30 keV; 2.5 nA"
-adapter_weld:
+prepare-copper-block-weld:
     height: 2.5e-6
     width: 0.5e-6
     depth: 4.0e-6
@@ -122,13 +122,13 @@ adapter_weld:
     rotation: 0.0
     passes: 1.0
     milling_voltage: 30.0e+3
-    milling_current: 1.0e-09
+    milling_current: 300.0e-12
     hfw: 150.0e-6
     application_file: "autolamella"
     scan_direction: "TopToBottom"
     type: "SpotWeldVertical"
     preset: "30 keV; 2.5 nA"
-weld:
+landing-weld:
     stages:
     -   height: 0.5e-6
         width: 5.0e-6
@@ -156,7 +156,7 @@ weld:
         scan_direction: "LeftToRight"
         type: "SpotWeld"
         preset: "30 keV; 2.5 nA"
-landing_sever:
+landing-sever:
     cleaning_cross_section: 0.0
     depth: 25.0e-06
     height: 1.0e-06
@@ -228,3 +228,48 @@ fiducial:
 # options
 # positions
 # milling
+
+prepare-copper-blocks:
+    stages:
+    -   application_file: autolamella
+        hfw: 150.0e-6
+        milling_current: 28.0e-9
+        milling_voltage: 30000
+        depth: 10.0e-6
+        distance: 30.0e-6
+        height: 20.0e-6
+        width: 10.0e-6
+        type: SpotWeldVertical
+        passes: null
+        number: 4.0
+        scan_direction: TopToBottom
+    -   application_file: autolamella
+        hfw: 0.00015
+        milling_current: 28.0e-9
+        milling_voltage: 30000
+        type: Rectangle
+        width: 100.0e-6
+        height: 7.50e-6
+        depth: 10.0e-6
+prepare-copper-grid:
+    stages:
+    -   application_file: autolamella
+        hfw: 0.00015
+        milling_current: 28.0e-9
+        milling_voltage: 30000
+        type: Rectangle
+        width: 100.0e-6
+        height: 5.0e-6
+        depth: 30.0e-6
+prepare-copper-release:
+    - stages:
+        application_file: autolamella
+        hfw: 0.00015
+        milling_current: 15.0e-9
+        milling_voltage: 30000
+        type: Microexpansion
+        height: 1.0e-6
+        width: 5.0e-6
+        depth: 5.0e-6
+        distance: 2.0e-6
+        lamella_width: 10.e-6

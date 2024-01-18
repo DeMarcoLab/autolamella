@@ -111,13 +111,12 @@ microexpansion:
   width: 0.5e-6
   height: 18.e-6
   depth: 1.0e-6
-  distance: 10.e-6 # Does not include Lamella width. So centre of microexpansion is lamella_width/2 + distance.
+  distance: 10.e-6
   milling_current: 2.e-9
   preset: "30 keV; 2.5 nA" # TESCAN only
   hfw: 200e-6
   application_file: autolamella
   cleaning_cross_section: false
-  lamella_width: 10.e-6
 
 
 

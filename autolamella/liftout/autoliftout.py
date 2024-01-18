@@ -1239,6 +1239,56 @@ def _prepare_manipulator_autoliftout(microscope: FibsemMicroscope, settings: Mic
 
 def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: MicroscopeSettings, parent_ui: AutoLiftoutUIv2):
 
+    # assume manipulator is calibrated
+
+    # move to landing grid
+
+    # move to milling orientation (18 degrees)
+
+    # mill prepare-copper-grid (clean the grid surface)
+
+    # rotate flat to ion
+
+    # mill prepare-copper-blocks (chain of blocks)
+
+    # move back to milling orientation
+
+    # align coincidence
+
+
+    # optional, if manipulator already prepped
+    
+    # tilt stage flat
+    # insert manipulator to eucentric z=-10
+
+    # detect tip
+
+    # create rectangle pattern at tip (horizontal rect)
+
+    # mill
+
+    # insert manipulator to eucentric z-10
+
+    # detect tip, centre of image
+
+    # align in ELECTRON
+
+    # polish surfaces flat, cleaning cross section
+
+    # make contact in ion
+
+    # respositon weld
+
+    # release copper block
+
+    # check for release
+
+    # continue
+
+    # retract manipulator
+
+    
+
     return 
 
 PREPARE_MANIPULATOR_WORKFLOW = {
