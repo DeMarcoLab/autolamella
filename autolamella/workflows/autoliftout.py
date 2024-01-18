@@ -748,6 +748,12 @@ def reset_needle(
 
     settings.image.save_path = lamella.path
 
+    ask_user(msg="Reset manipulator is currently unavailble, please use the manual controls to reset the manipulator.", pos="OK")
+
+    return lamella
+
+    # TODO: re-implement
+
     # move sample stage out
     actions.move_sample_stage_out(microscope, settings)
 
@@ -760,8 +766,6 @@ def reset_needle(
     # move needle in
     actions.move_needle_to_reset_position(microscope)
 
-
-
     # needle imagesV
     settings.image.save = True
     settings.image.label = f"ref_{lamella.state.stage.name}_needle_start_position"
@@ -771,6 +775,20 @@ def reset_needle(
     # TODO: move needle to the centre, because it has been cut off...
     calibration.align_needle_to_eucentric_position(microscope, settings, validate=False)
 
+    log_status_message_raw(workflow_stage, "MOVE_TO_EUCENTRIC")
+    for beam_type in [BeamType.ELECTRON, BeamType.ION]:
+        
+        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH 
+        settings.image.beam_type = beam_type
+
+        # detect manipulator and user defined feature
+        features = [detection.NeedleTip(), detection.CoreFeature()] if np.isclose(scan_rotation, 0) else [detection.NeedleTipBottom(), detection.CoreFeature()]
+        det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg="Prepare Manipulator")
+
+        # move manipulator to target position
+        detection.move_based_on_detection(microscope, settings, det, beam_type, _move_system="manipulator")
+
+    
     # TODO: validate this movement
 
     # # create sharpening patterns
@@ -819,7 +837,8 @@ def run_setup_autoliftout(
     experiment: Experiment,	
     parent_ui: AutoLiftoutUIv2,	
 ) -> Experiment:
-    logging.info(f"INIT | {AutoLamellaWaffleStage.SetupTrench.name} | STARTED")
+    
+    log_status_message_raw(f"{AutoLamellaWaffleStage.SetupTrench.name}", "STARTED")
 
     # select the lamella and landing positions
     experiment = select_lamella_positions(microscope, settings, experiment, parent_ui)
@@ -1203,8 +1222,8 @@ def finish_setup_autoliftout(
         
 
     logging.info(f"Selected {len(experiment.positions)} lamella for autoliftout.")
-    logging.info(f"INIT | {AutoLamellaWaffleStage.SetupTrench.name} | FINISHED")
-
+    log_status_message_raw(f"{AutoLamellaWaffleStage.SetupTrench.name}", "FINISHED")
+    
 
 
 
@@ -1431,7 +1450,6 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
     # move manipulator to centre of image
     log_status_message_raw(workflow_stage, "MOVE_TO_WELD_POSITION")
     for beam_type in [BeamType.ELECTRON, BeamType.ION]:
-        beam_type = BeamType.ION
         
         settings.image.hfw = fcfg.REFERENCE_HFW_HIGH 
         settings.image.beam_type = beam_type
