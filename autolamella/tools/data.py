@@ -97,6 +97,7 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
                 
                 # get timestamp, function, and message from log line
                 tsd, func, msg = parse_line(line)
+                # msgd = parse_msg(msg) # TODO: enable, and remove indiviudal calls
 
                 # TELEMETRY -> depcrecated in favour of manufacturer telemetry
                 if "get_current_microscope_state" in func:
