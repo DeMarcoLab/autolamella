@@ -34,10 +34,11 @@ options:
     batch_mode: true
     confirm_next_stage: true
     complete_undercut: False
+    milling_tilt_angle: 8.0    # absolute angle (pre-tilt - 27)
     lamella_start_position: autoliftout-serial-pre-tilt-35-deg-grid-01-lamella
     landing_start_position: autoliftout-serial-pre-tilt-35-deg-grid-02-landing
-    compucentric_x_offset: 50.0e-6
-    compucentric_y_offset: 25.0e-6
+    compucentric_x_offset: 0.0e-6
+    compucentric_y_offset: 0.0e-6
     alignment_at_milling_current: true
     take_final_reference_images: true
     take_final_high_quality_reference_images: true
@@ -111,21 +112,6 @@ liftout-weld:
     hfw: 150.0e-6
     application_file: "autolamella"
     scan_direction: "BottomToTop"
-    type: "SpotWeldVertical"
-    preset: "30 keV; 2.5 nA"
-prepare-copper-block-weld:
-    height: 2.5e-6
-    width: 0.5e-6
-    depth: 4.0e-6
-    distance: 0.25e-6
-    number: 10
-    rotation: 0.0
-    passes: 1.0
-    milling_voltage: 30.0e+3
-    milling_current: 300.0e-12
-    hfw: 150.0e-6
-    application_file: "autolamella"
-    scan_direction: "TopToBottom"
     type: "SpotWeldVertical"
     preset: "30 keV; 2.5 nA"
 landing-weld:
@@ -228,7 +214,26 @@ fiducial:
 # options
 # positions
 # milling
-
+prepare-manipulator:
+    stages:
+    -   application_file: autolamella
+        hfw: 0.00015
+        milling_current: 28.0e-9
+        milling_voltage: 30000
+        type: Rectangle
+        width: 25.0e-6
+        height: 2.50e-6
+        depth: 10.0e-6  
+prepare-copper-grid:
+    stages:
+    -   application_file: autolamella
+        hfw: 0.00015
+        milling_current: 28.0e-9
+        milling_voltage: 30000
+        type: Rectangle
+        width: 100.0e-6
+        height: 5.0e-6
+        depth: 30.0e-6
 prepare-copper-blocks:
     stages:
     -   application_file: autolamella
@@ -251,25 +256,33 @@ prepare-copper-blocks:
         width: 100.0e-6
         height: 7.50e-6
         depth: 10.0e-6
-prepare-copper-grid:
+prepare-copper-weld:
+    stages:
+    -   height: 2.5e-6
+        width: 0.5e-6
+        depth: 4.0e-6
+        distance: 1.0e-6
+        number: 15
+        rotation: 0.0
+        passes: 1.0
+        milling_voltage: 30.0e+3
+        milling_current: 300.0e-12
+        hfw: 150.0e-6
+        application_file: "autolamella"
+        scan_direction: "TopToBottom"
+        type: "SpotWeldVertical"
+        preset: "30 keV; 2.5 nA"
+prepare-copper-release:
     stages:
     -   application_file: autolamella
-        hfw: 0.00015
+        hfw: 150.0e-6
         milling_current: 28.0e-9
         milling_voltage: 30000
-        type: Rectangle
-        width: 100.0e-6
-        height: 5.0e-6
-        depth: 30.0e-6
-prepare-copper-release:
-    - stages:
-        application_file: autolamella
-        hfw: 0.00015
-        milling_current: 15.0e-9
-        milling_voltage: 30000
-        type: Microexpansion
-        height: 1.0e-6
+        depth: 10.0e-6
+        distance: 30.0e-6
+        height: 20.0e-6
         width: 5.0e-6
-        depth: 5.0e-6
-        distance: 2.0e-6
-        lamella_width: 10.e-6
+        type: SpotWeldVertical
+        passes: null
+        number: 2.0
+        scan_direction: TopToBottom

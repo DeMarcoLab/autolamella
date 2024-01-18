@@ -641,6 +641,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         logging.info(f"Workflow Finished.")
         self._WORKFLOW_RUNNING = False
         self.tabWidget.setCurrentIndex(0)
+        napari.utils.notifications.show_info(f"Workflow Finished.")
 
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
@@ -749,7 +750,13 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         elif workflow == "prepare-manipulator":
 
             _METHOD = self.settings.protocol.get("method", "autoliftout-default")
-            napari.utils.notification.show_warning(f"Prepare Manipulator ({_METHOD}) is Not Yet Implemented")
+            if _METHOD == "autoliftout-serial-liftout":
+                autoliftout.PREPARE_MANIPULATOR_WORKFLOW["serial-liftout"](microscope=microscope, 
+                                                                  settings= settings, 
+                                                                  parent_ui=self,
+                                                                  experiment=experiment)
+            else:
+                napari.utils.notification.show_warning(f"Prepare Manipulator ({_METHOD}) is Not Yet Implemented")
 
         else:
             raise ValueError(f"Unknown workflow: {workflow}")

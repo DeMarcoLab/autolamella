@@ -1236,63 +1236,263 @@ def _prepare_manipulator_autoliftout(microscope: FibsemMicroscope, settings: Mic
 
     return
 
+def log_status_message_raw( stage: str, step: str, petname: str = "null"):
+    msgd = {"msg": "status", "petname": petname, stage: "PrepareManipulator", "step": step }
+    logging.debug(f"{msgd}")   
 
-def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: MicroscopeSettings, parent_ui: AutoLiftoutUIv2):
+def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: MicroscopeSettings, parent_ui: AutoLiftoutUIv2, experiment: Experiment = None):
+
+
+    # bookkeeping
+    workflow_stage = "PrepareManipulator"
+    log_status_message_raw(workflow_stage, "STARTED")
+    validate = bool(settings.protocol["options"]["supervise"].get("prepare_manipulator", True))
+    scan_rotation = microscope.get("scan_rotation", BeamType.ION)
+
+    if experiment is not None:
+        path = experiment.path
+    else: 
+        path = os.getcwd()
+
+    settings.image.save_path = os.path.join(path, "prepare_manipulator")
+    os.makedirs(settings.image.save_path, exist_ok=True)
 
     # assume manipulator is calibrated
+    ret = ask_user(parent_ui=parent_ui, 
+                   msg="Do you want to prepare the manipulator for serial-liftout)? Please ensure the manipulator is calibrated before starting.",
+                    pos="Yes", neg="No")
+
+    if ret is False:
+        logging.info(f"Exiting prepare manipulator workflow. Manipulator is not calibrated")
+        return
 
     # move to landing grid
+    log_status_message_raw(workflow_stage, "MOVE_TO_LANDING_GRID")
+    _update_status_ui(parent_ui, f"Moving to Landing Grid...")
+    position = fibsem_utils._get_position(settings.protocol["options"]["landing_start_position"])
+    microscope._safe_absolute_stage_movement(position)
 
     # move to milling orientation (18 degrees)
+    t=np.deg2rad(settings.protocol["options"].get("milling_tilt_angle", 18))
+    microscope._safe_absolute_stage_movement(FibsemStagePosition(t=t))
+
+    # ask the user to navigate to the desired location
+    ask_user(
+        parent_ui,
+        msg=f"Please navigate to the desired location for preparing the copper adaptors. Press Continue when ready.",
+        pos="Continue",
+    )
+
 
     # mill prepare-copper-grid (clean the grid surface)
+    settings.image.label = f"ref_prepare_copper_grid"
+    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
+    _update_status_ui(parent_ui, f"Preparing Copper Grid...")
+
+    log_status_message_raw(workflow_stage, "MILL_PREPARE_COPPER_GRID")
+    stages = _get_milling_stages("prepare-copper-grid", settings.protocol)
+    stages = _validate_mill_ui(stages=stages,
+            msg=f"Press Run Milling to mill the grid preparation milling. Press Continue when done.", 
+            parent_ui=parent_ui, validate=validate)
+    
+    # refernce images
+    log_status_message_raw(workflow_stage, "REFERENCE_IMAGES")
+    reference_images = acquire.take_set_of_reference_images(
+        microscope=microscope,
+        image_settings=settings.image,
+        hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH],
+        label=f"ref_prepare_copper_grid_final",
+    )
+    _set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
+
+    # get milling state for return later
+    milling_state = microscope.get_current_microscope_state()
 
     # rotate flat to ion
+    log_status_message_raw(workflow_stage, "ROTATE_FLAT_TO_ION")
+    _update_status_ui(parent_ui, f"Rotating to Ion Beam...")
+    microscope.move_flat_to_beam(settings, beam_type=BeamType.ION)
 
     # mill prepare-copper-blocks (chain of blocks)
+    settings.image.label = f"ref_prepare_copper_blocks"
+    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
+    _update_status_ui(parent_ui, f"Preparing Copper Blocks...")
+
+
+    log_status_message_raw(workflow_stage, "MILL_PREPARE_COPPER_BLOCKS")
+    # get top pattern position
+    h1 = settings.protocol["prepare-copper-blocks"]["stages"][0]["height"]
+    h2 = settings.protocol["prepare-copper-blocks"]["stages"][1]["height"]
+    dy = h1/2 - h2/2
+    points = [Point(0, 0), Point(0, dy)]
+    
+    stages = _get_milling_stages("prepare-copper-blocks", settings.protocol, point=points)
+    stages = _validate_mill_ui(stages=stages, 
+                msg=f"Press Run Milling to mill the copper blocks. Press Continue when done.", 
+                parent_ui=parent_ui, validate=validate)
+    
 
     # move back to milling orientation
+    log_status_message_raw(workflow_stage, "MOVE_TO_MILLING_ORIENTATION")
+    _update_status_ui(parent_ui, f"Moving to Milling Orientation...")
+    microscope.set_microscope_state(milling_state)
 
     # align coincidence
+    if validate:
+        ask_user(
+            parent_ui,
+            msg=f"Please align the coincidence of the beam. Press Continue when ready.",
+            pos="Continue",
+        )
 
-
-    # optional, if manipulator already prepped
+    # update saved milling state
+    milling_state = microscope.get_current_microscope_state()
     
-    # tilt stage flat
+    # optional, if manipulator already prepped
+    ret = ask_user(parent_ui=parent_ui, 
+                msg="Do you want to prepare the manipulator surface (mill the surface flat)?",
+                pos="Yes", neg="Skip")
+
+    if ret is True:
+
+        # tilt stage flat
+        microscope._safe_absolute_stage_movement(FibsemStagePosition(t = 0))
+        
+        # insert manipulator to eucentric z=-10
+        actions.move_needle_to_prepare_position(microscope)
+        
+        # move manipulator to centre of image
+        beam_type = BeamType.ION
+        settings.image.beam_type = beam_type
+
+        features = [detection.NeedleTip(), detection.ImageCentre()] if np.isclose(scan_rotation, 0) else [detection.NeedleTipBottom(), detection.ImageCentre()]
+        det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg="Prepare Manipulator")
+
+        move_x = bool(beam_type == BeamType.ELECTRON) # ION calibration only in z
+        detection.move_based_on_detection(microscope, settings, det, beam_type, move_x=move_x, _move_system="manipulator")
+
+        # mill prepare-manipulator (clean the manipulator surface)
+        settings.image.label = f"ref_prepare_manipulator_surface"
+        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+        settings.image.save = True
+        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+        _set_images_ui(parent_ui, eb_image, ib_image)
+        _update_status_ui(parent_ui, f"Preparing Manipulator...")
+
+        # create rectangle pattern at tip (horizontal rect)
+        log_status_message_raw(workflow_stage, "MILL_PREPARE_MANIPULATOR")
+        stages = _get_milling_stages("prepare-manipulator", settings.protocol)
+
+        point = Point(0, 10e-6)
+        if not np.isclose(scan_rotation, 0):
+            point.y *= -1.0
+
+        stages = _validate_mill_ui(stages=stages, 
+                    msg=f"Press Run Milling to mill the manipulator. Press Continue when done.", 
+                    parent_ui=parent_ui, validate=validate)
+
+        # reference images
+        log_status_message_raw(workflow_stage, "REFERENCE_IMAGES")
+        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+        settings.image.label = f"ref_prepare_manipulator_surface_final"
+        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+        _set_images_ui(parent_ui, eb_image, ib_image)
+
+        # retract manipulator
+        microscope.retract_manipulator()
+
+        # move back to milling orientation
+        microscope.set_microscope_state(milling_state)
+
     # insert manipulator to eucentric z=-10
+    actions.move_needle_to_prepare_position(microscope)
 
-    # detect tip
+    # polish surfaces flat, cleaning cross section?
+    ask_user(
+        parent_ui,
+        msg=f"Confirm that both surfaces are flat. Polish with milling if required. Press Continue when ready.",
+        pos="Continue",
+    )
 
-    # create rectangle pattern at tip (horizontal rect)
+    # move manipulator to centre of image
+    log_status_message_raw(workflow_stage, "MOVE_TO_WELD_POSITION")
+    for beam_type in [BeamType.ELECTRON, BeamType.ION]:
+        beam_type = BeamType.ION
+        
+        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH 
+        settings.image.beam_type = beam_type
 
-    # mill
+        # detect manipulator and user defined feature
+        features = [detection.NeedleTip(), detection.CoreFeature()] if np.isclose(scan_rotation, 0) else [detection.NeedleTipBottom(), detection.CoreFeature()]
+        det = _validate_det_ui_v2(microscope, settings, features, parent_ui, validate, msg="Prepare Manipulator")
 
-    # insert manipulator to eucentric z-10
+        # move manipulator to target position
+        detection.move_based_on_detection(microscope, settings, det, beam_type, _move_system="manipulator")
 
-    # detect tip, centre of image
-
-    # align in ELECTRON
-
-    # polish surfaces flat, cleaning cross section
-
-    # make contact in ion
+    # reference images
+    log_status_message_raw(workflow_stage, "REFERENCE_IMAGES")
+    settings.image.label = f"ref_prepare_weld_position"
+    settings.image.hfw = fcfg.REFERENCE_HFW_ULTRA
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
 
     # respositon weld
+    # TODO: detect the weld position
+    log_status_message_raw(workflow_stage, "MILL_COPPER_WELD")
+    stages = _get_milling_stages("prepare-copper-weld", settings.protocol)
+    stages = _validate_mill_ui(stages=stages,
+                        msg=f"Press Run Milling to weld the copper block. Press Continue when done.", 
+                        parent_ui=parent_ui, validate=validate)
 
+    # reference images
+    log_status_message_raw(workflow_stage, "REFERENCE_IMAGES")
+    settings.image.label = f"ref_prepare_copper_release"
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
+    
     # release copper block
+    log_status_message_raw(workflow_stage, "MILL_COPPER_RELEASE")
+    ret = False
+    while ret is False:
 
-    # check for release
+        # mill prepare-copper-release (release the copper block)
+        stages = _get_milling_stages("prepare-copper-release", settings.protocol)
+        stages = _validate_mill_ui(stages=stages, 
+                msg=f"Press Run Milling to mill copper block release. Press Continue when done.", 
+                        parent_ui=parent_ui, validate=validate)
 
-    # continue
+        # check for release
+        ret = ask_user(parent_ui=parent_ui, 
+                    msg="Has the copper block been released?",
+                    pos="Yes", neg="No")
+
+    # reference images
+    log_status_message_raw(workflow_stage, "REFERENCE_IMAGES")
+    settings.image.label = f"ref_prepare_manipulator_final"
+    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    _set_images_ui(parent_ui, eb_image, ib_image)
 
     # retract manipulator
+    microscope.retract_manipulator()
 
+    # logging
+    log_status_message_raw(workflow_stage, "FINISHED")
     
-
     return 
 
 PREPARE_MANIPULATOR_WORKFLOW = {
-    "autoliftout": _prepare_manipulator_autoliftout,
-    "serial-lfitout": _prepare_manipulator_serial_liftout
+    "liftout": _prepare_manipulator_autoliftout,
+    "serial-liftout": _prepare_manipulator_serial_liftout
 }
 

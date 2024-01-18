@@ -143,6 +143,29 @@ def move_needle_to_park_position(microscope: FibsemMicroscope, name: str = "PARK
     return microscope.get_manipulator_position()
 
 
+def move_needle_to_prepare_position(
+    microscope: FibsemMicroscope,
+    position: str = "EUCENTRIC", 
+    dx: float = 0.0e-6,
+    dy: float = 0.0e-6,
+    dz: float = 10.0e-6,
+) -> None:
+    """Insert the needle to just above the eucentric point, ready for preparation.
+
+    Args:
+        microscope (FibsemMicroscope): autoscript microscope instance
+        dz (float): distance to move above the eucentric point (ManipulatorCoordinateSystem.RAW -> up = negative)
+    """
+
+    # insert to park position
+    microscope.insert_manipulator("PARK")
+
+    # move to  offset position
+    offset = FibsemManipulatorPosition(dx, dy, dz, coordinate_system="RAW")                                                                         
+    microscope.move_manipulator_to_position_offset(offset = offset, name=position)
+
+
+
 def move_to_lamella_angle(
     microscope: FibsemMicroscope, protocol: dict
 ) -> FibsemStagePosition:

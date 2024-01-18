@@ -20,7 +20,7 @@ def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by u
         raise InterruptedError(msg)
 
 
-def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg, validate: bool,milling_enabled: bool = True):
+def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg:str, validate: bool,milling_enabled: bool = True):
     _update_mill_stages_ui(parent_ui, stages=stages)
 
     if validate:
