@@ -4,8 +4,8 @@ from fibsem.ui import utils as fui
 from PyQt5 import QtWidgets
 
 from autolamella import config as cfg
-from autolamella.structures import Experiment, Lamella
-from fibsem.structures import Point, FibsemImage, FibsemStagePosition
+from autolamella.structures import Experiment
+
 
 def setup_experiment_ui_v2(
     parent_ui: QtWidgets.QMainWindow, new_experiment: bool = True
@@ -70,31 +70,3 @@ def create_experiment_ui(parent,
     experiment = Experiment(path=PATH, name=NAME)
     experiment.save()
     return experiment
-
-
-def lamella_in_view(lamella: Lamella, lamella_centre: Point, ib_image: FibsemImage):
-
-    # get effective lamella position
-    lamella_offset = FibsemStagePosition(x = lamella_centre.x, y = lamella_centre.y, z = 0)
-    lamella_position = lamella.state.microscope_state.absolute_position.__add__(lamella_offset)
-
-
-    
-
-    # get image bounds
-    x = ib_image.metadata.microscope_state.absolute_position.x
-    z = ib_image.metadata.microscope_state.absolute_position.z
-    x_bounds = [0,0]
-    z_bounds = [0,0]
-    x_bounds[0] = x - ib_image.metadata.image_settings.resolution[0]/2 * ib_image.metadata.pixel_size.x
-    x_bounds[1] = x + ib_image.metadata.image_settings.resolution[0]/2 * ib_image.metadata.pixel_size.x
-
-    z_bounds[0] = z - ib_image.metadata.image_settings.resolution[1]/2 * ib_image.metadata.pixel_size.y
-    z_bounds[1] = z + ib_image.metadata.image_settings.resolution[1]/2 * ib_image.metadata.pixel_size.y
-
-
-    # check if lamella is in view
-    if x_bounds[0] < lamella_position.x < x_bounds[1] and z_bounds[0] < lamella_position.z < z_bounds[1]:
-        return True, lamella_position
-    else:
-        return False, lamella_position

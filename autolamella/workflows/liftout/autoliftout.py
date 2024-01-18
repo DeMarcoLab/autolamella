@@ -40,9 +40,9 @@ from fibsem.structures import (
 )
 from fibsem.ui import windows as fibsem_ui_windows
 
-from autolamella.liftout import actions
-from autolamella.liftout.structures import AutoLamellaWaffleStage, Experiment, Lamella
-from autolamella.liftout.ui.AutoLiftoutUIv2 import AutoLiftoutUIv2
+from autolamella.workflows.liftout import actions
+from autolamella.structures import AutoLamellaWaffleStage, Experiment, Lamella
+from autolamella.ui.AutoLiftoutUIv2 import AutoLiftoutUIv2
 from fibsem import config as fcfg
 
 

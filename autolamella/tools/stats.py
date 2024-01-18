@@ -413,9 +413,6 @@ with tab_stage:
             cols[0].image(eb_image.data, caption=f"{petname} - {os.path.basename(fname_eb)}")
             cols[1].image(ib_image.data, caption=f"{petname} - {os.path.basename(fname_ib)}")
 
-
-    if program == "autoliftout":
-        from autolamella.liftout.structures import Experiment
         
     exp = Experiment.load(os.path.join(EXPERIMENT_PATH, "experiment.yaml"))
 

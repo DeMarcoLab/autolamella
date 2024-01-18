@@ -20,10 +20,11 @@ from napari.utils import notifications
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSignal
 
-from autolamella.liftout.config import config as cfg
-from autolamella.liftout.structures import AutoLamellaWaffleStage, Experiment, Lamella
-from autolamella.liftout.ui import utils as ui_utils
-from autolamella.liftout.ui.qt import AutoLiftoutUIv2
+import autolamella
+from autolamella import config as cfg
+from autolamella.structures import AutoLamellaWaffleStage, Experiment, Lamella
+from autolamella.ui import utils as ui_utils
+from autolamella.ui.qt import AutoLiftoutUIv2
 
 from datetime import datetime
 from fibsem.ui import _stylesheets
@@ -508,14 +509,14 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # TODO: enable this
         # register metadata
-        # if fcfg._REGISTER_METADATA:
-        #     import autolamella #NB: microscope needs to be connected beforehand
-        #     futils._register_metadata(
-        #         microscope=self.microscope, 
-        #         application_software="autolamella",
-        #         application_software_version=autolamella.__version__,
-        #         experiment_name=self.experiment.name,
-        #         experiment_method = "autoliftout") # TODO: add method to experiment
+        if cfg._REGISTER_METADATA:
+             #NB: microscope needs to be connected beforehand
+            futils._register_metadata(
+                microscope=self.microscope, 
+                application_software="autolamella",
+                application_software_version=autolamella.__version__,
+                experiment_name=self.experiment.name,
+                experiment_method = "autoliftout") # TODO: add method to experiment
 
         # # automatically re-load protocol if available
         if not new_experiment and self.settings is not None:
@@ -694,7 +695,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
 
-        from autolamella.liftout import autoliftout
+        from autolamella.workflows.liftout import autoliftout
 
         if workflow == "setup":
             self.experiment = autoliftout.run_setup_autoliftout(
@@ -716,7 +717,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                     parent_ui=self,
                 )
             if _METHOD == "autoliftout-serial-liftout":
-                from autolamella.liftout.workflows import serial as serial_workflow
+                from autolamella.workflows.liftout import serial as serial_workflow
                 self.experiment = serial_workflow.run_serial_liftout_workflow(
                     microscope=microscope,
                     settings=settings,
@@ -725,7 +726,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                 )
         elif workflow == "serial-liftout-landing":
 
-            from autolamella.liftout.workflows import serial as serial_workflow
+            from autolamella.workflows.liftout import serial as serial_workflow
             self.experiment = serial_workflow.run_serial_liftout_landing(
 
                 microscope=microscope,
