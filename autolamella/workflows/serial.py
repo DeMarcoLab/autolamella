@@ -38,16 +38,16 @@ from fibsem.structures import (
     Point,
 )
 import numpy as np
-from autolamella.workflows.liftout import actions
+from autolamella.workflows import actions
 from autolamella.structures import AutoLamellaWaffleStage, Experiment, Lamella
 from autolamella.ui.AutoLiftoutUIv2 import AutoLiftoutUIv2
 from fibsem import config as fcfg
 
 from collections import Counter
 from autolamella.structures import Lamella, Experiment, LamellaState, AutoLamellaWaffleStage
-from autolamella.workflows.liftout.autoliftout import log_status_message, start_of_stage_update, end_of_stage_update
+from autolamella.workflows.autoliftout import log_status_message, start_of_stage_update, end_of_stage_update, setup_lamella, mill_lamella
 from autolamella.workflows.ui import ask_user, _update_status_ui, _validate_det_ui_v2, _set_images_ui,  _validate_mill_ui
-from autolamella.workflows.core import align_feature_coincident
+from autolamella.workflows.core import align_feature_coincident, mill_trench, mill_undercut
 from pprint import pprint
 
 # serial workflow functions
@@ -499,8 +499,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
     return lamella
 
 
-from autolamella.workflows.liftout.autoliftout import setup_lamella, mill_lamella
-from autolamella.workflows.core import mill_trench, mill_undercut
+
 
 # serial workflow functions
 SERIAL_WORKFLOW_STAGES = {

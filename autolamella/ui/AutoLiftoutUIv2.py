@@ -691,7 +691,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
 
-        from autolamella.workflows.liftout import autoliftout
+        from autolamella.workflows import autoliftout
 
         if workflow == "setup":
             self.experiment = autoliftout.run_setup_autoliftout(
@@ -713,7 +713,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                     parent_ui=self,
                 )
             if _METHOD == "autoliftout-serial-liftout":
-                from autolamella.workflows.liftout import serial as serial_workflow
+                from autolamella.workflows import serial as serial_workflow
                 self.experiment = serial_workflow.run_serial_liftout_workflow(
                     microscope=microscope,
                     settings=settings,
@@ -722,7 +722,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                 )
         elif workflow == "serial-liftout-landing":
 
-            from autolamella.workflows.liftout import serial as serial_workflow
+            from autolamella.workflows import serial as serial_workflow
             self.experiment = serial_workflow.run_serial_liftout_landing(
 
                 microscope=microscope,

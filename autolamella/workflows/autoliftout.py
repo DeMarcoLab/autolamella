@@ -5,7 +5,6 @@ from datetime import datetime
 from pathlib import Path
 
 import os
-import napari
 import numpy as np
 from fibsem import acquire, alignment, calibration, patterning
 from fibsem import utils as fibsem_utils
@@ -38,16 +37,21 @@ from fibsem.structures import (
     Point,
     ImageSettings
 )
-from fibsem.ui import windows as fibsem_ui_windows
+# from fibsem.ui import windows as fibsem_ui_windows
 
-from autolamella.workflows.liftout import actions
+from autolamella.workflows import actions
 from autolamella.structures import AutoLamellaWaffleStage, Experiment, Lamella
 from autolamella.ui.AutoLiftoutUIv2 import AutoLiftoutUIv2
 from fibsem import config as fcfg
 
 
-from autolamella.workflows.core import log_status_message, start_of_stage_update, end_of_stage_update
-from autolamella.workflows.ui import _validate_mill_ui, _update_status_ui, _set_images_ui, ask_user, _validate_det_ui_v2
+from autolamella.workflows.core import (log_status_message, 
+                                        start_of_stage_update, end_of_stage_update, 
+                                        mill_trench, mill_undercut, mill_lamella, 
+                                        setup_lamella, pass_through_stage)
+from autolamella.workflows.ui import (_validate_mill_ui, _update_status_ui, 
+                                      _set_images_ui, ask_user, _validate_det_ui_v2)
+
 
 # autoliftout workflow functions
 
@@ -822,7 +826,6 @@ def run_setup_autoliftout(
 
     return experiment
 
-from autolamella.workflows.core import mill_trench, mill_undercut, mill_lamella, setup_lamella, pass_through_stage
 # autoliftout_workflow
 WORKFLOW_STAGES = {
     AutoLamellaWaffleStage.SetupTrench: run_setup_autoliftout, # TODO: split this further
@@ -1211,10 +1214,10 @@ def validate_needle_insertion(
     while validation.validate_stage_height_for_needle_insertion(
         microscope, needle_stage_height_limit
     ):
-        fibsem_ui_windows.ask_user_interaction(
+        ask_user(
             msg=f"""The system has identified the distance between the sample and the pole piece is less than {needle_stage_height_limit * 1000}mm. "
             "The needle will contact the sample, and it is unsafe to insert the needle. "
-            "\nPlease manually refocus and link the stage, then press OK to continue. """,
+            "\nPlease manually refocus and link the stage, then press OK to continue. """, pos="Continue."
         )
 
 

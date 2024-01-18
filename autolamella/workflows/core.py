@@ -446,7 +446,7 @@ def setup_lamella(
     _update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
 
     if method == "autoliftout-default":
-        from autolamella.workflows.liftout import actions
+        from autolamella.workflows import actions
 
         actions.move_to_lamella_angle(microscope, settings.protocol)
         # OFFSET FOR COMPUCENTRIC ROTATION
