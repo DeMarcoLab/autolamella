@@ -1325,13 +1325,14 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
     _update_status_ui(parent_ui, f"Preparing Copper Blocks...")
 
 
-    log_status_message_raw(workflow_stage, "MILL_PREPARE_COPPER_BLOCKS")
     # get top pattern position
+    log_status_message_raw(workflow_stage, "MILL_PREPARE_COPPER_BLOCKS")
     h1 = settings.protocol["prepare-copper-blocks"]["stages"][0]["height"]
     h2 = settings.protocol["prepare-copper-blocks"]["stages"][1]["height"]
     dy = h1/2 - h2/2
     points = [Point(0, 0), Point(0, dy)]
     
+    # mill prepare-copper-blocks (chain of blocks)
     stages = _get_milling_stages("prepare-copper-blocks", settings.protocol, point=points)
     stages = _validate_mill_ui(stages=stages, 
                 msg=f"Press Run Milling to mill the copper blocks. Press Continue when done.", 
@@ -1365,6 +1366,8 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
         microscope._safe_absolute_stage_movement(FibsemStagePosition(t = 0))
         
         # insert manipulator to eucentric z=-10
+        log_status_message_raw(workflow_stage, "INSERT_MANIPULATOR")
+        _update_status_ui(parent_ui, f"Inserting Manipulator...")
         actions.move_needle_to_prepare_position(microscope)
         
         # move manipulator to centre of image
@@ -1378,15 +1381,15 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
         detection.move_based_on_detection(microscope, settings, det, beam_type, move_x=move_x, _move_system="manipulator")
 
         # mill prepare-manipulator (clean the manipulator surface)
+        log_status_message_raw(workflow_stage, "MILL_PREPARE_MANIPULATOR_SURFACE")
         settings.image.label = f"ref_prepare_manipulator_surface"
         settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
         settings.image.save = True
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         _set_images_ui(parent_ui, eb_image, ib_image)
-        _update_status_ui(parent_ui, f"Preparing Manipulator...")
+        _update_status_ui(parent_ui, f"Preparing Manipulator Surface...")
 
         # create rectangle pattern at tip (horizontal rect)
-        log_status_message_raw(workflow_stage, "MILL_PREPARE_MANIPULATOR")
         stages = _get_milling_stages("prepare-manipulator", settings.protocol)
 
         point = Point(0, 10e-6)
@@ -1411,6 +1414,8 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
         microscope.set_microscope_state(milling_state)
 
     # insert manipulator to eucentric z=-10
+    log_status_message_raw(workflow_stage, "INSERT_MANIPULATOR")
+    _update_status_ui(parent_ui, f"Inserting Manipulator...")
     actions.move_needle_to_prepare_position(microscope)
 
     # polish surfaces flat, cleaning cross section?
