@@ -77,7 +77,7 @@
     <item row="0" column="0" colspan="2">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -768,6 +768,27 @@
           </property>
          </widget>
         </item>
+        <item row="5" column="0">
+         <widget class="QCheckBox" name="checkBox_options_confirm_next_stage">
+          <property name="text">
+           <string>Confirm Next Stage</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QCheckBox" name="checkBox_take_final_reference_images">
+          <property name="text">
+           <string>Take Final Reference Images</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="1">
+         <widget class="QCheckBox" name="checkBox_take_final_high_quality_reference">
+          <property name="text">
+           <string>Take Final High Quality Reference Image</string>
+          </property>
+         </widget>
+        </item>
         <item row="7" column="0">
          <widget class="QLabel" name="label_protocol_undercut_tilt_angle">
           <property name="text">
@@ -789,6 +810,16 @@
          <widget class="QLabel" name="label_protocol_undercut_tilt_step">
           <property name="text">
            <string>Undercut Tilt Steps</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="1">
+         <widget class="QDoubleSpinBox" name="doubleSpinBox_undercut_step">
+          <property name="minimum">
+           <double>-180.000000000000000</double>
+          </property>
+          <property name="maximum">
+           <double>180.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -893,34 +924,7 @@
           </property>
          </widget>
         </item>
-        <item row="31" column="0">
-         <widget class="QLabel" name="label_ml_encoder">
-          <property name="text">
-           <string>Encoder</string>
-          </property>
-         </widget>
-        </item>
-        <item row="31" column="1">
-         <widget class="QLineEdit" name="lineEdit_ml_encoder">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-         </widget>
-        </item>
-        <item row="32" column="0">
-         <widget class="QLabel" name="label_ml_num_classes">
-          <property name="text">
-           <string>Num Classes</string>
-          </property>
-         </widget>
-        </item>
-        <item row="32" column="1">
-         <widget class="QSpinBox" name="spinBox_ml_num_classes"/>
-        </item>
-        <item row="33" column="0" colspan="2">
+        <item row="31" column="0" colspan="2">
          <widget class="QLabel" name="label_supervise_header">
           <property name="font">
            <font>
@@ -933,35 +937,35 @@
           </property>
          </widget>
         </item>
-        <item row="34" column="0">
+        <item row="32" column="0">
          <widget class="QCheckBox" name="checkBox_trench">
           <property name="text">
            <string>Trench Stage</string>
           </property>
          </widget>
         </item>
-        <item row="34" column="1">
+        <item row="32" column="1">
          <widget class="QCheckBox" name="checkBox_setup">
           <property name="text">
            <string>Setup Stage</string>
           </property>
          </widget>
         </item>
-        <item row="35" column="0">
+        <item row="33" column="0">
          <widget class="QCheckBox" name="checkBox_undercut">
           <property name="text">
            <string>Undercut Stage</string>
           </property>
          </widget>
         </item>
-        <item row="35" column="1">
+        <item row="33" column="1">
          <widget class="QCheckBox" name="checkBox_supervise_mill_rough">
           <property name="text">
            <string>Mill Rough Stage</string>
           </property>
          </widget>
         </item>
-        <item row="36" column="0">
+        <item row="34" column="0">
          <widget class="QCheckBox" name="checkBox_supervise_liftout">
           <property name="enabled">
            <bool>true</bool>
@@ -971,14 +975,14 @@
           </property>
          </widget>
         </item>
-        <item row="36" column="1">
+        <item row="34" column="1">
          <widget class="QCheckBox" name="checkBox_supervise_mill_polishing">
           <property name="text">
            <string>Mill Polishing Stage</string>
           </property>
          </widget>
         </item>
-        <item row="37" column="0">
+        <item row="35" column="0">
          <widget class="QCheckBox" name="checkBox_supervise_landing">
           <property name="enabled">
            <bool>true</bool>
@@ -988,41 +992,10 @@
           </property>
          </widget>
         </item>
-        <item row="40" column="0" colspan="2">
+        <item row="38" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_update_protocol">
           <property name="text">
            <string>Update Protocol</string>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="1">
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_undercut_step">
-          <property name="minimum">
-           <double>-180.000000000000000</double>
-          </property>
-          <property name="maximum">
-           <double>180.000000000000000</double>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0">
-         <widget class="QCheckBox" name="checkBox_take_final_reference_images">
-          <property name="text">
-           <string>Take Final Reference Images</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="QCheckBox" name="checkBox_take_final_high_quality_reference">
-          <property name="text">
-           <string>Take Final High Quality Reference Image</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QCheckBox" name="checkBox_options_confirm_next_stage">
-          <property name="text">
-           <string>Confirm Next Stage</string>
           </property>
          </widget>
         </item>

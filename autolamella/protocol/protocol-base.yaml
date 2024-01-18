@@ -19,9 +19,7 @@ options:
     mill_polishing: true
 
 ml:
-    encoder: resnet34
-    num_classes: 3
-    checkpoint: autolamella-05-34.pt
+    checkpoint: autolamella-mega-20240107.pt
 
 fiducial:
   enabled: true

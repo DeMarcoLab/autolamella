@@ -415,9 +415,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.checkBox_supervise_mill_polishing.setChecked(bool(options["supervise"]["mill_polishing"]))
 
         # ml
-        self.lineEdit_protocol_ml_encoder.setText(self.settings.protocol["ml"]["encoder"])
         self.lineEdit_protocol_ml_checkpoint.setText(self.settings.protocol["ml"]["checkpoint"])
-        self.spinBox_protocol_ml_num_classes.setValue(int(self.settings.protocol["ml"]["num_classes"]))
 
         # TODO: initial positions
 
@@ -447,9 +445,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         )
 
         self.settings.protocol["ml"] = {
-            "encoder": self.lineEdit_protocol_ml_encoder.text(),
             "checkpoint": self.lineEdit_protocol_ml_checkpoint.text(),
-            "num_classes": int(self.spinBox_protocol_ml_num_classes.value()),
         }
 
         if self.sender() == self.actionSave_Protocol:

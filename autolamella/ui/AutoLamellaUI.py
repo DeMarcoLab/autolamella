@@ -202,9 +202,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"].get("undercut", True))
 
             # machine learning
-            self.lineEdit_ml_checkpoint.setText(self.settings.protocol.get("ml", {}).get("checkpoint", "autolamella-05-34.pt"))
-            self.lineEdit_ml_encoder.setText(self.settings.protocol.get("ml", {}).get("encoder", "resnet34"))
-            self.spinBox_ml_num_classes.setValue(self.settings.protocol.get("ml", {}).get("num_classes", 3))  
+            self.lineEdit_ml_checkpoint.setText(self.settings.protocol.get("ml", {}).get("checkpoint", "autolamella-waffle-20240107.pt"))
 
             # undercut
             self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol.get("undercut", {}).get("tilt_angle", -5))
@@ -215,11 +213,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.label_ml_header.setVisible(_WAFFLE_METHOD)
         self.label_ml_checkpoint.setVisible(_WAFFLE_METHOD)
-        self.label_ml_num_classes.setVisible(_WAFFLE_METHOD)
-        self.label_ml_encoder.setVisible(_WAFFLE_METHOD)
         self.lineEdit_ml_checkpoint.setVisible(_WAFFLE_METHOD)
-        self.lineEdit_ml_encoder.setVisible(_WAFFLE_METHOD)
-        self.spinBox_ml_num_classes.setVisible(_WAFFLE_METHOD)
 
         self.doubleSpinBox_undercut_tilt.setVisible(_WAFFLE_METHOD)
         self.doubleSpinBox_undercut_step.setVisible(_WAFFLE_METHOD)
@@ -280,8 +274,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             # machine learning
             self.settings.protocol["ml"]["checkpoint"] = self.lineEdit_ml_checkpoint.text()
-            self.settings.protocol["ml"]["encoder"] = self.lineEdit_ml_encoder.text()
-            self.settings.protocol["ml"]["num_classes"] = self.spinBox_ml_num_classes.value()
 
             # undercut
             self.settings.protocol["undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()

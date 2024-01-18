@@ -5,7 +5,7 @@ import autolamella
 BASE_PATH: Path = os.path.dirname(__file__)
 LOG_PATH: Path = os.path.join(BASE_PATH, 'log')
 CONFIG_PATH: Path = os.path.join(BASE_PATH)
-PROTOCOL_PATH: Path = os.path.join(BASE_PATH, "protocol", "protocol.yaml")
+PROTOCOL_PATH: Path = os.path.join(BASE_PATH, "protocol", "protocol-base.yaml")
 SYSTEM_PATH: Path = os.path.join(CONFIG_PATH, "system.yaml")
 DESKTOP_SHORTCUT_PATH= os.path.dirname(autolamella.__path__[0]) 
 
