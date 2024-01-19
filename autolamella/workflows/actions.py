@@ -17,7 +17,6 @@ def move_to_trenching_angle(
         settings (MicroscopeSettings): microscope settings
     """
     microscope.move_flat_to_beam(
-        settings=settings,
         beam_type=BeamType.ION,
     )
 
@@ -33,7 +32,6 @@ def move_to_liftout_angle(
     """
 
     microscope.move_flat_to_beam(
-        settings=settings,
         beam_type=BeamType.ELECTRON,
     )
 

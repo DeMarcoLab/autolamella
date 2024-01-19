@@ -147,7 +147,7 @@ def mill_undercut(
     # rotate flat to eb
     log_status_message(lamella, "MOVE_TO_UNDERCUT")
     _update_status_ui(parent_ui, f"{lamella.info} Moving to Undercut Position...")
-    microscope.move_flat_to_beam(settings, BeamType.ELECTRON, _safe=True) # TODO: TEST UNSAFE MOVE
+    microscope.move_flat_to_beam(BeamType.ELECTRON, _safe=True) # TODO: TEST UNSAFE MOVE
     
     # OFFSET FOR COMPUCENTRIC ROTATION
     X_OFFSET = settings.protocol["options"].get("compucentric_x_offset", 0)
@@ -267,7 +267,7 @@ def mill_undercut(
 
     # optional return flat to electron beam (autoliftout)
     if settings.protocol["options"].get("return_to_eb_after_undercut", False):
-        microscope.move_flat_to_beam(settings, BeamType.ELECTRON, _safe=True)
+        microscope.move_flat_to_beam(BeamType.ELECTRON, _safe=True)
 
     log_status_message(lamella, "ALIGN_FINAL")
 

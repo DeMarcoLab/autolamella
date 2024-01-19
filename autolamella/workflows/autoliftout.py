@@ -1336,7 +1336,7 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
     # rotate flat to ion
     log_status_message_raw(workflow_stage, "ROTATE_FLAT_TO_ION")
     _update_status_ui(parent_ui, f"Rotating to Ion Beam...")
-    microscope.move_flat_to_beam(settings, beam_type=BeamType.ION)
+    microscope.move_flat_to_beam(beam_type=BeamType.ION)
 
     # mill prepare-copper-blocks (chain of blocks)
     settings.image.label = f"ref_prepare_copper_blocks"

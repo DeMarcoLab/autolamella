@@ -773,7 +773,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     
                         current_position = lamella.state.microscope_state.absolute_position
                         lamella_position = self.microscope._calculate_new_position( 
-                                        settings=self.settings, 
                                         dx=lamella_centre.x, dy=lamella_centre.y, 
                                         beam_type=BeamType.ION, 
                                         base_position=current_position)  

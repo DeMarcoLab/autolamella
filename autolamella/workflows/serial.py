@@ -69,7 +69,6 @@ def liftout_lamella(
 
     # move the stage flat to ion beam
     microscope.move_flat_to_beam(
-        settings=settings,
         beam_type=BeamType.ION,
     )    
     
@@ -746,7 +745,6 @@ def _calculate_landing_positions(microscope, settings) -> list[FibsemStagePositi
     for i in range(n_rows):
         for j in range(n_cols):
             _new_position = microscope._calculate_new_position( 
-                settings=settings, 
                 dx=grid_square.x*j, 
                 dy=-grid_square.y*i, 
                 beam_type=BeamType.ION, 
