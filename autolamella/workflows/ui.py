@@ -20,14 +20,14 @@ def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by u
         raise InterruptedError(msg)
 
 
-def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg:str, validate: bool,milling_enabled: bool = True):
+def update_milling_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg:str, validate: bool,milling_enabled: bool = True):
     _update_mill_stages_ui(parent_ui, stages=stages)
 
     if validate:
         response = ask_user(parent_ui, msg=msg, pos="Continue", mill=milling_enabled)
         stages = deepcopy(parent_ui.milling_widget.get_milling_stages())
     else:
-        _update_status_ui(parent_ui, f"Milling {len(stages)} stages...") # TODO: better feedback here, change to milling tab for progress bar
+        update_status_ui(parent_ui, f"Milling {len(stages)} stages...") # TODO: better feedback here, change to milling tab for progress bar
         parent_ui._MILLING_RUNNING = True
         parent_ui._run_milling_signal.emit()
         
@@ -35,7 +35,7 @@ def _validate_mill_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI
         while parent_ui._MILLING_RUNNING or parent_ui.image_widget.TAKING_IMAGES:
             time.sleep(1)
         
-        _update_status_ui(
+        update_status_ui(
             parent_ui, f"Milling Complete: {len(stages)} stages completed."
         )
 
@@ -68,11 +68,11 @@ def _update_mill_stages_ui(
     while parent_ui.WAITING_FOR_UI_UPDATE:
         time.sleep(0.5)
 
-def _validate_det_ui_v2(
+def update_detection_ui(
     microscope, settings, features, parent_ui, validate: bool, msg: str = "Lamella", position: FibsemStagePosition = None,
 ) -> DetectedFeatures:
     feat_str = ", ".join([f.name for f in features])
-    _update_status_ui(parent_ui, f"{msg}: Detecting Features ({feat_str})...")
+    update_status_ui(parent_ui, f"{msg}: Detecting Features ({feat_str})...")
 
     det = detection.take_image_and_detect_features(
         microscope=microscope,
@@ -93,18 +93,13 @@ def _validate_det_ui_v2(
 
         # I need this to happen in the parent thread for it to work correctly
         parent_ui.det_confirm_signal.emit(True)
-
-#     # image = acquire.last_image(microscope, settings.image.beam_type)
-#     # if settings.image.beam_type is BeamType.ELECTRON:
-#     #     eb_image, ib_image = image, None
-#     # else:
-#     #     eb_image, ib_image = None, image
-#     # _set_images_ui(parent_ui, eb_image=eb_image, ib_image=ib_image)
+    
+    # TODO: set images in ui here
 
     return det
 
 
-def _set_images_ui(
+def set_images_ui(
     parent_ui: AutoLamellaUI,
     eb_image: FibsemImage = None,
     ib_image: FibsemImage = None,
@@ -128,7 +123,7 @@ def _set_images_ui(
     while parent_ui.WAITING_FOR_UI_UPDATE:
         time.sleep(0.5)
 
-def _update_status_ui(parent_ui: AutoLamellaUI, msg: str):
+def update_status_ui(parent_ui: AutoLamellaUI, msg: str):
 
     _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
 

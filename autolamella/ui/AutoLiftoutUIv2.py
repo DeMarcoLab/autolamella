@@ -5,9 +5,9 @@ from pprint import pprint
 from collections import Counter
 import napari
 from fibsem import utils as futils
-from fibsem.microscope import FibsemMicroscope, MicroscopeSettings
+from fibsem.microscope import FibsemMicroscope
+from fibsem.structures import MicroscopeSettings
 from fibsem.ui import utils as fui
-from fibsem.structures import BeamType
 from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemManipulatorWidget import FibsemManipulatorWidget
@@ -136,16 +136,6 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.checkBox_current_lamella_landing_selected.stateChanged.connect(self._update_lamella_info)
         self.checkBox_current_lamella_failure.stateChanged.connect(self._update_lamella_info)
         self.pushButton_revert_stage.clicked.connect(self.revert_stage)
-
-
-    def set_stage_parameters(self):
-        if self.microscope is None:
-            return
-        self.settings.system.stage = (
-            self.system_widget.settings.system.stage
-        )  # TODO: this doesnt actually update the movement widget
-        logging.debug(f"Stage parameters set to {self.settings.system.stage}")
-        logging.info("Stage parameters set")
 
     # TODO: move this to system wideget??
     def connect_to_microscope(self):
@@ -705,7 +695,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             _METHOD = self.settings.protocol.get("method", "autoliftout-default")
             
             if _METHOD == "autoliftout-default":
-                settings.image.gamma_enabled = True
+                settings.image.autogamma = True
                 self.experiment = autoliftout.run_autoliftout_workflow(
                     microscope=microscope,
                     settings=settings,

@@ -100,7 +100,7 @@ def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: 
                 # msgd = parse_msg(msg) # TODO: enable, and remove indiviudal calls
 
                 # TELEMETRY -> depcrecated in favour of manufacturer telemetry
-                if "get_current_microscope_state" in func:
+                if "get_microscope_state" in func:
                     msgd = parse_msg(msg)
 
                     state_data.append(deepcopy(msgd["state"]))

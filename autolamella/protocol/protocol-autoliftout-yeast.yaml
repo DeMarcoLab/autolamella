@@ -123,21 +123,21 @@ lamella:
 #   size_ratio: 1.0
 #   trench_height: 9.999999999999999e-06
 lamella_state:
-  absolute_position:
+  stage_position:
     coordinate_system: Raw
     r: -2.28636643635382
     t: 0.2967058527613453
     x: 0.0023149166666666665
     y: -0.0019699166666666667
     z: 0.031954218106995884
-  eb_settings:
+  electron_beam:
     beam_current: 5.0e-11
     beam_type: ELECTRON
     dwell_time: 1.0e-06
     hfw: 0.00015
     resolution: 1536x1024
     working_distance: 0.00391
-  ib_settings:
+  ion_beam:
     beam_current: 2.0e-11
     beam_type: ION
     dwell_time: 1.0e-06
@@ -146,21 +146,21 @@ lamella_state:
     working_distance: 0.0165
   timestamp: 1669684862.642714
 landing_state:
-  absolute_position:
+  stage_position:
     coordinate_system: Raw
     r: -2.286298510029761
     t: 0.5585004974916625
     x: -0.003933166666666666
     y: -0.0023545
     z: 0.031787004886831276
-  eb_settings:
+  electron_beam:
     beam_current: 5.0e-11
     beam_type: ELECTRON
     dwell_time: 1.0e-06
     hfw: 0.0009
     resolution: 1536x1024
     working_distance: 0.00391
-  ib_settings:
+  ion_beam:
     beam_current: 2.0e-11
     beam_type: ION
     dwell_time: 1.0e-06
