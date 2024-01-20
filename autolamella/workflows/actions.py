@@ -36,9 +36,7 @@ def move_to_liftout_angle(
     )
 
 
-def move_sample_stage_out(
-    microscope: FibsemMicroscope, settings: MicroscopeSettings
-) -> None:
+def move_sample_stage_out(microscope: FibsemMicroscope) -> None:
     """Move stage completely out of the way, so it is not visible at all.
 
     Args:
@@ -48,7 +46,7 @@ def move_sample_stage_out(
 
     # Must set tilt to zero, so we don't see reflections from metal stage base
     current_position = microscope.get_stage_position()
-    microscope._safe_absolute_stage_movement(FibsemStagePosition(x = current_position.x, 
+    microscope.safe_absolute_stage_movement(FibsemStagePosition(x = current_position.x, 
                                                         y = current_position.y,    
                                                         z = current_position.z,
                                                         r = current_position.r,
@@ -58,14 +56,14 @@ def move_sample_stage_out(
         x=-0.002507,
         y=0.025962792,
         z=0.0039559049,
-        r=np.deg2rad(settings.system.stage.rotation_flat_to_electron),
+        r=np.deg2rad(microscope.system.stage.rotation_reference),
     )
 
     # TODO: probably good enought to just move down a fair bit.
     # TODO: make these dynamically set based on initial_position
     # TODO: MAGIC_NUMBER
     logging.info(f"move sample grid out to {sample_stage_out}")
-    microscope._safe_absolute_stage_movement(sample_stage_out)
+    microscope.safe_absolute_stage_movement(sample_stage_out)
     logging.info(f"move sample stage out complete.")
 
 
@@ -177,6 +175,6 @@ def move_to_lamella_angle(
         r=thinning_rotation_angle,
         t=thinning_tilt_angle,
         )
-    microscope._safe_absolute_stage_movement(stage_position)
+    microscope.safe_absolute_stage_movement(stage_position)
 
 

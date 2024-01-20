@@ -329,7 +329,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             f"Experiment {self.experiment.name} loaded."
         )
         if self.settings is not None:
-            self.settings.image.save_path = self.experiment.path
+            self.settings.image.path = self.experiment.path
 
 
         # register metadata
@@ -362,7 +362,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.microscope = self.system_widget.microscope
         self.settings = self.system_widget.settings
         if self.experiment is not None:
-            self.settings.image.save_path = self.experiment.path
+            self.settings.image.path = self.experiment.path
         self.update_microscope_ui()
         self.update_ui()
 
@@ -371,15 +371,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings = None
         self.update_microscope_ui()
         self.update_ui()
-
-    def set_stage_parameters(self):
-        if self.microscope is None:
-            return
-        self.settings.system.stage = (
-            self.system_widget.settings.system.stage
-        )  # TODO: this doesnt actually update the movement widget
-        logging.debug(f"Stage parameters set to {self.settings.system.stage}")
-        logging.info("Stage parameters set")
 
     def update_microscope_ui(self):
         """Update the ui based on the current state of the microscope."""
@@ -462,7 +453,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.minimap_widget._minimap_positions.connect(self.update_experiment_positions)
         
 
-        positions = [lamella.state.microscope_state.absolute_position for lamella in self.experiment.positions]
+        positions = [lamella.state.microscope_state.stage_position for lamella in self.experiment.positions]
 
         self.movement_widget.positions_signal.connect(self.minimap_connection)
         self.movement_widget.move_signal.connect(self.minimap_connection)
@@ -499,7 +490,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # modify exisitng position
         else:
             for idx, pos in enumerate(positions):
-                self.experiment.positions[idx].state.microscope_state.absolute_position = pos
+                self.experiment.positions[idx].state.microscope_state.stage_position = pos
             self.experiment.save()
             self.update_ui()
 
@@ -527,7 +518,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             logging.warning("No experiment loaded")
             return
 
-        positions = [lamella.state.microscope_state.absolute_position for lamella in self.experiment.positions]
+        positions = [lamella.state.microscope_state.stage_position for lamella in self.experiment.positions]
 
         self.minimap_connection(positions=positions)
 
@@ -545,7 +536,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         pdict = utils.load_yaml(path)
         
-        positions = [FibsemStagePosition.__from_dict__(p) for p in pdict]
+        positions = [FibsemStagePosition.from_dict(p) for p in pdict]
 
         for pos in positions:
             self.add_lamella_ui(pos)
@@ -682,7 +673,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self.experiment is not None and self.minimap_image is not None:
             positions = []
             for lamella in self.experiment.positions:
-                position = lamella.state.microscope_state.absolute_position
+                position = lamella.state.microscope_state.stage_position
                 position.name = lamella._petname
                 positions.append(position)
             
@@ -767,12 +758,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
                     for lamella in positions:
                         if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
-                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
+                            lamella_centre =  Point.from_dict(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
                         else:
-                            lamella_centre =  Point.__from_dict__(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
+                            lamella_centre =  Point.from_dict(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
                     
-                        current_position = lamella.state.microscope_state.absolute_position
-                        lamella_position = self.microscope._calculate_new_position( 
+                        current_position = lamella.state.microscope_state.stage_position
+                        lamella_position = self.microscope.project_stable_move( 
                                         dx=lamella_centre.x, dy=lamella_centre.y, 
                                         beam_type=BeamType.ION, 
                                         base_position=current_position)  
@@ -817,29 +808,29 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
                 if _DISPLAY_TRENCH:
                     protocol = lamella.protocol if "trench" in lamella.protocol else self.settings.protocol
-                    trench_position = Point.__from_dict__(protocol["trench"].get("point", {"x": 0, "y": 0})) 
-                    stages = patterning._get_milling_stages("trench", protocol, trench_position)
+                    trench_position = Point.from_dict(protocol["trench"].get("point", {"x": 0, "y": 0})) 
+                    stages = patterning.get_milling_stages("trench", protocol, trench_position)
 
                 if _DISPLAY_LAMELLA:
                     protocol = lamella.protocol if "lamella" in lamella.protocol else self.settings.protocol
-                    lamella_position = Point.__from_dict__(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
-                    stages = patterning._get_milling_stages("lamella", protocol, lamella_position)
+                    lamella_position = Point.from_dict(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
+                    stages = patterning.get_milling_stages("lamella", protocol, lamella_position)
                     
                     _feature_name = "notch" if method == "autolamella-waffle"  else "microexpansion"
                     protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol
                     
                     NOTCH_H_OFFSET = 0.5e-6                     
-                    feature_position = Point.__from_dict__(protocol[_feature_name].get("point", 
+                    feature_position = Point.from_dict(protocol[_feature_name].get("point", 
                             {"x":lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET, 
                             "y": lamella_position.y} if _feature_name == "notch" else {"x": 0, "y": 0})) 
-                    feature_stage = patterning._get_milling_stages(_feature_name, protocol, feature_position)
+                    feature_stage = patterning.get_milling_stages(_feature_name, protocol, feature_position)
                     stages += feature_stage
 
                     # fiducial
                     if self.settings.protocol["fiducial"]["enabled"]:
                         protocol = lamella.protocol if "fiducial" in lamella.protocol else self.settings.protocol
-                        fiducial_position = Point.__from_dict__(protocol["fiducial"].get("point", {"x": 25e-6, "y": 0})) 
-                        fiducial_stage = patterning._get_milling_stages("fiducial", protocol, fiducial_position)
+                        fiducial_position = Point.from_dict(protocol["fiducial"].get("point", {"x": 25e-6, "y": 0})) 
+                        fiducial_stage = patterning.get_milling_stages("fiducial", protocol, fiducial_position)
                         stages += fiducial_stage
 
                 self.milling_widget.set_milling_stages(stages)
@@ -960,7 +951,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # load experiment
         self.experiment = Experiment.load(DEV_EXP_PATH)
-        self.settings.image.save_path = self.experiment.path
+        self.settings.image.path = self.experiment.path
         self._update_lamella_combobox()
 
         # load protocol
@@ -976,7 +967,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
-        position = lamella.state.microscope_state.absolute_position
+        position = lamella.state.microscope_state.stage_position
 
         self.movement_widget.go_to_saved_position(position)
         logging.info(f"Moved to position of {lamella.info}.")
@@ -991,16 +982,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _number=len(self.experiment.positions) + 1,
             state=LamellaState(
                 stage=stage,
-                microscope_state=self.microscope.get_current_microscope_state(),
+                microscope_state=self.microscope.get_microscope_state(),
                 start_timestamp = datetime.timestamp(datetime.now())
         ))
         from autolamella.workflows.core import log_status_message
         log_status_message(lamella, "STARTED")
         
         if pos is not None:
-            lamella.state.microscope_state.absolute_position = deepcopy(pos)
+            lamella.state.microscope_state.stage_position = deepcopy(pos)
 
-            lamella.state.microscope_state.absolute_position.name = lamella._petname
+            lamella.state.microscope_state.stage_position.name = lamella._petname
 
         self.experiment.positions.append(deepcopy(lamella))
         
@@ -1108,11 +1099,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             self.milling_widget._PATTERN_IS_MOVEABLE = True
 
-        lamella.state.microscope_state.absolute_position.name = lamella._petname
+        lamella.state.microscope_state.stage_position.name = lamella._petname
 
 
         if self.minimap_widget is not None:
-            positions = [lamella.state.microscope_state.absolute_position for lamella in self.experiment.positions]
+            positions = [lamella.state.microscope_state.stage_position for lamella in self.experiment.positions]
             self.minimap_connection(positions=positions)
 
 
@@ -1125,25 +1116,25 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         stages = deepcopy(self.milling_widget.get_milling_stages())
         if method == "autolamella-waffle" and stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
             self.experiment.positions[idx].protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
-            self.experiment.positions[idx].protocol["trench"]["point"] = stages[0].pattern.point.__to_dict__()
+            self.experiment.positions[idx].protocol["trench"]["point"] = stages[0].pattern.point.to_dict()
         
         if stage in [AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.PreSetupLamella]:
             n_lamella = len(self.settings.protocol["lamella"]["stages"])
 
             # lamella
             self.experiment.positions[idx].protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
-            self.experiment.positions[idx].protocol["lamella"]["point"] = stages[0].pattern.point.__to_dict__()
+            self.experiment.positions[idx].protocol["lamella"]["point"] = stages[0].pattern.point.to_dict()
 
             # feature
             _feature_name = "notch" if method == "autolamella-waffle" else "microexpansion"
             self.experiment.positions[idx].protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella]))
-            self.experiment.positions[idx].protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.__to_dict__()
+            self.experiment.positions[idx].protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.to_dict()
 
             
             # fiducial (optional)
             if self.settings.protocol["fiducial"]["enabled"]:
                 self.experiment.positions[idx].protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-1]))
-                self.experiment.positions[idx].protocol["fiducial"]["point"] = stages[-1].pattern.point.__to_dict__()
+                self.experiment.positions[idx].protocol["fiducial"]["point"] = stages[-1].pattern.point.to_dict()
 
     def _run_milling(self):
         self._MILLING_RUNNING = True

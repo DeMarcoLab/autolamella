@@ -442,7 +442,7 @@ with tab_stage:
                     if state.stage.name in positions.keys():
                         _names = [pos.name for pos in positions[state.stage.name]]
                         if lamella._petname not in _names:
-                            positions[state.stage.name].append(state.microscope_state.absolute_position)
+                            positions[state.stage.name].append(state.microscope_state.stage_position)
                             positions[state.stage.name][-1].name = f"{lamella._petname}"
 
                         # go to next lamella if added 

@@ -38,17 +38,17 @@ class LamellaState:
     start_timestamp: float = datetime.timestamp(datetime.now())
     end_timestamp: float = None
 
-    def __to_dict__(self):
+    def to_dict(self):
         return {
-            "microscope_state": self.microscope_state.__to_dict__() if self.microscope_state is not None else "not defined",
+            "microscope_state": self.microscope_state.to_dict() if self.microscope_state is not None else "not defined",
             "stage": self.stage.name,
             "start_timestamp": self.start_timestamp,
             "end_timestamp": self.end_timestamp,
         }
     
     @classmethod
-    def __from_dict__(cls, data):
-        state = MicroscopeState.__from_dict__(data["microscope_state"])
+    def from_dict(cls, data):
+        state = MicroscopeState.from_dict(data["microscope_state"])
         return cls(
             microscope_state=state,
             stage=AutoLamellaWaffleStage[data["stage"]],
@@ -82,20 +82,20 @@ class Lamella:
         if self.protocol is None:
             self.protocol = {}
 
-    def __to_dict__(self):
+    def to_dict(self):
         if self.history is None:
             self.history = []
         return {
             "petname": self._petname,
-            "state": self.state.__to_dict__() if self.state is not None else None,
+            "state": self.state.to_dict() if self.state is not None else None,
             "path": str(self.path) if self.path is not None else None,
-            "fiducial_area": self.fiducial_area.__to_dict__() if self.fiducial_area is not None else None,
+            "fiducial_area": self.fiducial_area.to_dict() if self.fiducial_area is not None else None,
             "protocol": self.protocol,
             "_number": self._number,
-            "history": [state.__to_dict__() for state in self.history] if self.history is not False else [],
+            "history": [state.to_dict() for state in self.history] if self.history is not False else [],
             "_is_failure": self._is_failure,
-            "lamella_state": self.lamella_state.__to_dict__(),
-            "landing_state": self.landing_state.__to_dict__(),
+            "lamella_state": self.lamella_state.to_dict(),
+            "landing_state": self.landing_state.to_dict(),
             "landing_selected": self.landing_selected,
             "id": str(self._id),
         }
@@ -105,12 +105,12 @@ class Lamella:
         return f"Lamella {self._petname} [{self.state.stage.name}]"
 
     @classmethod
-    def __from_dict__(cls, data):
-        state = LamellaState().__from_dict__(data["state"])
+    def from_dict(cls, data):
+        state = LamellaState().from_dict(data["state"])
         if data.get("fiducial_area", None) is None:
             fiducial_area = None
         else:
-            fiducial_area = FibsemRectangle.__from_dict__(data["fiducial_area"])
+            fiducial_area = FibsemRectangle.from_dict(data["fiducial_area"])
                
         return cls(
             _petname=data["petname"],
@@ -120,10 +120,10 @@ class Lamella:
             fiducial_area=fiducial_area,
             protocol=data.get("protocol", {}),
             _number=data.get("_number", data.get("number", 0)),
-            history=[LamellaState().__from_dict__(state) for state in data["history"]],
+            history=[LamellaState().from_dict(state) for state in data["history"]],
             _is_failure=data.get("_is_failure", data.get("is_failure", False)),
-            lamella_state = MicroscopeState.__from_dict__(data.get("lamella_state", MicroscopeState().__to_dict__())), # tmp solution
-            landing_state = MicroscopeState.__from_dict__(data.get("landing_state", MicroscopeState().__to_dict__())), # tmp solution
+            lamella_state = MicroscopeState.from_dict(data.get("lamella_state", MicroscopeState().to_dict())), # tmp solution
+            landing_state = MicroscopeState.from_dict(data.get("landing_state", MicroscopeState().to_dict())), # tmp solution
             landing_selected = bool(data.get("landing_selected", False)),
         )
     
@@ -143,12 +143,12 @@ class Lamella:
         return adorned_img
 
     # convert to method
-    def get_reference_images(self, label: str) -> ReferenceImages:
+    def get_reference_images(self, filename: str) -> ReferenceImages:
         reference_images = ReferenceImages(
-            low_res_eb=self.load_reference_image(f"{label}_low_res_eb"),
-            high_res_eb=self.load_reference_image(f"{label}_high_res_eb"),
-            low_res_ib=self.load_reference_image(f"{label}_low_res_ib"),
-            high_res_ib=self.load_reference_image(f"{label}_high_res_ib"),
+            low_res_eb=self.load_reference_image(f"{filename}_low_res_eb"),
+            high_res_eb=self.load_reference_image(f"{filename}_high_res_eb"),
+            low_res_ib=self.load_reference_image(f"{filename}_low_res_ib"),
+            high_res_ib=self.load_reference_image(f"{filename}_high_res_ib"),
         )
 
         return reference_images
@@ -170,14 +170,14 @@ class Experiment:
         self.program = program
         self.method = method
 
-    def __to_dict__(self) -> dict:
+    def to_dict(self) -> dict:
 
         state_dict = {
             "name": self.name,
             "_id": self._id,
             "path": self.path,
             "log_path": self.log_path,
-            "positions": [lamella.__to_dict__() for lamella in self.positions],
+            "positions": [lamella.to_dict() for lamella in self.positions],
             "created_at": self._created_at,
             "program": self.program,
             "method": self.method,
@@ -189,7 +189,7 @@ class Experiment:
         """Save the sample data to yaml file"""
 
         with open(os.path.join(self.path, f"experiment.yaml"), "w") as f:
-            yaml.safe_dump(self.__to_dict__(), f, indent=4)
+            yaml.safe_dump(self.to_dict(), f, indent=4)
 
     def __repr__(self) -> str:
 
@@ -215,23 +215,23 @@ class Experiment:
                 "number": lamella._number,
                 "petname": lamella._petname,  # what?
                 "path": lamella.path,
-                "lamella.x": lamella.state.microscope_state.absolute_position.x,
-                "lamella.y": lamella.state.microscope_state.absolute_position.y,
-                "lamella.z": lamella.state.microscope_state.absolute_position.z,
-                "lamella.r": lamella.state.microscope_state.absolute_position.r,
-                "lamella.t": lamella.state.microscope_state.absolute_position.t,
+                "lamella.x": lamella.state.microscope_state.stage_position.x,
+                "lamella.y": lamella.state.microscope_state.stage_position.y,
+                "lamella.z": lamella.state.microscope_state.stage_position.z,
+                "lamella.r": lamella.state.microscope_state.stage_position.r,
+                "lamella.t": lamella.state.microscope_state.stage_position.t,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
                 "current_stage": lamella.state.stage.name,
             }
 
             if "autoliftout" in self.method:
                 ldict.update({
-                    "landing.x": lamella.landing_state.absolute_position.x,
-                    "landing.y": lamella.landing_state.absolute_position.y,
-                    "landing.z": lamella.landing_state.absolute_position.z,
-                    "landing.r": lamella.landing_state.absolute_position.r,
-                    "landing.t": lamella.landing_state.absolute_position.t,
-                    "landing.coordinate_system": lamella.landing_state.absolute_position.coordinate_system,
+                    "landing.x": lamella.landing_state.stage_position.x,
+                    "landing.y": lamella.landing_state.stage_position.y,
+                    "landing.z": lamella.landing_state.stage_position.z,
+                    "landing.r": lamella.landing_state.stage_position.r,
+                    "landing.t": lamella.landing_state.stage_position.t,
+                    "landing.coordinate_system": lamella.landing_state.stage_position.coordinate_system,
                     "landing_selected": lamella.landing_selected,
                     "history: ": len(lamella.history),}
                 )
@@ -282,7 +282,7 @@ class Experiment:
 
         # load lamella from dict
         for lamella_dict in ddict["positions"]:
-            lamella = Lamella.__from_dict__(data=lamella_dict)
+            lamella = Lamella.from_dict(data=lamella_dict)
             experiment.positions.append(lamella)
 
         return experiment
