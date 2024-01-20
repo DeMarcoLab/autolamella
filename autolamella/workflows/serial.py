@@ -159,9 +159,9 @@ def liftout_lamella(
     # move the pattern to the top of the volume (i.e up by half the height of the pattern)
     _V_OFFSET = 0.0e-6 # TODO: make this a parameter
     point = det.features[0].feature_m 
-    point.y += settings.protocol["liftout-weld"].get("height", 5e-6) / 2 + _V_OFFSET 
+    point.y += settings.protocol["milling"]["liftout-weld"].get("height", 5e-6) / 2 + _V_OFFSET 
 
-    stages = get_milling_stages("liftout-weld", settings.protocol, point)
+    stages = get_milling_stages("liftout-weld", settings.protocol["milling"], point)
     stages = update_milling_ui(stages, parent_ui, 
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
@@ -188,7 +188,7 @@ def liftout_lamella(
 
     point = det.features[0].feature_m 
 
-    stages = get_milling_stages("liftout-sever", settings.protocol, point)
+    stages = get_milling_stages("liftout-sever", settings.protocol["milling"], point)
     stages = update_milling_ui(stages, parent_ui, 
         msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
         validate=validate)
@@ -212,14 +212,16 @@ def liftout_lamella(
         microscope.move_manipulator_corrected(dx=0, dy=1e-6, beam_type=BeamType.ION)
         if i % 3 == 0:
             settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_slow_{i:02d}"
-            acquire.take_reference_images(microscope, settings.image)
+            eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+            set_images_ui(parent_ui, eb_image, ib_image)
         time.sleep(1)
 
     # then retract quickly
     for i in range(3):
         microscope.move_manipulator_corrected(dx=0, dy=20e-6, beam_type=BeamType.ION)
         settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_{i:02d}"
-        acquire.take_reference_images(microscope, settings.image)
+        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+        set_images_ui(parent_ui, eb_image, ib_image)
         time.sleep(1)
 
     # take reference images
@@ -374,7 +376,7 @@ def land_lamella(
     right_corner.y +=  v_offset
 
     # mill welds
-    stages = get_milling_stages("landing-weld", settings.protocol, [left_corner, right_corner])
+    stages = get_milling_stages("landing-weld", settings.protocol["milling"], [left_corner, right_corner])
     stages = update_milling_ui(stages, parent_ui, 
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
@@ -408,7 +410,8 @@ def land_lamella(
         microscope.move_manipulator_corrected(dx=0, dy=100e-9, beam_type=BeamType.ION)
         if i % 5 == 0:
             settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_slow{i:02d}"
-            acquire.take_reference_images(microscope, settings.image)
+            eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+            set_images_ui(parent_ui, eb_image, ib_image)
         time.sleep(1)
     
     # move manipulator up
@@ -452,7 +455,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
         _LAMELLA_THICKNESS = 4e-6 / 2  # TODO: make this a parameter
-        _V_OFFSET = settings.protocol["landing-sever"].get("height", 2e-6) / 2 + _LAMELLA_THICKNESS
+        _V_OFFSET = settings.protocol["milling"]["landing-sever"].get("height", 2e-6) / 2 + _LAMELLA_THICKNESS
         
         if np.isclose(scan_rotation, 0):
             _V_OFFSET *= -1
@@ -460,7 +463,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         point = det.features[0].feature_m
         point.y += _V_OFFSET
 
-        stages = get_milling_stages("landing-sever", settings.protocol, point)
+        stages = get_milling_stages("landing-sever", settings.protocol["milling"], point)
         stages = update_milling_ui(stages, parent_ui, 
             msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
             validate=validate)
@@ -493,7 +496,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
         # if the distance is less than the threshold, then the lamella is not severed
-        threshold = settings.protocol["landing-sever"].get("threshold", 0.5e-6)
+        threshold = settings.protocol["options"].get("landing-sever-threshold", 0.5e-6)
         if abs(det.distance.y) < threshold:
             logging.info(f"Lamella Not Severed: {det.distance.y} < {threshold}")
             logging.debug({"msg": "check_volume_sever",  "detected_features": det.to_dict(), "threshold": threshold})   

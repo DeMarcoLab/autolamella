@@ -40,9 +40,14 @@ from collections import Counter
 import numpy as np
 
 
+
+
 _DEV_MODE = False
 DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBACK_01/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
+
+from fibsem.segmentation.utils import list_available_checkpoints
+__AUTOLAMELLA_CHECKPOINTS__ = list_available_checkpoints()
 
 
 CONFIGURATION = {
@@ -137,8 +142,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_undercut.clicked.connect(lambda: self._run_workflow(workflow="undercut"))
         self.pushButton_run_setup_autolamella.clicked.connect(lambda: self._run_workflow(workflow="setup-lamella"))
 
-
-
         self.pushButton_run_waffle_trench.setVisible(False)
         self.pushButton_run_autolamella.setVisible(False)
         self.pushButton_run_waffle_undercut.setVisible(False)
@@ -182,6 +185,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # comboboxes
         self.comboBox_method.addItems(cfg.__AUTOLAMELLA_METHODS__)
         self.comboBox_method.currentIndexChanged.connect(lambda: self.update_protocol_ui(False))
+        self.comboBox_ml_checkpoint.addItems(__AUTOLAMELLA_CHECKPOINTS__)
 
     def update_protocol_ui(self, _load: bool=True):
 
@@ -191,7 +195,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._UPDATING_PROTOCOL_UI = True
         
         if _load:
-            method = self.settings.protocol["method"]
+            method = self.settings.protocol["options"]["method"]
             self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title())) # TODO: coerce this to be a supported method, alert the user if not
         else:
             method = self.comboBox_method.currentText().lower()
@@ -218,18 +222,18 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"].get("undercut", True))
 
             # machine learning
-            self.lineEdit_ml_checkpoint.setText(self.settings.protocol.get("ml", {}).get("checkpoint", "autolamella-waffle-20240107.pt"))
+            self.comboBox_ml_checkpoint.setCurrentText(self.settings.protocol["options"].get("checkpoint", cfg.__DEFAULT_CHECKPOINT__))
 
             # undercut
-            self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol.get("undercut", {}).get("tilt_angle", -5))
-            self.doubleSpinBox_undercut_step.setValue(self.settings.protocol.get("undercut", {}).get("tilt_angle_step", 2))
+            self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["options"].get("undercut_tilt_angle", -5))
+            self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["options"].get("undercut_tilt_angle_steps", 2))
         
         self.checkBox_trench.setVisible(_WAFFLE_METHOD)
         self.checkBox_undercut.setVisible(_WAFFLE_METHOD)
 
         self.label_ml_header.setVisible(_WAFFLE_METHOD)
         self.label_ml_checkpoint.setVisible(_WAFFLE_METHOD)
-        self.lineEdit_ml_checkpoint.setVisible(_WAFFLE_METHOD)
+        self.comboBox_ml_checkpoint.setVisible(_WAFFLE_METHOD)
 
         self.doubleSpinBox_undercut_tilt.setVisible(_WAFFLE_METHOD)
         self.doubleSpinBox_undercut_step.setVisible(_WAFFLE_METHOD)
@@ -268,8 +272,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if self._PROTOCOL_LOADED is False:
             return
-        self.settings.protocol["name"] = self.lineEdit_name.text()
-        self.settings.protocol["method"] = self.comboBox_method.currentText().lower()
+        self.settings.protocol["options"]["name"] = self.lineEdit_name.text()
+        self.settings.protocol["options"]["method"] = self.comboBox_method.currentText().lower()
         
         # options
         self.settings.protocol["options"]["alignment_attempts"] = int(self.beamshift_attempts.value())
@@ -282,20 +286,20 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["options"]["supervise"]["mill_rough"] = self.checkBox_supervise_mill_rough.isChecked()
         self.settings.protocol["options"]["supervise"]["mill_polishing"] = self.checkBox_supervise_mill_polishing.isChecked()
 
-        if self.settings.protocol["method"] in ["autolamella-waffle", "autoliftout-default", "autoliftout-serial-liftout"]:
+        if self.settings.protocol["options"]["method"] in ["autolamella-waffle", "autoliftout-default", "autoliftout-serial-liftout"]:
 
             # supervision
             self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
             self.settings.protocol["options"]["supervise"]["undercut"] = self.checkBox_undercut.isChecked()
 
             # machine learning
-            self.settings.protocol["ml"]["checkpoint"] = self.lineEdit_ml_checkpoint.text()
+            self.settings.protocol["options"]["checkpoint"] = self.comboBox_ml_checkpoint.currentText()
 
             # undercut
-            self.settings.protocol["undercut"]["tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
-            self.settings.protocol["undercut"]["tilt_angle_step"] = int(self.doubleSpinBox_undercut_step.value())
+            self.settings.protocol["options"]["undercut_tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
+            self.settings.protocol["options"]["undercut_tilt_angle_steps"] = int(self.doubleSpinBox_undercut_step.value())
 
-        if self.settings.protocol["method"] in ["autoliftout-default", "autoliftout-serial-liftout"]:
+        if self.settings.protocol["options"]["method"] in ["autoliftout-default", "autoliftout-serial-liftout"]:
             
             # supervision
             self.settings.protocol["options"]["confirm_next_stage"] = self.checkBox_options_confirm_next_stage.isChecked()
@@ -619,7 +623,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if _experiment_loaded and _protocol_loaded:
             # workflow buttons
-            _WAFFLE_METHOD = self.settings.protocol.get("method", "autolamella-waffle") == "autolamella-waffle"
+            _WAFFLE_METHOD = self.settings.protocol["options"].get("method", "autolamella-waffle") == "autolamella-waffle"
             _counter = Counter([p.state.stage.name for p in self.experiment.positions])
             
             _READY_TRENCH = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
@@ -716,7 +720,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # buttons
         if self._PROTOCOL_LOADED:
 
-            method = self.settings.protocol.get("method", "autolamella-waffle")
+            method = self.settings.protocol["options"].get("method", "autolamella-waffle")
             SETUP_STAGES =  [AutoLamellaWaffleStage.SetupTrench] if method == "autolamella-waffle" else [AutoLamellaWaffleStage.PreSetupLamella]
             READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench] if method == "autolamella-waffle" else [AutoLamellaWaffleStage.SetupLamella]
             if lamella.state.stage in SETUP_STAGES:
@@ -783,7 +787,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             if self._PROTOCOL_LOADED:
 
                 _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, False
-                method = self.settings.protocol.get("method", "autolamella-waffle")
+                method = self.settings.protocol["options"].get("method", "autolamella-waffle")
                 
                 if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
                     _DISPLAY_TRENCH = True
@@ -794,17 +798,17 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
                 if _DISPLAY_TRENCH:
-                    protocol = lamella.protocol if "trench" in lamella.protocol else self.settings.protocol
+                    protocol = lamella.protocol if "trench" in lamella.protocol else self.settings.protocol["milling"]
                     trench_position = Point.from_dict(protocol["trench"].get("point", {"x": 0, "y": 0})) 
                     stages = patterning.get_milling_stages("trench", protocol, trench_position)
 
                 if _DISPLAY_LAMELLA:
-                    protocol = lamella.protocol if "lamella" in lamella.protocol else self.settings.protocol
+                    protocol = lamella.protocol if "lamella" in lamella.protocol else self.settings.protocol["milling"]
                     lamella_position = Point.from_dict(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
                     stages = patterning.get_milling_stages("lamella", protocol, lamella_position)
                     
                     _feature_name = "notch" if method == "autolamella-waffle"  else "microexpansion"
-                    protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol
+                    protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol["milling"]
                     
                     NOTCH_H_OFFSET = 0.5e-6                     
                     feature_position = Point.from_dict(protocol[_feature_name].get("point", 
@@ -814,8 +818,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     stages += feature_stage
 
                     # fiducial
-                    if self.settings.protocol["fiducial"]["enabled"]:
-                        protocol = lamella.protocol if "fiducial" in lamella.protocol else self.settings.protocol
+                    if self.settings.protocol["milling"]["fiducial"]["enabled"]:
+                        protocol = lamella.protocol if "fiducial" in lamella.protocol else self.settings.protocol["milling"]
                         fiducial_position = Point.from_dict(protocol["fiducial"].get("point", {"x": 25e-6, "y": 0})) 
                         fiducial_stage = patterning.get_milling_stages("fiducial", protocol, fiducial_position)
                         stages += fiducial_stage
@@ -853,7 +857,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info(f"Updating Lamella Pattern for {lamella.info}")
 
         # update the trench point
-        method = self.settings.protocol.get("method", "autolamella-waffle")
+        method = self.settings.protocol["options"].get("method", "autolamella-waffle")
         self._update_milling_protocol(idx=idx, method=method, stage=lamella.state.stage)
 
         self.experiment.save() 
@@ -961,7 +965,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def add_lamella_ui(self, pos:FibsemStagePosition=None):
 
-        method = self.settings.protocol.get("method", "autolamella-waffle")
+        method = self.settings.protocol["options"].get("method", "autolamella-waffle")
         stage = AutoLamellaWaffleStage.SetupTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.PreSetupLamella
 
         lamella = Lamella(
@@ -1028,7 +1032,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         idx = self.comboBox_current_lamella.currentIndex()
         # TOGGLE BETWEEN READY AND SETUP
 
-        method = self.settings.protocol.get("method", "autolamella-waffle")
+        method = self.settings.protocol["options"].get("method", "autolamella-waffle")
         SETUP_STATE = AutoLamellaWaffleStage.SetupTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.PreSetupLamella
         READY_STATE = AutoLamellaWaffleStage.ReadyTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.SetupLamella
         
@@ -1106,7 +1110,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.experiment.positions[idx].protocol["trench"]["point"] = stages[0].pattern.point.to_dict()
         
         if stage in [AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.PreSetupLamella]:
-            n_lamella = len(self.settings.protocol["lamella"]["stages"])
+            n_lamella = len(self.settings.protocol["milling"]["lamella"]["stages"])
 
             # lamella
             self.experiment.positions[idx].protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
@@ -1119,7 +1123,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             
             # fiducial (optional)
-            if self.settings.protocol["fiducial"]["enabled"]:
+            if self.settings.protocol["milling"]["fiducial"]["enabled"]:
                 self.experiment.positions[idx].protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-1]))
                 self.experiment.positions[idx].protocol["fiducial"]["point"] = stages[-1].pattern.point.to_dict()
 

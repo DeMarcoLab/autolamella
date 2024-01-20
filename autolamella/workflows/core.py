@@ -162,7 +162,7 @@ def mill_undercut(
     microscope.stable_move(dx=X_OFFSET, dy=Y_OFFSET, beam_type=BeamType.ELECTRON)
     
     # align feature coincident
-    method = settings.protocol.get("method", "autolamella-waffle")
+    method = settings.protocol["options"].get("method", "autolamella-waffle")
     
     if method == "autoliftout-serial-liftout":
         feature = VolumeBlockCentre()
@@ -177,9 +177,9 @@ def mill_undercut(
                                        feature=feature)
     
     # mill under cut
-    lamella.protocol["undercut"] = deepcopy(settings.protocol["undercut"])
-    N_UNDERCUTS = int(lamella.protocol["undercut"].get("tilt_angle_step", 1))
-    UNDERCUT_ANGLE_DEG = lamella.protocol["undercut"].get("tilt_angle", -5)
+    lamella.protocol["undercut"] = deepcopy(settings.protocol["milling"]["undercut"])
+    N_UNDERCUTS = int(settings.protocol["options"].get("undercut_tilt_angle_steps", 1))
+    UNDERCUT_ANGLE_DEG = settings.protocol["options"].get("under_tilt_tilt_angle", -5)
     _UNDERCUT_V_OFFSET = lamella.protocol["undercut"].get("v_offset", 0e-6)
     undercut_stages = []
 
@@ -284,7 +284,7 @@ def mill_lamella(
 ) -> Lamella:
     validate = settings.protocol["options"]["supervise"].get("lamella", True)
     settings.image.path = lamella.path
-    method = settings.protocol.get("method", "autolamella-waffle")
+    method = settings.protocol["options"].get("method", "autolamella-waffle")
 
 
     supervise_map = {
@@ -417,7 +417,7 @@ def setup_lamella(
 
     validate = settings.protocol["options"]["supervise"].get("setup_lamella", True)
     settings.image.path = lamella.path
-    method = settings.protocol.get("method", "autolamella-waffle")
+    method = settings.protocol["options"].get("method", "autolamella-waffle")
 
 
     log_status_message(lamella, "ALIGN_LAMELLA")
@@ -442,9 +442,9 @@ def setup_lamella(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     set_images_ui(parent_ui, eb_image, ib_image)
 
-   
+    # TODO: copy the entire milling protocol into each lamella protocol beforehand
     # load the default protocol unless in lamella protocol
-    protocol = lamella.protocol if "lamella" in lamella.protocol else settings.protocol
+    protocol = lamella.protocol if "lamella" in lamella.protocol else settings.protocol["milling"]
     lamella_position = Point.from_dict(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
     lamella_stages = patterning.get_milling_stages("lamella", protocol, lamella_position)
     stages = deepcopy(lamella_stages)
@@ -452,7 +452,7 @@ def setup_lamella(
     # feature 
     if "autolamella" in method:
         _feature_name = "notch" if method == "autolamella-waffle" else "microexpansion"
-        protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol
+        protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol["milling"]
         NOTCH_H_OFFSET = 0.5e-6                     
         feature_position = Point.from_dict(protocol[_feature_name].get("point", 
                 {"x":lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET, 
@@ -461,7 +461,7 @@ def setup_lamella(
         stages += feature_stage
 
     # fiducial
-    protocol = lamella.protocol if "fiducial" in lamella.protocol else settings.protocol
+    protocol = lamella.protocol if "fiducial" in lamella.protocol else settings.protocol["milling"]
     FIDUCIAL_X_OFFSET = 25e-6
     if method == "autoliftout-default":
         FIDUCIAL_X_OFFSET *= -1

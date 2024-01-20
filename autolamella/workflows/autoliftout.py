@@ -537,7 +537,7 @@ def mill_lamella_edge(
     point = det.features[0].feature_m
     point.x += x_shift
 
-    stages = get_milling_stages("sever", settings.protocol, point=point)
+    stages = get_milling_stages("sever", settings.protocol["milling"], point=point)
     stages = update_milling_ui(stages, parent_ui, 
         msg=f"Press Run Milling to mill the sever for {lamella._petname}. Press Continue when done.", 
         validate=validate)
@@ -583,7 +583,7 @@ def land_lamella_on_post(
 
         logging.info(f"OFFSET: {det._offset}")
         logging.info(f"DISTANCE: {det.distance}")
-        det._offset = Point(x=settings.protocol.get("landing_post_x_offset", 0.75e-6), y=0)
+        det._offset = Point(x=settings.protocol["options"].get("landing_post_x_offset", 0.75e-6), y=0)
         logging.info(f"OFFSET: {det._offset}")
         logging.info(f"DISTANCE: {det.distance}")
         
@@ -626,9 +626,9 @@ def land_lamella_on_post(
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
     point = det.features[0].feature_m 
-    point.x += settings.protocol["weld"].get("width", 5e-6) / 2
+    point.x += settings.protocol["milling"]["weld"].get("width", 5e-6) / 2
 
-    stages = get_milling_stages("weld", settings.protocol, point)
+    stages = get_milling_stages("weld", settings.protocol["milling"], point)
     stages = update_milling_ui(stages, parent_ui, 
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
@@ -1032,7 +1032,7 @@ def select_initial_lamella_positions(
     set_images_ui(parent_ui, eb_image, ib_image)
 
     log_status_message(lamella, "SELECT_LAMELLA_POSITION")
-    stages = patterning.get_milling_stages("trench", settings.protocol)
+    stages = patterning.get_milling_stages("trench", settings.protocol["milling"])
     stages = update_milling_ui(stages, parent_ui,
         msg=f"Select a position and milling pattern for {lamella._petname}. Press Continue when done.",
         validate=True,
@@ -1133,7 +1133,7 @@ def select_landing_sample_positions(
     
     # log the protocol
     # TODO: change to prepare-landing protocol
-    stages = get_milling_stages("flatten", settings.protocol)
+    stages = get_milling_stages("flatten", settings.protocol["milling"])
     stages = update_milling_ui(stages, parent_ui, 
         msg=f"Select the landing position and prepare (mill) the area for {lamella._petname}. Press Continue when done.", 
         validate=True)
@@ -1278,7 +1278,7 @@ def prepare_manipulator_surface(microscope: FibsemMicroscope, settings: Microsco
     update_status_ui(parent_ui, f"Preparing Manipulator Surface...")
 
     # create rectangle pattern at tip (horizontal rect)
-    stages = get_milling_stages("prepare-manipulator", settings.protocol)
+    stages = get_milling_stages("prepare-manipulator", ["milling"])
 
     # move pattern based on preparation method
     method = settings.protocol.get("method", "autoliftout-serial-liftout")
@@ -1396,7 +1396,7 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
     update_status_ui(parent_ui, f"Preparing Copper Grid...")
 
     log_status_message_raw(workflow_stage, "MILL_PREPARE_COPPER_GRID")
-    stages = get_milling_stages("prepare-copper-grid", settings.protocol)
+    stages = get_milling_stages("prepare-copper-grid", settings.protocol["milling"])
     stages = update_milling_ui(stages=stages,
             msg=f"Press Run Milling to mill the grid preparation milling. Press Continue when done.", 
             parent_ui=parent_ui, validate=validate)
@@ -1430,13 +1430,13 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
 
     # get top pattern position
     log_status_message_raw(workflow_stage, "MILL_PREPARE_COPPER_BLOCKS")
-    h1 = settings.protocol["prepare-copper-blocks"]["stages"][0]["height"]
-    h2 = settings.protocol["prepare-copper-blocks"]["stages"][1]["height"]
+    h1 = settings.protocol["milling"]["prepare-copper-blocks"]["stages"][0]["height"]
+    h2 = settings.protocol["milling"]["prepare-copper-blocks"]["stages"][1]["height"]
     dy = h1/2 - h2/2
     points = [Point(0, 0), Point(0, dy)]
     
     # mill prepare-copper-blocks (chain of blocks)
-    stages = get_milling_stages("prepare-copper-blocks", settings.protocol, point=points)
+    stages = get_milling_stages("prepare-copper-blocks", settings.protocol["milling"], point=points)
     stages = update_milling_ui(stages=stages, 
                 msg=f"Press Run Milling to mill the copper blocks. Press Continue when done.", 
                 parent_ui=parent_ui, validate=validate)
@@ -1505,7 +1505,7 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
     # respositon weld
     # TODO: detect the weld position
     log_status_message_raw(workflow_stage, "MILL_COPPER_WELD")
-    stages = get_milling_stages("prepare-copper-weld", settings.protocol)
+    stages = get_milling_stages("prepare-copper-weld", settings.protocol["milling"])
     stages = update_milling_ui(stages=stages,
                         msg=f"Press Run Milling to weld the copper block. Press Continue when done.", 
                         parent_ui=parent_ui, validate=validate)
@@ -1524,7 +1524,7 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
     while ret is False:
 
         # mill prepare-copper-release (release the copper block)
-        stages = get_milling_stages("prepare-copper-release", settings.protocol)
+        stages = get_milling_stages("prepare-copper-release", settings.protocol["milling"])
         stages = update_milling_ui(stages=stages, 
                 msg=f"Press Run Milling to mill copper block release. Press Continue when done.", 
                         parent_ui=parent_ui, validate=validate)

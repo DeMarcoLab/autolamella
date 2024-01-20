@@ -20,7 +20,8 @@ __AUTOLIFTOUT_METHODS__ = ["autoliftout-default", "autoliftout-serial-liftout"]
 __AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__ = ["None", "Weld"]
 __AUTOLIFTOUT_LANDING_JOIN_METHODS__ = ["Weld"]
 
-
+# machine learning
+from fibsem.config import __DEFAULT_CHECKPOINT__
 
 ####### FEATURE FLAGS
 _MINIMAP_VISUALISATION = False

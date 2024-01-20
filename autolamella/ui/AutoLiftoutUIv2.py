@@ -169,7 +169,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         # setup experiment -> connect to microscope -> select lamella -> run autoliftout -> run polishing
 
         # METHOD 
-        _METHOD = self.settings.protocol.get("method", "autoliftout-default") if _protocol_loaded else "autoliftout-default"
+        _METHOD = self.settings.protocol["options"].get("method", "autoliftout-default") if _protocol_loaded else "autoliftout-default"
 
         # experiment loaded
         self.actionConnect_Microscope.setVisible(_experiment_loaded)
@@ -225,7 +225,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         if _protocol_loaded:
             self.label_protocol_name.setText(
-                f"Protocol: {self.settings.protocol.get('name', 'protocol')}"
+                f"Protocol: {self.settings.protocol['options'].get('name', 'protocol')}"
             )
 
 
@@ -377,8 +377,8 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.settings.protocol = protocol
 
         # meta
-        self.lineEdit_protocol_name.setText(self.settings.protocol.get("name", "autoliftout"))
-        self.comboBox_protocol_method.setCurrentText(self.settings.protocol.get("method", "autoliftout-default"))
+        self.lineEdit_protocol_name.setText(self.settings.protocol["options"].get("name", "autoliftout"))
+        self.comboBox_protocol_method.setCurrentText(self.settings.protocol["options"].get("method", "autoliftout-default"))
 
         
         # options
@@ -401,15 +401,15 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.checkBox_supervise_mill_polishing.setChecked(bool(options["supervise"]["mill_polishing"]))
 
         # ml
-        self.lineEdit_protocol_ml_checkpoint.setText(self.settings.protocol["ml"]["checkpoint"])
+        self.lineEdit_protocol_ml_checkpoint.setText(options["checkpoint"])
 
         # TODO: initial positions
 
 
     def update_protocol_from_ui(self):
 
-        self.settings.protocol["name"] = self.lineEdit_protocol_name.text()
-        self.settings.protocol["method"] = self.comboBox_protocol_method.currentText()
+        self.settings.protocol["options"]["name"] = self.lineEdit_protocol_name.text()
+        self.settings.protocol["options"]["method"] = self.comboBox_protocol_method.currentText()
 
         # TODO: fix this for both methods
         self.settings.protocol["options"].update({
@@ -430,9 +430,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             }}
         )
 
-        self.settings.protocol["ml"] = {
-            "checkpoint": self.lineEdit_protocol_ml_checkpoint.text(),
-        }
+        self.settings.protocol["options"]["checkpoint"] = self.lineEdit_protocol_ml_checkpoint.text()
 
         if self.sender() == self.actionSave_Protocol:
 
@@ -688,7 +686,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             )
         elif workflow == "autoliftout":
 
-            _METHOD = self.settings.protocol.get("method", "autoliftout-default")
+            _METHOD = self.settings.protocol["options"].get("method", "autoliftout-default")
             
             if _METHOD == "autoliftout-default":
                 settings.image.autogamma = True
@@ -732,7 +730,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         elif workflow == "prepare-manipulator":
 
-            _METHOD = self.settings.protocol.get("method", "autoliftout-default")
+            _METHOD = self.settings.protocol["options"].get("method", "autoliftout-default")
             if _METHOD == "autoliftout-serial-liftout":
                 autoliftout.PREPARE_MANIPULATOR_WORKFLOW["serial-liftout"](microscope=microscope, 
                                                                   settings= settings, 

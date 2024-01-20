@@ -168,8 +168,8 @@ def move_to_lamella_angle(
     """Rotate and tilt the stage to the thinning angle, assumes from the landing position"""
 
     # thinning position
-    thinning_rotation_angle = np.deg2rad(protocol["lamella"]["rotation_angle"])
-    thinning_tilt_angle = np.deg2rad(protocol["lamella"]["tilt_angle"])
+    thinning_rotation_angle = np.deg2rad(protocol["options"]["milling_rotation_angle"])
+    thinning_tilt_angle = np.deg2rad(protocol["options"]["milling_tilt_angle"])
 
     stage_position = FibsemStagePosition(
         r=thinning_rotation_angle,
