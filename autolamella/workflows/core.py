@@ -55,6 +55,7 @@ from fibsem.detection.detection import (
     LamellaBottomEdge,
     detect_features,
     DetectedFeatures,
+    VolumeBlockCentre
 )
 from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 from fibsem import config as fcfg
@@ -89,6 +90,10 @@ def mill_trench(
 
     validate = settings.protocol["options"]["supervise"].get("trench", True)
     settings.image.path = lamella.path
+
+    log_status_message(lamella, "MOVE_TO_TRENCH")
+    update_status_ui(parent_ui, f"{lamella.info} Moving to Trench Position...")
+    microscope.move_flat_to_beam(BeamType.ION)
     
     log_status_message(lamella, "MILL_TRENCH")
 
@@ -117,7 +122,7 @@ def mill_trench(
     settings.image.beam_type = BeamType.ELECTRON
     calibration.auto_charge_neutralisation(microscope, settings.image)
     
-    # refernce images
+    # reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
     reference_images = acquire.take_set_of_reference_images(
         microscope=microscope,
@@ -149,55 +154,29 @@ def mill_undercut(
     # rotate flat to eb
     log_status_message(lamella, "MOVE_TO_UNDERCUT")
     update_status_ui(parent_ui, f"{lamella.info} Moving to Undercut Position...")
-    microscope.move_flat_to_beam(BeamType.ELECTRON, _safe=True) # TODO: TEST UNSAFE MOVE
+    microscope.move_flat_to_beam(BeamType.ELECTRON, _safe=True)
     
     # OFFSET FOR COMPUCENTRIC ROTATION
     X_OFFSET = settings.protocol["options"].get("compucentric_x_offset", 0)
     Y_OFFSET = settings.protocol["options"].get("compucentric_y_offset", 0)
     microscope.stable_move(dx=X_OFFSET, dy=Y_OFFSET, beam_type=BeamType.ELECTRON)
     
-
-    # detect
-    log_status_message(lamella, f"ALIGN_TRENCH")
-    update_status_ui(parent_ui, f"{lamella.info} Aligning Trench (Rotated)...")
-    settings.image.beam_type = BeamType.ELECTRON
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.filename = f"ref_{lamella.state.stage.name}_trench_align_ml"
-    settings.image.save = True
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    set_images_ui(parent_ui, eb_image, ib_image)
-    
-    features = [LamellaCentre()] 
-    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.stage_position)
-
-    microscope.stable_move(
-        dx=det.features[0].feature_m.x,
-        dy=det.features[0].feature_m.y,
-        beam_type=settings.image.beam_type
-    )
-    
-    # Align ion so it is coincident with the electron beam
-    settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-
-    features = [LamellaCentre()] 
-    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.stage_position)
-    
-    # align vertical
-    microscope.vertical_move(
-        dx=det.features[0].feature_m.x,
-        dy=-det.features[0].feature_m.y,
-    )
-
-    # lamella should now be centred in ion beam
-
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.filename = f"ref_{lamella.state.stage.name}_start"
-    settings.image.save = True
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    set_images_ui(parent_ui, eb_image, ib_image)
-
+    # align feature coincident
     method = settings.protocol.get("method", "autolamella-waffle")
+    
+    if method == "autoliftout-serial-liftout":
+        feature = VolumeBlockCentre()
+    else: # autolamella-waffle, autoliftout-default
+        feature = LamellaCentre()
+
+    lamella = align_feature_coincident(microscope=microscope,
+                                       settings=settings,
+                                       lamella=lamella,
+                                       parent_ui=parent_ui,
+                                       validate=validate,
+                                       feature=feature)
+    
+    # mill under cut
     lamella.protocol["undercut"] = deepcopy(settings.protocol["undercut"])
     N_UNDERCUTS = int(lamella.protocol["undercut"].get("tilt_angle_step", 1))
     UNDERCUT_ANGLE_DEG = lamella.protocol["undercut"].get("tilt_angle", -5)
@@ -656,7 +635,7 @@ def align_feature_coincident(microscope: FibsemMicroscope, settings: MicroscopeS
 
     # update status
     log_status_message(lamella, f"ALIGN_FEATURE_COINCIDENT")
-    update_status_ui(parent_ui, f"{lamella.info} Aligning Feature Coincident({feature.name})...")
+    update_status_ui(parent_ui, f"{lamella.info} Aligning Feature Coincident ({feature.name})...")
     settings.image.beam_type = BeamType.ELECTRON
     settings.image.hfw = hfw
     settings.image.filename = f"ref_{lamella.state.stage.name}_{feature.name}_align_coincident_ml"

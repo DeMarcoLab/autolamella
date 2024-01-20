@@ -468,7 +468,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.minimap_widget._minimap_positions.connect(self.movement_widget.minimap_window_positions)
         self.minimap_widget._minimap_positions.connect(self.update_experiment_positions)
         
-
+        # TODO: sync these positions properly
         positions = [lamella.state.microscope_state.stage_position for lamella in self.experiment.positions]
 
         self.movement_widget.positions_signal.connect(self.minimap_connection)
