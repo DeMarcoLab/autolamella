@@ -299,7 +299,7 @@ def mill_lamella(
         or settings.protocol["options"].get("take_final_reference_images", True))
     _take_high_quality_ref =  bool(
         lamella.state.stage is AutoLamellaWaffleStage.MillPolishingCut 
-        and settings.protocol["options"].get("take_final_high_quality_reference_images", False)
+        and settings.protocol["options"].get("high_quality_image", {}).get("enabled", False)
         )
 
     # milling stages
@@ -407,11 +407,20 @@ def mill_lamella(
     if _take_high_quality_ref:
         log_status_message(lamella, "HIGH_QUALITY_REFERENCE_IMAGES")
         update_status_ui(parent_ui, f"{lamella.info} Acquiring High Quality Reference Images...")
-        settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
-        settings.image.filename = f"ref_{lamella.state.stage.name}_final_ultra"
+
+        ddict = {"dwell_time": 2.0e-6,
+            "resolution": fcfg.REFERENCE_RES_HIGH,
+            "hfw": fcfg.REFERENCE_HFW_SUPER,
+            "frame_integration": 2,
+        }
+        hq_settings = settings.protocol["options"].get("high_quality_image", ddict)
+        # take high quality reference images
         settings.image.save = True
-        settings.image.resolution = fcfg.REFERENCE_RES_HIGH
-        settings.image.frame_integration = 4
+        settings.image.filename = f"ref_{lamella.state.stage.name}_final_ultra"
+        settings.image.hfw = hq_settings["hfw"]
+        settings.image.dwell_time = hq_settings["dwell_time"]
+        settings.image.resolution = hq_settings["resolution"]
+        settings.image.frame_integration = hq_settings["frame_integration"]
         settings.image.beam_type = BeamType.ELECTRON
         eb_image = acquire.new_image(microscope, settings.image)
         # set_images_ui(parent_ui, eb_image, ib_image)

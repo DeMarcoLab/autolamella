@@ -18,8 +18,12 @@ options:
     compucentric_y_offset: 25.0e-6 
     alignment_attempts: 3.0
     alignment_at_milling_current: true
-    take_final_reference_images: true
-    take_final_high_quality_reference_images: true
+    high_quality_image:
+        enabled: false
+        dwell_time: 2.0e-6
+        resolution: [3072, 2048]
+        hfw: 50.e-6
+        frame_integration: 2
     take_final_overview_image: true
     undercut_return_to_electron: True
     undercut_tilt_angle: 6.0

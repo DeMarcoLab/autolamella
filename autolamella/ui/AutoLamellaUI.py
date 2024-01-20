@@ -207,7 +207,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.checkBox_align_at_milling_current.setChecked(self.settings.protocol["options"].get("alignment_at_milling_current", True))
 
         self.checkBox_take_final_reference_images.setChecked(self.settings.protocol["options"].get("take_final_reference_images", True))
-        self.checkBox_take_final_high_quality_reference.setChecked(self.settings.protocol["options"].get("take_final_high_quality_reference_images", False))
+        self.checkBox_take_final_high_quality_reference.setChecked(self.settings.protocol["options"]["high_quality_image"].get("enabled", False))
 
         # lamella 
         self.doubleSpinBox_lamella_tilt_angle.setValue(self.settings.protocol["options"].get("lamella_tilt_angle", 18))
@@ -284,7 +284,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["options"]["alignment_attempts"] = int(self.beamshift_attempts.value())
         self.settings.protocol["options"]["alignment_at_milling_current"] = self.checkBox_align_at_milling_current.isChecked()
         self.settings.protocol["options"]["take_final_reference_images"] = self.checkBox_take_final_reference_images.isChecked()
-        self.settings.protocol["options"]["take_final_high_quality_reference_images"] = self.checkBox_take_final_high_quality_reference.isChecked()
+        self.settings.protocol["options"]["high_quality_image"]["enabled"] = self.checkBox_take_final_high_quality_reference.isChecked()
 
         self.settings.protocol["options"]["lamella_tilt_angle"] = self.doubleSpinBox_lamella_tilt_angle.value()
         self.settings.protocol["options"]["use_microexpansion"] = self.checkBox_use_microexpansion.isChecked()

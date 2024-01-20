@@ -10,8 +10,13 @@ options:
     compucentric_y_offset: 0.0e-6
     alignment_at_milling_current: true
     take_final_reference_images: true
-    take_final_high_quality_reference_images: true
-    undercut_required: False
+    high_quality_image:
+    enabled: false
+    dwell_time: 2.0e-6
+    resolution: [3072, 2048]
+    hfw: 50.e-6
+    frame_integration: 2    
+    undercut_required: false
     undercut_tilt_angle: -10.0
     undercut_tilt_angle_steps: 1.0
     lamella_tilt_angle: 8.0    # absolute angle (pre-tilt - 27)

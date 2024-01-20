@@ -105,7 +105,12 @@ options:
     alignment_attempts: 3.0
     alignment_at_milling_current: true
     take_final_reference_images: true
-    take_final_high_quality_reference_images: false
+    high_quality_image:
+    enabled: false
+        dwell_time: 2.0e-6
+        resolution: [3072, 2048]
+        hfw: 50.e-6
+        frame_integration: 2    
     take_final_overview_image: true
     compucentric_x_offset: 0.0e-6
     compucentric_y_offset: 0.0e-6
