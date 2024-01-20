@@ -106,7 +106,7 @@ options:
     alignment_at_milling_current: true
     take_final_reference_images: true
     high_quality_image:
-    enabled: false
+        enabled: false
         dwell_time: 2.0e-6
         resolution: [3072, 2048]
         hfw: 50.e-6

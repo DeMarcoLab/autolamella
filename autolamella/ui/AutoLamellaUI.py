@@ -169,6 +169,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.menuWorkflow.setEnabled(True)
         self.actionStop_Workflow.setVisible(False)
 
+        self.actionLoad_Milling_Pattern.triggered.connect(self._load_milling_protocol)
+        self.actionSave_Milling_Pattern.triggered.connect(self._save_milling_protocol)
+
         self.pushButton_yes.clicked.connect(self.push_interaction_button)
         self.pushButton_no.clicked.connect(self.push_interaction_button)
 
@@ -186,6 +189,50 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.comboBox_method.addItems(cfg.__AUTOLAMELLA_METHODS__)
         self.comboBox_method.currentIndexChanged.connect(lambda: self.update_protocol_ui(False))
         self.comboBox_ml_checkpoint.addItems(__AUTOLAMELLA_CHECKPOINTS__)
+
+    def _save_milling_protocol(self):
+
+        print("save milling protocol")
+
+        if self._PROTOCOL_LOADED is False:
+            logging.info(f"No protocol loaded")
+            return
+
+        pattern = fui.create_combobox_message_box(text="Select a milling pattern to save as", 
+                                              title="Save Milling Pattern", 
+                                              options=self.settings.protocol["milling"].keys(), 
+                                              parent=self)
+
+        if pattern is None:
+            logging.info(f"No pattern selected")
+            return
+
+        logging.info(f"Loading milling pattern: {pattern}")
+        stages = self.milling_widget.get_milling_stages()
+        protocol = patterning.get_protocol_from_stages(stages)
+
+        self.settings.protocol["milling"][pattern] = protocol
+
+        # TODO: also allow to create new patterns
+
+    def _load_milling_protocol(self):
+
+        print("load milling protocol")
+
+        if self._PROTOCOL_LOADED is False:
+            logging.info(f"No protocol loaded")
+            return
+                
+        pattern = fui.create_combobox_message_box(text="Select a milling pattern to load", 
+                                              title="Load Milling Pattern", 
+                                              options=self.settings.protocol["milling"].keys(), 
+                                              parent=self)
+        
+        logging.info(f"Loading milling pattern: {pattern}")
+        stages = patterning.get_milling_stages(pattern, self.settings.protocol["milling"])
+        self.milling_widget.set_milling_stages(stages)
+
+        
 
     def update_protocol_ui(self, _load: bool=True):
 
@@ -438,6 +485,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.tabWidget.insertTab(CONFIGURATION["TABS"]["Milling"], self.milling_widget, "Milling")
             self.tabWidget.insertTab(CONFIGURATION["TABS"]["Detection"], self.det_widget, "Detection")
 
+
+
             self._microscope_ui_loaded = True
             self.milling_widget.milling_position_changed.connect(self._update_milling_position)
             self.milling_widget._milling_finished.connect(self._milling_finished)
@@ -583,6 +632,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Protocol"], _protocol_loaded)
         self.actionNew_Experiment.setVisible(_microscope_connected)
 
+        # workflow
+
+
+
         # setup experiment -> connect to microscope -> select lamella -> run autolamella
         self.pushButton_fail_lamella.setVisible(_lamella_selected)
         self.pushButton_revert_stage.setVisible(_lamella_selected)
@@ -595,6 +648,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionOpen_Minimap.setVisible(_protocol_loaded)
         self.actionLoad_Minimap_Image.setVisible(_protocol_loaded and cfg._MINIMAP_VISUALISATION)
         self.actionLoad_Positions.setVisible(_protocol_loaded)
+        self.actionLoad_Milling_Pattern.setVisible(_protocol_loaded)
+        self.actionSave_Milling_Pattern.setVisible(_protocol_loaded)
 
         # labels
         if _experiment_loaded:
@@ -633,6 +688,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if _experiment_loaded and _protocol_loaded:
             # workflow buttons
             _WAFFLE_METHOD = self.settings.protocol["options"].get("method", "autolamella-waffle") == "autolamella-waffle"
+            _ON_GRID_METHOD = self.settings.protocol["options"].get("method", "autolamella-waffle") == "autolamella-on-grid"
             _counter = Counter([p.state.stage.name for p in self.experiment.positions])
             
             _READY_TRENCH = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
@@ -661,6 +717,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+
+
+            # tab visibity / enabled
+            # self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], self._WORKFLOW_RUNNING and not _ON_GRID_METHOD)
+            # self.tabWidget.setTabEnabled(CONFIGURATION["TABS"]["Connection"], not self._WORKFLOW_RUNNING)
+            # self.tabWidget.setTabEnabled(CONFIGURATION["TABS"]["Experiment"], not self._WORKFLOW_RUNNING)
+            # self.tabWidget.setTabEnabled(CONFIGURATION["TABS"]["Protocol"], not self._WORKFLOW_RUNNING)
 
             if self._WORKFLOW_RUNNING:
                 self.pushButton_run_waffle_trench.setEnabled(False)
