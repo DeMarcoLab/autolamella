@@ -1,7 +1,7 @@
 
 options:
     name: autolamella-liftout-base-protocol
-    method: autoliftout-default
+    method: autolamella-liftout
     checkpoint: autolamella-mega-20240107.pt
     batch_mode: true
     confirm_next_stage: true
@@ -16,12 +16,18 @@ options:
     landing_charge_neutralisation_iterations: 100
     compucentric_x_offset: 50.0e-6
     compucentric_y_offset: 25.0e-6 
-    return_to_eb_after_undercut: True
     alignment_attempts: 3.0
     alignment_at_milling_current: true
     take_final_reference_images: true
     take_final_high_quality_reference_images: true
     take_final_overview_image: true
+    undercut_return_to_electron: True
+    undercut_tilt_angle: 6.0
+    undercut_tilt_angle_steps: 1
+    lamella_tilt_angle: 18.0
+    use_fiducial: true
+    use_microexpansion: true
+    use_notch: true 
     supervise:
         landing: true
         liftout: true
@@ -110,8 +116,6 @@ milling:
         scan_direction: TopToBottom
         trench_width: 2.0e-06
         undercut_angle: 6.0
-        tilt_angle: 6.0
-        tilt_angle_step: 1
         v_offset: 1.0e-6
         width: 2.5e-05
         application_file: "autolamella"

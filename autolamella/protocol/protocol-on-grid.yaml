@@ -1,12 +1,16 @@
 options:
   name: autolamella-base-scan-rotation-0deg
-  method: autolamella-default # autolamella-waffle or autolamella-default
+  method: autolamella-on-grid # autolamella-waffle or autolamella-on-grid
   checkpoint: autolamella-mega-20240107.pt
   alignment_attempts: 3.0
   alignment_at_milling_current: true
   take_final_reference_images: false 
   take_final_high_quality_reference_images: false
   take_final_overview_image: true
+  lamella_lamella_tilt_angle: 18.0
+  use_fiducial: true
+  use_microexpansion: true
+  use_notch: true 
   supervise:
     trench: false
     undercut: true
@@ -86,3 +90,18 @@ milling:
     hfw: 200e-6
     application_file: autolamella
     cleaning_cross_section: false
+  notch:
+    application_file: autolamella
+    cleaning_cross_section: false
+    depth: 2.5e-06
+    distance: 2.0e-06
+    enabled: true
+    flip: 0
+    hfw: 80e-6
+    hheight: 2.0e-07
+    hwidth: 4.0e-06
+    milling_current: 2.0e-09
+    preset: 30 keV; 2.5 nA
+    vheight: 2.0e-06
+    vwidth: 2.0e-07
+    type: WaffleNotch

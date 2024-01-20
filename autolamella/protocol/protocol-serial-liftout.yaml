@@ -1,11 +1,9 @@
 options:
     name: autoliftout-serial-protocol
-    method: autoliftout-serial-liftout
+    method: autolamella-serial-liftout
     checkpoint: autolamella-serial-liftout-20240107.pt
     batch_mode: true
     confirm_next_stage: true
-    complete_undercut: False
-    milling_tilt_angle: 8.0    # absolute angle (pre-tilt - 27)
     lamella_start_position: autoliftout-serial-pre-tilt-35-deg-grid-01-lamella
     landing_start_position: autoliftout-serial-pre-tilt-35-deg-grid-02-landing
     compucentric_x_offset: 0.0e-6
@@ -13,6 +11,13 @@ options:
     alignment_at_milling_current: true
     take_final_reference_images: true
     take_final_high_quality_reference_images: true
+    undercut_required: False
+    undercut_tilt_angle: -10.0
+    undercut_tilt_angle_steps: 1.0
+    lamella_tilt_angle: 8.0    # absolute angle (pre-tilt - 27)
+    use_fiducial: true
+    use_microexpansion: true
+    use_notch: true 
     landing_grid:
         x: 100.0e-6
         y: 400.0e-6
@@ -77,8 +82,6 @@ milling:
         hfw: 150.0e-6
         milling_current: 28.0e-09
         preset: 30 keV; 2.5 nA
-        tilt_angle: -10.0
-        tilt_angle_step: 1.0
         width: 45.0e-6
         scan_direction: TopToBottom
         type: Rectangle

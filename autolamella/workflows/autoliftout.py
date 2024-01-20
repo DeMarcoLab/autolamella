@@ -138,7 +138,7 @@ def liftout_lamella(
             msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
             validate=validate)
         
-        lamella.protocol["join"] = deepcopy(patterning._get_protocol_from_stages(stages))
+        lamella.protocol["join"] = deepcopy(patterning.get_protocol_from_stages(stages))
         lamella.protocol["join"]["point"] = stages[0].pattern.point.to_dict()
 
     logging.info(
@@ -542,7 +542,7 @@ def mill_lamella_edge(
         msg=f"Press Run Milling to mill the sever for {lamella._petname}. Press Continue when done.", 
         validate=validate)
 
-    lamella.protocol[f"{lamella.state.stage.name}_sever"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
+    lamella.protocol[f"{lamella.state.stage.name}_sever"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
     lamella.protocol[f"{lamella.state.stage.name}_sever"]["point"] = stages[0].pattern.point.to_dict()
 
     # take reference images
@@ -633,7 +633,7 @@ def land_lamella_on_post(
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
     
-    lamella.protocol["weld"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
+    lamella.protocol["weld"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
     lamella.protocol["weld"]["point"] = stages[0].pattern.point.to_dict()
 
     # final reference images
@@ -799,7 +799,7 @@ def reset_needle(
         msg=f"Press Run Milling to mill the sharpen for {lamella._petname}. Press Continue when done.", 
         validate=validate)
 
-    lamella.protocol["reset"] = deepcopy(patterning._get_protocol_from_stages(stages[0]))
+    lamella.protocol["reset"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
     lamella.protocol["reset"]["point"] = stages[0].pattern.point.to_dict()
 
     #################################################################################################
@@ -1040,7 +1040,7 @@ def select_initial_lamella_positions(
     )
     
     # log the protocol
-    lamella.protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
+    lamella.protocol["trench"] = deepcopy(patterning.get_protocol_from_stages(stages))
     lamella.protocol["trench"]["point"] = stages[0].pattern.point.to_dict()
     
     # need to set the imaging settings too?
@@ -1138,7 +1138,7 @@ def select_landing_sample_positions(
         msg=f"Select the landing position and prepare (mill) the area for {lamella._petname}. Press Continue when done.", 
         validate=True)
     
-    lamella.protocol["flatten"] = deepcopy(patterning._get_protocol_from_stages(stages))
+    lamella.protocol["flatten"] = deepcopy(patterning.get_protocol_from_stages(stages))
     lamella.protocol["flatten"]["point"] = stages[0].pattern.point.to_dict()
     lamella.landing_state = microscope.get_microscope_state()
 
@@ -1281,10 +1281,10 @@ def prepare_manipulator_surface(microscope: FibsemMicroscope, settings: Microsco
     stages = get_milling_stages("prepare-manipulator", ["milling"])
 
     # move pattern based on preparation method
-    method = settings.protocol.get("method", "autoliftout-serial-liftout")
-    if method == "autoliftout-serial-liftout":
+    method = settings.protocol.get("method", "autolamella-serial-liftout")
+    if method == "autolamella-serial-liftout":
         point = Point(0, 10e-6)
-    if method == "autoliftout-default":
+    if method == "autolamella-liftout":
         point = Point(-10e-6, 0)
 
     if not np.isclose(scan_rotation, 0):
@@ -1376,7 +1376,7 @@ def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: 
     microscope.safe_absolute_stage_movement(position)
 
     # move to milling orientation (18 degrees)
-    t=np.deg2rad(settings.protocol["options"].get("milling_tilt_angle", 18))
+    t=np.deg2rad(settings.protocol["options"].get("lamella_tilt_angle", 18))
     microscope.safe_absolute_stage_movement(FibsemStagePosition(t=t))
 
     # ask the user to navigate to the desired location

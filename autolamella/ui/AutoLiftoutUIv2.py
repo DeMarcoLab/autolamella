@@ -169,7 +169,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         # setup experiment -> connect to microscope -> select lamella -> run autoliftout -> run polishing
 
         # METHOD 
-        _METHOD = self.settings.protocol["options"].get("method", "autoliftout-default") if _protocol_loaded else "autoliftout-default"
+        _METHOD = self.settings.protocol["options"].get("method", "autolamella-liftout") if _protocol_loaded else "autolamella-liftout"
 
         # experiment loaded
         self.actionConnect_Microscope.setVisible(_experiment_loaded)
@@ -181,14 +181,14 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # workflow buttons
         _SETUP_ENABLED = _microscope_connected and _protocol_loaded
-        _AUTOLIFTOUT_ENABLED = (_LAMELLA_SETUP or _LAMELLA_TRENCH or _LAMELLA_UNDERCUT or (_LIFTOUT_FINISHED and _METHOD=="autoliftout-default")) and _microscope_connected and _protocol_loaded
+        _AUTOLIFTOUT_ENABLED = (_LAMELLA_SETUP or _LAMELLA_TRENCH or _LAMELLA_UNDERCUT or (_LIFTOUT_FINISHED and _METHOD=="autolamella-liftout")) and _microscope_connected and _protocol_loaded
         _SERIAL_LIFTOUT_LANDING_ENABLED = _LIFTOUT_FINISHED and _microscope_connected and _protocol_loaded
         _AUTOLAMELLA_ENABLED = (_LAMELLA_LANDED or _AUTOLAMELLA_PROGRESS) and _microscope_connected and _protocol_loaded
 
         self.pushButton_setup_autoliftout.setEnabled(_SETUP_ENABLED)
         self.pushButton_run_autoliftout.setEnabled(_AUTOLIFTOUT_ENABLED)
         self.pushButton_run_serial_liftout_landing.setEnabled(_SERIAL_LIFTOUT_LANDING_ENABLED)
-        self.pushButton_run_serial_liftout_landing.setVisible(_METHOD=="autoliftout-serial-liftout")
+        self.pushButton_run_serial_liftout_landing.setVisible(_METHOD=="autolamella-serial-liftout")
         self.pushButton_run_polishing.setEnabled(_AUTOLAMELLA_ENABLED)
 
         # set stylesheets
@@ -378,7 +378,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # meta
         self.lineEdit_protocol_name.setText(self.settings.protocol["options"].get("name", "autoliftout"))
-        self.comboBox_protocol_method.setCurrentText(self.settings.protocol["options"].get("method", "autoliftout-default"))
+        self.comboBox_protocol_method.setCurrentText(self.settings.protocol["options"].get("method", "autolamella-liftout"))
 
         
         # options
@@ -686,9 +686,9 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             )
         elif workflow == "autoliftout":
 
-            _METHOD = self.settings.protocol["options"].get("method", "autoliftout-default")
+            _METHOD = self.settings.protocol["options"].get("method", "autolamella-liftout")
             
-            if _METHOD == "autoliftout-default":
+            if _METHOD == "autolamella-liftout":
                 settings.image.autogamma = True
                 self.experiment = autoliftout.run_autoliftout_workflow(
                     microscope=microscope,
@@ -696,7 +696,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                     experiment=experiment,
                     parent_ui=self,
                 )
-            if _METHOD == "autoliftout-serial-liftout":
+            if _METHOD == "autolamella-serial-liftout":
                 from autolamella.workflows import serial as serial_workflow
                 self.experiment = serial_workflow.run_serial_liftout_workflow(
                     microscope=microscope,
@@ -730,8 +730,8 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         elif workflow == "prepare-manipulator":
 
-            _METHOD = self.settings.protocol["options"].get("method", "autoliftout-default")
-            if _METHOD == "autoliftout-serial-liftout":
+            _METHOD = self.settings.protocol["options"].get("method", "autolamella-liftout")
+            if _METHOD == "autolamella-serial-liftout":
                 autoliftout.PREPARE_MANIPULATOR_WORKFLOW["serial-liftout"](microscope=microscope, 
                                                                   settings= settings, 
                                                                   parent_ui=self,

@@ -196,11 +196,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         
         if _load:
             method = self.settings.protocol["options"]["method"]
-            self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.title())) # TODO: coerce this to be a supported method, alert the user if not
+            self.comboBox_method.setCurrentIndex(cfg.__AUTOLAMELLA_METHODS__.index(method.lower())) # TODO: coerce this to be a supported method, alert the user if not
         else:
             method = self.comboBox_method.currentText().lower()
 
-        self.lineEdit_name.setText(self.settings.protocol.get("name", "autolamella-protocol"))
+        self.lineEdit_name.setText(self.settings.protocol["options"].get("name", "autolamella-protocol"))
 
         # options
         self.beamshift_attempts.setValue(self.settings.protocol["options"].get("alignment_attempts", 3))
@@ -208,6 +208,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.checkBox_take_final_reference_images.setChecked(self.settings.protocol["options"].get("take_final_reference_images", True))
         self.checkBox_take_final_high_quality_reference.setChecked(self.settings.protocol["options"].get("take_final_high_quality_reference_images", False))
+
+        # lamella 
+        self.doubleSpinBox_lamella_tilt_angle.setValue(self.settings.protocol["options"].get("lamella_tilt_angle", 18))
+        self.checkBox_use_microexpansion.setChecked(self.settings.protocol["options"].get("use_microexpansion", True))
+        self.checkBox_use_notch.setChecked(self.settings.protocol["options"].get("use_notch", True))
 
         # supervision
         self.checkBox_setup.setChecked(self.settings.protocol["options"]["supervise"].get("setup_lamella", True))
@@ -281,12 +286,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["options"]["take_final_reference_images"] = self.checkBox_take_final_reference_images.isChecked()
         self.settings.protocol["options"]["take_final_high_quality_reference_images"] = self.checkBox_take_final_high_quality_reference.isChecked()
 
+        self.settings.protocol["options"]["lamella_tilt_angle"] = self.doubleSpinBox_lamella_tilt_angle.value()
+        self.settings.protocol["options"]["use_microexpansion"] = self.checkBox_use_microexpansion.isChecked()
+        self.settings.protocol["options"]["use_notch"] = self.checkBox_use_notch.isChecked()
+
         # supervision
         self.settings.protocol["options"]["supervise"]["setup_lamella"] = self.checkBox_setup.isChecked()
         self.settings.protocol["options"]["supervise"]["mill_rough"] = self.checkBox_supervise_mill_rough.isChecked()
         self.settings.protocol["options"]["supervise"]["mill_polishing"] = self.checkBox_supervise_mill_polishing.isChecked()
 
-        if self.settings.protocol["options"]["method"] in ["autolamella-waffle", "autoliftout-default", "autoliftout-serial-liftout"]:
+        if self.settings.protocol["options"]["method"] in ["autolamella-waffle", "autolamella-liftout", "autolamella-serial-liftout"]:
 
             # supervision
             self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
@@ -299,7 +308,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.settings.protocol["options"]["undercut_tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
             self.settings.protocol["options"]["undercut_tilt_angle_steps"] = int(self.doubleSpinBox_undercut_step.value())
 
-        if self.settings.protocol["options"]["method"] in ["autoliftout-default", "autoliftout-serial-liftout"]:
+        if self.settings.protocol["options"]["method"] in ["autolamella-liftout", "autolamella-serial-liftout"]:
             
             # supervision
             self.settings.protocol["options"]["confirm_next_stage"] = self.checkBox_options_confirm_next_stage.isChecked()
@@ -807,18 +816,30 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     lamella_position = Point.from_dict(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
                     stages = patterning.get_milling_stages("lamella", protocol, lamella_position)
                     
-                    _feature_name = "notch" if method == "autolamella-waffle"  else "microexpansion"
-                    protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol["milling"]
+                    use_notch = self.settings.protocol["options"].get("use_notch", True)
+                    use_microexpansion = self.settings.protocol["options"].get("use_microexpansion", True)
+
+                    if use_notch:
+                        _feature_name = "notch"
+                        protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol["milling"]
+                        
+                        NOTCH_H_OFFSET = 0.5e-6                     
+                        notch_position = Point.from_dict(protocol[_feature_name].get("point", 
+                                {"x":lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET, 
+                                "y": lamella_position.y}))
+                        notch_stage = patterning.get_milling_stages(_feature_name, protocol, notch_position)
+                        stages += notch_stage
                     
-                    NOTCH_H_OFFSET = 0.5e-6                     
-                    feature_position = Point.from_dict(protocol[_feature_name].get("point", 
-                            {"x":lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET, 
-                            "y": lamella_position.y} if _feature_name == "notch" else {"x": 0, "y": 0})) 
-                    feature_stage = patterning.get_milling_stages(_feature_name, protocol, feature_position)
-                    stages += feature_stage
+                    if use_microexpansion:
+                        _feature_name = "microexpansion"
+                        protocol = lamella.protocol if _feature_name in lamella.protocol else self.settings.protocol["milling"]
+                        
+                        feature_position = Point.from_dict(protocol[_feature_name].get("point", {"x": 0, "y": 0}))
+                        microexpansion_stage = patterning.get_milling_stages(_feature_name, protocol, feature_position)
+                        stages += microexpansion_stage
 
                     # fiducial
-                    if self.settings.protocol["milling"]["fiducial"]["enabled"]:
+                    if self.settings.protocol["options"].get("use_fiducial"):
                         protocol = lamella.protocol if "fiducial" in lamella.protocol else self.settings.protocol["milling"]
                         fiducial_position = Point.from_dict(protocol["fiducial"].get("point", {"x": 25e-6, "y": 0})) 
                         fiducial_stage = patterning.get_milling_stages("fiducial", protocol, fiducial_position)
@@ -1106,25 +1127,33 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         stages = deepcopy(self.milling_widget.get_milling_stages())
         if method == "autolamella-waffle" and stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
-            self.experiment.positions[idx].protocol["trench"] = deepcopy(patterning._get_protocol_from_stages(stages))
+            self.experiment.positions[idx].protocol["trench"] = deepcopy(patterning.get_protocol_from_stages(stages))
             self.experiment.positions[idx].protocol["trench"]["point"] = stages[0].pattern.point.to_dict()
         
         if stage in [AutoLamellaWaffleStage.SetupLamella, AutoLamellaWaffleStage.PreSetupLamella]:
             n_lamella = len(self.settings.protocol["milling"]["lamella"]["stages"])
 
             # lamella
-            self.experiment.positions[idx].protocol["lamella"] = deepcopy(patterning._get_protocol_from_stages(stages[:n_lamella]))
+            self.experiment.positions[idx].protocol["lamella"] = deepcopy(patterning.get_protocol_from_stages(stages[:n_lamella]))
             self.experiment.positions[idx].protocol["lamella"]["point"] = stages[0].pattern.point.to_dict()
 
-            # feature
-            _feature_name = "notch" if method == "autolamella-waffle" else "microexpansion"
-            self.experiment.positions[idx].protocol[_feature_name] = deepcopy(patterning._get_protocol_from_stages(stages[n_lamella]))
-            self.experiment.positions[idx].protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.to_dict()
+            # stress relief features
+            use_notch = self.settings.protocol["options"].get("use_notch", True)
+            use_microexpansion = self.settings.protocol["options"].get("use_microexpansion", True)
 
+            if use_notch:
+                _feature_name = "notch" 
+                self.experiment.positions[idx].protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(stages[n_lamella]))
+                self.experiment.positions[idx].protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.to_dict()
+            
+            if use_microexpansion:
+                _feature_name = "microexpansion"
+                self.experiment.positions[idx].protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(stages[n_lamella + use_notch]))
+                self.experiment.positions[idx].protocol[_feature_name]["point"] = stages[n_lamella + use_notch].pattern.point.to_dict()
             
             # fiducial (optional)
-            if self.settings.protocol["milling"]["fiducial"]["enabled"]:
-                self.experiment.positions[idx].protocol["fiducial"] = deepcopy(patterning._get_protocol_from_stages(stages[-1]))
+            if self.settings.protocol["options"].get("use_fiducial", True):
+                self.experiment.positions[idx].protocol["fiducial"] = deepcopy(patterning.get_protocol_from_stages(stages[-1]))
                 self.experiment.positions[idx].protocol["fiducial"]["point"] = stages[-1].pattern.point.to_dict()
 
     def _run_milling(self):

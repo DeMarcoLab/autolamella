@@ -36,7 +36,7 @@ ml: # machine learning parameters
     num_classes: 3
     checkpoint: model4.pt #model4.pt
 options:
-    return_to_eb_after_undercut: True
+    undercut_return_to_electron: True
     alignment_attempts: 3
     supervise:
         features: false
