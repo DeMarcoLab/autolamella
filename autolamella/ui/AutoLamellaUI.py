@@ -44,6 +44,24 @@ _DEV_MODE = False
 DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBACK_01/experiment.yaml"
 DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
 
+
+CONFIGURATION = {
+    "TABS_ID": {0: "Connection", 
+                1: "Experiment", 
+                2: "Protocol", 
+                3: "Image", 
+                4: "Movement", 
+                5: "Milling", 
+                6: "Detection", 
+                7: "Manipulator"},
+}
+
+# invert the dictionary
+CONFIGURATION["TABS"] = {v: k for k, v in CONFIGURATION["TABS_ID"].items()}
+
+
+
+
 class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     ui_signal = pyqtSignal(dict)
     det_confirm_signal = pyqtSignal(bool)
@@ -59,8 +77,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.viewer = viewer
         self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
         self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
-
-        logging.info(f"INIT | INITIALISATION | STARTED")
 
         self._PROTOCOL_LOADED = False
         self._microscope_ui_loaded = False
@@ -79,7 +95,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             config_path=cfg.SYSTEM_PATH,
             parent=self,
         )
-        self.tabWidget.addTab(self.system_widget, "System")
+        self.tabWidget.insertTab(CONFIGURATION["TABS"]["Connection"], self.system_widget, "Connection")
 
         self.image_widget: FibsemImageSettingsWidget = None
         self.movement_widget: FibsemMovementWidget = None
@@ -101,9 +117,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if _DEV_MODE:
             self._auto_load()
-
-        logging.info(f"INIT | INITIALISATION | FINISHED")
-
 
     def setup_connections(self):
         self.pushButton_add_lamella.clicked.connect(lambda: self.add_lamella_ui(pos=None))
@@ -404,10 +417,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 )
 
             # add widgets to tabs
-            self.tabWidget.addTab(self.image_widget, "Image")
-            self.tabWidget.addTab(self.movement_widget, "Movement")
-            self.tabWidget.addTab(self.milling_widget, "Milling")
-            self.tabWidget.addTab(self.det_widget, "Detection")
+            self.tabWidget.insertTab(CONFIGURATION["TABS"]["Image"], self.image_widget, "Image")
+            self.tabWidget.insertTab(CONFIGURATION["TABS"]["Movement"], self.movement_widget, "Movement")
+            self.tabWidget.insertTab(CONFIGURATION["TABS"]["Milling"], self.milling_widget, "Milling")
+            self.tabWidget.insertTab(CONFIGURATION["TABS"]["Detection"], self.det_widget, "Detection")
 
             self._microscope_ui_loaded = True
             self.milling_widget.milling_position_changed.connect(self._update_milling_position)
@@ -418,11 +431,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 return
 
             # remove tabs
-            self.tabWidget.removeTab(6)
-            self.tabWidget.removeTab(5)
-            self.tabWidget.removeTab(4)
-            self.tabWidget.removeTab(3)
-            self.tabWidget.removeTab(3)
+            self.tabWidget.removeTab(CONFIGURATION["TABS"]["Detection"])
+            self.tabWidget.removeTab(CONFIGURATION["TABS"]["Milling"])
+            self.tabWidget.removeTab(CONFIGURATION["TABS"]["Movement"])
+            self.tabWidget.removeTab(CONFIGURATION["TABS"]["Image"])
+            self.tabWidget.removeTab(CONFIGURATION["TABS"]["Protocol"])
 
             self.image_widget.clear_viewer()
             self.image_widget.deleteLater()
@@ -550,8 +563,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         _lamella_selected = bool(self.experiment.positions) if _experiment_loaded else False
 
         # force order: connect -> experiment -> protocol
-        self.tabWidget.setTabVisible(0, _microscope_connected)
-        self.tabWidget.setTabVisible(1, _protocol_loaded)
+        self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Experiment"], _microscope_connected)
+        self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Protocol"], _protocol_loaded)
         self.actionNew_Experiment.setVisible(_microscope_connected)
 
         # setup experiment -> connect to microscope -> select lamella -> run autolamella
@@ -1182,7 +1195,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info(f'Workflow finished.')
         self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Experiment"])
         self.pushButton_stop_workflow_thread.setVisible(False)
 
         # clear the image settings save settings etc
@@ -1200,10 +1213,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if _det:
             self.det_widget.set_detected_features(info["det"])
-            self.tabWidget.setCurrentIndex(6)
+            self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Detection"])
         
         if _mill:
-            self.tabWidget.setCurrentIndex(5)
+            self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Milling"])
 
         if info["eb_image"] is not None:
             eb_image = info["eb_image"]

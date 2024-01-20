@@ -52,8 +52,6 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
         self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
-        logging.info(f"INIT | INITIALISATION | STARTED")
-
         self._PROTOCOL_LOADED = False
         self._microscope_ui_loaded = False
 
@@ -68,7 +66,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             viewer=self.viewer,
             config_path=cfg.SYSTEM_PATH,
         )
-        self.tabWidget.addTab(self.system_widget, "System")
+        self.tabWidget.addTab(self.system_widget, "Connection")
 
         self.image_widget: FibsemImageSettingsWidget = None
         self.movement_widget: FibsemMovementWidget = None
@@ -88,8 +86,6 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
 
         if _DEV_MODE:
             self._auto_load()
-
-        logging.info(f"INIT | INITIALISATION | FINISHED")
 
     def setup_connections(self):
         # system widget
