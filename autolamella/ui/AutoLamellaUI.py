@@ -22,8 +22,8 @@ from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
 from fibsem.ui.FibsemCryoDepositionWidget import FibsemCryoDepositionWidget
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui import utils as fui
-from fibsem.imaging._tile import _minimap 
 from qtpy import QtWidgets
+import autolamella
 
 from autolamella.ui import utils as aui_utils
 import autolamella.config as cfg
@@ -73,6 +73,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         super(AutoLamellaUI, self).__init__()
         
         self.setupUi(self)
+
+        self.label_title.setText(f"AutoLamella v{autolamella.__version__}")
 
         self.viewer = viewer
         self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
@@ -135,8 +137,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_undercut.clicked.connect(lambda: self._run_workflow(workflow="undercut"))
         self.pushButton_run_setup_autolamella.clicked.connect(lambda: self._run_workflow(workflow="setup-lamella"))
 
-        self.pushButton_stop_workflow_thread.clicked.connect(self._stop_workflow_thread)
-        self.pushButton_stop_workflow_thread.setVisible(False)
+
 
         self.pushButton_run_waffle_trench.setVisible(False)
         self.pushButton_run_autolamella.setVisible(False)
@@ -160,8 +161,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
-        self.actionLoad_Minimap_Image.triggered.connect(self.load_minimap_image)
-
+        
+        self.actionStop_Workflow.triggered.connect(self._stop_workflow_thread)
+        self.menuWorkflow.setEnabled(True)
+        self.actionStop_Workflow.setVisible(False)
 
         self.pushButton_yes.clicked.connect(self.push_interaction_button)
         self.pushButton_no.clicked.connect(self.push_interaction_button)
@@ -683,35 +686,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         elif _lamella_selected:
             self._set_instructions(INSTRUCTIONS["AUTOLAMELLA_READY"])
 
-        if self.experiment is not None and self.minimap_image is not None:
-            positions = []
-            for lamella in self.experiment.positions:
-                position = lamella.state.microscope_state.stage_position
-                position.name = lamella._petname
-                positions.append(position)
-            
-            qpixmap = _minimap(self.minimap_image, positions)
-
-            self.label_minimap.setPixmap(qpixmap)
-
-    def load_minimap_image(self):
-
-        path = fui._get_file_ui( msg="Select image to load", 
-                                path=self.experiment.path, _filter="Image Files (*.tif *.tiff)", parent=self)
-
-        if path == "":
-            napari.utils.notifications.show_info(f"No file selected..")
-            return
-
-        from fibsem.structures import FibsemImage
-        image = FibsemImage.load(path)
-        if image.metadata is None:
-            napari.utils.notifications.show_error(f"Could not load image {path}. Make sure it is an OpenFibsem Image.")
-            return
-
-        self.minimap_image = image
-        self.update_ui()
-
     def _update_lamella_combobox(self):
         # detail combobox
         idx = self.comboBox_current_lamella.currentIndex()
@@ -1196,7 +1170,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
         self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Experiment"])
-        self.pushButton_stop_workflow_thread.setVisible(False)
+        self.menuWorkflow.setEnabled(False)
+        self.actionStop_Workflow.setVisible(False)
 
         # clear the image settings save settings etc
         self.image_widget.checkBox_image_save_image.setChecked(False)
@@ -1264,8 +1239,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
         self.pushButton_run_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
-        self.pushButton_stop_workflow_thread.setVisible(True)
-        self.pushButton_stop_workflow_thread.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        self.menuWorkflow.setEnabled(True)
+        self.actionStop_Workflow.setVisible(True)
 
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
@@ -1288,7 +1263,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
 def main():
-    import autolamella
     autolamella_ui = AutoLamellaUI(viewer=napari.Viewer())
     autolamella_ui.viewer.window.add_dock_widget(
         autolamella_ui, area="right", 
