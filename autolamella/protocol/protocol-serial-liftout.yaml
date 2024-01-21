@@ -11,11 +11,11 @@ options:
     alignment_at_milling_current: true
     take_final_reference_images: true
     high_quality_image:
-    enabled: false
-    dwell_time: 2.0e-6
-    resolution: [3072, 2048]
-    hfw: 50.e-6
-    frame_integration: 2    
+        enabled: false
+        dwell_time: 2.0e-6
+        resolution: [3072, 2048]
+        hfw: 50.e-6
+        frame_integration: 2    
     undercut_required: false
     undercut_tilt_angle: -10.0
     undercut_tilt_angle_steps: 1.0
@@ -54,7 +54,7 @@ milling:
     trench:
         stages:
         -   depth: 25.0e-6
-            hfw: 8.0e-05
+            hfw: 400.0e-06
             height: 180.0e-06
             width: 4.5e-05
             milling_current: 2.8e-08
@@ -65,7 +65,6 @@ milling:
             application_file: "autolamella"
             type: "HorseshoeVertical"
             preset: "30 keV; 20 nA"
-
     liftout-sever:
         cleaning_cross_section: 0.0
         depth: 10.0e-06
