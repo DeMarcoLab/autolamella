@@ -5,7 +5,7 @@ from copy import deepcopy
 from fibsem.detection import detection
 from fibsem.detection.detection import DetectedFeatures
 from fibsem.patterning import FibsemMillingStage
-from fibsem.structures import FibsemImage, FibsemStagePosition
+from fibsem.structures import FibsemImage, FibsemStagePosition, ImageSettings
 
 from autolamella.structures import (
     AutoLamellaWaffleStage,
@@ -316,7 +316,7 @@ def mill_lamella(
 
     n_lamella = len(stages) # number of lamella stages
 
-    # beam_shift alignment
+    # beam_shift alignment #TODO: clean up this execution, bit messy and redundant
     log_status_message(lamella, "ALIGN_LAMELLA")
     update_status_ui(parent_ui, f"{lamella.info} Aligning Reference Images...")
 
@@ -328,6 +328,8 @@ def mill_lamella(
 
     # beam alignment
     alignment_current = stages[0].milling.milling_current if _align_at_milling_current else None
+    tmp = deepcopy(settings.image)
+    settings.image = ImageSettings.fromFibsemImage(ref_image)
     settings.image.filename = f"alignment_target_{lamella.state.stage.name}"
     settings.image.autocontrast = False
     alignment._multi_step_alignment(microscope=microscope, 
@@ -336,8 +338,8 @@ def mill_lamella(
         reduced_area=lamella.fiducial_area, 
         alignment_current=alignment_current, 
         steps=_ALIGNMENT_ATTEMPTS)
-
-    settings.image.autocontrast = True
+    
+    settings.image = tmp
     settings.image.reduced_area = None
 
     # take reference images
@@ -378,6 +380,7 @@ def mill_lamella(
     lamella.protocol[lamella.state.stage.name] = deepcopy(patterning.get_protocol_from_stages(stages[:n_lamella]))
     lamella.protocol[lamella.state.stage.name]["point"] = stages[0].pattern.point.to_dict()
 
+    use_notch, use_microexpansion = False, False
     if _MILL_FEATURES:
         if use_notch:
             _feature_name = "notch"
@@ -566,16 +569,17 @@ def setup_lamella(
     settings.image.reduced_area = lamella.fiducial_area
     print(f"REDUCED_AREA: ", lamella.fiducial_area)
 
-    
+    # TODO: the ref should also be acquired at the milling current?
     # for alignment
     settings.image.beam_type = BeamType.ION
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
     settings.image.filename = f"ref_alignment"
+    settings.image.autocontrast = False # disable autocontrast for alignment
     print(f"REDUCED_AREA: ", settings.image.reduced_area)
     ib_image = acquire.new_image(microscope, settings.image)
     settings.image.reduced_area = None
-    
+    settings.image.autocontrast = True
     log_status_message(lamella, "REFERENCE_IMAGES")
     update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
 

@@ -341,7 +341,7 @@ with tab_automation:
 
         df_det_filt = df_det[["lamella", "stage", "feature", "is_correct", "fname", "px_x", "px_y", "dpx_x", "dpx_y"]].sort_values(by="lamella")
 
-
+        # TODO: make sure these images are refreshed properly when the dataframe is filtered (the incorrect image is shown when the dataframe is filtered)
         petname = cols[0].selectbox(label="Petname", options=df_det_filt["lamella"].unique())
         stage = cols[0].selectbox(label="Stage", options=df_det_filt["stage"].unique())
         feature = cols[0].selectbox(label="Feature", options=df_det_filt["feature"].unique())
@@ -372,8 +372,8 @@ with tab_automation:
         fig = plt.figure(figsize=(10, 10))
         ax = fig.add_subplot(111)
         ax.imshow(image.data, cmap="gray")
-        ax.scatter(px_x, px_y, marker="+", color="red", s=100, label=f"{feature} (initial)")
-        ax.scatter(px_x+dpx_x, px_y+dpx_y, marker="+", color="blue", s=100, label=f"{feature} (final)")
+        ax.scatter(px_x+dpx_x, px_y+dpx_y, marker="+", color="red", s=100, label=f"{feature} (initial)")
+        ax.scatter(px_x, px_y, marker="+", color="blue", s=100, label=f"{feature} (final)")
         ax.legend()
         ax.set_title(caption)
         cols[1].pyplot(fig, use_container_width=True)
