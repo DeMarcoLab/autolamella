@@ -65,6 +65,7 @@ milling:
             application_file: "autolamella"
             type: "HorseshoeVertical"
             preset: "30 keV; 20 nA"
+            inverted: True
     liftout-sever:
         cleaning_cross_section: 0.0
         depth: 10.0e-06
