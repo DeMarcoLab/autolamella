@@ -1011,6 +1011,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_yes.setVisible(pos is not None)
         self.pushButton_no.setVisible(neg is not None)
 
+        if pos == "Run Milling":
+            self.pushButton_yes.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        else:
+            self.pushButton_yes.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+
     def push_interaction_button(self):
         logging.info("Sender: {}".format(self.sender().objectName()))
 
@@ -1226,6 +1231,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def _run_milling(self):
         self._MILLING_RUNNING = True
+        self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Milling"])
         self.milling_widget.run_milling()
 
     def _milling_finished(self):
@@ -1280,6 +1286,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.image_widget.lineEdit_image_label.setText("default-image")
         self.update_ui()
 
+        # set electron image as active layer
+        self.viewer.layers.selection.active = self.image_widget.eb_layer
+
     def _ui_signal(self, info:dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
         _mill = bool(info["mill"] is not None) if info["mill"] is None else info["mill"]
@@ -1310,8 +1319,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.milling_widget._remove_all_stages()
 
         # ui interaction
-        self.milling_widget.pushButton_run_milling.setEnabled(_mill)
-        self.milling_widget.pushButton_run_milling.setVisible(_mill)
+        self.milling_widget.pushButton_run_milling.setEnabled(False)
+        self.milling_widget.pushButton_run_milling.setVisible(False)
 
         # instruction message
         self._set_instructions(info["msg"], info["pos"], info["neg"])

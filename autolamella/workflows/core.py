@@ -347,6 +347,7 @@ def mill_lamella(
 
     # define feature
     _MILL_FEATURES = bool(method in ["autolamella-on-grid", "autolamella-waffle"])
+    features_stages = []
     if _MILL_FEATURES and lamella.state.stage.name == AutoLamellaWaffleStage.MillRoughCut.name:
         log_status_message(lamella, "MILL_FEATURE")
 
@@ -356,13 +357,32 @@ def mill_lamella(
 
             feature_stage = patterning.get_milling_stages(_feature_name, lamella.protocol, 
                                                           point=Point.from_dict(lamella.protocol[_feature_name]["point"]))
-            stages += feature_stage
+            features_stages += feature_stage
 
         if use_microexpansion := bool(settings.protocol["options"].get("use_microexpansion", False)):
             _feature_name = "microexpansion"
             feature_stage = patterning.get_milling_stages(_feature_name, lamella.protocol, 
                                                           point=Point.from_dict(lamella.protocol[_feature_name]["point"]))
-            stages += feature_stage
+            features_stages += feature_stage
+
+
+        features_stages = update_milling_ui(features_stages, parent_ui,
+            msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
+            validate=validate,
+        )
+
+        if use_notch:
+            _feature_name = "notch"
+            idx = 0
+            lamella.protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(features_stages[idx]))
+            lamella.protocol[_feature_name]["point"] = features_stages[idx].pattern.point.to_dict()
+
+        if use_microexpansion:
+            _feature_name = "microexpansion"
+            idx = use_notch
+            lamella.protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(features_stages[idx]))
+            lamella.protocol[_feature_name]["point"] = features_stages[idx].pattern.point.to_dict()
+
 
     # mill lamella trenches
     log_status_message(lamella, "MILL_LAMELLA")
@@ -375,21 +395,6 @@ def mill_lamella(
     # TODO: refactor this so it is like the original protocol
     lamella.protocol[lamella.state.stage.name] = deepcopy(patterning.get_protocol_from_stages(stages[:n_lamella]))
     lamella.protocol[lamella.state.stage.name]["point"] = stages[0].pattern.point.to_dict()
-
-    use_notch, use_microexpansion = False, False
-    if _MILL_FEATURES:
-        if use_notch:
-            _feature_name = "notch"
-            idx = n_lamella
-            lamella.protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(stages[idx]))
-            lamella.protocol[_feature_name]["point"] = stages[idx].pattern.point.to_dict()
-
-        if use_microexpansion:
-            _feature_name = "microexpansion"
-            idx = n_lamella + use_notch
-            lamella.protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(stages[idx]))
-            lamella.protocol[_feature_name]["point"] = stages[idx].pattern.point.to_dict()
-
 
     if _take_reference_images:
         # take reference images

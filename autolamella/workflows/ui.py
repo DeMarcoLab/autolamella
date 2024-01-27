@@ -23,23 +23,56 @@ def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by u
 def update_milling_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg:str, validate: bool,milling_enabled: bool = True):
     _update_mill_stages_ui(parent_ui, stages=stages)
 
+    pos, neg = "Run Milling", "Continue"
+
+    # we only want the user to confirm the milling patterns, not acatually run them
+    if milling_enabled is False:
+        pos = "Continue"
+        neg = None
+
+    response = True
     if validate:
-        response = ask_user(parent_ui, msg=msg, pos="Continue", mill=milling_enabled)
-        stages = deepcopy(parent_ui.milling_widget.get_milling_stages())
-    else:
+        response = ask_user(parent_ui, msg=msg, pos=pos, neg=neg, mill=milling_enabled)
+
+    while response and milling_enabled:
         update_status_ui(parent_ui, f"Milling {len(stages)} stages...") # TODO: better feedback here, change to milling tab for progress bar
         parent_ui._MILLING_RUNNING = True
         parent_ui._run_milling_signal.emit()
-        
+
         logging.info(f"WAITING FOR MILLING TO FINISH... ")
         while parent_ui._MILLING_RUNNING or parent_ui.image_widget.TAKING_IMAGES:
             time.sleep(1)
-        
+
         update_status_ui(
-            parent_ui, f"Milling Complete: {len(stages)} stages completed."
+           parent_ui, f"Milling Complete: {len(stages)} stages completed."
         )
 
+        response = False
+        if validate:
+            response = ask_user(parent_ui, msg=msg, pos=pos, neg=neg, mill=milling_enabled)
+
+    stages = deepcopy(parent_ui.milling_widget.get_milling_stages())
+
     _update_mill_stages_ui(parent_ui, stages="clear")
+
+
+    # if validate:
+    #     response = ask_user(parent_ui, msg=msg, pos="Continue", mill=milling_enabled)
+    #     stages = deepcopy(parent_ui.milling_widget.get_milling_stages())
+    # else:
+    #     update_status_ui(parent_ui, f"Milling {len(stages)} stages...") # TODO: better feedback here, change to milling tab for progress bar
+    #     parent_ui._MILLING_RUNNING = True
+    #     parent_ui._run_milling_signal.emit()
+        
+    #     logging.info(f"WAITING FOR MILLING TO FINISH... ")
+    #     while parent_ui._MILLING_RUNNING or parent_ui.image_widget.TAKING_IMAGES:
+    #         time.sleep(1)
+        
+    #     update_status_ui(
+    #         parent_ui, f"Milling Complete: {len(stages)} stages completed."
+    #     )
+
+    # _update_mill_stages_ui(parent_ui, stages="clear")
 
     return stages
 

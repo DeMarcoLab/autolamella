@@ -592,6 +592,11 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_yes.setVisible(pos is not None)
         self.pushButton_no.setVisible(neg is not None)
 
+        if pos == "Run Milling":
+            self.pushButton_yes.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+        else:
+            self.pushButton_yes.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+
     def push_interaction_button(self):
         logging.info("Sender: {}".format(self.sender().objectName()))
 
@@ -601,6 +606,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
     
     def _run_milling(self):
         self._MILLING_RUNNING = True
+        self.tabWidget.setCurrentIndex(5)
         self.milling_widget.run_milling()
 
     def _milling_finished(self):
@@ -654,8 +660,8 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             self.milling_widget._remove_all_stages()
 
         # ui interaction
-        self.milling_widget.pushButton_run_milling.setEnabled(_mill)
-        self.milling_widget.pushButton_run_milling.setVisible(_mill)
+        self.milling_widget.pushButton_run_milling.setEnabled(False)
+        self.milling_widget.pushButton_run_milling.setVisible(False)
 
         # instruction message
         self._set_instructions(info["msg"], info["pos"], info["neg"])
