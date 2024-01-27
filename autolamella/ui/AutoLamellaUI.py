@@ -172,6 +172,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionLoad_Milling_Pattern.triggered.connect(self._load_milling_protocol)
         self.actionSave_Milling_Pattern.triggered.connect(self._save_milling_protocol)
 
+        self.actionInformation.triggered.connect(lambda: fui.show_information_dialog(self.microscope, self))
+
         self.pushButton_yes.clicked.connect(self.push_interaction_button)
         self.pushButton_no.clicked.connect(self.push_interaction_button)
 
@@ -631,6 +633,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Experiment"], _microscope_connected)
         self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Protocol"], _protocol_loaded)
         self.actionNew_Experiment.setVisible(_microscope_connected)
+        self.actionLoad_Experiment.setVisible(_microscope_connected)
+        self.actionInformation.setVisible(_microscope_connected)
 
         # workflow
 

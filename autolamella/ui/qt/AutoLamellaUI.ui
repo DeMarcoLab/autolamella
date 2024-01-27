@@ -686,7 +686,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>510</width>
+             <width>732</width>
              <height>710</height>
             </rect>
            </property>
@@ -1102,9 +1102,16 @@
     </property>
     <addaction name="actionStop_Workflow"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionInformation"/>
+   </widget>
    <addaction name="menuAutoLamella"/>
    <addaction name="menuTools"/>
    <addaction name="menuWorkflow"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionNew_Experiment">
@@ -1165,6 +1172,11 @@
   <action name="actionSave_Milling_Pattern">
    <property name="text">
     <string>Save Milling Pattern</string>
+   </property>
+  </action>
+  <action name="actionInformation">
+   <property name="text">
+    <string>Information</string>
    </property>
   </action>
  </widget>
