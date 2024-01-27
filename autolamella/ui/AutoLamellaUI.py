@@ -1089,6 +1089,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self._update_stage_positions() # update the minimap
 
+        # clear milling widget if no lamella
+        if self.experiment.positions == []:
+            self.milling_widget._remove_all_stages()
+            fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
+
     def fail_lamella_ui(self):
         idx = self.comboBox_current_lamella.currentIndex()
         self.experiment.positions[idx]._is_failure = True if not self.experiment.positions[idx]._is_failure else False
