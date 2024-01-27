@@ -128,15 +128,17 @@ milling:
         height: 1.0e-6
         width: 5.0e-6
         depth: 5.0e-6
-        distance: 2.0e-6
-        number: 5
+        pitch_vertical: 2.0e-6
+        n_rows: 5
+        n_columns: 1
+        pitch_horizontal: 0
         rotation: 0.0
         passes: 1.0
         milling_current: 0.74e-09
         hfw: 8.0e-5
         application_file: "autolamella"
         scan_direction: "LeftToRight"
-        type: "SpotWeld"
+        type: "ArrayPattern"
     lamella:
         resolution:
         - 3072
