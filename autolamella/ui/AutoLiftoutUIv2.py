@@ -726,7 +726,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             from fibsem import calibration
             calibration._calibrate_manipulator_thermo(microscope = microscope, settings = settings, parent_ui = self)
 
-            napari.utils.notification.show_info(f"Calibrated Manipulator")
+            napari.utils.notifications.show_info(f"Calibrated Manipulator")
 
         elif workflow == "prepare-manipulator":
 
@@ -737,7 +737,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
                                                                   parent_ui=self,
                                                                   experiment=experiment)
             else:
-                napari.utils.notification.show_warning(f"Prepare Manipulator ({_METHOD}) is Not Yet Implemented")
+                napari.utils.notifications.show_warning(f"Prepare Manipulator ({_METHOD}) is Not Yet Implemented")
 
         else:
             raise ValueError(f"Unknown workflow: {workflow}")
