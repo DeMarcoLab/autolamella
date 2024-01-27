@@ -2,9 +2,6 @@ import logging
 import time
 from copy import deepcopy
 
-from fibsem.detection import detection
-from fibsem.detection.detection import DetectedFeatures
-from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import FibsemImage, FibsemStagePosition, ImageSettings
 
 from autolamella.structures import (
@@ -30,7 +27,6 @@ from datetime import datetime
 import numpy as np
 from fibsem import acquire, patterning,  calibration, alignment
 from fibsem.microscope import FibsemMicroscope
-from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
     BeamType,
     FibsemStagePosition,
