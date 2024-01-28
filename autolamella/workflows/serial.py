@@ -89,7 +89,7 @@ def liftout_lamella(
     # insert the manipulator for liftout
     log_status_message(lamella, "INSERT_MANIPULATOR")
     update_status_ui(parent_ui, f"{lamella.info} Inserting Manipulator...")
-    actions.move_needle_to_liftout_position(microscope, dx=0.0e-6, dz=25.0e-6)
+    microscope.insert_manipulator("PARK")
 
     # reference images
     settings.image.save = True
@@ -118,8 +118,8 @@ def liftout_lamella(
          _move_system="manipulator"
     )
 
-    # align manipulator to top of lamella in ion x2
-    HFWS = [fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER]
+    # align manipulator to top of lamella in ion x3
+    HFWS = [fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER]
 
     for i, hfw in enumerate(HFWS):
 
