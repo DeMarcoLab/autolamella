@@ -4,7 +4,7 @@ options:
   checkpoint: autolamella-mega-20240107.pt
   alignment_attempts: 3.0
   alignment_at_milling_current: true
-  take_final_reference_images: false 
+  take_final_reference_images: true 
   high_quality_image:
     enabled: false
     dwell_time: 2.0e-6
@@ -12,7 +12,7 @@ options:
     hfw: 50.e-6
     frame_integration: 2
   take_final_overview_image: true
-  lamella_lamella_tilt_angle: 18.0
+  lamella_tilt_angle: 18.0
   use_fiducial: true
   use_microexpansion: true
   use_notch: true 

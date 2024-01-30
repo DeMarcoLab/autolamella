@@ -116,7 +116,7 @@ options:
     compucentric_y_offset: 0.0e-6
     undercut_tilt_angle: -5.0
     undercut_tilt_angle_steps: 2.0
-    lamella_lamella_tilt_angle: 18.0
+    lamella_tilt_angle: 18.0
     use_notch: true
     use_microexpansion: true
     use_fiducial: true 
