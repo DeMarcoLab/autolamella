@@ -906,7 +906,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         stages += microexpansion_stage
 
                     # fiducial
-                    if self.settings.protocol["options"].get("use_fiducial"):
+                    if self.settings.protocol["options"].get("use_fiducial", True):
                         protocol = lamella.protocol if "fiducial" in lamella.protocol else self.settings.protocol["milling"]
                         fiducial_position = Point.from_dict(protocol["fiducial"].get("point", {"x": 25e-6, "y": 0})) 
                         fiducial_stage = patterning.get_milling_stages("fiducial", protocol, fiducial_position)

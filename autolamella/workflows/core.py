@@ -451,7 +451,8 @@ def setup_lamella(
     update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
 
     from autolamella.workflows import actions
-    actions.move_to_lamella_angle(microscope, settings.protocol)
+    if method != "autolamella-on-grid":
+        actions.move_to_lamella_angle(microscope, settings.protocol)
 
     if method == "autolamella-liftout":
 
