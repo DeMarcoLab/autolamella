@@ -367,7 +367,7 @@ def mill_lamella(
 
 
         features_stages = update_milling_ui(features_stages, parent_ui,
-            msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
+            msg=f"Press Run Milling to mill the features for {lamella._petname}. Press Continue when done.",
             validate=validate,
         )
 
