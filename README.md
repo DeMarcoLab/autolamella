@@ -32,6 +32,14 @@ autolamella_ui
 
 ![ui_new](docs/img/ui_new.png)
 
+To launch liftout related methods:
+
+```bash
+conda activate fibsem
+autoliftout_ui
+
+```
+
 ## Citation
 
 If you find this useful, please cite our work.
