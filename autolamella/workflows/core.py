@@ -324,19 +324,33 @@ def mill_lamella(
 
     # beam alignment
     alignment_current = stages[0].milling.milling_current if _align_at_milling_current else None
-    tmp = deepcopy(settings.image)
-    settings.image = ImageSettings.fromFibsemImage(ref_image)
-    settings.image.filename = f"alignment_target_{lamella.state.stage.name}"
-    settings.image.autocontrast = False
-    alignment._multi_step_alignment(microscope=microscope, 
-        image_settings=settings.image, 
-        ref_image=ref_image, 
-        reduced_area=lamella.fiducial_area, 
-        alignment_current=alignment_current, 
-        steps=_ALIGNMENT_ATTEMPTS)
     
-    settings.image = tmp
-    settings.image.reduced_area = None
+    ### REPLACE WITH V2
+    from autolamella.config import USE_BEAM_SHIFT_ALIGNMENT_V2
+    if USE_BEAM_SHIFT_ALIGNMENT_V2:
+        # V2
+        alignment.multi_step_alignment_v2(microscope=microscope, 
+                                        ref_image=ref_image, 
+                                        beam_type=BeamType.ION, 
+                                        alignment_current=alignment_current,
+                                        steps=_ALIGNMENT_ATTEMPTS)
+    else:
+        logging.warning(f"Using alignment method v1 for {lamella._petname}... This method will be depreciated in the next version..")
+        # V1
+        tmp = deepcopy(settings.image)
+        settings.image = ImageSettings.fromFibsemImage(ref_image)
+        settings.image.filename = f"alignment_target_{lamella.state.stage.name}"
+        settings.image.autocontrast = False
+        alignment._multi_step_alignment(microscope=microscope, 
+            image_settings=settings.image, 
+            ref_image=ref_image, 
+            reduced_area=lamella.fiducial_area, 
+            alignment_current=alignment_current, 
+            steps=_ALIGNMENT_ATTEMPTS)
+        
+        settings.image = tmp
+        settings.image.reduced_area = None
+    #### 
 
     # take reference images
     update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
