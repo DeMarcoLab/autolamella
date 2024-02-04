@@ -96,7 +96,7 @@ milling:
     hfw: 200e-6
     application_file: autolamella
     cleaning_cross_section: false
-    type: Microexpansion
+    type: MicroExpansion
   notch:
     application_file: autolamella
     cleaning_cross_section: false

@@ -464,6 +464,12 @@ def land_lamella(
         # confirm with user
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         set_images_ui(parent_ui, eb_image, ib_image)
+
+        # TODO: reenable this
+        # features = [LamellaRightEdge(), LandingPost()]
+        # det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+        # successful_landing = (det.distance.x >= 2.5e-6)
+
         if validate:
             response = ask_user(
                 parent_ui,
