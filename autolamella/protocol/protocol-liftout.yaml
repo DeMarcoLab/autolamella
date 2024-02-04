@@ -30,8 +30,8 @@ options:
     undercut_tilt_angle_steps: 1
     lamella_tilt_angle: 18.0
     use_fiducial: true
-    use_microexpansion: true
-    use_notch: true 
+    use_microexpansion: false
+    use_notch: false
     supervise:
         landing: true
         liftout: true

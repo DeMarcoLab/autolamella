@@ -98,6 +98,7 @@ milling:
         hfw: 200e-6
         application_file: autolamella
         cleaning_cross_section: false
+        type: Microexpansion
 options:
     name: autolamella-waffle-scan-rotation-0deg
     method: autolamella-waffle
@@ -118,7 +119,7 @@ options:
     undercut_tilt_angle_steps: 2.0
     lamella_tilt_angle: 18.0
     use_notch: true
-    use_microexpansion: true
+    use_microexpansion: false
     use_fiducial: true 
     supervise:
         setup_lamella: true

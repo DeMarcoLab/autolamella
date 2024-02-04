@@ -21,8 +21,8 @@ options:
     undercut_tilt_angle_steps: 1.0
     lamella_tilt_angle: 8.0    # absolute angle (pre-tilt - 27)
     use_fiducial: true
-    use_microexpansion: true
-    use_notch: true 
+    use_microexpansion: false
+    use_notch: false 
     landing_grid:
         x: 100.0e-6
         y: 400.0e-6

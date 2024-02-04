@@ -38,6 +38,7 @@ milling:
     cleaning_cross_section: false
     passes: null
     hfw: 80.e-6
+    type: Fiducial
   lamella:
     stages:
       -   application_file: autolamella
@@ -95,6 +96,7 @@ milling:
     hfw: 200e-6
     application_file: autolamella
     cleaning_cross_section: false
+    type: Microexpansion
   notch:
     application_file: autolamella
     cleaning_cross_section: false
