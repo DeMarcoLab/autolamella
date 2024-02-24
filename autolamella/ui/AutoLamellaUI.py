@@ -668,7 +668,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.comboBox_current_lamella.setVisible(_lamella_selected)
 
         if _protocol_loaded:
-            method = self.settings.protocol.get("method", "autolamella-waffle")
+            method = self.settings.protocol["options"].get("method", "autolamella-waffle")
             self.label_protocol_name.setText(
                 f"Protocol: {self.settings.protocol.get('name', 'protocol')} ({method.title()} Method)"
             )
