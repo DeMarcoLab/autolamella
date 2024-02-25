@@ -68,7 +68,7 @@ def parse_line(line: str) -> tuple[str, str, str]:
     return tsd, func, msg
 
 
-def calculate_statistics_dataframe(path: Path, program="autolamella", encoding: str = "cp1252"):
+def calculate_statistics_dataframe(path: Path, encoding: str = "cp1252"):
 
     fname = os.path.join(path, "logfile.log")
     df_beam_shift = []

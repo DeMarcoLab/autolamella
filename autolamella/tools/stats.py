@@ -18,30 +18,30 @@ import plotly.io as pio
 
 pio.templates.default = "plotly_white"
 
-st.set_page_config(page_title="OpenFIBSEM Analytics", page_icon=':snowflake:', layout="wide")
-page_title = st.title("AutoLamella Analytics")
+st.set_page_config(page_title="AutoLamella Analytics", page_icon=':snowflake:', layout="wide")
+page_title = st.header("AutoLamella Analytics")
 
 #################### EXPERIMENT SECTION ####################
 
 # select experiment
-
-path_cols = st.sidebar.columns(2)
-LOG_PATH = st.sidebar.text_input("Log Path", cfg.LOG_PATH)
+st.sidebar.header("AutoLamella Analytics")
+LOG_PATH = st.sidebar.text_input("Log Path", cfg.LOG_PATH, help="Path to the log files")
 paths = glob.glob(os.path.join(LOG_PATH, "*/"))
-EXPERIMENT_NAME = st.sidebar.selectbox(label="Experiment ", options=[os.path.basename(os.path.dirname(path)) for path in paths])
+EXPERIMENT_NAME = st.sidebar.selectbox(label="Experiment ", 
+                                       options=[os.path.basename(os.path.dirname(path)) for path in paths],
+                                       help="Select the experiment to analyse")
 EXPERIMENT_PATH = os.path.join(LOG_PATH, EXPERIMENT_NAME)
 
-program = st.sidebar.selectbox(label="Program", options=["autolamella", "autoliftout"])
-encoding = st.sidebar.text_input("Encoding", "cp1252")
+encoding = st.sidebar.text_input("Encoding", "cp1252", help="Encoding of the log file (e.g. cp1252 for windows, utf-8 for linux)")
 
 encoding = None if encoding == "None" else encoding
 
-page_title.title(f"{EXPERIMENT_NAME} Analytics ({program.capitalize()})")
+page_title.header(f"Experiment: {EXPERIMENT_NAME} Analytics")
 
 (df_experiment, df_history, 
 df_beam_shift, 
     df_steps, df_stage, 
-    df_det, df_click) = calculate_statistics_dataframe(EXPERIMENT_PATH, program=program, encoding=encoding)
+    df_det, df_click) = calculate_statistics_dataframe(EXPERIMENT_PATH, encoding=encoding)
 
 # experiment metrics
 cols = st.columns(4)
@@ -50,11 +50,11 @@ cols = st.columns(4)
 n_lamella = len(df_history["petname"].unique())
 n_trenches = len(df_history[df_history["stage"] == "MillTrench"]["petname"].unique())
 
-if program == "autolamella":
-    n_undercut = len(df_history[df_history["stage"] == "MillUndercut"]["petname"].unique())
-    cols[2].metric(label="Undercut", value=n_undercut)
 
-if program == "autoliftout":
+n_undercut = len(df_history[df_history["stage"] == "MillUndercut"]["petname"].unique())
+cols[2].metric(label="Undercut", value=n_undercut)
+
+if "Landing" in df_history["stage"].unique():
     n_liftout = len(df_history[df_history["stage"] == "Landing"]["petname"].unique())
     cols[2].metric(label="Landing", value=n_liftout)
 
