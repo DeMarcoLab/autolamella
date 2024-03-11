@@ -222,6 +222,7 @@ class Experiment:
                 "lamella.t": lamella.state.microscope_state.stage_position.t,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
                 "current_stage": lamella.state.stage.name,
+                "failure": lamella._is_failure,
             }
 
             if "autoliftout" in self.method:
