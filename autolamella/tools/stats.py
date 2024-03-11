@@ -32,7 +32,7 @@ EXPERIMENT_NAME = st.sidebar.selectbox(label="Experiment ",
                                        help="Select the experiment to analyse")
 EXPERIMENT_PATH = os.path.join(LOG_PATH, EXPERIMENT_NAME)
 
-encoding = st.sidebar.text_input("Encoding", "cp1252", help="Encoding of the log file (e.g. cp1252 for windows, utf-8 for linux)")
+encoding = st.sidebar.selectbox("Encoding", ["cp1252", "utf-8"], help="Encoding of the log file (e.g. cp1252 for windows, utf-8 for linux)")
 
 encoding = None if encoding == "None" else encoding
 
