@@ -119,7 +119,7 @@ def liftout_lamella(
     )
 
     # align manipulator to top of lamella in ion x3
-    HFWS = [fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER]
+    HFWS = [fcfg.REFERENCE_HFW_LOW, fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER]
 
     for i, hfw in enumerate(HFWS):
 
@@ -143,7 +143,7 @@ def liftout_lamella(
 
     # reference images
     settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
     settings.image.save = True
     settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_landed"
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
@@ -181,7 +181,7 @@ def liftout_lamella(
     log_status_message(lamella, "SEVER_LAMELLA_BLOCK")
     update_status_ui(parent_ui, f"{lamella.info} Sever Manipulator...")
 
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+    settings.image.hfw = fcfg.REFERENCE_HFW_LOW
 
     features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge()] 
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
@@ -215,6 +215,8 @@ def liftout_lamella(
             eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
             set_images_ui(parent_ui, eb_image, ib_image)
         time.sleep(1)
+    
+    # TODO: add a validation check here, to make sure the mill is complete
 
     # then retract quickly
     for i in range(3):
@@ -453,8 +455,9 @@ def sever_lamella_block(microscope: FibsemMicroscope,
 
         features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge()]  
         det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
-
-        _LAMELLA_THICKNESS = 4e-6 / 2  # TODO: make this a parameter
+        set_images_ui(parent_ui, None, det.fibsem_image)
+        
+        _LAMELLA_THICKNESS = settings.protocol["options"].get("lamella_block_thickness", 4e-6) / 2  # TODO: make this a parameter
         _V_OFFSET = settings.protocol["milling"]["landing-sever"].get("height", 2e-6) / 2 + _LAMELLA_THICKNESS
         
         if np.isclose(scan_rotation, 0):
@@ -504,7 +507,8 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         
         # check with the user
         if validate:
-            response = ask_user(parent_ui, msg=f"Confirm Lamella has been severed for {lamella._petname}.", pos="Confirm", neg="Retry")
+            response = ask_user(parent_ui, msg=f"Confirm Lamella has been severed for {lamella._petname}. Distance measured was {det.distance.y*1e6} um. (Threshold = {threshold*1e6})", 
+                                pos="Confirm", neg="Retry")
             confirm_severed = response
 
         i += 1

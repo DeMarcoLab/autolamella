@@ -8,6 +8,7 @@ options:
     landing_start_position: autoliftout-serial-pre-tilt-35-deg-grid-02-landing
     compucentric_x_offset: 0.0e-6
     compucentric_y_offset: 0.0e-6
+    lamella_block_thickness: 4.0e-6
     alignment_at_milling_current: false
     take_final_reference_images: true
     high_quality_image:
@@ -107,6 +108,7 @@ milling:
         scan_direction: "BottomToTop"
         type: "ArrayPattern"
         preset: "30 keV; 2.5 nA"
+        cross_section: RegularCrossSection
     landing-weld:
         stages:
         -   height: 0.5e-6
@@ -124,6 +126,7 @@ milling:
             scan_direction: "RightToLeft"
             type: "ArrayPattern"
             preset: "30 keV; 2.5 nA"
+            cross_section: RegularCrossSection
         -   height: 0.5e-6
             width: 5.0e-6
             depth: 5.0e-6
@@ -139,6 +142,7 @@ milling:
             scan_direction: "LeftToRight"
             type: "ArrayPattern"
             preset: "30 keV; 2.5 nA"
+            cross_section: RegularCrossSection
     landing-sever:
         cleaning_cross_section: 0.0
         depth: 25.0e-06
