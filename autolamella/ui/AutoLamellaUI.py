@@ -99,7 +99,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             microscope=self.microscope,
             settings=self.settings,
             viewer=self.viewer,
-            config_path=cfg.SYSTEM_PATH,
             parent=self,
         )
         self.tabWidget.insertTab(CONFIGURATION["TABS"]["Connection"], self.system_widget, "Connection")

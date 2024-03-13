@@ -32,7 +32,7 @@ EXPERIMENT_NAME = st.sidebar.selectbox(label="Experiment ",
                                        help="Select the experiment to analyse")
 EXPERIMENT_PATH = os.path.join(LOG_PATH, EXPERIMENT_NAME)
 
-encoding = st.sidebar.text_input("Encoding", "cp1252", help="Encoding of the log file (e.g. cp1252 for windows, utf-8 for linux)")
+encoding = st.sidebar.selectbox("Encoding", ["cp1252", "utf-8"], help="Encoding of the log file (e.g. cp1252 for windows, utf-8 for linux)")
 
 encoding = None if encoding == "None" else encoding
 
@@ -64,6 +64,16 @@ cols[0].metric(label="Lamella", value=n_lamella)
 cols[1].metric(label="Trenches", value=n_trenches)
 cols[3].metric(label="Polish", value=n_polish)
 
+try:
+    # calculate yield (success / failure)
+    n_total = len(df_experiment)
+    n_failure = len(df_experiment[df_experiment["failure"] == True])
+
+    cols[0].metric(label="Total Lamella", value=n_total)
+    cols[1].metric(label="Failed Lamella", value=n_failure)
+    cols[2].metric(label="Success Rate", value=f"{round((1 - n_failure/n_total)*100, 2)}%")
+except:
+    pass
 
 # average duration
 # group by petname
@@ -129,6 +139,10 @@ if len(df_det) > 0:
     cols[0].metric(label="ML Total Correct ", value=total_correct)
     cols[1].metric(label="ML Total Incorrect", value=total_incorrect)
     cols[2].metric(label="ML Accuracy", value=accuracy_str, delta=d_accuracy_str)
+
+
+
+
 
 
 tab_experiment, tab_history, tab_automation, tab_workflow, tab_lamella, tab_protocol, tab_telemetry = st.tabs(["Experiment", "Duration", "Automation", "Workflow", "Lamella", "Protocol","Telemetry", ])

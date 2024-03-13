@@ -64,7 +64,6 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             microscope=self.microscope,
             settings=self.settings,
             viewer=self.viewer,
-            config_path=cfg.SYSTEM_PATH,
         )
         self.tabWidget.addTab(self.system_widget, "Connection")
 
