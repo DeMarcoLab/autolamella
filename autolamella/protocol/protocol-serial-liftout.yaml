@@ -8,7 +8,7 @@ options:
     landing_start_position: autoliftout-serial-pre-tilt-35-deg-grid-02-landing
     compucentric_x_offset: 0.0e-6
     compucentric_y_offset: 0.0e-6
-    alignment_at_milling_current: true
+    alignment_at_milling_current: false
     take_final_reference_images: true
     high_quality_image:
         enabled: false

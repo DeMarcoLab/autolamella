@@ -17,7 +17,7 @@ options:
     compucentric_x_offset: 50.0e-6
     compucentric_y_offset: 25.0e-6 
     alignment_attempts: 3.0
-    alignment_at_milling_current: true
+    alignment_at_milling_current: false
     high_quality_image:
         enabled: false
         dwell_time: 2.0e-6

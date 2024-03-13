@@ -3,7 +3,7 @@ options:
   method: autolamella-on-grid # autolamella-waffle or autolamella-on-grid
   checkpoint: autolamella-mega-20240107.pt
   alignment_attempts: 3.0
-  alignment_at_milling_current: true
+  alignment_at_milling_current: false
   take_final_reference_images: true 
   high_quality_image:
     enabled: false
