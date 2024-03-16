@@ -1,1 +1,1 @@
-fibsem>=0.3.3a0
+fibsem>=0.3.3
