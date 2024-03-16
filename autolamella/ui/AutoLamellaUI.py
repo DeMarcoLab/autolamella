@@ -661,7 +661,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
-                fmsg = '\t\t FAILED' if lamella._is_failure else ''
+                fnote = f"{lamella.failure_note[:10]}"
+                fmsg = f'\t FAILED ({fnote})' if lamella._is_failure else ''
                 msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} {fmsg} \n"            
             self.label_info.setText(msg)
 
@@ -670,7 +671,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if _protocol_loaded:
             method = self.settings.protocol["options"].get("method", "autolamella-waffle")
             self.label_protocol_name.setText(
-                f"Protocol: {self.settings.protocol.get('name', 'protocol')} ({method.title()} Method)"
+                f"Protocol: {self.settings.protocol['options'].get('name', 'protocol')} ({method.title()} Method)"
             )
 
         # buttons
@@ -1107,7 +1108,30 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def fail_lamella_ui(self):
         idx = self.comboBox_current_lamella.currentIndex()
-        self.experiment.positions[idx]._is_failure = True if not self.experiment.positions[idx]._is_failure else False
+        
+        # get the current state
+        is_failure = self.experiment.positions[idx]._is_failure
+        petname = self.experiment.positions[idx]._petname
+
+        # if marking as failure, get user reason for failure
+        if not is_failure:
+            msg, ret = fui._get_text_ui(msg="Enter failure reason:", 
+                            title=f"Mark Lamella {petname} as failure?", 
+                            default="",
+                            parent=self)
+
+            if ret is False:
+                logging.debug(f"User cancelled marking lamella {petname} as failure.")
+                return
+        
+            self.experiment.positions[idx]._is_failure = True
+            self.experiment.positions[idx].failure_note = msg
+            self.experiment.positions[idx].failure_timestamp = datetime.timestamp(datetime.now())
+        else:
+            self.experiment.positions[idx]._is_failure = False
+            self.experiment.positions[idx].failure_note = ""
+            self.experiment.positions[idx].failure_timestamp = None
+        
         self.experiment.save()
         self.update_ui()
 

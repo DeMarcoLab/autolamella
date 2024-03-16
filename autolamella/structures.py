@@ -67,6 +67,8 @@ class Lamella:
     _petname: str = None
     protocol: dict = None    
     _is_failure: bool = False
+    failure_note: str = ""
+    failure_timestamp: float = None
     lamella_state: MicroscopeState = MicroscopeState()
     landing_state: MicroscopeState = MicroscopeState()
     landing_selected: bool = False
@@ -94,6 +96,8 @@ class Lamella:
             "_number": self._number,
             "history": [state.to_dict() for state in self.history] if self.history is not False else [],
             "_is_failure": self._is_failure,
+            "failure_note": self.failure_note,
+            "failure_timestamp": self.failure_timestamp,
             "lamella_state": self.lamella_state.to_dict(),
             "landing_state": self.landing_state.to_dict(),
             "landing_selected": self.landing_selected,
@@ -122,6 +126,8 @@ class Lamella:
             _number=data.get("_number", data.get("number", 0)),
             history=[LamellaState().from_dict(state) for state in data["history"]],
             _is_failure=data.get("_is_failure", data.get("is_failure", False)),
+            failure_note=data.get("failure_note", ""),
+            failure_timestamp=data.get("failure_timestamp", None),
             lamella_state = MicroscopeState.from_dict(data.get("lamella_state", MicroscopeState().to_dict())), # tmp solution
             landing_state = MicroscopeState.from_dict(data.get("landing_state", MicroscopeState().to_dict())), # tmp solution
             landing_selected = bool(data.get("landing_selected", False)),
@@ -223,6 +229,8 @@ class Experiment:
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
                 "current_stage": lamella.state.stage.name,
                 "failure": lamella._is_failure,
+                "failure_note": lamella.failure_note,
+                "failure_timestamp": lamella.failure_timestamp,
             }
 
             if "autoliftout" in self.method:

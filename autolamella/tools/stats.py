@@ -186,6 +186,15 @@ with tab_experiment:
     else:
         tab_experiment.warning("No interaction data available")
 
+    # display df_experiment dataframe
+    st.subheader("Experiment Data")
+    df_lamella = df_experiment[["petname", "current_stage", "failure", "failure_note", "failure_timestamp"]]
+    # rename petname to lamella
+    df_lamella.rename(columns={"petname": "lamella"}, inplace=True)
+    # convert timestamp to datetime, aus timezone
+    df_lamella.failure_timestamp = pd.to_datetime(df_lamella.failure_timestamp, unit="s")
+    st.dataframe(df_lamella)
+
 
 with tab_history:
     # Duration
