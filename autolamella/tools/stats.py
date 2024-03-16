@@ -39,31 +39,14 @@ encoding = None if encoding == "None" else encoding
 page_title.header(f"Experiment: {EXPERIMENT_NAME} Analytics")
 
 (df_experiment, df_history, 
-df_beam_shift, 
+_, 
     df_steps, df_stage, 
     df_det, df_click) = calculate_statistics_dataframe(EXPERIMENT_PATH, encoding=encoding)
 
 # experiment metrics
 cols = st.columns(4)
 
-# experiment metrics
-n_lamella = len(df_history["petname"].unique())
-n_trenches = len(df_history[df_history["stage"] == "MillTrench"]["petname"].unique())
-
-
-n_undercut = len(df_history[df_history["stage"] == "MillUndercut"]["petname"].unique())
-cols[2].metric(label="Undercut", value=n_undercut)
-
-if "Landing" in df_history["stage"].unique():
-    n_liftout = len(df_history[df_history["stage"] == "Landing"]["petname"].unique())
-    cols[2].metric(label="Landing", value=n_liftout)
-
-n_polish = len(df_history[df_history["stage"] == "MillPolishingCut"]["petname"].unique())
-
-cols[0].metric(label="Lamella", value=n_lamella)
-cols[1].metric(label="Trenches", value=n_trenches)
-cols[3].metric(label="Polish", value=n_polish)
-
+# experiment yield metrics
 try:
     # calculate yield (success / failure)
     n_total = len(df_experiment)
@@ -74,6 +57,20 @@ try:
     cols[2].metric(label="Success Rate", value=f"{round((1 - n_failure/n_total)*100, 2)}%")
 except:
     pass
+
+n_trenches = len(df_history[df_history["stage"] == "MillTrench"]["petname"].unique())
+n_undercut = len(df_history[df_history["stage"] == "MillUndercut"]["petname"].unique())
+cols[1].metric(label="Undercut", value=n_undercut)
+
+if "Landing" in df_history["stage"].unique():
+    n_landing = len(df_history[df_history["stage"] == "Landing"]["petname"].unique())
+    cols[1].metric(label="Landing", value=n_landing)
+
+n_polish = len(df_history[df_history["stage"] == "MillPolishingCut"]["petname"].unique())
+
+cols[0].metric(label="Trenches", value=n_trenches)
+cols[2].metric(label="Polish", value=n_polish)
+
 
 # average duration
 # group by petname
