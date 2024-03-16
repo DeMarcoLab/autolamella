@@ -148,7 +148,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.pushButton_update_protocol.clicked.connect(self.export_protocol_ui)
 
-        self.checkBox_show_lamella_in_view.setChecked(True)
+        self.checkBox_show_lamella_in_view.setChecked(False)
+        self.checkBox_show_lamella_in_view.setVisible(False) # disabled: causes display issue with milling pattern
         self.checkBox_show_lamella_in_view.stateChanged.connect(self.update_lamella_ui) 
   
         # system widget
@@ -741,7 +742,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # Current Lamella Status
         if _lamella_selected:
             self.update_lamella_ui()
-        self.checkBox_show_lamella_in_view.setVisible(_lamella_selected)
+        # self.checkBox_show_lamella_in_view.setVisible(_lamella_selected)
 
         # instructions# TODO: update with autolamella instructions
         INSTRUCTIONS = {"NOT_CONNECTED": "Please connect to the microscope (System -> Connect to Microscope).",
