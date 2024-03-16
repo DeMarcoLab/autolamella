@@ -765,7 +765,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         elif _lamella_selected:
             self._set_instructions(INSTRUCTIONS["AUTOLAMELLA_READY"])
 
-    def _update_lamella_combobox(self):
+    def _update_lamella_combobox(self, latest: bool = False):
         # detail combobox
         idx = self.comboBox_current_lamella.currentIndex()
         self.comboBox_current_lamella.currentIndexChanged.disconnect()
@@ -773,6 +773,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.comboBox_current_lamella.addItems([lamella.info for lamella in self.experiment.positions])
         if idx != -1 and self.experiment.positions:
             self.comboBox_current_lamella.setCurrentIndex(idx)
+        if latest and self.experiment.positions:
+            self.comboBox_current_lamella.setCurrentIndex(len(self.experiment.positions) - 1)
         self.comboBox_current_lamella.currentIndexChanged.connect(self.update_lamella_ui)
 
     def update_lamella_ui(self):
@@ -1082,7 +1084,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         logging.info(f"Added lamella {lamella._petname} to experiment {self.experiment.name}.")
 
-        self._update_lamella_combobox()
+        self._update_lamella_combobox(latest=True)
         self.update_ui()
     
     def remove_lamella_ui(self):
