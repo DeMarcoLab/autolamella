@@ -185,7 +185,7 @@ with tab_experiment:
 
     # display df_experiment dataframe
     st.subheader("Experiment Data")
-    df_lamella = df_experiment[["petname", "current_stage", "failure", "failure_note", "failure_timestamp"]]
+    df_lamella = df_experiment[["petname", "current_stage", "failure", "failure_note", "failure_timestamp"]].copy()
     # rename petname to lamella
     df_lamella.rename(columns={"petname": "lamella"}, inplace=True)
     # convert timestamp to datetime, aus timezone
