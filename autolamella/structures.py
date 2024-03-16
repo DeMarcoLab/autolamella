@@ -268,6 +268,32 @@ class Experiment:
 
         return df
 
+    def history_dataframe(self) -> pd.DataFrame:
+        """Create a dataframe with the history of all lamellas."""
+        history = []
+        lam: Lamella
+        hist: LamellaState
+        for lam in self.positions:
+
+            petname = lam._petname
+
+            for hist in lam.history:
+                start, end = hist.start_timestamp, hist.end_timestamp
+                stage_name = hist.stage.name
+
+                hist_d = {
+                    "petname": petname,
+                    "stage": stage_name,
+                    "start": start,
+                    "end": end,
+                }
+                history.append(deepcopy(hist_d))
+
+        df_stage_history = pd.DataFrame.from_dict(history)
+        df_stage_history["duration"] = df_stage_history["end"] - df_stage_history["start"]
+
+        return df_stage_history
+
     @staticmethod
     def load(fname: Path) -> 'Experiment':
         """Load a sample from disk."""

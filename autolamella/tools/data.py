@@ -9,31 +9,6 @@ from pathlib import Path
 from autolamella.structures import Lamella, Experiment, LamellaState 
   
 
-def create_history_dataframe(experiment: Experiment) -> pd.DataFrame:
-    history = []
-    lam: Lamella
-    hist: LamellaState
-    for lam in experiment.positions:
-
-        petname = lam._petname
-
-        for hist in lam.history:
-            start, end = hist.start_timestamp, hist.end_timestamp
-            stage_name = hist.stage.name
-
-            hist_d = {
-                "petname": petname,
-                "stage": stage_name,
-                "start": start,
-                "end": end,
-            }
-            history.append(deepcopy(hist_d))
-
-    df_stage_history = pd.DataFrame.from_dict(history)
-    df_stage_history["duration"] = df_stage_history["end"] - df_stage_history["start"]
-
-    return df_stage_history
-
 def parse_msg(msg: str):
     """parse message json"""
     # turn this into a loop
@@ -224,11 +199,11 @@ def calculate_statistics_dataframe(path: Path, encoding: str = "cp1252"):
     # experiment
     experiment = Experiment.load(os.path.join(path, "experiment.yaml"))
     df_experiment = experiment.__to_dataframe__()
-    df_history = create_history_dataframe(experiment)
+    df_history = experiment.history_dataframe()
     df_steps = pd.DataFrame(steps_data)
     df_stage = pd.DataFrame(stage_data)
     df_det = pd.DataFrame(det_data)
-    df_beam_shift = pd.DataFrame.from_dict(df_beam_shift)
+    df_beam_shift = pd.DataFrame.from_dict(df_beam_shift) # TODO: remove this, not used
     df_click = pd.DataFrame(click_data)
     
     df_steps["duration"] = df_steps["timestamp"].diff() # TODO: fix this duration
