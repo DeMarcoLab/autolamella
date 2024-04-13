@@ -1166,6 +1166,25 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if lamella.state.stage not in [SETUP_STATE, READY_STATE]:
             return
 
+        # we need to be at the lamella position to save, check we are...
+        # usually this is required when selected positions from minimap.
+        # TODO: change how we do this, so that this is not required
+        current_position = self.microscope.get_stage_position()        
+
+        if not lamella.state.microscope_state.stage_position.is_close(current_position, 1e-6):
+            ret = fui.message_box_ui(
+                title=f"Far away from lamella position",
+                text=f"Current position is far away from lamella position. Move to lamella position? (You need to move to the lamella position before saving)",
+            )
+
+            # abort if user doesnt move to lamella position
+            if ret is False:
+                return
+            
+            # move to lamella position
+            self.movement_widget.go_to_saved_position(lamella.state.microscope_state.stage_position)
+
+
         # end of stage update
         self.experiment = wfl.end_of_stage_update(
             microscope=self.microscope, 
