@@ -178,7 +178,7 @@ def liftout_lamella(
     set_images_ui(parent_ui, eb_image, ib_image)
 
     # SEVER
-    log_status_message(lamella, "SEVER_LAMELLA_BLOCK")
+    log_status_message(lamella, "SEVER_VOLUME_BLOCK")
     update_status_ui(parent_ui, f"{lamella.info} Sever Manipulator...")
 
     settings.image.hfw = fcfg.REFERENCE_HFW_LOW
@@ -187,6 +187,7 @@ def liftout_lamella(
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
     point = det.features[0].feature_m 
+    set_images_ui(parent_ui, None, det.fibsem_image)
 
     stages = get_milling_stages("liftout-sever", settings.protocol["milling"], point)
     stages = update_milling_ui(stages, parent_ui, 
@@ -206,6 +207,15 @@ def liftout_lamella(
     # RETRACT MANIPULATOR
     log_status_message(lamella, "RETRACT_MANIPULATOR")
     update_status_ui(parent_ui, f"{lamella.info} Retracting Manipulator...")
+
+    # retract small and validate
+    microscope.move_manipulator_corrected(dx=0, dy=0.5e-6, beam_type=BeamType.ION)
+    settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_initial"
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    set_images_ui(parent_ui, eb_image, ib_image)
+
+    if validate:
+        response = ask_user(parent_ui, msg=f"Press Continue to confirm to separation of volume for {lamella._petname}.", pos="Continue")
 
     # retract slowly at first
     for i in range(10):
@@ -283,12 +293,32 @@ def land_lamella(
     set_images_ui(parent_ui, eb_image, ib_image)
 
 
+    # align in electron beam
+    log_status_message(lamella, f"NEEDLE_EB_DETECTION_INITIAL")
+    update_status_ui(parent_ui, f"{lamella.info} Moving Volume to Landing Grid...")
+
+    settings.image.beam_type = BeamType.ELECTRON
+    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+
+    # DETECT COPPER ADAPTER, LAMELLA TOP
+    scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ELECTRON)
+    features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
+    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    set_images_ui(parent_ui, det.fibsem_image, None)
+
+    # MOVE TO LANDING GRID
+    detection.move_based_on_detection(
+        microscope, settings, det, 
+        beam_type=settings.image.beam_type, 
+        _move_system="manipulator"
+    )
+
     # DETECT LAMELLA BOTTOM EDGE, LandingGridCentre_TOP
     # align manipulator to top of lamella
     log_status_message(lamella, "NEEDLE_IB_DETECTION")
     update_status_ui(parent_ui, f"{lamella.info} Moving Volume to Landing Grid...")
 
-    HFWS = [fcfg.REFERENCE_HFW_LOW, fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH]
+    HFWS = [fcfg.REFERENCE_HFW_LOW, fcfg.REFERENCE_HFW_MEDIUM]#, fcfg.REFERENCE_HFW_HIGH]
     for i, hfw in enumerate(HFWS):
 
         log_status_message(lamella, f"NEEDLE_IB_DETECTION_{i:02d}")
@@ -303,7 +333,7 @@ def land_lamella(
         set_images_ui(parent_ui, None, det.fibsem_image)
 
         # offset above the grid
-        det._offset = Point(0, -15e-6) 
+        det._offset = Point(0, -20e-6) 
 
         # MOVE TO LANDING POST
         detection.move_based_on_detection(
@@ -313,29 +343,29 @@ def land_lamella(
 
         log_status_message(lamella, "NEEDLE_IB_DETECTION")
 
-    # align in electron beam
-    log_status_message(lamella, f"NEEDLE_EB_DETECTION_FINAL")
-    update_status_ui(parent_ui, f"{lamella.info} Moving Volume to Landing Grid...")
 
-    settings.image.beam_type = BeamType.ELECTRON
+
+
+    settings.image.beam_type = BeamType.ION
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
 
     # DETECT COPPER ADAPTER, LAMELLA TOP
     scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
     features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
-    set_images_ui(parent_ui, det.fibsem_image, None)
-
+    set_images_ui(parent_ui, None, det.fibsem_image)
+    
     # MOVE TO LANDING GRID
     detection.move_based_on_detection(
         microscope, settings, det, 
         beam_type=settings.image.beam_type, 
+        move_x=True,
+        move_y=False,
         _move_system="manipulator"
     )
 
     # TODO: check if the volume is wider than the landing grid
     # mill away excess width
-
 
     # align in ion beam
     log_status_message(lamella, f"NEEDLE_IB_DETECTION_FINAL")
@@ -408,8 +438,8 @@ def land_lamella(
     update_status_ui(parent_ui, f"{lamella.info} Retracting Manipulator...")
 
     # move up slowly at first
-    for i in range(20):
-        microscope.move_manipulator_corrected(dx=0, dy=100e-9, beam_type=BeamType.ION)
+    for i in range(10):
+        microscope.move_manipulator_corrected(dx=0, dy=1e-6, beam_type=BeamType.ION)
         if i % 5 == 0:
             settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_slow{i:02d}"
             eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
@@ -418,6 +448,9 @@ def land_lamella(
     
     # move manipulator up
     microscope.move_manipulator_corrected(dx=0, dy=100e-6, beam_type=BeamType.ION)
+
+    # move needle to park position
+    microscope.retract_manipulator()  # retracted needle not supported on tescan
 
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
@@ -429,9 +462,7 @@ def land_lamella(
     )
     set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
-    # move needle to park position
-    microscope.retract_manipulator()  # retracted needle not supported on tescan
-    
+
     return lamella
 
 def sever_lamella_block(microscope: FibsemMicroscope,
