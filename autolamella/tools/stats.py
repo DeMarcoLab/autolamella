@@ -361,44 +361,45 @@ with tab_automation:
 
         df_det_filt = df_det[["lamella", "stage", "feature", "is_correct", "fname", "px_x", "px_y", "dpx_x", "dpx_y"]].sort_values(by="lamella")
 
-        # TODO: make sure these images are refreshed properly when the dataframe is filtered (the incorrect image is shown when the dataframe is filtered)
+        # loop through each row and plot the image
+        # select petname, stage, feature
         petname = cols[0].selectbox(label="Petname", options=df_det_filt["lamella"].unique())
-        stage = cols[0].selectbox(label="Stage", options=df_det_filt["stage"].unique())
-        feature = cols[0].selectbox(label="Feature", options=df_det_filt["feature"].unique())
 
-        # glob for all ml images
-        ML_IMAGE_PATHS = sorted(glob.glob(os.path.join(EXPERIMENT_PATH, f"**/{petname}/*ml-*.tif"), recursive=True))
-        IMAGE_FILENAMES = [os.path.basename(path) for path in ML_IMAGE_PATHS]
+        # filter dataframe on petname
+        df_det_filt = df_det_filt[df_det_filt["lamella"] == petname]
 
-        # select image
-        IMAGE_FILENAMES = df_det_filt[(df_det_filt["lamella"] == petname) & (df_det_filt["feature"] == feature) & (df_det_filt["stage"] == stage)]["fname"].unique().tolist()
-        image_filename = cols[0].selectbox(label="Image", options=IMAGE_FILENAMES)
+        cols[0].dataframe(df_det_filt)
 
-        # get image path
-        image_path = ML_IMAGE_PATHS[IMAGE_FILENAMES.index(image_filename)]
+        for row in df_det_filt.iterrows():
+            cols[0].write(row)
+            # get stage, feature
+            stage = row[1]["stage"]
+            feature = row[1]["feature"]
+            is_correct = row[1]["is_correct"]
+            px_x = row[1]["px_x"]
+            px_y = row[1]["px_y"]
+            dpx_x = row[1]["dpx_x"]
+            dpx_y = row[1]["dpx_y"]
+            fname = row[1]["fname"]
 
-        image = FibsemImage.load(image_path)
+            # get image path
+            path = os.path.join(EXPERIMENT_PATH, petname, f"{fname}*.tif")
+            path = glob.glob(path)[0]
 
-        df_image = df_det_filt[(df_det_filt["lamella"] == petname) & (df_det_filt["feature"] == feature) & (df_det_filt["stage"] == stage) & (df_det_filt["fname"] == image_filename)]
-        is_correct = df_image["is_correct"].values[0]
-        px_x = df_image["px_x"].values[0]
-        px_y = df_image["px_y"].values[0]
-        dpx_x = df_image["dpx_x"].values[0]
-        dpx_y = df_image["dpx_y"].values[0]
-        caption = f"Petname: {petname}, Feature: {feature}, Stage: {stage}, Correct: {is_correct}"
+            image = FibsemImage.load(path)
+            caption = f"Petname: {petname}, Feature: {feature}, Stage: {stage}, Correct: {is_correct}"
 
-        # plot the feature detections on the image
-        import matplotlib.pyplot as plt
-        fig = plt.figure(figsize=(10, 10))
-        ax = fig.add_subplot(111)
-        ax.imshow(image.data, cmap="gray")
-        ax.scatter(px_x+dpx_x, px_y+dpx_y, marker="+", color="red", s=100, label=f"{feature} (initial)")
-        ax.scatter(px_x, px_y, marker="+", color="blue", s=100, label=f"{feature} (final)")
-        ax.legend()
-        ax.set_title(caption)
-        cols[1].pyplot(fig, use_container_width=True)
+            # plot the feature detections on the image
+            import matplotlib.pyplot as plt
+            fig = plt.figure(figsize=(10, 10))
+            ax = fig.add_subplot(111)
+            ax.imshow(image.data, cmap="gray")
+            ax.scatter(px_x+dpx_x, px_y+dpx_y, marker="+", color="red", s=100, label=f"{feature} (initial)")
+            ax.scatter(px_x, px_y, marker="+", color="blue", s=100, label=f"{feature} (final)")
+            ax.legend()
+            ax.set_title(caption)
+            cols[1].pyplot(fig, use_container_width=True)
 
-        # cols[1].image(image.data, caption=caption, use_column_width=True)
         
 
 
