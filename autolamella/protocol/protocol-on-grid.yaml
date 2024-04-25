@@ -34,15 +34,14 @@ milling:
     rotation: 45
     milling_current: 2.0e-9
     preset: "30 keV; 20 nA" # TESCAN only
-    application_file: autolamella
-    cleaning_cross_section: false
+    application_file: Si
     passes: null
     hfw: 80.e-6
     type: Fiducial
   lamella:
     stages:
-      -   application_file: autolamella
-          cleaning_cross_section: false
+      -   application_file: Si-ccs
+          cross_section: CleaningCrossSection
           depth: 6.5e-07
           dwell_time: 1.0e-06
           hfw: 7.999999999999999e-05
@@ -57,8 +56,8 @@ milling:
           spot_size: 5.0e-08
           trench_height: 3.5e-06
           name: Rough Cut
-      -   application_file: autolamella
-          cleaning_cross_section: true
+      -   application_file: Si-ccs
+          cross_section: CleaningCrossSection
           depth: 6.5e-07
           dwell_time: 1.0e-06
           hfw: 7.999999999999999e-05
@@ -73,8 +72,8 @@ milling:
           spot_size: 5.0e-08
           trench_height: 2.0e-06
           name: Regular Cut
-      -   application_file: autolamella
-          cleaning_cross_section: true
+      -   application_file: Si-ccs
+          cross_section: CleaningCrossSection
           depth: 4.0e-07
           dwell_time: 1.0e-06
           hfw: 7.999999999999999e-05
@@ -97,12 +96,10 @@ milling:
     milling_current: 2.e-9
     preset: "30 keV; 2.5 nA" # TESCAN only
     hfw: 200e-6
-    application_file: autolamella
-    cleaning_cross_section: false
+    application_file: Si
     type: MicroExpansion
   notch:
-    application_file: autolamella
-    cleaning_cross_section: false
+    application_file: Si
     depth: 2.5e-06
     distance: 2.0e-06
     enabled: true

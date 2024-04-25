@@ -49,7 +49,7 @@ milling:
         rotation: 0.0
         scan_direction: LeftToRight
         width: 2.0e-06
-        application_file: "autolamella"
+        application_file: Si
         type: "Rectangle"
         preset: "30 keV; 20 nA"
     trench:
@@ -63,12 +63,11 @@ milling:
             scan_direction: TopToBottom
             side_trench_width: 5.0e-06
             top_trench_height: 30.0e-6
-            application_file: "autolamella"
+            application_file: Si
             type: "HorseshoeVertical"
             preset: "30 keV; 20 nA"
             inverted: True
     liftout-sever:
-        cleaning_cross_section: 0.0
         depth: 10.0e-06
         height: 0.5e-06
         hfw: 400.0e-6
@@ -77,12 +76,11 @@ milling:
         rotation: 0.0
         scan_direction: TopToBottom
         width: 50.0e-06
-        application_file: "autolamella"
+        application_file: Si
         type: "Rectangle"
         preset: "30 keV; 20 nA"
     undercut:
-        application_file: autolamella
-        cleaning_cross_section: false
+        application_file: Si
         depth: 15.0e-06
         height: 5.0e-06
         hfw: 150.0e-6
@@ -122,7 +120,7 @@ milling:
             passes: 1.0
             milling_current: 0.74e-09
             hfw: 150.0e-6
-            application_file: "autolamella"
+            application_file: "Si-multipass"
             scan_direction: "RightToLeft"
             type: "ArrayPattern"
             preset: "30 keV; 2.5 nA"
@@ -138,13 +136,12 @@ milling:
             passes: 1.0
             milling_current: 0.74e-09
             hfw: 150.0e-6
-            application_file: "autolamella"
+            application_file: "Si-multipass"
             scan_direction: "LeftToRight"
             type: "ArrayPattern"
             preset: "30 keV; 2.5 nA"
             cross_section: RegularCrossSection
     landing-sever:
-        cleaning_cross_section: 0.0
         depth: 25.0e-06
         height: 1.0e-06
         hfw: 150.0e-6
@@ -152,7 +149,7 @@ milling:
         rotation: 0.0
         scan_direction: TopToBottom
         width: 50.0e-06
-        application_file: "autolamella"
+        application_file: "Si"
         type: "Rectangle"
         preset: "30 keV; 20 nA"
     lamella:
@@ -164,8 +161,8 @@ milling:
         hfw: 8.0e-05
         tilt_angle: 35.0 # TODO: better way of doing this (52 - 35 pretilt)
         stages:
-        -   application_file: autolamella
-            cleaning_cross_section: true
+        -   application_file: Si-ccs
+            cross_section: CleaningCrossSection
             depth: 2.0e-06
             hfw: 8.0e-05
             lamella_height: 6.0e-07
@@ -176,8 +173,8 @@ milling:
             size_ratio: 1.0
             trench_height: 0.5e-05
             type: "Trench"
-        -   application_file: autolamella
-            cleaning_cross_section: true
+        -   application_file: Si-ccs
+            cross_section: CleaningCrossSection
             depth: 1.0e-06
             hfw: 8.0e-05
             lamella_height: 6.0e-07
@@ -188,8 +185,8 @@ milling:
             size_ratio: 1.0
             trench_height: 2.0e-06
             type: "Trench"
-        -   application_file: autolamella
-            cleaning_cross_section: true
+        -   application_file: Si-ccs
+            cross_section: CleaningCrossSection
             depth: 4.0e-07
             hfw: 8.0e-05
             lamella_height: 6.0e-07
@@ -201,8 +198,7 @@ milling:
             trench_height: 6.0e-07
             type: "Trench"
     fiducial:
-        application_file: autolamella
-        cleaning_cross_section: false
+        application_file: Si
         depth: 4.0e-06
         height: 1.0e-05
         hfw: 8.0e-05
@@ -213,7 +209,7 @@ milling:
         type: "Fiducial"
     prepare-manipulator:
         stages:
-        -   application_file: autolamella
+        -   application_file: Si
             hfw: 0.00015
             milling_current: 28.0e-9
             milling_voltage: 30000
@@ -223,7 +219,7 @@ milling:
             depth: 10.0e-6  
     prepare-copper-grid:
         stages:
-        -   application_file: autolamella
+        -   application_file: Si
             hfw: 0.00015
             milling_current: 28.0e-9
             milling_voltage: 30000
@@ -233,7 +229,7 @@ milling:
             depth: 30.0e-6
     prepare-copper-blocks:
         stages:
-        -   application_file: autolamella
+        -   application_file: Si
             hfw: 150.0e-6
             milling_current: 28.0e-9
             milling_voltage: 30000
@@ -247,7 +243,7 @@ milling:
             n_rows: 1.0
             pitch_vertical: 0.0
             scan_direction: TopToBottom
-        -   application_file: autolamella
+        -   application_file: Si
             hfw: 0.00015
             milling_current: 28.0e-9
             milling_voltage: 30000
@@ -269,13 +265,14 @@ milling:
             milling_voltage: 30.0e+3
             milling_current: 300.0e-12
             hfw: 150.0e-6
-            application_file: "autolamella"
+            application_file: "Si-multipass"
             scan_direction: "TopToBottom"
             type: "ArrayPattern"
             preset: "30 keV; 2.5 nA"
+            cross_section: RegularCrossSection
     prepare-copper-release:
         stages:
-        -   application_file: autolamella
+        -   application_file: Si
             hfw: 150.0e-6
             milling_current: 28.0e-9
             milling_voltage: 30000
