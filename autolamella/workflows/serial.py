@@ -157,9 +157,11 @@ def liftout_lamella(
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
     # move the pattern to the top of the volume (i.e up by half the height of the pattern)
-    _V_OFFSET = 0.0e-6 # TODO: make this a parameter
+    _V_OFFSET = settings.protocol["milling"]["liftout-weld"].get("height", 5e-6) / 2
+    if np.isclose(scan_rotation, 0):
+        _V_OFFSET *= -1
     point = det.features[0].feature_m 
-    point.y += settings.protocol["milling"]["liftout-weld"].get("height", 5e-6) / 2 + _V_OFFSET 
+    point.y += _V_OFFSET
 
     stages = get_milling_stages("liftout-weld", settings.protocol["milling"], point)
     stages = update_milling_ui(stages, parent_ui, 
@@ -181,41 +183,48 @@ def liftout_lamella(
     log_status_message(lamella, "SEVER_VOLUME_BLOCK")
     update_status_ui(parent_ui, f"{lamella.info} Sever Manipulator...")
 
-    settings.image.hfw = fcfg.REFERENCE_HFW_LOW
+    # repeat severing until the volume is free
+    while True:
+        settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
 
-    features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge()] 
-    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+        features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge()] 
+        det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
-    point = det.features[0].feature_m 
-    set_images_ui(parent_ui, None, det.fibsem_image)
+        point = det.features[0].feature_m 
+        set_images_ui(parent_ui, None, det.fibsem_image)
 
-    stages = get_milling_stages("liftout-sever", settings.protocol["milling"], point)
-    stages = update_milling_ui(stages, parent_ui, 
-        msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
-        validate=validate)
-    
-    lamella.protocol["liftout-sever"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
-    lamella.protocol["liftout-sever"]["point"] = stages[0].pattern.point.to_dict()
+        stages = get_milling_stages("liftout-sever", settings.protocol["milling"], point)
+        stages = update_milling_ui(stages, parent_ui, 
+            msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
+            validate=validate)
+        
+        lamella.protocol["liftout-sever"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+        lamella.protocol["liftout-sever"]["point"] = stages[0].pattern.point.to_dict()
 
-    # reference images
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.save = True
-    settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_sever"
-    acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
-    set_images_ui(parent_ui, eb_image, ib_image)
+        # reference images
+        settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
+        settings.image.save = True
+        settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_sever"
+        acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
+        set_images_ui(parent_ui, eb_image, ib_image)
 
-    # RETRACT MANIPULATOR
-    log_status_message(lamella, "RETRACT_MANIPULATOR")
-    update_status_ui(parent_ui, f"{lamella.info} Retracting Manipulator...")
+        # RETRACT MANIPULATOR
+        log_status_message(lamella, "RETRACT_MANIPULATOR")
+        update_status_ui(parent_ui, f"{lamella.info} Retracting Manipulator...")
 
-    # retract small and validate
-    microscope.move_manipulator_corrected(dx=0, dy=0.5e-6, beam_type=BeamType.ION)
-    settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_initial"
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    set_images_ui(parent_ui, eb_image, ib_image)
+        # retract small and validate
+        microscope.move_manipulator_corrected(dx=0, dy=0.5e-6, beam_type=BeamType.ION)
+        settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_initial"
+        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+        set_images_ui(parent_ui, eb_image, ib_image)
 
-    if validate:
-        response = ask_user(parent_ui, msg=f"Press Continue to confirm to separation of volume for {lamella._petname}.", pos="Continue")
+        # TODO: implemented automated detection for separation of volume from trench
+        if validate:
+            response = ask_user(parent_ui, msg=f"Press Continue to confirm to separation of volume for {lamella._petname}.", pos="Continue", neg="Repeat")
+
+        if response:
+            logging.info(f"Volume Severed for {lamella._petname}, response: {response}")
+            break
 
     # retract slowly at first
     for i in range(10):
@@ -225,8 +234,6 @@ def liftout_lamella(
             eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
             set_images_ui(parent_ui, eb_image, ib_image)
         time.sleep(1)
-    
-    # TODO: add a validation check here, to make sure the mill is complete
 
     # then retract quickly
     for i in range(3):
@@ -264,8 +271,8 @@ def land_lamella(
     settings.image.path = lamella.path
 
     # # MOVE TO LANDING POSITION
-    # log_status_message(lamella, "MOVE_TO_LANDING_POSITION")
-    # update_status_ui(parent_ui, f"{lamella.info} Moving to Landing Position...")
+    log_status_message(lamella, "MOVE_TO_LANDING_POSITION")
+    update_status_ui(parent_ui, f"{lamella.info} Moving to Landing Position...")
 
     # reference images
     settings.image.save = True
@@ -487,15 +494,8 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge()]  
         det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
         set_images_ui(parent_ui, None, det.fibsem_image)
-        
-        _LAMELLA_THICKNESS = settings.protocol["options"].get("lamella_block_thickness", 4e-6) / 2  # TODO: make this a parameter
-        _V_OFFSET = settings.protocol["milling"]["landing-sever"].get("height", 2e-6) / 2 + _LAMELLA_THICKNESS
-        
-        if np.isclose(scan_rotation, 0):
-            _V_OFFSET *= -1
-        
+                
         point = det.features[0].feature_m
-        point.y += _V_OFFSET
 
         stages = get_milling_stages("landing-sever", settings.protocol["milling"], point)
         stages = update_milling_ui(stages, parent_ui, 
@@ -538,7 +538,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         
         # check with the user
         if validate:
-            response = ask_user(parent_ui, msg=f"Confirm Lamella has been severed for {lamella._petname}. Distance measured was {det.distance.y*1e6} um. (Threshold = {threshold*1e6})", 
+            response = ask_user(parent_ui, msg=f"Confirm Lamella has been severed for {lamella._petname}. Distance measured was {det.distance.y*1e6} um. (Threshold = {threshold*1e6}) um", 
                                 pos="Confirm", neg="Retry")
             confirm_severed = response
 

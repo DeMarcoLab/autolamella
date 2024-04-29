@@ -8,7 +8,6 @@ options:
     landing_start_position: autoliftout-serial-pre-tilt-35-deg-grid-02-landing
     compucentric_x_offset: 0.0e-6
     compucentric_y_offset: 0.0e-6
-    lamella_block_thickness: 4.0e-6
     alignment_at_milling_current: false
     take_final_reference_images: true
     high_quality_image:
@@ -110,47 +109,47 @@ milling:
     landing-weld:
         stages:
         -   height: 0.5e-6
-            width: 5.0e-6
-            depth: 5.0e-6
-            pitch_vertical: 2.0e-6
-            n_rows: 5
+            width: 4.0e-6
+            depth: 8.0e-6
+            pitch_vertical: 0.75e-6
+            n_rows: 7
             n_columns: 1
             pitch_horizontal: 0
-            rotation: 0.0
             passes: 1.0
-            milling_current: 0.74e-09
-            hfw: 150.0e-6
+            milling_current: 1.0e-09
+            hfw: 80.0e-6
             application_file: "Si-multipass"
             scan_direction: "RightToLeft"
             type: "ArrayPattern"
             preset: "30 keV; 2.5 nA"
             cross_section: RegularCrossSection
         -   height: 0.5e-6
-            width: 5.0e-6
-            depth: 5.0e-6
-            pitch_vertical: 2.0e-6
-            n_rows: 5
+            width: 4.0e-6
+            depth: 8.0e-6
+            pitch_vertical: 0.75e-6
+            n_rows: 7
             n_columns: 1
             pitch_horizontal: 0
-            rotation: 0.0
             passes: 1.0
-            milling_current: 0.74e-09
-            hfw: 150.0e-6
+            milling_current: 1.0e-09
+            hfw: 80.0e-6
             application_file: "Si-multipass"
             scan_direction: "LeftToRight"
             type: "ArrayPattern"
             preset: "30 keV; 2.5 nA"
             cross_section: RegularCrossSection
     landing-sever:
-        depth: 25.0e-06
-        height: 1.0e-06
+        section_thickness: 4.0e-6
+        section_width: 50.0e-6
+        section_depth: 20.0e-6
+        side_width: 10.0e-6
+        side_depth: 40.0e-6
+        side_height: 10.0e-6
+        inverted: false
         hfw: 150.0e-6
-        milling_current: 7.6e-09
-        rotation: 0.0
-        scan_direction: TopToBottom
-        width: 50.0e-06
+        milling_current: 2.0e-09
         application_file: "Si"
-        type: "Rectangle"
+        type: "SerialSection"
         preset: "30 keV; 20 nA"
     lamella:
         resolution:
