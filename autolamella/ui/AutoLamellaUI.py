@@ -707,21 +707,22 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _ENABLE_UNDERCUT = _WAFFLE_METHOD and _READY_UNDERCUT
             _ENABLE_LAMELLA = _READY_LAMELLA
             _ENABLE_AUTOLAMELLA = _READY_AUTOLAMELLA
-
+            
+            _ENABLE_FULL_AUTOLAMELLA = _ENABLE_LAMELLA or _ENABLE_AUTOLAMELLA
 
             self.pushButton_run_waffle_trench.setVisible(_WAFFLE_METHOD)
             self.pushButton_run_waffle_trench.setEnabled(_ENABLE_TRENCH)
             self.pushButton_run_waffle_undercut.setVisible(_WAFFLE_METHOD)
             self.pushButton_run_waffle_undercut.setEnabled(_ENABLE_UNDERCUT)
             self.pushButton_run_setup_autolamella.setVisible(True)
-            self.pushButton_run_setup_autolamella.setEnabled(_ENABLE_LAMELLA or _ENABLE_AUTOLAMELLA)
-            self.pushButton_run_autolamella.setVisible(False)
-            self.pushButton_run_autolamella.setEnabled(_ENABLE_AUTOLAMELLA)
+            self.pushButton_run_setup_autolamella.setEnabled(_ENABLE_FULL_AUTOLAMELLA)
+            # self.pushButton_run_autolamella.setVisible(False)
+            # self.pushButton_run_autolamella.setEnabled(_ENABLE_AUTOLAMELLA)
 
             self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_FULL_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            # self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
 
             # tab visibity / enabled
@@ -1174,16 +1175,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if not lamella.state.microscope_state.stage_position.is_close(current_position, 1e-6):
             ret = fui.message_box_ui(
                 title=f"Far away from lamella position",
-                text=f"Current position is far away from lamella position. Move to lamella position? (You need to move to the lamella position before saving)",
+                text=f"The current position is far away from the initial lamella position. Move to initial lamella position? (Press No to save at current position)",
             )
+        
+            # TODO: handle the case when user exits dialog box
+            # TODO: only do this check if position created by minimap?
 
-            # abort if user doesnt move to lamella position
-            if ret is False:
-                return
-            
-            # move to lamella position
-            self.movement_widget.go_to_saved_position(lamella.state.microscope_state.stage_position)
-
+            if ret is True:
+                # move to lamella position
+                self.movement_widget.go_to_saved_position(lamella.state.microscope_state.stage_position)
+             
 
         # end of stage update
         self.experiment = wfl.end_of_stage_update(

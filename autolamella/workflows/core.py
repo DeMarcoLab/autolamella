@@ -575,6 +575,7 @@ def setup_lamella(
     if use_fiducial:
         fiducial_stage = deepcopy(stages[-n_fiducial:])
 
+    fiducial_stage = fiducial_stage[0] # always single stage
     lamella.protocol["fiducial"] = deepcopy(patterning.get_protocol_from_stages(fiducial_stage))
     lamella.protocol["fiducial"]["point"] = fiducial_stage.pattern.point.to_dict()
     lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, 

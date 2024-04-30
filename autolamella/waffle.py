@@ -153,6 +153,4 @@ def run_autolamella(
     # run lamella milling
     experiment = run_lamella_milling(microscope, settings, experiment, parent_ui)
 
-    log_status_message(None, "NULL_END") # for logging purposes
-
     return experiment
