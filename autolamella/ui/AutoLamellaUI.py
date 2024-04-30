@@ -139,7 +139,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_trench.clicked.connect(lambda: self._run_workflow(workflow="trench"))
         self.pushButton_run_autolamella.clicked.connect(lambda: self._run_workflow(workflow="lamella"))
         self.pushButton_run_waffle_undercut.clicked.connect(lambda: self._run_workflow(workflow="undercut"))
-        self.pushButton_run_setup_autolamella.clicked.connect(lambda: self._run_workflow(workflow="setup-lamella"))
+        self.pushButton_run_setup_autolamella.clicked.connect(lambda: self._run_workflow(workflow="autolamella"))
 
         self.pushButton_run_waffle_trench.setVisible(False)
         self.pushButton_run_autolamella.setVisible(False)
@@ -714,8 +714,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_run_waffle_undercut.setVisible(_WAFFLE_METHOD)
             self.pushButton_run_waffle_undercut.setEnabled(_ENABLE_UNDERCUT)
             self.pushButton_run_setup_autolamella.setVisible(True)
-            self.pushButton_run_setup_autolamella.setEnabled(_ENABLE_LAMELLA)
-            self.pushButton_run_autolamella.setVisible(True)
+            self.pushButton_run_setup_autolamella.setEnabled(_ENABLE_LAMELLA or _ENABLE_AUTOLAMELLA)
+            self.pushButton_run_autolamella.setVisible(False)
             self.pushButton_run_autolamella.setEnabled(_ENABLE_AUTOLAMELLA)
 
             self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
@@ -1416,6 +1416,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if workflow == "lamella":
             wfl.run_lamella_milling(microscope, settings, experiment, parent_ui=self )
+
+        if workflow == "autolamella":
+            wfl.run_autolamella(microscope, settings, experiment, parent_ui=self)
 
         self.update_experiment_signal.emit(self.experiment)
 

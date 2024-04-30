@@ -6,6 +6,7 @@ from autolamella.structures import (
 )
 from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 from autolamella.workflows.core import ( log_status_message, mill_trench, mill_undercut, mill_lamella, setup_lamella, start_of_stage_update, end_of_stage_update)
+from autolamella.workflows.ui import ask_user
 
 WORKFLOW_STAGES = {
     AutoLamellaWaffleStage.MillTrench: mill_trench,
@@ -129,5 +130,29 @@ def run_lamella_milling(
             parent_ui.update_experiment_signal.emit(experiment)
 
     log_status_message(lamella, "NULL_END") # for logging purposes
+
+    return experiment
+
+
+def run_autolamella(    
+    microscope: FibsemMicroscope,
+    settings: MicroscopeSettings,
+    experiment: Experiment,
+    parent_ui: AutoLamellaUI = None,
+) -> Experiment:
+    
+    # run setup
+    experiment = run_setup_lamella(microscope, settings, experiment, parent_ui)
+
+    validate = settings.protocol["options"]["supervise"].get("setup_lamella", True)
+    if validate:
+        ret = ask_user(parent_ui=parent_ui, msg="Start AutoLamella Milling?", pos="Continue", neg="Cancel")
+        if ret is False:
+            return experiment
+
+    # run lamella milling
+    experiment = run_lamella_milling(microscope, settings, experiment, parent_ui)
+
+    log_status_message(None, "NULL_END") # for logging purposes
 
     return experiment
