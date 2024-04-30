@@ -523,7 +523,10 @@ def setup_lamella(
         FIDUCIAL_X_OFFSET *= -1
     fiducial_position = Point.from_dict(protocol["fiducial"].get("point", {"x": FIDUCIAL_X_OFFSET, "y": 0}))
     fiducial_stage = patterning.get_milling_stages("fiducial", protocol, fiducial_position)
-    stages += fiducial_stage
+
+    use_fiducial = settings.protocol["options"].get("use_fiducial", True)
+    if use_fiducial:
+        stages += fiducial_stage
     
     if validate:
         stages =update_milling_ui(stages, parent_ui, 
@@ -569,17 +572,21 @@ def setup_lamella(
     # fiducial
     # save fiducial information
     n_fiducial = len(fiducial_stage)
-    lamella.protocol["fiducial"] = deepcopy(patterning.get_protocol_from_stages(stages[-n_fiducial:]))
-    lamella.protocol["fiducial"]["point"] = stages[-n_fiducial].pattern.point.to_dict()
+    if use_fiducial:
+        fiducial_stage = deepcopy(stages[-n_fiducial:])
+
+    lamella.protocol["fiducial"] = deepcopy(patterning.get_protocol_from_stages(fiducial_stage))
+    lamella.protocol["fiducial"]["point"] = fiducial_stage.pattern.point.to_dict()
     lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, 
-        deepcopy(stages[-n_fiducial].pattern.point), 
+        deepcopy(fiducial_stage.pattern.point), 
         lamella.protocol["fiducial"]["stages"][0]["height"])
 
     # mill the fiducial
-    fiducial_stage = patterning.get_milling_stages("fiducial", lamella.protocol, Point.from_dict(lamella.protocol["fiducial"]["point"]))
-    stages =update_milling_ui(fiducial_stage, parent_ui, 
-        msg=f"Press Run Milling to mill the fiducial for {lamella._petname}. Press Continue when done.", 
-        validate=validate)
+    if use_fiducial:
+        fiducial_stage = patterning.get_milling_stages("fiducial", lamella.protocol, Point.from_dict(lamella.protocol["fiducial"]["point"]))
+        stages = update_milling_ui(fiducial_stage, parent_ui, 
+            msg=f"Press Run Milling to mill the fiducial for {lamella._petname}. Press Continue when done.", 
+            validate=validate)
 
     # set reduced area for fiducial alignment
     settings.image.reduced_area = lamella.fiducial_area
