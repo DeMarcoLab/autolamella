@@ -107,7 +107,7 @@ def liftout_lamella(
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
 
     # DETECT COPPER ADAPTER, VOLUME TOP
-    scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
+    scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ELECTRON)
     features = [CopperAdapterTopEdge(), VolumeBlockBottomEdge()] if np.isclose(scan_rotation, 0) else [CopperAdapterBottomEdge(), VolumeBlockTopEdge()]
     
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
@@ -295,7 +295,7 @@ def land_lamella(
     # reference images
     settings.image.save = True
     settings.image.hfw = fcfg.REFERENCE_HFW_LOW
-    settings.image.filename = f"ref_{lamella.state.stage.name}_manipualtor_inserted"
+    settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_inserted"
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     set_images_ui(parent_ui, eb_image, ib_image)
 
@@ -307,13 +307,12 @@ def land_lamella(
     settings.image.beam_type = BeamType.ELECTRON
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
 
-    # DETECT COPPER ADAPTER, LAMELLA TOP
+    # detect volume top right corner, landing grid right edge 
     scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ELECTRON)
     features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
     set_images_ui(parent_ui, det.fibsem_image, None)
 
-    # MOVE TO LANDING GRID
     detection.move_based_on_detection(
         microscope, settings, det, 
         beam_type=settings.image.beam_type, 
