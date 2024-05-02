@@ -528,10 +528,11 @@ def setup_lamella(
     if use_fiducial:
         stages += fiducial_stage
     
-    if validate:
-        stages =update_milling_ui(stages, parent_ui, 
+    validate_position = True if method != "autolamella-on-grid" else validate
+    if validate_position:
+        stages = update_milling_ui(stages, parent_ui, 
             msg=f"Confirm the positions for the {lamella._petname} milling. Press Continue to Confirm.",
-            validate=True, # always validate, until we fix milling issue
+            validate=validate_position, # always validate non on-grid for now
             milling_enabled=False)
        
     from pprint import pprint
