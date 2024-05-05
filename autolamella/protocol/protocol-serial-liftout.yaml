@@ -154,6 +154,16 @@ milling:
         application_file: "Si"
         type: "SerialSection"
         preset: "30 keV; 20 nA"
+    landing-thin:
+        application_file: Si
+        depth: 19.0e-06
+        height: 20.0e-06
+        hfw: 80.0e-6
+        milling_current: 1.0e-09
+        preset: 30 keV; 2.5 nA
+        width: 5.0e-6
+        scan_direction: RightToLeft
+        type: Rectangle
     lamella:
         resolution:
         - 3072
