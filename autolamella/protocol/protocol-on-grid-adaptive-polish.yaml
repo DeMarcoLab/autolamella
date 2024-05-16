@@ -1,0 +1,130 @@
+options:
+  name: autolamella-base-scan-rotation-0deg
+  method: autolamella-on-grid # autolamella-waffle or autolamella-on-grid
+  checkpoint: autolamella-mega-20240107.pt
+  alignment_attempts: 3.0
+  alignment_at_milling_current: false
+  take_final_reference_images: true 
+  high_quality_image:
+    enabled: false
+    dwell_time: 2.0e-6
+    resolution: [3072, 2048]
+    hfw: 50.e-6
+    frame_integration: 2
+  take_final_overview_image: true
+  lamella_tilt_angle: 18.0
+  use_fiducial: true
+  use_microexpansion: true
+  use_notch: false 
+  supervise:
+    trench: false
+    undercut: true
+    setup_lamella: true
+    features: true
+    lamella: true
+    mill_rough: true
+    mill_regular: true
+    mill_polishing: true
+milling:
+  fiducial:
+    enabled: true
+    height: 10.e-6
+    width: 1.e-6
+    depth: 1.0e-6
+    rotation: 45
+    milling_current: 2.0e-9
+    preset: "30 keV; 20 nA" # TESCAN only
+    application_file: Si
+    passes: null
+    hfw: 80.e-6
+    type: Fiducial
+  lamella:
+    stages:
+      -   application_file: Si-ccs
+          cross_section: CleaningCrossSection
+          depth: 6.5e-07
+          dwell_time: 1.0e-06
+          hfw: 7.999999999999999e-05
+          lamella_height: 6.0e-07
+          lamella_width: 6.0e-06
+          milling_current: 7.4e-10
+          offset: 2.0e-06
+          patterning_mode: Serial
+          preset: ''
+          rate: 0.0001
+          size_ratio: 1.0
+          spot_size: 5.0e-08
+          trench_height: 3.5e-06
+          name: Rough Cut
+      -   application_file: Si-ccs
+          cross_section: CleaningCrossSection
+          depth: 6.5e-07
+          dwell_time: 1.0e-06
+          hfw: 7.999999999999999e-05
+          lamella_height: 6.0e-07
+          lamella_width: 6.0e-06
+          milling_current: 2.0e-10
+          offset: 5.0e-07
+          patterning_mode: Serial
+          preset: ''
+          rate: 0.0001
+          size_ratio: 1.0
+          spot_size: 5.0e-08
+          trench_height: 2.0e-06
+          name: Regular Cut
+      -   application_file: Si-ccs
+          cross_section: CleaningCrossSection
+          depth: 4.0e-07
+          dwell_time: 1.0e-06
+          hfw: 7.999999999999999e-05
+          lamella_height: 6.0e-07
+          lamella_width: 6.0e-06
+          milling_current: 6.0e-11
+          offset: 0.0
+          patterning_mode: Serial
+          preset: ''
+          rate: 0.0001
+          size_ratio: 1.0
+          spot_size: 5.0e-08
+          trench_height: 5.0e-07
+          name: Polishing Cut
+      -   application_file: Si-ccs
+          cross_section: CleaningCrossSection
+          depth: 4.0e-07
+          dwell_time: 1.0e-06
+          hfw: 7.999999999999999e-05
+          lamella_height: 6.0e-07
+          lamella_width: 6.0e-06
+          milling_current: 6.0e-11
+          offset: 0.0
+          patterning_mode: Serial
+          preset: ''
+          rate: 0.0001
+          size_ratio: 1.0
+          spot_size: 5.0e-08
+          trench_height: 5.0e-07
+          name: Adaptive polishing
+  microexpansion:
+    width: 0.5e-6
+    height: 18.e-6
+    depth: 1.0e-6
+    distance: 10.e-6  # distance between micoexpansion and lamella centre
+    milling_current: 2.e-9
+    preset: "30 keV; 2.5 nA" # TESCAN only
+    hfw: 200e-6
+    application_file: Si
+    type: MicroExpansion
+  notch:
+    application_file: Si
+    depth: 2.5e-06
+    distance: 2.0e-06
+    enabled: true
+    flip: 0
+    hfw: 80e-6
+    hheight: 2.0e-07
+    hwidth: 4.0e-06
+    milling_current: 2.0e-09
+    preset: 30 keV; 2.5 nA
+    vheight: 2.0e-06
+    vwidth: 2.0e-07
+    type: WaffleNotch
