@@ -82,8 +82,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.label_title.setText(f"AutoLamella v{autolamella.__version__}")
 
         self.viewer = viewer
-        self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
-        self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
+        #TODO: LMAP Remove comments
+        #self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
+        #self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
         self._PROTOCOL_LOADED = False
         self._microscope_ui_loaded = False
