@@ -5,7 +5,7 @@ options:
     checkpoint: autolamella-mega-20240107.pt
     batch_mode: true
     confirm_next_stage: true
-    lamella_start_position: autoliftout-pre-tilt-35-deg-grid-01-lamella
+    trench_start_position: autoliftout-pre-tilt-35-deg-grid-01-lamella
     liftout_joining_method: None
     liftout_contact_detection: True
     liftout_contact_offset: 0.25e-6

@@ -317,9 +317,9 @@
              </widget>
             </item>
             <item row="8" column="0">
-             <widget class="QLabel" name="label_options_lamella_start_position">
+             <widget class="QLabel" name="label_options_trench_start_position">
               <property name="text">
-               <string>Lamella Start Position</string>
+               <string>Trench Start Position</string>
               </property>
              </widget>
             </item>
@@ -442,7 +442,7 @@
              </widget>
             </item>
             <item row="8" column="1">
-             <widget class="QComboBox" name="comboBox_options_lamella_start_position"/>
+             <widget class="QComboBox" name="comboBox_options_trench_start_position"/>
             </item>
             <item row="9" column="1">
              <widget class="QComboBox" name="comboBox_options_liftout_joining_method"/>

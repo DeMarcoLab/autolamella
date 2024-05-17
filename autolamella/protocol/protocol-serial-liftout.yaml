@@ -4,7 +4,7 @@ options:
     checkpoint: autolamella-serial-liftout-20240107.pt
     batch_mode: true
     confirm_next_stage: true
-    lamella_start_position: autoliftout-serial-pre-tilt-35-deg-grid-01-lamella
+    trench_start_position: autoliftout-serial-pre-tilt-35-deg-grid-01-lamella
     landing_start_position: autoliftout-serial-pre-tilt-35-deg-grid-02-landing
     compucentric_x_offset: 0.0e-6
     compucentric_y_offset: 0.0e-6

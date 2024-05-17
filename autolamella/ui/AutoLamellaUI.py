@@ -241,6 +241,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
         self.comboBox_ml_checkpoint.addItems(__AUTOLAMELLA_CHECKPOINTS__)
 
+        self.comboBox_options_liftout_joining_method.addItems(cfg.__AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__)
+        self.comboBox_options_landing_joining_method.addItems(cfg.__AUTOLIFTOUT_LANDING_JOIN_METHODS__)
+
+        _AVAILABLE_POSITIONS_ = utils._get_positions()
+        self.comboBox_options_trench_start_position.addItems(_AVAILABLE_POSITIONS_)
+        self.comboBox_options_landing_start_position.addItems(_AVAILABLE_POSITIONS_)
+
     def _save_milling_protocol(self):
         print("save milling protocol")
 
@@ -379,15 +386,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # autoliftout components
         _LIFTOUT_METHOD = _is_method_type(method, "liftout")
+        _CLASSIC_LIFTOUT_METHOD = method == "autolamella-liftout"
         self.checkBox_options_confirm_next_stage.setVisible(_LIFTOUT_METHOD)
-        self.label_options_lamella_start_position.setVisible(_LIFTOUT_METHOD)
-        self.label_options_liftout_joining_method.setVisible(_LIFTOUT_METHOD)
+        self.label_options_trench_start_position.setVisible(_LIFTOUT_METHOD)
+        self.label_options_liftout_joining_method.setVisible(_LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD)
         self.label_options_landing_start_position.setVisible(_LIFTOUT_METHOD)
-        self.label_options_landing_joining_method.setVisible(_LIFTOUT_METHOD)
-        self.comboBox_options_lamella_start_position.setVisible(_LIFTOUT_METHOD)
-        self.comboBox_options_liftout_joining_method.setVisible(_LIFTOUT_METHOD)
+        self.label_options_landing_joining_method.setVisible(_LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD)
+        self.comboBox_options_trench_start_position.setVisible(_LIFTOUT_METHOD)
+        self.comboBox_options_liftout_joining_method.setVisible(_LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD)
         self.comboBox_options_landing_start_position.setVisible(_LIFTOUT_METHOD)
-        self.comboBox_options_landing_joining_method.setVisible(_LIFTOUT_METHOD)
+        self.comboBox_options_landing_joining_method.setVisible(_LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD)
         self.checkBox_supervise_liftout.setVisible(_LIFTOUT_METHOD)
         self.checkBox_supervise_landing.setVisible(_LIFTOUT_METHOD)
         if _LIFTOUT_METHOD:
@@ -401,8 +409,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.settings.protocol["options"].get("landing_joining_method", "Weld")
             )
 
-            self.comboBox_options_lamella_start_position.setCurrentText(
-                self.settings.protocol["options"]["lamella_start_position"]
+            self.comboBox_options_trench_start_position.setCurrentText(
+                self.settings.protocol["options"]["trench_start_position"]
             )
             self.comboBox_options_landing_start_position.setCurrentText(
                 self.settings.protocol["options"]["landing_start_position"]
@@ -505,8 +513,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
 
             # start positions
-            self.settings.protocol["options"]["lamella_start_position"] = (
-                self.comboBox_options_lamella_start_position.currentText()
+            self.settings.protocol["options"]["trench_start_position"] = (
+                self.comboBox_options_trench_start_position.currentText()
             )
             self.settings.protocol["options"]["landing_start_position"] = (
                 self.comboBox_options_landing_start_position.currentText()

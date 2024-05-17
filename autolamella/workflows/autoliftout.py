@@ -1183,8 +1183,8 @@ def select_lamella_positions(
     select_another = get_current_lamella(experiment, parent_ui)
 
     if select_another:
-        lamella_start_position = fibsem_utils._get_position(settings.protocol["options"]["lamella_start_position"])
-        microscope.safe_absolute_stage_movement(lamella_start_position)
+        trench_start_position = fibsem_utils._get_position(settings.protocol["options"]["trench_start_position"])
+        microscope.safe_absolute_stage_movement(trench_start_position)
 
     # allow the user to select additional lamella positions
     while select_another:

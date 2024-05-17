@@ -252,7 +252,7 @@
          </spacer>
         </item>
         <item row="4" column="0">
-         <widget class="QLabel" name="label_options_lamella_start_position">
+         <widget class="QLabel" name="label_options_trench_start_position">
           <property name="text">
            <string>Lamella Start Position</string>
           </property>
@@ -333,7 +333,7 @@
          </widget>
         </item>
         <item row="4" column="1">
-         <widget class="QComboBox" name="comboBox_options_lamella_start_position"/>
+         <widget class="QComboBox" name="comboBox_options_trench_start_position"/>
         </item>
         <item row="7" column="0">
          <widget class="QLabel" name="label_options_landing_joining_method">

@@ -107,7 +107,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.comboBox_options_landing_joining_method.addItems(cfg.__AUTOLIFTOUT_LANDING_JOIN_METHODS__)
 
         _AVAILABLE_POSITIONS_ = futils._get_positions()
-        self.comboBox_options_lamella_start_position.addItems(_AVAILABLE_POSITIONS_)
+        self.comboBox_options_trench_start_position.addItems(_AVAILABLE_POSITIONS_)
         self.comboBox_options_landing_start_position.addItems(_AVAILABLE_POSITIONS_)
 
         # workflow buttons
@@ -387,7 +387,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         self.comboBox_options_liftout_joining_method.setCurrentText(options.get("liftout_joining_method", "None"))
         self.comboBox_options_landing_joining_method.setCurrentText(options.get("landing_joining_method", "Weld"))
 
-        self.comboBox_options_lamella_start_position.setCurrentText(options["lamella_start_position"])
+        self.comboBox_options_trench_start_position.setCurrentText(options["trench_start_position"])
         self.comboBox_options_landing_start_position.setCurrentText(options["landing_start_position"])
 
         # supervision
@@ -416,7 +416,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
             "confirm_next_stage": self.checkBox_options_confirm_next_stage.isChecked(),
             "liftout_joining_method": self.comboBox_options_liftout_joining_method.currentText(),
             "landing_joining_method": self.comboBox_options_landing_joining_method.currentText(),
-            "lamella_start_position": self.comboBox_options_lamella_start_position.currentText(),
+            "trench_start_position": self.comboBox_options_trench_start_position.currentText(),
             "landing_start_position": self.comboBox_options_landing_start_position.currentText(),
             "supervise": {
                 "trench": self.checkBox_supervise_mill_trench.isChecked(),
