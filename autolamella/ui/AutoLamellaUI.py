@@ -304,9 +304,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             return
 
         self._UPDATING_PROTOCOL_UI = True
-        
-        #reference to self.settings.protocol["options"]
-        sett_options= self.settings.protocol["options"]
+
 
         if _load:
             method = self.settings.protocol["options"]["method"]
@@ -321,34 +319,34 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
 
         # options
-        self.beamshift_attempts.setValue(sett_options.get("alignment_attempts", 3))
-        self.checkBox_align_at_milling_current.setChecked(sett_options.get("alignment_at_milling_current", True))
+        self.beamshift_attempts.setValue(self.settings.protocol["options"].get("alignment_attempts", 3))
+        self.checkBox_align_at_milling_current.setChecked(self.settings.protocol["options"].get("alignment_at_milling_current", True))
 
-        self.checkBox_take_final_reference_images.setChecked(sett_options.get("take_final_reference_images", True))
-        self.checkBox_take_final_high_quality_reference.setChecked(sett_options.get("high_quality_image", {}).get("enabled", False))
+        self.checkBox_take_final_reference_images.setChecked(self.settings.protocol["options"].get("take_final_reference_images", True))
+        self.checkBox_take_final_high_quality_reference.setChecked(self.settings.protocol["options"].get("high_quality_image", {}).get("enabled", False))
 
         # lamella 
-        self.doubleSpinBox_lamella_tilt_angle.setValue(sett_options.get("lamella_tilt_angle", 18))
-        self.checkBox_use_microexpansion.setChecked(sett_options.get("use_microexpansion", True))
-        self.checkBox_use_notch.setChecked(sett_options.get("use_notch", True))
+        self.doubleSpinBox_lamella_tilt_angle.setValue(self.settings.protocol["options"].get("lamella_tilt_angle", 18))
+        self.checkBox_use_microexpansion.setChecked(self.settings.protocol["options"].get("use_microexpansion", True))
+        self.checkBox_use_notch.setChecked(self.settings.protocol["options"].get("use_notch", True))
 
         # supervision
-        self.checkBox_setup.setChecked(sett_options["supervise"].get("setup_lamella", True))
-        self.checkBox_supervise_mill_rough.setChecked(sett_options["supervise"].get("mill_rough", True))
-        self.checkBox_supervise_mill_polishing.setChecked(sett_options["supervise"].get("mill_polishing", True))
+        self.checkBox_setup.setChecked(self.settings.protocol["options"]["supervise"].get("setup_lamella", True))
+        self.checkBox_supervise_mill_rough.setChecked(self.settings.protocol["options"]["supervise"].get("mill_rough", True))
+        self.checkBox_supervise_mill_polishing.setChecked(self.settings.protocol["options"]["supervise"].get("mill_polishing", True))
 
         # TRENCH METHOD ONLY (waffle, serial-liftout)
         _TRENCH_METHOD = _is_method_type(method, "trench")
         if _TRENCH_METHOD:
             # supervision
-            self.checkBox_trench.setChecked(sett_options["supervise"].get("trench", True))
-            self.checkBox_undercut.setChecked(sett_options["supervise"].get("undercut", True))
+            self.checkBox_trench.setChecked(self.settings.protocol["options"]["supervise"].get("trench", True))
+            self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"].get("undercut", True))
 
             # machine learning
-            self.comboBox_ml_checkpoint.setCurrentText(sett_options.get("checkpoint", cfg.__DEFAULT_CHECKPOINT__))
+            self.comboBox_ml_checkpoint.setCurrentText(self.settings.protocol["options"].get("checkpoint", cfg.__DEFAULT_CHECKPOINT__))
 
             # undercut
-            self.doubleSpinBox_undercut_tilt.setValue(sett_options.get("undercut_tilt_angle", -5))
+            self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["options"].get("undercut_tilt_angle", -5))
 
         self.checkBox_trench.setVisible(_TRENCH_METHOD)
         self.checkBox_undercut.setVisible(_TRENCH_METHOD)
@@ -396,20 +394,20 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if _LIFTOUT_METHOD:
             self.checkBox_options_confirm_next_stage.setChecked(
-                sett_options.get("confirm_next_stage", True)
+                self.settings.protocol["options"].get("confirm_next_stage", True)
             )
             self.comboBox_options_liftout_joining_method.setCurrentText(
-                sett_options.get("liftout_joining_method", "None")
+                self.settings.protocol["options"].get("liftout_joining_method", "None")
             )
             self.comboBox_options_landing_joining_method.setCurrentText(
-                sett_options.get("landing_joining_method", "Weld")
+                self.settings.protocol["options"].get("landing_joining_method", "Weld")
             )
 
             self.comboBox_options_trench_start_position.setCurrentText(
-                sett_options["trench_start_position"]
+                self.settings.protocol["options"]["trench_start_position"]
             )
             self.comboBox_options_landing_start_position.setCurrentText(
-                sett_options["landing_start_position"]
+                self.settings.protocol["options"]["landing_start_position"]
             )
 
             self.doubleSpinBox_section_thickness.setValue(
@@ -495,11 +493,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.doubleSpinBox_undercut_tilt.value()
             )
 
-        if _is_method_type(sett_options["method"], "liftout"):
+        if _is_method_type(self.settings.protocol["options"]["method"], "liftout"):
             # supervision
-            sett_options["confirm_next_stage"] = self.checkBox_options_confirm_next_stage.isChecked()
-            sett_options["supervise"]["liftout"] = self.checkBox_supervise_liftout.isChecked()
-            sett_options["supervise"]["landing"] = self.checkBox_supervise_landing.isChecked()
+            self.settings.protocol["options"]["confirm_next_stage"] = self.checkBox_options_confirm_next_stage.isChecked()
+            self.settings.protocol["options"]["supervise"]["liftout"] = self.checkBox_supervise_liftout.isChecked()
+            self.settings.protocol["options"]["supervise"]["landing"] = self.checkBox_supervise_landing.isChecked()
             self.settings.protocol["options"]["confirm_next_stage"] = (
                 self.checkBox_options_confirm_next_stage.isChecked()
             )
@@ -511,8 +509,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
 
             # joining methods
-            sett_options["liftout_joining_method"] = self.comboBox_options_liftout_joining_method.currentText()
-            sett_options["landing_joining_method"] = self.comboBox_options_landing_joining_method.currentText()
+            self.settings.protocol["options"]["liftout_joining_method"] = self.comboBox_options_liftout_joining_method.currentText()
+            self.settings.protocol["options"]["landing_joining_method"] = self.comboBox_options_landing_joining_method.currentText()
             self.settings.protocol["options"]["liftout_joining_method"] = (
                 self.comboBox_options_liftout_joining_method.currentText()
             )
