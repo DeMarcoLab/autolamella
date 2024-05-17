@@ -53,13 +53,6 @@
           </property>
          </widget>
         </item>
-        <item row="19" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_serial_liftout_landing">
-          <property name="text">
-           <string>Run Landing Workflow</string>
-          </property>
-         </widget>
-        </item>
         <item row="16" column="0" colspan="2">
          <spacer name="verticalSpacer">
           <property name="orientation">
@@ -73,10 +66,10 @@
           </property>
          </spacer>
         </item>
-        <item row="18" column="0" colspan="2">
+        <item row="22" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_autoliftout">
           <property name="text">
-           <string>Run AutoLiftout</string>
+           <string>Run Liftout Workflow</string>
           </property>
          </widget>
         </item>
@@ -87,7 +80,7 @@
           </property>
          </widget>
         </item>
-        <item row="22" column="0" colspan="2">
+        <item row="24" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_setup_autolamella">
           <property name="text">
            <string>Run AutoLamella</string>
@@ -115,17 +108,17 @@
           </property>
          </widget>
         </item>
+        <item row="27" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_stop_workflow">
+          <property name="text">
+           <string>Stop Workflow</string>
+          </property>
+         </widget>
+        </item>
         <item row="10" column="1">
          <widget class="QPushButton" name="pushButton_go_to_lamella">
           <property name="text">
            <string>Go to position</string>
-          </property>
-         </widget>
-        </item>
-        <item row="25" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_stop_workflow">
-          <property name="text">
-           <string>Stop Workflow</string>
           </property>
          </widget>
         </item>
@@ -139,7 +132,7 @@
         <item row="12" column="0">
          <widget class="QComboBox" name="comboBox_lamella_history"/>
         </item>
-        <item row="24" column="0" colspan="2">
+        <item row="26" column="0" colspan="2">
          <widget class="QLabel" name="label_run_autolamella_info">
           <property name="text">
            <string>Run AutoLamella will run all workflows stages.</string>
@@ -228,6 +221,13 @@
          <widget class="QCheckBox" name="checkBox_show_lamella_in_view">
           <property name="text">
            <string>Show Lamellas In View</string>
+          </property>
+         </widget>
+        </item>
+        <item row="23" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_serial_liftout_landing">
+          <property name="text">
+           <string>Run Landing Workflow</string>
           </property>
          </widget>
         </item>
@@ -654,12 +654,6 @@
     <addaction name="actionLoad_Milling_Pattern"/>
     <addaction name="actionSave_Milling_Pattern"/>
    </widget>
-   <widget class="QMenu" name="menuWorkflow">
-    <property name="title">
-     <string>Workflow</string>
-    </property>
-    <addaction name="actionStop_Workflow"/>
-   </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>Help</string>
@@ -668,7 +662,6 @@
    </widget>
    <addaction name="menuAutoLamella"/>
    <addaction name="menuTools"/>
-   <addaction name="menuWorkflow"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>

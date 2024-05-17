@@ -1010,7 +1010,7 @@ def get_current_lamella(
     select_another_lamella = (
         ask_user(
             parent_ui,
-            msg=f"Do you want to select another lamella? {len(experiment.positions)} currentlly selected.",
+            msg=f"Do you want to select another trench? {len(experiment.positions)} currentlly selected.",
             pos="Yes",
             neg="No",
         )

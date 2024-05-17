@@ -3,17 +3,32 @@ import os
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
+from collections import Counter
+
 
 import napari
-from napari.qt.threading import thread_worker
 import yaml
+
+from napari.qt.threading import thread_worker
 from fibsem import utils
 from fibsem import patterning
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     MicroscopeSettings,
-    FibsemStagePosition, Point, BeamType
+    FibsemStagePosition, Point
 )
+
+# TODO: migrate
+# from fibsem.ui import (
+#     FibsemImageSettingsWidget,
+#     FibsemMovementWidget,
+#     FibsemSystemSetupWidget,
+#     FibsemMillingWidget,
+#     FibsemEmbeddedDetectionUI,
+#     FibsemCryoDepositionWidget,
+#     FibsemMinimapWidget,
+#     utils as fui
+# )
 from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
 from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
 from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
@@ -23,9 +38,8 @@ from fibsem.ui.FibsemCryoDepositionWidget import FibsemCryoDepositionWidget
 from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
 from fibsem.ui import utils as fui
 from qtpy import QtWidgets
-import autolamella
 
-from autolamella.ui import utils as aui_utils
+import autolamella
 import autolamella.config as cfg
 from autolamella.structures import (
     AutoLamellaWaffleStage,
@@ -33,11 +47,10 @@ from autolamella.structures import (
     Lamella,
     LamellaState,
 )
+from autolamella.ui import utils as aui_utils
+from autolamella.ui import _stylesheets
 from autolamella.ui.qt import AutoLamellaUI
 from PyQt5.QtCore import pyqtSignal
-from autolamella.ui import _stylesheets
-from collections import Counter
-import numpy as np
 
 
 
@@ -65,7 +78,8 @@ CONFIGURATION = {
 # invert the dictionary
 CONFIGURATION["TABS"] = {v: k for k, v in CONFIGURATION["TABS_ID"].items()}
 
-TRENCH_METHODS = ["autolamella-waflle", "autolamella-liftout", "autolamella-serial-liftout"]
+ON_GRID_METHODS = ["autolamella-on-grid", "autolamella-waffle"]
+TRENCH_METHODS = ["autolamella-waffle", "autolamella-liftout", "autolamella-serial-liftout"]
 LIFTOUT_METHODS = ["autolamella-liftout", "autolamella-serial-liftout"]
 
 def _is_method_type(method: str, method_type: str) -> bool:
@@ -73,6 +87,8 @@ def _is_method_type(method: str, method_type: str) -> bool:
         return method in TRENCH_METHODS
     elif method_type == "liftout":
         return method in LIFTOUT_METHODS
+    elif method_type == "on-grid":
+        return method in ON_GRID_METHODS
     else:
         return False
 
@@ -185,9 +201,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionLoad_Positions.triggered.connect(self._load_positions)
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
         
-        self.actionStop_Workflow.triggered.connect(self._stop_workflow_thread)
-        self.menuWorkflow.setEnabled(True)
-        self.actionStop_Workflow.setVisible(False)
+        # stop workflow 
+        self.pushButton_stop_workflow.clicked.connect(self._stop_workflow_thread)
+        self.pushButton_stop_workflow.setVisible(False)
+        self.pushButton_stop_workflow.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+
 
         self.actionLoad_Milling_Pattern.triggered.connect(self._load_milling_protocol)
         self.actionSave_Milling_Pattern.triggered.connect(self._save_milling_protocol)
@@ -668,8 +686,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionOpen_Minimap.setVisible(_protocol_loaded)
         self.actionLoad_Minimap_Image.setVisible(_protocol_loaded and cfg._MINIMAP_VISUALISATION)
         self.actionLoad_Positions.setVisible(_protocol_loaded)
-        self.actionLoad_Milling_Pattern.setVisible(_protocol_loaded)
-        self.actionSave_Milling_Pattern.setVisible(_protocol_loaded)
+        self.actionLoad_Milling_Pattern.setVisible(_protocol_loaded and False) # disable
+        self.actionSave_Milling_Pattern.setVisible(_protocol_loaded and False) # disable
 
         # labels
         if _experiment_loaded:
@@ -723,13 +741,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _READY_LAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
             _READY_SETUP_LAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
             _READY_ROUGH = _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0
-            _READY_AUTOLAMELLA = _READY_SETUP_LAMELLA or _READY_ROUGH
+            _READY_AUTOLAMELLA = _READY_SETUP_LAMELLA or _READY_ROUGH or _READY_LANDED
 
             _ENABLE_TRENCH = _TRENCH_METHOD and _READY_TRENCH
             _ENABLE_UNDERCUT = _TRENCH_METHOD and _READY_UNDERCUT
             _ENABLE_LIFTOUT = _LIFTOUT_METHOD and (_READY_TRENCH or _READY_UNDERCUT or _READY_LIFTOUT)
             _ENABLE_LANDING = _LIFTOUT_METHOD and _READY_LANDING
-            _ENABLE_LAMELLA = _READY_LAMELLA
+            _ENABLE_LAMELLA = _READY_LAMELLA 
             _ENABLE_AUTOLAMELLA = _READY_AUTOLAMELLA
             
             # TODO: handle failed lamella with the button display
@@ -752,6 +770,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # autolamella
             self.pushButton_run_setup_autolamella.setVisible(True)
             self.pushButton_run_setup_autolamella.setEnabled(_ENABLE_FULL_AUTOLAMELLA)
+            self.label_run_autolamella_info.setVisible(_ENABLE_FULL_AUTOLAMELLA)
 
 
             self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
@@ -923,7 +942,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             if self._PROTOCOL_LOADED:
 
                 _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, False
-                # method = self.settings.protocol["options"].get("method", None)
                 
                 if _is_method_type(method, "trench") and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
                     _DISPLAY_TRENCH = True
@@ -1383,8 +1401,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(self._update_milling_position)
         self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Experiment"])
-        self.menuWorkflow.setEnabled(False)
-        self.actionStop_Workflow.setVisible(False)
+        self.pushButton_stop_workflow.setVisible(False)
 
         # clear the image settings save settings etc
         self.image_widget.checkBox_image_save_image.setChecked(False)
@@ -1453,8 +1470,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
         self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
-        self.menuWorkflow.setEnabled(True)
-        self.actionStop_Workflow.setVisible(True)
+        self.pushButton_stop_workflow.setVisible(True)
 
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
