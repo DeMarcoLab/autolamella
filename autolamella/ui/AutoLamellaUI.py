@@ -5,39 +5,29 @@ from datetime import datetime
 from pathlib import Path
 from collections import Counter
 
-
 import napari
 import yaml
 
 from napari.qt.threading import thread_worker
-from fibsem import utils
-from fibsem import patterning
+from PyQt5.QtCore import pyqtSignal
+from qtpy import QtWidgets
+
+from fibsem import patterning, utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     MicroscopeSettings,
     FibsemStagePosition, Point
 )
-
-# TODO: migrate
-# from fibsem.ui import (
-#     FibsemImageSettingsWidget,
-#     FibsemMovementWidget,
-#     FibsemSystemSetupWidget,
-#     FibsemMillingWidget,
-#     FibsemEmbeddedDetectionUI,
-#     FibsemCryoDepositionWidget,
-#     FibsemMinimapWidget,
-#     utils as fui
-# )
-from fibsem.ui.FibsemImageSettingsWidget import FibsemImageSettingsWidget
-from fibsem.ui.FibsemMovementWidget import FibsemMovementWidget
-from fibsem.ui.FibsemSystemSetupWidget import FibsemSystemSetupWidget
-from fibsem.ui.FibsemMillingWidget import FibsemMillingWidget
-from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
-from fibsem.ui.FibsemCryoDepositionWidget import FibsemCryoDepositionWidget
-from fibsem.ui.FibsemMinimapWidget import FibsemMinimapWidget
-from fibsem.ui import utils as fui
-from qtpy import QtWidgets
+from fibsem.ui import (
+    FibsemImageSettingsWidget,
+    FibsemMovementWidget,
+    FibsemSystemSetupWidget,
+    FibsemMillingWidget,
+    FibsemEmbeddedDetectionUI,
+    FibsemCryoDepositionWidget,
+    FibsemMinimapWidget,
+    utils as fui
+)
 
 import autolamella
 import autolamella.config as cfg
@@ -47,10 +37,9 @@ from autolamella.structures import (
     Lamella,
     LamellaState,
 )
-from autolamella.ui import utils as aui_utils
-from autolamella.ui import _stylesheets
-from autolamella.ui.qt import AutoLamellaUI
-from PyQt5.QtCore import pyqtSignal
+from autolamella.ui import stylesheets, AutoLamellaUI
+from autolamella.ui.utils import setup_experiment_ui_v2
+# from autolamella.ui.qt import AutoLamellaUI
 
 
 
@@ -204,7 +193,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # stop workflow 
         self.pushButton_stop_workflow.clicked.connect(self._stop_workflow_thread)
         self.pushButton_stop_workflow.setVisible(False)
-        self.pushButton_stop_workflow.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
+        self.pushButton_stop_workflow.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
 
 
         self.actionLoad_Milling_Pattern.triggered.connect(self._load_milling_protocol)
@@ -221,9 +210,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.ui_signal.connect(self._ui_signal)
         self._run_milling_signal.connect(self._run_milling)
 
-        self.pushButton_add_lamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_remove_lamella.setStyleSheet(_stylesheets._RED_PUSHBUTTON_STYLE)
-        self.pushButton_go_to_lamella.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_add_lamella.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_remove_lamella.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
+        self.pushButton_go_to_lamella.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
 
         # comboboxes
         self.comboBox_method.addItems(cfg.__AUTOLAMELLA_METHODS__)
@@ -427,7 +416,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def setup_experiment(self):
         new_experiment = bool(self.sender() is self.actionNew_Experiment)
-        experiment = aui_utils.setup_experiment_ui_v2(
+        experiment = setup_experiment_ui_v2(
             self, new_experiment=new_experiment
         )
 
@@ -773,13 +762,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.label_run_autolamella_info.setVisible(_ENABLE_FULL_AUTOLAMELLA)
 
 
-            self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_FULL_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_waffle_trench.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_waffle_undercut.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_setup_autolamella.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_FULL_AUTOLAMELLA else stylesheets._DISABLED_PUSHBUTTON_STYLE)
             # liftout
-            self.pushButton_setup_autoliftout.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _LIFTOUT_METHOD  else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_run_autoliftout.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LIFTOUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            self.pushButton_run_serial_liftout_landing.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LANDING else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_setup_autoliftout.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE if _LIFTOUT_METHOD  else stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_autoliftout.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LIFTOUT else stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_serial_liftout_landing.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LANDING else stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
             # global button visibility configuration
             SHOW_INDIVUDAL_STAGES = CONFIGURATION["SHOW_INDIVIDUAL_STAGES"]
@@ -796,9 +785,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_run_waffle_trench.setEnabled(False)
                 self.pushButton_run_waffle_undercut.setEnabled(False)
                 self.pushButton_run_setup_autolamella.setEnabled(False)
-                self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-                self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-                self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_waffle_trench.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_waffle_undercut.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_run_setup_autolamella.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
         # Current Lamella Status
         if _lamella_selected:
@@ -864,17 +853,17 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             READY_STAGES = [AutoLamellaWaffleStage.SetupLamella] if method == "autolamella-on-grid" else [AutoLamellaWaffleStage.ReadyTrench]
             if lamella.state.stage in SETUP_STAGES:
                 self.pushButton_save_position.setText(f"Save Position")
-                self.pushButton_save_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+                self.pushButton_save_position.setStyleSheet(stylesheets._ORANGE_PUSHBUTTON_STYLE)
                 self.pushButton_save_position.setEnabled(True)
                 self.milling_widget._PATTERN_IS_MOVEABLE = True
             elif lamella.state.stage in READY_STAGES:
                 self.pushButton_save_position.setText(f"Position Ready")
-                self.pushButton_save_position.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+                self.pushButton_save_position.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
                 self.pushButton_save_position.setEnabled(True)
                 self.milling_widget._PATTERN_IS_MOVEABLE = False
             else:
                 self.pushButton_save_position.setText(f"")
-                self.pushButton_save_position.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+                self.pushButton_save_position.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
                 self.pushButton_save_position.setEnabled(False)
                 self.milling_widget._PATTERN_IS_MOVEABLE = True
             
@@ -883,12 +872,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_lamella_landing_selected.setVisible(True)
                 if lamella.landing_selected:
                     self.pushButton_lamella_landing_selected.setText(f"Landing Position Selected")
-                    self.pushButton_lamella_landing_selected.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+                    self.pushButton_lamella_landing_selected.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
                     self.pushButton_lamella_landing_selected.setEnabled(True)
                 else:
                     self.pushButton_lamella_landing_selected.setEnabled(False)
                     self.pushButton_lamella_landing_selected.setText(f"No Landing Position")
-                    self.pushButton_lamella_landing_selected.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+                    self.pushButton_lamella_landing_selected.setStyleSheet(stylesheets._ORANGE_PUSHBUTTON_STYLE)
                     self.pushButton_lamella_landing_selected.setToolTip("Run Setup Liftout to select a Landing Position")
             else:
                 self.pushButton_lamella_landing_selected.setVisible(False)
@@ -1094,9 +1083,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_no.setVisible(neg is not None)
 
         if pos == "Run Milling":
-            self.pushButton_yes.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_yes.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
         else:
-            self.pushButton_yes.setStyleSheet(_stylesheets._BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_yes.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
 
     def push_interaction_button(self):
         logging.info("Sender: {}".format(self.sender().objectName()))
@@ -1466,9 +1455,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_trench.setEnabled(False)
         self.pushButton_run_waffle_undercut.setEnabled(False)
         self.pushButton_run_setup_autolamella.setEnabled(False)
-        self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-        self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-        self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_waffle_trench.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_waffle_undercut.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
+        self.pushButton_run_setup_autolamella.setStyleSheet(stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
         self.pushButton_stop_workflow.setVisible(True)
 
