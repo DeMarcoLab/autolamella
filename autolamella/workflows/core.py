@@ -180,9 +180,6 @@ def mill_undercut(
         lamella.protocol["undercut"] = deepcopy({"stages": [lamella.protocol["undercut"]]})
     N_UNDERCUTS = len(lamella.protocol["undercut"]["stages"])
 
-    # TODO: remove undercut_tilt_angle_steps from protocol and user interfa
-
-    # N_UNDERCUTS = int(settings.protocol["options"].get("undercut_tilt_angle_steps", 1))
     UNDERCUT_ANGLE_DEG = settings.protocol["options"].get("undercut_tilt_angle", -5)
     _UNDERCUT_V_OFFSET = lamella.protocol["undercut"].get("v_offset", 0e-6)
     undercut_stages = []

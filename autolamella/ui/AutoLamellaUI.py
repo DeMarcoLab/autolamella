@@ -280,7 +280,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             # undercut
             self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["options"].get("undercut_tilt_angle", -5))
-            self.doubleSpinBox_undercut_step.setValue(self.settings.protocol["options"].get("undercut_tilt_angle_steps", 2))
         
         self.checkBox_trench.setVisible(_WAFFLE_METHOD)
         self.checkBox_undercut.setVisible(_WAFFLE_METHOD)
@@ -290,9 +289,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.comboBox_ml_checkpoint.setVisible(_WAFFLE_METHOD)
 
         self.doubleSpinBox_undercut_tilt.setVisible(_WAFFLE_METHOD)
-        self.doubleSpinBox_undercut_step.setVisible(_WAFFLE_METHOD)
         self.label_protocol_undercut_tilt_angle.setVisible(_WAFFLE_METHOD)
-        self.label_protocol_undercut_tilt_step.setVisible(_WAFFLE_METHOD)
 
 
         # autoliftout components
@@ -355,7 +352,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             # undercut
             self.settings.protocol["options"]["undercut_tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
-            self.settings.protocol["options"]["undercut_tilt_angle_steps"] = int(self.doubleSpinBox_undercut_step.value())
 
         if self.settings.protocol["options"]["method"] in ["autolamella-liftout", "autolamella-serial-liftout"]:
             

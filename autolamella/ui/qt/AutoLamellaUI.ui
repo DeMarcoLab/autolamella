@@ -686,167 +686,12 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>377</width>
-             <height>583</height>
+             <width>732</width>
+             <height>678</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
-            <item row="19" column="1">
-             <widget class="QComboBox" name="comboBox_ml_checkpoint"/>
-            </item>
-            <item row="13" column="1">
-             <widget class="QCheckBox" name="checkBox_use_notch">
-              <property name="text">
-               <string>Use Notch</string>
-              </property>
-             </widget>
-            </item>
-            <item row="10" column="1">
-             <widget class="QComboBox" name="comboBox_options_liftout_joining_method"/>
-            </item>
-            <item row="1" column="1">
-             <widget class="QComboBox" name="comboBox_method"/>
-            </item>
-            <item row="11" column="1">
-             <widget class="QComboBox" name="comboBox_options_landing_start_position"/>
-            </item>
-            <item row="6" column="0" colspan="2">
-             <widget class="QLabel" name="label">
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Workflow</string>
-              </property>
-             </widget>
-            </item>
-            <item row="22" column="0">
-             <widget class="QCheckBox" name="checkBox_undercut">
-              <property name="text">
-               <string>Undercut Stage</string>
-              </property>
-             </widget>
-            </item>
-            <item row="17" column="1">
-             <widget class="QDoubleSpinBox" name="beamshift_attempts">
-              <property name="minimum">
-               <double>-180.000000000000000</double>
-              </property>
-              <property name="maximum">
-               <double>180.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="16" column="1">
-             <widget class="QCheckBox" name="checkBox_align_at_milling_current">
-              <property name="text">
-               <string>Align at Milling Current</string>
-              </property>
-             </widget>
-            </item>
-            <item row="13" column="0">
-             <widget class="QCheckBox" name="checkBox_use_microexpansion">
-              <property name="text">
-               <string>Use Microexpansion</string>
-              </property>
-             </widget>
-            </item>
-            <item row="23" column="1">
-             <widget class="QCheckBox" name="checkBox_supervise_mill_polishing">
-              <property name="text">
-               <string>Mill Polishing Stage</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="0">
-             <widget class="QLabel" name="label_protocol_name_2">
-              <property name="text">
-               <string>Name</string>
-              </property>
-             </widget>
-            </item>
-            <item row="8" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_undercut_step">
-              <property name="minimum">
-               <double>-180.000000000000000</double>
-              </property>
-              <property name="maximum">
-               <double>180.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="8" column="0">
-             <widget class="QLabel" name="label_protocol_undercut_tilt_step">
-              <property name="text">
-               <string>Undercut Tilt Steps</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1">
-             <widget class="QLineEdit" name="lineEdit_name">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-             </widget>
-            </item>
-            <item row="23" column="0">
-             <widget class="QCheckBox" name="checkBox_supervise_liftout">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
-              <property name="text">
-               <string>Liftout Lamella</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_protocol_method">
-              <property name="text">
-               <string>Method</string>
-              </property>
-             </widget>
-            </item>
-            <item row="22" column="1">
-             <widget class="QCheckBox" name="checkBox_supervise_mill_rough">
-              <property name="text">
-               <string>Mill Rough Stage</string>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="0">
-             <widget class="QLabel" name="label_protocol_undercut_tilt_angle">
-              <property name="text">
-               <string>Undercut Tilt Angle</string>
-              </property>
-             </widget>
-            </item>
-            <item row="14" column="0">
-             <widget class="QLabel" name="label_lamella_tilt_angle">
-              <property name="text">
-               <string>Lamella Tilt Angle (deg)</string>
-              </property>
-             </widget>
-            </item>
-            <item row="18" column="0">
-             <widget class="QLabel" name="label_ml_header">
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Machine Learning</string>
-              </property>
-             </widget>
-            </item>
-            <item row="25" column="0" colspan="2">
+            <item row="24" column="0" colspan="2">
              <spacer name="verticalSpacer_2">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
@@ -859,44 +704,65 @@
               </property>
              </spacer>
             </item>
-            <item row="24" column="0">
-             <widget class="QCheckBox" name="checkBox_supervise_landing">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
+            <item row="4" column="1">
+             <widget class="QCheckBox" name="checkBox_take_final_high_quality_reference">
               <property name="text">
-               <string>Land Lamella</string>
+               <string>Acquire Final High Quality Image</string>
               </property>
              </widget>
             </item>
-            <item row="14" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_lamella_tilt_angle"/>
+            <item row="22" column="1">
+             <widget class="QCheckBox" name="checkBox_supervise_mill_polishing">
+              <property name="text">
+               <string>Mill Polishing Stage</string>
+              </property>
+             </widget>
             </item>
-            <item row="12" column="1">
-             <widget class="QComboBox" name="comboBox_options_landing_joining_method"/>
-            </item>
-            <item row="15" column="0">
-             <widget class="QLabel" name="label_alignment_header">
+            <item row="17" column="0">
+             <widget class="QLabel" name="label_ml_header">
               <property name="font">
                <font>
                 <weight>75</weight>
                 <bold>true</bold>
-                <underline>false</underline>
                </font>
               </property>
               <property name="text">
-               <string>Alignment</string>
+               <string>Machine Learning</string>
+              </property>
+             </widget>
+            </item>
+            <item row="16" column="1">
+             <widget class="QDoubleSpinBox" name="beamshift_attempts">
+              <property name="minimum">
+               <double>-180.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>180.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="0">
+             <widget class="QLabel" name="label_options_lamella_start_position">
+              <property name="text">
+               <string>Lamella Start Position</string>
               </property>
              </widget>
             </item>
             <item row="10" column="0">
-             <widget class="QLabel" name="label_options_liftout_joining_method">
+             <widget class="QLabel" name="label_options_landing_start_position">
               <property name="text">
-               <string>Liftout Joining Method</string>
+               <string>Landing Start Position</string>
               </property>
              </widget>
             </item>
             <item row="20" column="0">
+             <widget class="QCheckBox" name="checkBox_trench">
+              <property name="text">
+               <string>Trench Stage</string>
+              </property>
+             </widget>
+            </item>
+            <item row="19" column="0">
              <widget class="QLabel" name="label_supervise_header">
               <property name="font">
                <font>
@@ -906,20 +772,6 @@
               </property>
               <property name="text">
                <string>Supervision</string>
-              </property>
-             </widget>
-            </item>
-            <item row="21" column="0">
-             <widget class="QCheckBox" name="checkBox_trench">
-              <property name="text">
-               <string>Trench Stage</string>
-              </property>
-             </widget>
-            </item>
-            <item row="11" column="0">
-             <widget class="QLabel" name="label_options_landing_start_position">
-              <property name="text">
-               <string>Landing Start Position</string>
               </property>
              </widget>
             </item>
@@ -933,27 +785,64 @@
               </property>
              </widget>
             </item>
-            <item row="19" column="0">
-             <widget class="QLabel" name="label_ml_checkpoint">
+            <item row="21" column="1">
+             <widget class="QCheckBox" name="checkBox_supervise_mill_rough">
               <property name="text">
-               <string>Checkpoint</string>
+               <string>Mill Rough Stage</string>
               </property>
              </widget>
             </item>
-            <item row="21" column="1">
+            <item row="11" column="1">
+             <widget class="QComboBox" name="comboBox_options_landing_joining_method"/>
+            </item>
+            <item row="20" column="1">
              <widget class="QCheckBox" name="checkBox_setup">
               <property name="text">
                <string>Setup Stage</string>
               </property>
              </widget>
             </item>
-            <item row="9" column="1">
-             <widget class="QComboBox" name="comboBox_options_lamella_start_position"/>
+            <item row="13" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_lamella_tilt_angle"/>
+            </item>
+            <item row="7" column="0">
+             <widget class="QLabel" name="label_protocol_undercut_tilt_angle">
+              <property name="text">
+               <string>Undercut Tilt Angle Per Step (deg)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="22" column="0">
+             <widget class="QCheckBox" name="checkBox_supervise_liftout">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>Liftout Lamella</string>
+              </property>
+             </widget>
+            </item>
+            <item row="16" column="0">
+             <widget class="QLabel" name="beamShiftAttemptsLabel">
+              <property name="text">
+               <string>Alignment Attempts</string>
+              </property>
+             </widget>
+            </item>
+            <item row="10" column="1">
+             <widget class="QComboBox" name="comboBox_options_landing_start_position"/>
             </item>
             <item row="9" column="0">
-             <widget class="QLabel" name="label_options_lamella_start_position">
+             <widget class="QLabel" name="label_options_liftout_joining_method">
               <property name="text">
-               <string>Lamella Start Position</string>
+               <string>Liftout Joining Method</string>
+              </property>
+             </widget>
+            </item>
+            <item row="13" column="0">
+             <widget class="QLabel" name="label_lamella_tilt_angle">
+              <property name="text">
+               <string>Lamella Tilt Angle (deg)</string>
               </property>
              </widget>
             </item>
@@ -970,12 +859,18 @@
               </property>
              </widget>
             </item>
-            <item row="4" column="0">
-             <widget class="QCheckBox" name="checkBox_take_final_reference_images">
+            <item row="15" column="1">
+             <widget class="QCheckBox" name="checkBox_align_at_milling_current">
               <property name="text">
-               <string>Acquire Final Reference Images</string>
+               <string>Align at Milling Current</string>
               </property>
              </widget>
+            </item>
+            <item row="8" column="1">
+             <widget class="QComboBox" name="comboBox_options_lamella_start_position"/>
+            </item>
+            <item row="9" column="1">
+             <widget class="QComboBox" name="comboBox_options_liftout_joining_method"/>
             </item>
             <item row="3" column="0">
              <widget class="QCheckBox" name="checkBox_options_confirm_next_stage">
@@ -984,24 +879,112 @@
               </property>
              </widget>
             </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_protocol_name_2">
+              <property name="text">
+               <string>Name</string>
+              </property>
+             </widget>
+            </item>
+            <item row="18" column="1">
+             <widget class="QComboBox" name="comboBox_ml_checkpoint"/>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="comboBox_method"/>
+            </item>
+            <item row="4" column="0">
+             <widget class="QCheckBox" name="checkBox_take_final_reference_images">
+              <property name="text">
+               <string>Acquire Final Reference Images</string>
+              </property>
+             </widget>
+            </item>
+            <item row="14" column="0">
+             <widget class="QLabel" name="label_alignment_header">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+                <underline>false</underline>
+               </font>
+              </property>
+              <property name="text">
+               <string>Alignment</string>
+              </property>
+             </widget>
+            </item>
+            <item row="18" column="0">
+             <widget class="QLabel" name="label_ml_checkpoint">
+              <property name="text">
+               <string>Checkpoint</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="lineEdit_name">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
             <item row="12" column="0">
+             <widget class="QCheckBox" name="checkBox_use_microexpansion">
+              <property name="text">
+               <string>Use Microexpansion</string>
+              </property>
+             </widget>
+            </item>
+            <item row="21" column="0">
+             <widget class="QCheckBox" name="checkBox_undercut">
+              <property name="text">
+               <string>Undercut Stage</string>
+              </property>
+             </widget>
+            </item>
+            <item row="12" column="1">
+             <widget class="QCheckBox" name="checkBox_use_notch">
+              <property name="text">
+               <string>Use Notch</string>
+              </property>
+             </widget>
+            </item>
+            <item row="6" column="0" colspan="2">
+             <widget class="QLabel" name="label">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Workflow</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_protocol_method">
+              <property name="text">
+               <string>Method</string>
+              </property>
+             </widget>
+            </item>
+            <item row="23" column="0">
+             <widget class="QCheckBox" name="checkBox_supervise_landing">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="text">
+               <string>Land Lamella</string>
+              </property>
+             </widget>
+            </item>
+            <item row="11" column="0">
              <widget class="QLabel" name="label_options_landing_joining_method">
               <property name="text">
                <string>Landing Joining Method</string>
-              </property>
-             </widget>
-            </item>
-            <item row="17" column="0">
-             <widget class="QLabel" name="beamShiftAttemptsLabel">
-              <property name="text">
-               <string>Alignment Attempts</string>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="1">
-             <widget class="QCheckBox" name="checkBox_take_final_high_quality_reference">
-              <property name="text">
-               <string>Acquire Final High Quality Image</string>
               </property>
              </widget>
             </item>
@@ -1072,7 +1055,7 @@
      <x>0</x>
      <y>0</y>
      <width>788</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAutoLamella">

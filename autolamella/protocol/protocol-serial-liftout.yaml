@@ -18,7 +18,6 @@ options:
         frame_integration: 2    
     undercut_required: false
     undercut_tilt_angle: -10.0
-    undercut_tilt_angle_steps: 1.0
     lamella_tilt_angle: 8.0    # absolute angle (pre-tilt - 27)
     use_fiducial: true
     use_microexpansion: false
