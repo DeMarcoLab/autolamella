@@ -1287,7 +1287,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         stages += fiducial_stage
 
                 #Fills Milling Tab with milling stages
-                self.milling_widget.set_milling_stages(milling_stages)
+                self.milling_widget.set_milling_stages(stages)
 
         if lamella._is_failure:
             self.pushButton_fail_lamella.setText("Mark Lamella as Active")
