@@ -59,6 +59,7 @@ CONFIGURATION = {
                 5: "Milling", 
                 6: "Detection", 
                 7: "Manipulator"},
+    "SHOW_INDIVIDUAL_STAGES": True
 }
 
 # invert the dictionary
@@ -695,16 +696,19 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             _READY_TRENCH = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
             _READY_UNDERCUT = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
             _READY_LAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
-            _READY_AUTOLAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
+            _READY_SETUP_LAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
             _READY_ROUGH = _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0
-            _READY_AUTOLAMELLA = _READY_AUTOLAMELLA or _READY_ROUGH
+            _READY_AUTOLAMELLA = _READY_SETUP_LAMELLA or _READY_ROUGH
 
             _ENABLE_TRENCH = _WAFFLE_METHOD and _READY_TRENCH
             _ENABLE_UNDERCUT = _WAFFLE_METHOD and _READY_UNDERCUT
             _ENABLE_LAMELLA = _READY_LAMELLA
             _ENABLE_AUTOLAMELLA = _READY_AUTOLAMELLA
             
-            _ENABLE_FULL_AUTOLAMELLA = _ENABLE_LAMELLA or _ENABLE_AUTOLAMELLA
+            # TODO: handle failed lamella with the button display
+
+            # if any of the stages are ready, enable the autolamella button
+            _ENABLE_FULL_AUTOLAMELLA = _ENABLE_LAMELLA or _ENABLE_AUTOLAMELLA or _ENABLE_TRENCH or _ENABLE_UNDERCUT
 
             self.pushButton_run_waffle_trench.setVisible(_WAFFLE_METHOD)
             self.pushButton_run_waffle_trench.setEnabled(_ENABLE_TRENCH)
@@ -720,6 +724,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_FULL_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             # self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
+            # global button visibility configuration
+            SHOW_INDIVUDAL_STAGES = CONFIGURATION["SHOW_INDIVIDUAL_STAGES"]
+            self.pushButton_run_waffle_trench.setVisible(SHOW_INDIVUDAL_STAGES)
+            self.pushButton_run_waffle_undercut.setVisible(SHOW_INDIVUDAL_STAGES)
 
             # tab visibity / enabled
             # self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], self._WORKFLOW_RUNNING and not _ON_GRID_METHOD)
@@ -742,7 +750,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.update_lamella_ui()
         # self.checkBox_show_lamella_in_view.setVisible(_lamella_selected)
 
-        # instructions# TODO: update with autolamella instructions
+        # instructions
         INSTRUCTIONS = {"NOT_CONNECTED": "Please connect to the microscope (System -> Connect to Microscope).",
                         "NO_EXPERIMENT": "Please create or load an experiment (File -> Create / Load Experiment)",
                         "NO_PROTOCOL": "Please load a protocol (File -> Load Protocol).",
@@ -1401,6 +1409,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
 
+
+        method = settings.protocol["options"].get("method", None)
+
+        if method not in cfg.__AUTOLAMELLA_METHODS__:
+            raise ValueError(f"Invalid method {method} for autolamella workflow")
+
         from autolamella import waffle as wfl # avoiding circular import
         if workflow == "trench":
             wfl.run_trench_milling(microscope, settings, experiment, parent_ui=self )
@@ -1408,14 +1422,17 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if workflow == "undercut":
             wfl.run_undercut_milling(microscope, settings, experiment, parent_ui=self )
 
-        if workflow == "setup-lamella":
-            wfl.run_setup_lamella(microscope, settings, experiment, parent_ui=self )
+        # if workflow == "setup-lamella":
+        #     wfl.run_setup_lamella(microscope, settings, experiment, parent_ui=self )
 
-        if workflow == "lamella":
-            wfl.run_lamella_milling(microscope, settings, experiment, parent_ui=self )
+        # if workflow == "lamella":
+        #     wfl.run_lamella_milling(microscope, settings, experiment, parent_ui=self )
 
         if workflow == "autolamella":
-            wfl.run_autolamella(microscope, settings, experiment, parent_ui=self)
+            if method == "autolamella-on-grid":
+                wfl.run_autolamella(microscope, settings, experiment, parent_ui=self)
+            if method == "autolamella-waffle":
+                wfl.run_autolamella_waffle(microscope, settings, experiment, parent_ui=self)
 
         self.update_experiment_signal.emit(self.experiment)
 
