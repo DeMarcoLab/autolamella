@@ -992,12 +992,14 @@ def run_thinning_workflow(
                 WORKFLOW_STAGES[next_stage](microscope, settings, lamella,parent_ui)
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, 
                                                  _save_state=_save_state)
+                parent_ui.update_experiment_signal.emit(experiment)
 
     # finish the experiment
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut:
             lamella = start_of_stage_update(microscope, lamella, next_stage=AutoLamellaWaffleStage.Finished, parent_ui=parent_ui, _restore_state=False)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
+            parent_ui.update_experiment_signal.emit(experiment)
 
 
     return experiment
@@ -1008,7 +1010,7 @@ def get_current_lamella(
     select_another_lamella = (
         ask_user(
             parent_ui,
-            msg=f"Do you want to select another lamella? {len(experiment.positions)} currentlly selected.",
+            msg=f"Do you want to select another trench? {len(experiment.positions)} currentlly selected.",
             pos="Yes",
             neg="No",
         )

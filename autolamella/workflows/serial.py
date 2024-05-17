@@ -828,6 +828,7 @@ def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positi
     lamella.state.microscope_state = microscope.get_microscope_state()
     lamella.state.microscope_state.stage_position = deepcopy(positions[land_idx])
     lamella.landing_state = deepcopy(lamella.state.microscope_state)
+    lamella.landing_selected = True
 
     print("LANDING POSITION")
     pprint(lamella.state.microscope_state.stage_position)
