@@ -12,7 +12,7 @@ from napari.qt.threading import thread_worker
 from PyQt5.QtCore import pyqtSignal
 from qtpy import QtWidgets
 
-from fibsem import patterning, utils
+from fibsem import patterning, utils, constants
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, FibsemStagePosition, Point
 from fibsem.segmentation.utils import list_available_checkpoints
@@ -241,8 +241,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
         self.comboBox_ml_checkpoint.addItems(__AUTOLAMELLA_CHECKPOINTS__)
 
-        self.comboBox_options_liftout_joining_method.addItems(cfg.__AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__)
-        self.comboBox_options_landing_joining_method.addItems(cfg.__AUTOLIFTOUT_LANDING_JOIN_METHODS__)
+        self.comboBox_options_liftout_joining_method.addItems(
+            cfg.__AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__
+        )
+        self.comboBox_options_landing_joining_method.addItems(
+            cfg.__AUTOLIFTOUT_LANDING_JOIN_METHODS__
+        )
 
         _AVAILABLE_POSITIONS_ = utils._get_positions()
         self.comboBox_options_trench_start_position.addItems(_AVAILABLE_POSITIONS_)
@@ -387,17 +391,37 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # autoliftout components
         _LIFTOUT_METHOD = _is_method_type(method, "liftout")
         _CLASSIC_LIFTOUT_METHOD = method == "autolamella-liftout"
+        _SERIAL_LIFTOUT_METHOD = method == "autolamella-serial-liftout"
         self.checkBox_options_confirm_next_stage.setVisible(_LIFTOUT_METHOD)
         self.label_options_trench_start_position.setVisible(_LIFTOUT_METHOD)
-        self.label_options_liftout_joining_method.setVisible(_LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD)
+        self.label_options_liftout_joining_method.setVisible(
+            _LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD
+        )
         self.label_options_landing_start_position.setVisible(_LIFTOUT_METHOD)
-        self.label_options_landing_joining_method.setVisible(_LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD)
+        self.label_options_landing_joining_method.setVisible(
+            _LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD
+        )
         self.comboBox_options_trench_start_position.setVisible(_LIFTOUT_METHOD)
-        self.comboBox_options_liftout_joining_method.setVisible(_LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD)
+        self.comboBox_options_liftout_joining_method.setVisible(
+            _LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD
+        )
         self.comboBox_options_landing_start_position.setVisible(_LIFTOUT_METHOD)
-        self.comboBox_options_landing_joining_method.setVisible(_LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD)
+        self.comboBox_options_landing_joining_method.setVisible(
+            _LIFTOUT_METHOD and _CLASSIC_LIFTOUT_METHOD
+        )
+        self.label_section_thickness.setVisible(
+            _LIFTOUT_METHOD and _SERIAL_LIFTOUT_METHOD
+        )
+        self.doubleSpinBox_section_thickness.setVisible(
+            _LIFTOUT_METHOD and _SERIAL_LIFTOUT_METHOD
+        )
         self.checkBox_supervise_liftout.setVisible(_LIFTOUT_METHOD)
         self.checkBox_supervise_landing.setVisible(_LIFTOUT_METHOD)
+
+        # disable some options for serial liftout
+        self.checkBox_use_microexpansion.setVisible(not _LIFTOUT_METHOD)
+        self.checkBox_use_notch.setVisible(not _LIFTOUT_METHOD)
+
         if _LIFTOUT_METHOD:
             self.checkBox_options_confirm_next_stage.setChecked(
                 self.settings.protocol["options"].get("confirm_next_stage", True)
@@ -414,6 +438,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             self.comboBox_options_landing_start_position.setCurrentText(
                 self.settings.protocol["options"]["landing_start_position"]
+            )
+
+            self.doubleSpinBox_section_thickness.setValue(
+                self.settings.protocol["milling"]["landing-sever"].get(
+                    "section_thickness", 4e-6
+                )
+                * constants.SI_TO_MICRO
             )
 
             # supervision
@@ -518,6 +549,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             self.settings.protocol["options"]["landing_start_position"] = (
                 self.comboBox_options_landing_start_position.currentText()
+            )
+
+            self.settings.protocol["milling"]["landing-sever"]["section_thickness"] = (
+                self.doubleSpinBox_section_thickness.value() * constants.MICRO_TO_SI
             )
 
         if self.sender() == self.actionSave_Protocol:
