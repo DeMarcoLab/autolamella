@@ -43,6 +43,16 @@
         <string>Experiment</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
+        <item row="8" column="1">
+         <widget class="QComboBox" name="comboBox_current_lamella"/>
+        </item>
+        <item row="11" column="0">
+         <widget class="QPushButton" name="pushButton_lamella_landing_selected">
+          <property name="text">
+           <string>Landing Position Selected</string>
+          </property>
+         </widget>
+        </item>
         <item row="16" column="0" colspan="2">
          <spacer name="verticalSpacer">
           <property name="orientation">
@@ -56,36 +66,24 @@
           </property>
          </spacer>
         </item>
-        <item row="12" column="1">
-         <widget class="QPushButton" name="pushButton_revert_stage">
+        <item row="22" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_autoliftout">
           <property name="text">
-           <string>Time Travel To</string>
+           <string>Run Liftout Workflow</string>
           </property>
          </widget>
         </item>
-        <item row="8" column="1">
-         <widget class="QComboBox" name="comboBox_current_lamella"/>
-        </item>
-        <item row="12" column="0">
-         <widget class="QComboBox" name="comboBox_lamella_history"/>
-        </item>
-        <item row="10" column="0">
-         <widget class="QPushButton" name="pushButton_save_position">
+        <item row="1" column="0" colspan="2">
+         <widget class="QLabel" name="label_experiment_name">
           <property name="text">
-           <string>Save Position</string>
+           <string>Experiment:</string>
           </property>
          </widget>
         </item>
-        <item row="8" column="0">
-         <widget class="QLabel" name="label_current_lamella_header">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
+        <item row="24" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_setup_autolamella">
           <property name="text">
-           <string>Current Lamella</string>
+           <string>Run AutoLamella</string>
           </property>
          </widget>
         </item>
@@ -96,6 +94,27 @@
           </property>
          </widget>
         </item>
+        <item row="14" column="0" colspan="2">
+         <widget class="QLabel" name="label_info">
+          <property name="text">
+           <string>No Lamella Selected</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="1">
+         <widget class="QPushButton" name="pushButton_revert_stage">
+          <property name="text">
+           <string>Time Travel To</string>
+          </property>
+         </widget>
+        </item>
+        <item row="27" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_stop_workflow">
+          <property name="text">
+           <string>Stop Workflow</string>
+          </property>
+         </widget>
+        </item>
         <item row="10" column="1">
          <widget class="QPushButton" name="pushButton_go_to_lamella">
           <property name="text">
@@ -103,10 +122,20 @@
           </property>
          </widget>
         </item>
-        <item row="19" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_setup_autolamella">
+        <item row="11" column="1">
+         <widget class="QPushButton" name="pushButton_fail_lamella">
           <property name="text">
-           <string>Run AutoLamella</string>
+           <string>Mark Lamella As Failed</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="0">
+         <widget class="QComboBox" name="comboBox_lamella_history"/>
+        </item>
+        <item row="26" column="0" colspan="2">
+         <widget class="QLabel" name="label_run_autolamella_info">
+          <property name="text">
+           <string>Run AutoLamella will run all workflows stages.</string>
           </property>
          </widget>
         </item>
@@ -125,490 +154,22 @@
          </widget>
         </item>
         <item row="21" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_autolamella">
-          <property name="palette">
-           <palette>
-            <active>
-             <colorrole role="WindowText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Button">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>100</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Light">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Midlight">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Dark">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>127</red>
-                <green>127</green>
-                <blue>127</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Mid">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>170</red>
-                <green>170</green>
-                <blue>170</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Text">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="BrightText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ButtonText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Base">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>100</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Window">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>100</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Shadow">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="AlternateBase">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ToolTipBase">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>220</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ToolTipText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="PlaceholderText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="128">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-            </active>
-            <inactive>
-             <colorrole role="WindowText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Button">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>100</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Light">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Midlight">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Dark">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>127</red>
-                <green>127</green>
-                <blue>127</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Mid">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>170</red>
-                <green>170</green>
-                <blue>170</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Text">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="BrightText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ButtonText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Base">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>100</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Window">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>100</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Shadow">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="AlternateBase">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ToolTipBase">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>220</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ToolTipText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="PlaceholderText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="128">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-            </inactive>
-            <disabled>
-             <colorrole role="WindowText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>127</red>
-                <green>127</green>
-                <blue>127</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Button">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>100</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Light">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Midlight">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Dark">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>127</red>
-                <green>127</green>
-                <blue>127</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Mid">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>170</red>
-                <green>170</green>
-                <blue>170</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Text">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>127</red>
-                <green>127</green>
-                <blue>127</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="BrightText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ButtonText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>127</red>
-                <green>127</green>
-                <blue>127</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Base">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>100</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Window">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>100</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="Shadow">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="AlternateBase">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>255</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ToolTipBase">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>255</red>
-                <green>255</green>
-                <blue>220</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="ToolTipText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="255">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-             <colorrole role="PlaceholderText">
-              <brush brushstyle="SolidPattern">
-               <color alpha="128">
-                <red>0</red>
-                <green>0</green>
-                <blue>0</blue>
-               </color>
-              </brush>
-             </colorrole>
-            </disabled>
-           </palette>
-          </property>
-          <property name="font">
-           <font>
-            <weight>50</weight>
-            <bold>false</bold>
-           </font>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">background-color: darkGreen</string>
-          </property>
+         <widget class="QPushButton" name="pushButton_run_waffle_undercut">
           <property name="text">
-           <string>Run AutoLamella</string>
+           <string>Run Undercut Milling</string>
           </property>
-          <property name="autoDefault">
-           <bool>false</bool>
+         </widget>
+        </item>
+        <item row="20" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_waffle_trench">
+          <property name="text">
+           <string>Run Trench Milling</string>
           </property>
           <property name="default">
            <bool>false</bool>
           </property>
           <property name="flat">
            <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="1">
-         <widget class="QPushButton" name="pushButton_fail_lamella">
-          <property name="text">
-           <string>Mark Lamella As Failed</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0" colspan="2">
-         <widget class="QLabel" name="label_experiment_name">
-          <property name="text">
-           <string>Experiment:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="18" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_undercut">
-          <property name="text">
-           <string>Run Waffle Undercut Milling</string>
           </property>
          </widget>
         </item>
@@ -622,13 +183,6 @@
           </property>
          </widget>
         </item>
-        <item row="14" column="0" colspan="2">
-         <widget class="QLabel" name="label_info">
-          <property name="text">
-           <string>No Lamella Selected</string>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="0" colspan="2">
          <widget class="QLabel" name="label_protocol_name">
           <property name="text">
@@ -636,16 +190,30 @@
           </property>
          </widget>
         </item>
-        <item row="17" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_trench">
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_current_lamella_header">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
           <property name="text">
-           <string>Run Waffle Trench Milling</string>
+           <string>Current Lamella</string>
           </property>
-          <property name="default">
-           <bool>false</bool>
+         </widget>
+        </item>
+        <item row="17" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_setup_autoliftout">
+          <property name="text">
+           <string>Run Setup Liftout</string>
           </property>
-          <property name="flat">
-           <bool>false</bool>
+         </widget>
+        </item>
+        <item row="10" column="0">
+         <widget class="QPushButton" name="pushButton_save_position">
+          <property name="text">
+           <string>Save Position</string>
           </property>
          </widget>
         </item>
@@ -653,6 +221,13 @@
          <widget class="QCheckBox" name="checkBox_show_lamella_in_view">
           <property name="text">
            <string>Show Lamellas In View</string>
+          </property>
+         </widget>
+        </item>
+        <item row="23" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_serial_liftout_landing">
+          <property name="text">
+           <string>Run Landing Workflow</string>
           </property>
          </widget>
         </item>
@@ -685,14 +260,49 @@
            <property name="geometry">
             <rect>
              <x>0</x>
-             <y>0</y>
-             <width>377</width>
-             <height>583</height>
+             <y>-72</y>
+             <width>732</width>
+             <height>710</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
-            <item row="19" column="1">
-             <widget class="QComboBox" name="comboBox_ml_checkpoint"/>
+            <item row="10" column="1">
+             <widget class="QComboBox" name="comboBox_options_landing_start_position"/>
+            </item>
+            <item row="8" column="0">
+             <widget class="QLabel" name="label_options_trench_start_position">
+              <property name="text">
+               <string>Trench Start Position</string>
+              </property>
+             </widget>
+            </item>
+            <item row="21" column="0">
+             <widget class="QCheckBox" name="checkBox_trench">
+              <property name="text">
+               <string>Trench Stage</string>
+              </property>
+             </widget>
+            </item>
+            <item row="17" column="0">
+             <widget class="QLabel" name="beamShiftAttemptsLabel">
+              <property name="text">
+               <string>Alignment Attempts</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QCheckBox" name="checkBox_take_final_reference_images">
+              <property name="text">
+               <string>Acquire Final Reference Images</string>
+              </property>
+             </widget>
+            </item>
+            <item row="13" column="0">
+             <widget class="QCheckBox" name="checkBox_use_microexpansion">
+              <property name="text">
+               <string>Use Microexpansion</string>
+              </property>
+             </widget>
             </item>
             <item row="13" column="1">
              <widget class="QCheckBox" name="checkBox_use_notch">
@@ -701,14 +311,87 @@
               </property>
              </widget>
             </item>
-            <item row="10" column="1">
-             <widget class="QComboBox" name="comboBox_options_liftout_joining_method"/>
+            <item row="14" column="0">
+             <widget class="QLabel" name="label_lamella_tilt_angle">
+              <property name="text">
+               <string>Lamella Tilt Angle (deg)</string>
+              </property>
+             </widget>
             </item>
-            <item row="1" column="1">
-             <widget class="QComboBox" name="comboBox_method"/>
+            <item row="23" column="1">
+             <widget class="QCheckBox" name="checkBox_supervise_mill_polishing">
+              <property name="text">
+               <string>Mill Polishing Stage</string>
+              </property>
+             </widget>
             </item>
-            <item row="11" column="1">
-             <widget class="QComboBox" name="comboBox_options_landing_start_position"/>
+            <item row="18" column="0">
+             <widget class="QLabel" name="label_ml_header">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Machine Learning</string>
+              </property>
+             </widget>
+            </item>
+            <item row="7" column="0">
+             <widget class="QLabel" name="label_protocol_undercut_tilt_angle">
+              <property name="text">
+               <string>Undercut Tilt Angle Per Step (deg)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="15" column="0">
+             <widget class="QLabel" name="label_alignment_header">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+                <underline>false</underline>
+               </font>
+              </property>
+              <property name="text">
+               <string>Alignment</string>
+              </property>
+             </widget>
+            </item>
+            <item row="25" column="0" colspan="2">
+             <spacer name="verticalSpacer_2">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="22" column="1">
+             <widget class="QCheckBox" name="checkBox_supervise_mill_rough">
+              <property name="text">
+               <string>Mill Rough Stage</string>
+              </property>
+             </widget>
+            </item>
+            <item row="21" column="1">
+             <widget class="QCheckBox" name="checkBox_setup">
+              <property name="text">
+               <string>Setup Stage</string>
+              </property>
+             </widget>
+            </item>
+            <item row="9" column="0">
+             <widget class="QLabel" name="label_options_liftout_joining_method">
+              <property name="text">
+               <string>Liftout Joining Method</string>
+              </property>
+             </widget>
             </item>
             <item row="6" column="0" colspan="2">
              <widget class="QLabel" name="label">
@@ -723,12 +406,15 @@
               </property>
              </widget>
             </item>
-            <item row="22" column="0">
-             <widget class="QCheckBox" name="checkBox_undercut">
+            <item row="10" column="0">
+             <widget class="QLabel" name="label_options_landing_start_position">
               <property name="text">
-               <string>Undercut Stage</string>
+               <string>Landing Start Position</string>
               </property>
              </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="comboBox_method"/>
             </item>
             <item row="17" column="1">
              <widget class="QDoubleSpinBox" name="beamshift_attempts">
@@ -740,24 +426,10 @@
               </property>
              </widget>
             </item>
-            <item row="16" column="1">
-             <widget class="QCheckBox" name="checkBox_align_at_milling_current">
+            <item row="22" column="0">
+             <widget class="QCheckBox" name="checkBox_undercut">
               <property name="text">
-               <string>Align at Milling Current</string>
-              </property>
-             </widget>
-            </item>
-            <item row="13" column="0">
-             <widget class="QCheckBox" name="checkBox_use_microexpansion">
-              <property name="text">
-               <string>Use Microexpansion</string>
-              </property>
-             </widget>
-            </item>
-            <item row="23" column="1">
-             <widget class="QCheckBox" name="checkBox_supervise_mill_polishing">
-              <property name="text">
-               <string>Mill Polishing Stage</string>
+               <string>Undercut Stage</string>
               </property>
              </widget>
             </item>
@@ -768,8 +440,8 @@
               </property>
              </widget>
             </item>
-            <item row="8" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_undercut_step">
+            <item row="7" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_undercut_tilt">
               <property name="minimum">
                <double>-180.000000000000000</double>
               </property>
@@ -778,10 +450,56 @@
               </property>
              </widget>
             </item>
-            <item row="8" column="0">
-             <widget class="QLabel" name="label_protocol_undercut_tilt_step">
+            <item row="11" column="0">
+             <widget class="QLabel" name="label_options_landing_joining_method">
               <property name="text">
-               <string>Undercut Tilt Steps</string>
+               <string>Landing Joining Method</string>
+              </property>
+             </widget>
+            </item>
+            <item row="19" column="1">
+             <widget class="QComboBox" name="comboBox_ml_checkpoint"/>
+            </item>
+            <item row="9" column="1">
+             <widget class="QComboBox" name="comboBox_options_liftout_joining_method"/>
+            </item>
+            <item row="14" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_lamella_tilt_angle"/>
+            </item>
+            <item row="3" column="0">
+             <widget class="QCheckBox" name="checkBox_options_confirm_next_stage">
+              <property name="text">
+               <string>Confirm Next Stage</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_protocol_method">
+              <property name="text">
+               <string>Method</string>
+              </property>
+             </widget>
+            </item>
+            <item row="8" column="1">
+             <widget class="QComboBox" name="comboBox_options_trench_start_position"/>
+            </item>
+            <item row="20" column="0">
+             <widget class="QLabel" name="label_supervise_header">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Supervision</string>
+              </property>
+             </widget>
+            </item>
+            <item row="19" column="0">
+             <widget class="QLabel" name="label_ml_checkpoint">
+              <property name="text">
+               <string>Checkpoint</string>
               </property>
              </widget>
             </item>
@@ -805,60 +523,6 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
-             <widget class="QLabel" name="label_protocol_method">
-              <property name="text">
-               <string>Method</string>
-              </property>
-             </widget>
-            </item>
-            <item row="22" column="1">
-             <widget class="QCheckBox" name="checkBox_supervise_mill_rough">
-              <property name="text">
-               <string>Mill Rough Stage</string>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="0">
-             <widget class="QLabel" name="label_protocol_undercut_tilt_angle">
-              <property name="text">
-               <string>Undercut Tilt Angle</string>
-              </property>
-             </widget>
-            </item>
-            <item row="14" column="0">
-             <widget class="QLabel" name="label_lamella_tilt_angle">
-              <property name="text">
-               <string>Lamella Tilt Angle (deg)</string>
-              </property>
-             </widget>
-            </item>
-            <item row="18" column="0">
-             <widget class="QLabel" name="label_ml_header">
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Machine Learning</string>
-              </property>
-             </widget>
-            </item>
-            <item row="25" column="0" colspan="2">
-             <spacer name="verticalSpacer_2">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
             <item row="24" column="0">
              <widget class="QCheckBox" name="checkBox_supervise_landing">
               <property name="enabled">
@@ -866,94 +530,6 @@
               </property>
               <property name="text">
                <string>Land Lamella</string>
-              </property>
-             </widget>
-            </item>
-            <item row="14" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_lamella_tilt_angle"/>
-            </item>
-            <item row="12" column="1">
-             <widget class="QComboBox" name="comboBox_options_landing_joining_method"/>
-            </item>
-            <item row="15" column="0">
-             <widget class="QLabel" name="label_alignment_header">
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <bold>true</bold>
-                <underline>false</underline>
-               </font>
-              </property>
-              <property name="text">
-               <string>Alignment</string>
-              </property>
-             </widget>
-            </item>
-            <item row="10" column="0">
-             <widget class="QLabel" name="label_options_liftout_joining_method">
-              <property name="text">
-               <string>Liftout Joining Method</string>
-              </property>
-             </widget>
-            </item>
-            <item row="20" column="0">
-             <widget class="QLabel" name="label_supervise_header">
-              <property name="font">
-               <font>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Supervision</string>
-              </property>
-             </widget>
-            </item>
-            <item row="21" column="0">
-             <widget class="QCheckBox" name="checkBox_trench">
-              <property name="text">
-               <string>Trench Stage</string>
-              </property>
-             </widget>
-            </item>
-            <item row="11" column="0">
-             <widget class="QLabel" name="label_options_landing_start_position">
-              <property name="text">
-               <string>Landing Start Position</string>
-              </property>
-             </widget>
-            </item>
-            <item row="7" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_undercut_tilt">
-              <property name="minimum">
-               <double>-180.000000000000000</double>
-              </property>
-              <property name="maximum">
-               <double>180.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="19" column="0">
-             <widget class="QLabel" name="label_ml_checkpoint">
-              <property name="text">
-               <string>Checkpoint</string>
-              </property>
-             </widget>
-            </item>
-            <item row="21" column="1">
-             <widget class="QCheckBox" name="checkBox_setup">
-              <property name="text">
-               <string>Setup Stage</string>
-              </property>
-             </widget>
-            </item>
-            <item row="9" column="1">
-             <widget class="QComboBox" name="comboBox_options_lamella_start_position"/>
-            </item>
-            <item row="9" column="0">
-             <widget class="QLabel" name="label_options_lamella_start_position">
-              <property name="text">
-               <string>Lamella Start Position</string>
               </property>
              </widget>
             </item>
@@ -970,33 +546,8 @@
               </property>
              </widget>
             </item>
-            <item row="4" column="0">
-             <widget class="QCheckBox" name="checkBox_take_final_reference_images">
-              <property name="text">
-               <string>Acquire Final Reference Images</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="0">
-             <widget class="QCheckBox" name="checkBox_options_confirm_next_stage">
-              <property name="text">
-               <string>Confirm Next Stage</string>
-              </property>
-             </widget>
-            </item>
-            <item row="12" column="0">
-             <widget class="QLabel" name="label_options_landing_joining_method">
-              <property name="text">
-               <string>Landing Joining Method</string>
-              </property>
-             </widget>
-            </item>
-            <item row="17" column="0">
-             <widget class="QLabel" name="beamShiftAttemptsLabel">
-              <property name="text">
-               <string>Alignment Attempts</string>
-              </property>
-             </widget>
+            <item row="11" column="1">
+             <widget class="QComboBox" name="comboBox_options_landing_joining_method"/>
             </item>
             <item row="4" column="1">
              <widget class="QCheckBox" name="checkBox_take_final_high_quality_reference">
@@ -1004,6 +555,23 @@
                <string>Acquire Final High Quality Image</string>
               </property>
              </widget>
+            </item>
+            <item row="16" column="1">
+             <widget class="QCheckBox" name="checkBox_align_at_milling_current">
+              <property name="text">
+               <string>Align at Milling Current</string>
+              </property>
+             </widget>
+            </item>
+            <item row="12" column="0">
+             <widget class="QLabel" name="label_section_thickness">
+              <property name="text">
+               <string>Section Thickness (um)</string>
+              </property>
+             </widget>
+            </item>
+            <item row="12" column="1">
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_section_thickness"/>
             </item>
            </layout>
           </widget>
@@ -1072,7 +640,7 @@
      <x>0</x>
      <y>0</y>
      <width>788</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAutoLamella">
@@ -1096,12 +664,6 @@
     <addaction name="actionLoad_Milling_Pattern"/>
     <addaction name="actionSave_Milling_Pattern"/>
    </widget>
-   <widget class="QMenu" name="menuWorkflow">
-    <property name="title">
-     <string>Workflow</string>
-    </property>
-    <addaction name="actionStop_Workflow"/>
-   </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>Help</string>
@@ -1110,7 +672,6 @@
    </widget>
    <addaction name="menuAutoLamella"/>
    <addaction name="menuTools"/>
-   <addaction name="menuWorkflow"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>

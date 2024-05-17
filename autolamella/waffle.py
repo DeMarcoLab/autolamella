@@ -6,7 +6,7 @@ from autolamella.structures import (
 )
 from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 from autolamella.workflows.core import ( log_status_message, mill_trench, mill_undercut, mill_lamella, setup_lamella, start_of_stage_update, end_of_stage_update)
-from autolamella.workflows.ui import ask_user
+from autolamella.workflows.ui import ask_user, ask_user_continue_workflow
 
 WORKFLOW_STAGES = {
     AutoLamellaWaffleStage.MillTrench: mill_trench,
@@ -146,11 +146,40 @@ def run_autolamella(
 
     validate = settings.protocol["options"]["supervise"].get("setup_lamella", True)
     if validate:
-        ret = ask_user(parent_ui=parent_ui, msg="Start AutoLamella Milling?", pos="Continue", neg="Cancel")
+        ret = ask_user(parent_ui=parent_ui, msg="Start AutoLamella Milling?", pos="Continue", neg="Exit")
         if ret is False:
             return experiment
 
     # run lamella milling
     experiment = run_lamella_milling(microscope, settings, experiment, parent_ui)
+
+    return experiment
+
+def run_autolamella_waffle(    
+    microscope: FibsemMicroscope,
+    settings: MicroscopeSettings,
+    experiment: Experiment,
+    parent_ui: AutoLamellaUI = None,
+) -> Experiment:
+    """Run the waffle method workflow."""
+
+    # run trench milling
+    experiment = run_trench_milling(microscope, settings, experiment, parent_ui)
+
+    ret = ask_user_continue_workflow(parent_ui, msg="Continue to Mill Undercut?", 
+        validate=settings.protocol["options"]["supervise"].get("undercut", True))
+    if ret == False:
+        return experiment
+
+    # run undercut milling
+    experiment = run_undercut_milling(microscope, settings, experiment, parent_ui)
+
+    ret = ask_user_continue_workflow(parent_ui, msg="Continue to Setup Lamella?", 
+        validate=settings.protocol["options"]["supervise"].get("setup_lamella", True))
+    if ret == False:
+        return experiment
+
+    # run autolamella
+    experiment = run_autolamella(microscope, settings, experiment, parent_ui)
 
     return experiment

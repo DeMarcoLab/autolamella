@@ -4,7 +4,7 @@ options:
     checkpoint: autolamella-serial-liftout-20240107.pt
     batch_mode: true
     confirm_next_stage: true
-    lamella_start_position: autoliftout-serial-pre-tilt-35-deg-grid-01-lamella
+    trench_start_position: autoliftout-serial-pre-tilt-35-deg-grid-01-lamella
     landing_start_position: autoliftout-serial-pre-tilt-35-deg-grid-02-landing
     compucentric_x_offset: 0.0e-6
     compucentric_y_offset: 0.0e-6
@@ -18,7 +18,6 @@ options:
         frame_integration: 2    
     undercut_required: false
     undercut_tilt_angle: -10.0
-    undercut_tilt_angle_steps: 1.0
     lamella_tilt_angle: 8.0    # absolute angle (pre-tilt - 27)
     use_fiducial: true
     use_microexpansion: false
@@ -55,7 +54,7 @@ milling:
         stages:
         -   depth: 25.0e-6
             hfw: 400.0e-06
-            height: 180.0e-06
+            height: 80.0e-06
             width: 4.5e-05
             milling_current: 2.8e-08
             rotation: 0.0
@@ -154,6 +153,16 @@ milling:
         application_file: "Si"
         type: "SerialSection"
         preset: "30 keV; 20 nA"
+    landing-thin:
+        application_file: Si
+        depth: 19.0e-06
+        height: 20.0e-06
+        hfw: 80.0e-6
+        milling_current: 1.0e-09
+        preset: 30 keV; 2.5 nA
+        width: 5.0e-6
+        scan_direction: RightToLeft
+        type: Rectangle
     lamella:
         resolution:
         - 3072

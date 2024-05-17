@@ -17,9 +17,16 @@ milling:
             preset: 30 keV; 2.5 nA
             width: 22.0e-6
             type: Rectangle
+        -   application_file: Si
+            depth: 1.2e-06
+            height: 4.0e-06
+            hfw: 8.0e-05
+            milling_current: 2.0e-09
+            preset: 30 keV; 2.5 nA
+            width: 22.0e-6
+            type: Rectangle
     fiducial:
         application_file: Si
-        cleaning_cross_section: false
         depth: 1.5e-06
         enabled: true
         height: 1.0e-05
@@ -72,7 +79,7 @@ milling:
             type: Trench
             name: Polish Milling
     notch:
-        application_file: Si-ccs
+        application_file: Si
         depth: 2.5e-06
         distance: 2.0e-06
         enabled: true
@@ -109,7 +116,7 @@ milling:
         application_file: Si
         type: MicroExpansion
 options:
-    name: autolamella-waffle-scan-rotation-0deg
+    name: autolamella-waffle-scan-rotation-0deg-multi-undercut
     method: autolamella-waffle
     checkpoint: autolamella-waffle-20240107.pt
     alignment_attempts: 3.0

@@ -24,6 +24,8 @@ from fibsem.detection.detection import (
     VolumeBlockTopRightCorner,
     VolumeBlockBottomLeftCorner,
     VolumeBlockBottomRightCorner,
+    LandingGridLeftEdge,
+    LandingGridRightEdge,
 )
 
 from fibsem.microscope import FibsemMicroscope
@@ -112,11 +114,23 @@ def liftout_lamella(
     
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
+    # TODO: do we offset this? Align the top edges -> move down by half the blcok? or just align the centre of the block
+
     # MOVE TO VOLUME BLOCK TOP
     detection.move_based_on_detection(
         microscope, settings, det, beam_type=settings.image.beam_type, move_x=True,
          _move_system="manipulator"
     )
+
+    if validate:
+        # reference images
+        settings.image.save = True
+        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+        settings.image.filename = f"ref_{lamella.state.stage.name}_manipualtor_validation_electron"
+        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+        set_images_ui(parent_ui, eb_image, ib_image)
+        response = ask_user(parent_ui, msg=f"No more movements in Electron, move manualy if required. Press Continue to proceed for {lamella._petname}.", pos="Continue")
+
 
     # align manipulator to top of lamella in ion x3
     HFWS = [fcfg.REFERENCE_HFW_LOW, fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER]
@@ -319,6 +333,17 @@ def land_lamella(
         _move_system="manipulator"
     )
 
+    if validate:
+        # reference images
+        settings.image.save = True
+        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+        settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_validation_electron"
+        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+        set_images_ui(parent_ui, eb_image, ib_image)
+
+        response = ask_user(parent_ui, msg=f"No more movements in Electron, Press Continue to confirm to manipulator position for {lamella._petname}.", pos="Continue")
+
+
     # DETECT LAMELLA BOTTOM EDGE, LandingGridCentre_TOP
     # align manipulator to top of lamella
     log_status_message(lamella, "NEEDLE_IB_DETECTION")
@@ -350,28 +375,105 @@ def land_lamella(
         log_status_message(lamella, "NEEDLE_IB_DETECTION")
 
 
-
-
     settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
 
-    # DETECT COPPER ADAPTER, LAMELLA TOP
-    scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
-    features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
-    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
-    set_images_ui(parent_ui, None, det.fibsem_image)
+    # # DETECT COPPER ADAPTER, LAMELLA TOP
+    # scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
+    # features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
+    # det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    # set_images_ui(parent_ui, None, det.fibsem_image)
     
-    # MOVE TO LANDING GRID
-    detection.move_based_on_detection(
-        microscope, settings, det, 
-        beam_type=settings.image.beam_type, 
-        move_x=True,
-        move_y=False,
-        _move_system="manipulator"
-    )
+    # # MOVE TO LANDING GRID
+    # detection.move_based_on_detection(
+    #     microscope, settings, det, 
+    #     beam_type=settings.image.beam_type, 
+    #     move_x=True,
+    #     move_y=False,
+    #     _move_system="manipulator"
+    # )
 
     # TODO: check if the volume is wider than the landing grid
     # mill away excess width
+
+    # detect the left and right edges of the landing grid
+    # detect the left and right top corners of the volume block
+    # the distance to move is the distance in x between the left grid edge, and left volume corner
+    # the grid width is the distance between the left and right grid edges
+    # the offset for the milling is the grid width from the left corner of the volume block + distance to move
+    # the milling is a rectangle with width of grid width - volume width
+    # height is the height of the volume block?
+
+    # scan_rotation 180
+    if np.isclose(scan_rotation, 0):
+        features = [VolumeBlockTopLeftCorner(), VolumeBlockTopRightCorner(), LandingGridLeftEdge(), LandingGridRightEdge()]
+    else:      
+        features = [VolumeBlockBottomLeftCorner(), VolumeBlockBottomRightCorner(), LandingGridLeftEdge(), LandingGridRightEdge()]
+
+    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    set_images_ui(parent_ui, None, det.fibsem_image)
+
+    # get individual features
+    vol_block_left, vol_block_right, grid_left_edge, grid_right_edge = det.features
+    
+    # get properties
+    vol_block_width = vol_block_left.px.distance(vol_block_right.px)._to_metres(det.pixelsize).x
+    grid_width = grid_left_edge.px.distance(grid_right_edge.px)._to_metres(det.pixelsize).x
+    diff = abs(vol_block_width - grid_width)
+
+    logging.info(f"Volume Block Width: {vol_block_width} um")
+    logging.info(f"Landing Grid Width: {grid_width} um")
+    logging.info(f"Excess Width: {diff} um")
+
+    # TODO: handle the case where the block is smaller than the grid? abort?
+ 
+    # amount to move the manipulator to align left edge / volume left corner
+    dx = vol_block_left.px.distance(grid_left_edge.px)._to_metres(det.pixelsize).x
+    logging.info(f"Move Manipulator by: {dx} um") 
+    # TODO: I dont think this is corrected for scan rotation^^^, but move_based_on detection is
+    if not np.isclose(scan_rotation, 0):
+        dx *= -1
+    microscope.move_manipulator_corrected(dx=dx, dy=0, beam_type=BeamType.ION)
+
+    # TODO: only do this is required?
+
+    ########### THIN VOLUME BLOCK
+
+    # reference images
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.save = True
+    settings.image.filename = f"ref_{lamella.state.stage.name}_match_volume_and_grid_width_pre"
+    acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
+    set_images_ui(parent_ui, eb_image, ib_image)
+
+    # draw milling pattern to remove excess material
+    pt = vol_block_right.feature_m # poisition of milling pattern
+    pt.x += dx - diff / 2
+    pt.y -= 20e-6
+    
+    logging.info(f"Milling Point: {pt}")
+
+    mill_protocol = deepcopy(settings.protocol["milling"])
+    mill_protocol["landing-thin"]["width"] = diff
+
+    # mill welds
+    stages = get_milling_stages("landing-thin", mill_protocol, pt)
+    stages = update_milling_ui(stages, parent_ui, 
+        msg=f"Press Run Milling to mill the thinning pattern for {lamella._petname}. Press Continue when done.", 
+        validate=validate)
+
+    lamella.protocol["landing-thin"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+    lamella.protocol["landing-thin"]["point"] = stages[0].pattern.point.to_dict()
+
+    # reference images
+    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.save = True
+    settings.image.filename = f"ref_{lamella.state.stage.name}_match_volume_and_grid_width_post"
+    acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
+    set_images_ui(parent_ui, eb_image, ib_image)
+
+
+    ########### FINAL MOVEMENT
 
     # align in ion beam
     log_status_message(lamella, f"NEEDLE_IB_DETECTION_FINAL")
@@ -382,7 +484,7 @@ def land_lamella(
 
     # DETECT COPPER ADAPTER, LAMELLA TOP
     scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
-    features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
+    features = [VolumeBlockTopLeftCorner() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridLeftEdge()]  # TODO: SCAN_ROTATION FOR LANDING_POST
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
     set_images_ui(parent_ui, None, det.fibsem_image)
     
@@ -393,6 +495,10 @@ def land_lamella(
         move_x=False,
         _move_system="manipulator"
     )
+
+    if validate:
+        response = ask_user(parent_ui, msg=f"No more movements, move manually if required, Press Continue to continue to landing welds for {lamella._petname}.", pos="Continue")
+
 
     # WELD BOTH SIDES
     log_status_message(lamella, "WELD_LAMELLA_TO_POST")
@@ -722,6 +828,7 @@ def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positi
     lamella.state.microscope_state = microscope.get_microscope_state()
     lamella.state.microscope_state.stage_position = deepcopy(positions[land_idx])
     lamella.landing_state = deepcopy(lamella.state.microscope_state)
+    lamella.landing_selected = True
 
     print("LANDING POSITION")
     pprint(lamella.state.microscope_state.stage_position)

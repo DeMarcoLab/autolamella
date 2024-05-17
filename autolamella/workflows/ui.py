@@ -213,3 +213,10 @@ def ask_user(
     parent_ui.ui_signal.emit(INFO)
 
     return parent_ui.USER_RESPONSE
+
+def ask_user_continue_workflow(parent_ui, msg: str = "Continue with the next stage?", validate: bool = True):
+
+    ret = True
+    if validate:
+        ret = ask_user(parent_ui=parent_ui, msg=msg, pos="Continue", neg="Exit")
+    return ret

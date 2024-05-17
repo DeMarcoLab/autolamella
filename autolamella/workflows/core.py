@@ -174,7 +174,12 @@ def mill_undercut(
     
     # mill under cut
     lamella.protocol["undercut"] = deepcopy(settings.protocol["milling"]["undercut"])
-    N_UNDERCUTS = int(settings.protocol["options"].get("undercut_tilt_angle_steps", 1))
+
+    # coerce old protocol into new
+    if "stages" not in lamella.protocol["undercut"]:
+        lamella.protocol["undercut"] = deepcopy({"stages": [lamella.protocol["undercut"]]})
+    N_UNDERCUTS = len(lamella.protocol["undercut"]["stages"])
+
     UNDERCUT_ANGLE_DEG = settings.protocol["options"].get("undercut_tilt_angle", -5)
     _UNDERCUT_V_OFFSET = lamella.protocol["undercut"].get("v_offset", 0e-6)
     undercut_stages = []
@@ -203,23 +208,22 @@ def mill_undercut(
 
         det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
-        # move pattern
-        if i > 0: # reduce the undercut height by half each time
-            lamella.protocol["undercut"]["height"] /= 2
+        # # move pattern
+        # if i > 0: # reduce the undercut height by half each time
+        #     lamella.protocol["undercut"]["height"] /= 2
 
-        
         if method == "autolamella-liftout":
-            offset = lamella.protocol["undercut"].get("trench_width", 2e-6) / 2 + _UNDERCUT_V_OFFSET
+            offset = lamella.protocol["undercut"]["stages"][i].get("trench_width", 2e-6) / 2 + _UNDERCUT_V_OFFSET
         else:         
-            offset = lamella.protocol["undercut"].get("height", 10) / 2 + _UNDERCUT_V_OFFSET
+            offset = lamella.protocol["undercut"]["stages"][i].get("height", 10) / 2 + _UNDERCUT_V_OFFSET
         point = deepcopy(det.features[0].feature_m)     
         point.y += offset if np.isclose(scan_rotation, 0) else -offset
 
         # mill undercut 1
         log_status_message(lamella, f"MILL_UNDERCUT_{_n}")
 
-        stages = patterning.get_milling_stages("undercut", lamella.protocol, point=point)
-        stages = update_milling_ui(stages, parent_ui,
+        stages = patterning.get_milling_stages("undercut", lamella.protocol, point=point)[i]
+        stages = update_milling_ui([stages], parent_ui,
             msg=f"Press Run Milling to mill the Undercut {_n} for {lamella._petname}. Press Continue when done.",
             validate=validate,
         )
