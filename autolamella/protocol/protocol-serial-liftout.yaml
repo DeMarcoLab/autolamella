@@ -54,7 +54,7 @@ milling:
         stages:
         -   depth: 25.0e-6
             hfw: 400.0e-06
-            height: 180.0e-06
+            height: 80.0e-06
             width: 4.5e-05
             milling_current: 2.8e-08
             rotation: 0.0

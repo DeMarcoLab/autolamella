@@ -65,7 +65,16 @@ CONFIGURATION = {
 # invert the dictionary
 CONFIGURATION["TABS"] = {v: k for k, v in CONFIGURATION["TABS_ID"].items()}
 
+TRENCH_METHODS = ["autolamella-waflle", "autolamella-liftout", "autolamella-serial-liftout"]
+LIFTOUT_METHODS = ["autolamella-liftout", "autolamella-serial-liftout"]
 
+def _is_method_type(method: str, method_type: str) -> bool:
+    if method_type == "trench":
+        return method in TRENCH_METHODS
+    elif method_type == "liftout":
+        return method in LIFTOUT_METHODS
+    else:
+        return False
 
 
 class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
@@ -138,14 +147,24 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_revert_stage.clicked.connect(self.revert_stage)
 
         self.pushButton_run_waffle_trench.clicked.connect(lambda: self._run_workflow(workflow="trench"))
-        self.pushButton_run_autolamella.clicked.connect(lambda: self._run_workflow(workflow="lamella"))
         self.pushButton_run_waffle_undercut.clicked.connect(lambda: self._run_workflow(workflow="undercut"))
         self.pushButton_run_setup_autolamella.clicked.connect(lambda: self._run_workflow(workflow="autolamella"))
+        self.pushButton_setup_autoliftout.clicked.connect(lambda: self._run_workflow(workflow="setup-liftout"))
+        self.pushButton_run_autoliftout.clicked.connect(lambda: self._run_workflow(workflow="autoliftout"))
+        self.pushButton_run_serial_liftout_landing.clicked.connect(lambda: self._run_workflow(workflow="serial-liftout-landing"))
 
-        self.pushButton_run_waffle_trench.setVisible(False)
-        self.pushButton_run_autolamella.setVisible(False)
-        self.pushButton_run_waffle_undercut.setVisible(False)
-        self.pushButton_run_setup_autolamella.setVisible(False)
+        # workflow button group
+        self.workflow_buttons = [
+            self.pushButton_run_waffle_trench,
+            self.pushButton_run_waffle_undercut,
+            self.pushButton_run_setup_autolamella,
+            self.pushButton_setup_autoliftout,
+            self.pushButton_run_autoliftout,
+            self.pushButton_run_serial_liftout_landing
+        ]
+        for button in self.workflow_buttons:
+            button.setVisible(False)
+
 
         self.pushButton_update_protocol.clicked.connect(self.export_protocol_ui)
 
@@ -269,9 +288,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.checkBox_supervise_mill_rough.setChecked(self.settings.protocol["options"]["supervise"].get("mill_rough", True))
         self.checkBox_supervise_mill_polishing.setChecked(self.settings.protocol["options"]["supervise"].get("mill_polishing", True))
 
-        # WAFFLE ONLY
-        _WAFFLE_METHOD = method == "autolamella-waffle"
-        if _WAFFLE_METHOD:
+        # TRENCH METHOD ONLY (waffle, serial-liftout)
+        _TRENCH_METHOD = _is_method_type(method, "trench")
+        if _TRENCH_METHOD:
             # supervision
             self.checkBox_trench.setChecked(self.settings.protocol["options"]["supervise"].get("trench", True))
             self.checkBox_undercut.setChecked(self.settings.protocol["options"]["supervise"].get("undercut", True))
@@ -282,31 +301,30 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # undercut
             self.doubleSpinBox_undercut_tilt.setValue(self.settings.protocol["options"].get("undercut_tilt_angle", -5))
         
-        self.checkBox_trench.setVisible(_WAFFLE_METHOD)
-        self.checkBox_undercut.setVisible(_WAFFLE_METHOD)
+        self.checkBox_trench.setVisible(_TRENCH_METHOD)
+        self.checkBox_undercut.setVisible(_TRENCH_METHOD)
 
-        self.label_ml_header.setVisible(_WAFFLE_METHOD)
-        self.label_ml_checkpoint.setVisible(_WAFFLE_METHOD)
-        self.comboBox_ml_checkpoint.setVisible(_WAFFLE_METHOD)
+        self.label_ml_header.setVisible(_TRENCH_METHOD)
+        self.label_ml_checkpoint.setVisible(_TRENCH_METHOD)
+        self.comboBox_ml_checkpoint.setVisible(_TRENCH_METHOD)
 
-        self.doubleSpinBox_undercut_tilt.setVisible(_WAFFLE_METHOD)
-        self.label_protocol_undercut_tilt_angle.setVisible(_WAFFLE_METHOD)
-
+        self.doubleSpinBox_undercut_tilt.setVisible(_TRENCH_METHOD)
+        self.label_protocol_undercut_tilt_angle.setVisible(_TRENCH_METHOD)
 
         # autoliftout components
-        _AUTOLIFTOUT_METHOD = "autoliftout" in method
-        self.checkBox_options_confirm_next_stage.setVisible(_AUTOLIFTOUT_METHOD)
-        self.label_options_lamella_start_position.setVisible(_AUTOLIFTOUT_METHOD)
-        self.label_options_liftout_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
-        self.label_options_landing_start_position.setVisible(_AUTOLIFTOUT_METHOD)
-        self.label_options_landing_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
-        self.comboBox_options_lamella_start_position.setVisible(_AUTOLIFTOUT_METHOD)
-        self.comboBox_options_liftout_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
-        self.comboBox_options_landing_start_position.setVisible(_AUTOLIFTOUT_METHOD)
-        self.comboBox_options_landing_joining_method.setVisible(_AUTOLIFTOUT_METHOD)
-        self.checkBox_supervise_liftout.setVisible(_AUTOLIFTOUT_METHOD)
-        self.checkBox_supervise_landing.setVisible(_AUTOLIFTOUT_METHOD)
-        if _AUTOLIFTOUT_METHOD:
+        _LIFTOUT_METHOD = _is_method_type(method, "liftout")
+        self.checkBox_options_confirm_next_stage.setVisible(_LIFTOUT_METHOD)
+        self.label_options_lamella_start_position.setVisible(_LIFTOUT_METHOD)
+        self.label_options_liftout_joining_method.setVisible(_LIFTOUT_METHOD)
+        self.label_options_landing_start_position.setVisible(_LIFTOUT_METHOD)
+        self.label_options_landing_joining_method.setVisible(_LIFTOUT_METHOD)
+        self.comboBox_options_lamella_start_position.setVisible(_LIFTOUT_METHOD)
+        self.comboBox_options_liftout_joining_method.setVisible(_LIFTOUT_METHOD)
+        self.comboBox_options_landing_start_position.setVisible(_LIFTOUT_METHOD)
+        self.comboBox_options_landing_joining_method.setVisible(_LIFTOUT_METHOD)
+        self.checkBox_supervise_liftout.setVisible(_LIFTOUT_METHOD)
+        self.checkBox_supervise_landing.setVisible(_LIFTOUT_METHOD)
+        if _LIFTOUT_METHOD:
             self.checkBox_options_confirm_next_stage.setChecked(self.settings.protocol["options"].get("confirm_next_stage", True))
             self.comboBox_options_liftout_joining_method.setCurrentText(self.settings.protocol["options"].get("liftout_joining_method", "None"))
             self.comboBox_options_landing_joining_method.setCurrentText(self.settings.protocol["options"].get("landing_joining_method", "Weld"))
@@ -342,7 +360,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.settings.protocol["options"]["supervise"]["mill_rough"] = self.checkBox_supervise_mill_rough.isChecked()
         self.settings.protocol["options"]["supervise"]["mill_polishing"] = self.checkBox_supervise_mill_polishing.isChecked()
 
-        if self.settings.protocol["options"]["method"] in ["autolamella-waffle", "autolamella-liftout", "autolamella-serial-liftout"]:
+        if _is_method_type(self.settings.protocol["options"]["method"], "trench"):
 
             # supervision
             self.settings.protocol["options"]["supervise"]["trench"] = self.checkBox_trench.isChecked()
@@ -354,7 +372,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # undercut
             self.settings.protocol["options"]["undercut_tilt_angle"] = self.doubleSpinBox_undercut_tilt.value()
 
-        if self.settings.protocol["options"]["method"] in ["autolamella-liftout", "autolamella-serial-liftout"]:
+        if _is_method_type(self.settings.protocol["options"]["method"], "liftout"):
             
             # supervision
             self.settings.protocol["options"]["confirm_next_stage"] = self.checkBox_options_confirm_next_stage.isChecked()
@@ -641,6 +659,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_fail_lamella.setVisible(_lamella_selected)
         self.pushButton_revert_stage.setVisible(_lamella_selected)
         self.comboBox_lamella_history.setVisible(_lamella_selected)
+        self.pushButton_lamella_landing_selected.setVisible(_lamella_selected)
         
         # experiment loaded
         self.actionLoad_Protocol.setVisible(_experiment_loaded)
@@ -666,7 +685,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.comboBox_current_lamella.setVisible(_lamella_selected)
 
         if _protocol_loaded:
-            method = self.settings.protocol["options"].get("method", "autolamella-waffle")
+            method = self.settings.protocol["options"].get("method", "NULL")
             self.label_protocol_name.setText(
                 f"Protocol: {self.settings.protocol['options'].get('name', 'protocol')} ({method.title()} Method)"
             )
@@ -689,19 +708,27 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if _experiment_loaded and _protocol_loaded:
             # workflow buttons
-            _WAFFLE_METHOD = self.settings.protocol["options"].get("method", "autolamella-waffle") == "autolamella-waffle"
-            _ON_GRID_METHOD = self.settings.protocol["options"].get("method", "autolamella-waffle") == "autolamella-on-grid"
+            method = self.settings.protocol["options"].get("method", None)
+            _TRENCH_METHOD = _is_method_type(method, "trench")
+            _LIFTOUT_METHOD = _is_method_type(method, "liftout")
+
+            # check if any of the stages are ready
             _counter = Counter([p.state.stage.name for p in self.experiment.positions])
             
             _READY_TRENCH = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
             _READY_UNDERCUT = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
+            _READY_LIFTOUT = _counter[AutoLamellaWaffleStage.MillUndercut.name] > 0
+            _READY_LANDING = _counter[AutoLamellaWaffleStage.LiftoutLamella.name] > 0
+            _READY_LANDED = _counter[AutoLamellaWaffleStage.LandLamella.name] > 0
             _READY_LAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
             _READY_SETUP_LAMELLA = _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
             _READY_ROUGH = _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0
             _READY_AUTOLAMELLA = _READY_SETUP_LAMELLA or _READY_ROUGH
 
-            _ENABLE_TRENCH = _WAFFLE_METHOD and _READY_TRENCH
-            _ENABLE_UNDERCUT = _WAFFLE_METHOD and _READY_UNDERCUT
+            _ENABLE_TRENCH = _TRENCH_METHOD and _READY_TRENCH
+            _ENABLE_UNDERCUT = _TRENCH_METHOD and _READY_UNDERCUT
+            _ENABLE_LIFTOUT = _LIFTOUT_METHOD and (_READY_TRENCH or _READY_UNDERCUT or _READY_LIFTOUT)
+            _ENABLE_LANDING = _LIFTOUT_METHOD and _READY_LANDING
             _ENABLE_LAMELLA = _READY_LAMELLA
             _ENABLE_AUTOLAMELLA = _READY_AUTOLAMELLA
             
@@ -710,19 +737,30 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # if any of the stages are ready, enable the autolamella button
             _ENABLE_FULL_AUTOLAMELLA = _ENABLE_LAMELLA or _ENABLE_AUTOLAMELLA or _ENABLE_TRENCH or _ENABLE_UNDERCUT
 
-            self.pushButton_run_waffle_trench.setVisible(_WAFFLE_METHOD)
+            # trench
+            self.pushButton_run_waffle_trench.setVisible(_TRENCH_METHOD)
             self.pushButton_run_waffle_trench.setEnabled(_ENABLE_TRENCH)
-            self.pushButton_run_waffle_undercut.setVisible(_WAFFLE_METHOD)
+            self.pushButton_run_waffle_undercut.setVisible(_TRENCH_METHOD)
             self.pushButton_run_waffle_undercut.setEnabled(_ENABLE_UNDERCUT)
+            
+            # liftout
+            self.pushButton_setup_autoliftout.setVisible(_LIFTOUT_METHOD)
+            self.pushButton_run_autoliftout.setVisible(_LIFTOUT_METHOD)
+            self.pushButton_run_serial_liftout_landing.setVisible(method=="autolamella-serial-liftout")
+            self.pushButton_run_autoliftout.setEnabled(_ENABLE_LIFTOUT)
+            self.pushButton_run_serial_liftout_landing.setEnabled(_ENABLE_LANDING)
+            # autolamella
             self.pushButton_run_setup_autolamella.setVisible(True)
             self.pushButton_run_setup_autolamella.setEnabled(_ENABLE_FULL_AUTOLAMELLA)
-            # self.pushButton_run_autolamella.setVisible(False)
-            # self.pushButton_run_autolamella.setEnabled(_ENABLE_AUTOLAMELLA)
+
 
             self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_TRENCH else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_UNDERCUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
             self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_FULL_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
-            # self.pushButton_run_autolamella.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_AUTOLAMELLA else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            # liftout
+            self.pushButton_setup_autoliftout.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _LIFTOUT_METHOD  else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_autoliftout.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LIFTOUT else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
+            self.pushButton_run_serial_liftout_landing.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE if _ENABLE_LANDING else _stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
             # global button visibility configuration
             SHOW_INDIVUDAL_STAGES = CONFIGURATION["SHOW_INDIVIDUAL_STAGES"]
@@ -739,11 +777,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_run_waffle_trench.setEnabled(False)
                 self.pushButton_run_waffle_undercut.setEnabled(False)
                 self.pushButton_run_setup_autolamella.setEnabled(False)
-                self.pushButton_run_autolamella.setEnabled(False)
                 self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
                 self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
                 self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-                self.pushButton_run_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
         # Current Lamella Status
         if _lamella_selected:
@@ -804,9 +840,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # buttons
         if self._PROTOCOL_LOADED:
 
-            method = self.settings.protocol["options"].get("method", "autolamella-waffle")
-            SETUP_STAGES =  [AutoLamellaWaffleStage.SetupTrench] if method == "autolamella-waffle" else [AutoLamellaWaffleStage.PreSetupLamella]
-            READY_STAGES = [AutoLamellaWaffleStage.ReadyTrench] if method == "autolamella-waffle" else [AutoLamellaWaffleStage.SetupLamella]
+            method = self.settings.protocol["options"].get("method", None)
+            SETUP_STAGES =  [AutoLamellaWaffleStage.PreSetupLamella] if method == "autolamella-on-grid" else [AutoLamellaWaffleStage.SetupTrench]
+            READY_STAGES = [AutoLamellaWaffleStage.SetupLamella] if method == "autolamella-on-grid" else [AutoLamellaWaffleStage.ReadyTrench]
             if lamella.state.stage in SETUP_STAGES:
                 self.pushButton_save_position.setText(f"Save Position")
                 self.pushButton_save_position.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
@@ -822,45 +858,61 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_save_position.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
                 self.pushButton_save_position.setEnabled(False)
                 self.milling_widget._PATTERN_IS_MOVEABLE = True
-
-            if self.checkBox_show_lamella_in_view.isChecked():
-                lamellas = []
-                text = []
-                positions = deepcopy(self.experiment.positions)
-
-                # TODO: we can wrap this up a bit, for re-use
-                if self.image_widget.ib_image is not None:
-                    fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
-                    for lamella in positions:
-                        if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
-                            lamella_centre =  Point.from_dict(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
-                        else:
-                            lamella_centre =  Point.from_dict(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
-                    
-                        current_position = lamella.state.microscope_state.stage_position
-                        lamella_position = self.microscope.project_stable_move( 
-                                        dx=lamella_centre.x, dy=lamella_centre.y, 
-                                        beam_type=BeamType.ION, 
-                                        base_position=current_position)  
-                        lamella_position.name = lamella._petname
-                        lamellas.append(lamella_position)
-
-                from fibsem.imaging._tile import _reproject_positions
-                points = _reproject_positions(self.image_widget.ib_image, lamellas, _bound = True)
-                for i in range(len(points)):
-                    temp = Point(x= points[i].y, y =points[i].x)
-                    temp.y += self.image_widget.eb_image.data.shape[1] #napari dimensions are swapped
-                    temp.name = points[i].name
-                    points[i] = temp
-                    text.append(points[i].name)
-                position_text = {
-                    "string": text,
-                    "color": "lime",
-                    "translation": np.array([-25, 0])
-                }
-                self.viewer.add_points(points, text=position_text, size=10, symbol="x", face_color="lime", edge_color="white", name="lamella_positions")
+            
+            # landing grid selected
+            if _is_method_type(method, "liftout"):
+                self.pushButton_lamella_landing_selected.setVisible(True)
+                if lamella.landing_selected:
+                    self.pushButton_lamella_landing_selected.setText(f"Landing Position Selected")
+                    self.pushButton_lamella_landing_selected.setStyleSheet(_stylesheets._GREEN_PUSHBUTTON_STYLE)
+                    self.pushButton_lamella_landing_selected.setEnabled(True)
+                else:
+                    self.pushButton_lamella_landing_selected.setEnabled(False)
+                    self.pushButton_lamella_landing_selected.setText(f"No Landing Position")
+                    self.pushButton_lamella_landing_selected.setStyleSheet(_stylesheets._ORANGE_PUSHBUTTON_STYLE)
+                    self.pushButton_lamella_landing_selected.setToolTip("Run Setup Liftout to select a Landing Position")
             else:
-                fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
+                self.pushButton_lamella_landing_selected.setVisible(False)
+
+            # if self.checkBox_show_lamella_in_view.isChecked():
+            #     lamellas = []
+            #     text = []
+            #     positions = deepcopy(self.experiment.positions)
+
+            #     # TODO: we can wrap this up a bit, for re-use
+            #     if self.image_widget.ib_image is not None:
+            #         fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
+            #         for lamella in positions:
+            #             if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+            #                 lamella_centre =  Point.from_dict(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
+            #             else:
+            #                 lamella_centre =  Point.from_dict(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
+                    
+            #             current_position = lamella.state.microscope_state.stage_position
+            #             lamella_position = self.microscope.project_stable_move( 
+            #                             dx=lamella_centre.x, dy=lamella_centre.y, 
+            #                             beam_type=BeamType.ION, 
+            #                             base_position=current_position)  
+            #             lamella_position.name = lamella._petname
+            #             lamellas.append(lamella_position)
+
+            #     from fibsem.imaging._tile import _reproject_positions
+            #     points = _reproject_positions(self.image_widget.ib_image, lamellas, _bound = True)
+            #     for i in range(len(points)):
+            #         temp = Point(x= points[i].y, y =points[i].x)
+            #         temp.y += self.image_widget.eb_image.data.shape[1] #napari dimensions are swapped
+            #         temp.name = points[i].name
+            #         points[i] = temp
+            #         text.append(points[i].name)
+            #     position_text = {
+            #         "string": text,
+            #         "color": "lime",
+            #         "translation": np.array([-25, 0])
+            #     }
+            #     self.viewer.add_points(points, text=position_text, size=10, symbol="x", face_color="lime", edge_color="white", name="lamella_positions")
+            # else:
+            #     fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
+
         # update the milling widget
         if self._WORKFLOW_RUNNING:
             self.milling_widget._PATTERN_IS_MOVEABLE = True
@@ -871,9 +923,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             if self._PROTOCOL_LOADED:
 
                 _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, False
-                method = self.settings.protocol["options"].get("method", "autolamella-waffle")
+                # method = self.settings.protocol["options"].get("method", None)
                 
-                if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+                if _is_method_type(method, "trench") and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
                     _DISPLAY_TRENCH = True
 
                 # show lamella and friends
@@ -953,7 +1005,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         logging.info(f"Updating Lamella Pattern for {lamella.info}")
 
         # update the trench point
-        method = self.settings.protocol["options"].get("method", "autolamella-waffle")
+        method = self.settings.protocol["options"].get("method", None)
         self._update_milling_protocol(idx=idx, method=method, stage=lamella.state.stage)
 
         self.experiment.save() 
@@ -1066,8 +1118,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def add_lamella_ui(self, pos:FibsemStagePosition=None):
 
-        method = self.settings.protocol["options"].get("method", "autolamella-waffle")
-        stage = AutoLamellaWaffleStage.SetupTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.PreSetupLamella
+        method = self.settings.protocol["options"].get("method", None)
+        stage = AutoLamellaWaffleStage.PreSetupLamella if method == "autolamella-on-grid" else AutoLamellaWaffleStage.SetupTrench
 
         lamella = Lamella(
             path=self.experiment.path,
@@ -1161,9 +1213,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         idx = self.comboBox_current_lamella.currentIndex()
         # TOGGLE BETWEEN READY AND SETUP
 
-        method = self.settings.protocol["options"].get("method", "autolamella-waffle")
-        SETUP_STATE = AutoLamellaWaffleStage.SetupTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.PreSetupLamella
-        READY_STATE = AutoLamellaWaffleStage.ReadyTrench if method == "autolamella-waffle" else AutoLamellaWaffleStage.SetupLamella
+        method = self.settings.protocol["options"].get("method", None)
+        SETUP_STATE = AutoLamellaWaffleStage.PreSetupLamella if method == "autolamella-on-grid" else AutoLamellaWaffleStage.SetupTrench
+        READY_STATE = AutoLamellaWaffleStage.SetupLamella if method == "autolamella-on-grid" else AutoLamellaWaffleStage.ReadyTrench
         
         lamella: Lamella = self.experiment.positions[idx]
         from autolamella import waffle as wfl
@@ -1176,7 +1228,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # TODO: change how we do this, so that this is not required
         current_position = self.microscope.get_stage_position()        
 
-        if not lamella.state.microscope_state.stage_position.is_close(current_position, 1e-6):
+        if not lamella.state.microscope_state.stage_position.is_close(current_position, 1e-6) and lamella.state.stage is SETUP_STATE:
             ret = fui.message_box_ui(
                 title=f"Far away from lamella position",
                 text=f"The current position is far away from the initial lamella position. Move to initial lamella position? (Press No to save at current position)",
@@ -1253,7 +1305,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def _update_milling_protocol(self, idx: int, method: str, stage: AutoLamellaWaffleStage):
 
         stages = deepcopy(self.milling_widget.get_milling_stages())
-        if method == "autolamella-waffle" and stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+        if _is_method_type(method, "trench") and stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
             self.experiment.positions[idx].protocol["trench"] = deepcopy(patterning.get_protocol_from_stages(stages))
             self.experiment.positions[idx].protocol["trench"]["point"] = stages[0].pattern.point.to_dict()
         
@@ -1397,11 +1449,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_trench.setEnabled(False)
         self.pushButton_run_waffle_undercut.setEnabled(False)
         self.pushButton_run_setup_autolamella.setEnabled(False)
-        self.pushButton_run_autolamella.setEnabled(False)
         self.pushButton_run_waffle_trench.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
         self.pushButton_run_waffle_undercut.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
         self.pushButton_run_setup_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
-        self.pushButton_run_autolamella.setStyleSheet(_stylesheets._DISABLED_PUSHBUTTON_STYLE)
 
         self.menuWorkflow.setEnabled(True)
         self.actionStop_Workflow.setVisible(True)
@@ -1416,6 +1466,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             raise ValueError(f"Invalid method {method} for autolamella workflow")
 
         from autolamella import waffle as wfl # avoiding circular import
+        from autolamella.workflows import autoliftout
+
         if workflow == "trench":
             wfl.run_trench_milling(microscope, settings, experiment, parent_ui=self )
 
@@ -1433,6 +1485,50 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 wfl.run_autolamella(microscope, settings, experiment, parent_ui=self)
             if method == "autolamella-waffle":
                 wfl.run_autolamella_waffle(microscope, settings, experiment, parent_ui=self)
+            if method == "autolamella-serial-liftout":
+                autoliftout.run_thinning_workflow(
+                    microscope=microscope,
+                    settings=settings,
+                    experiment=experiment,
+                    parent_ui=self,
+                )
+
+        # liftout workflows
+        from autolamella.workflows import autoliftout
+        if workflow == "setup-liftout":
+            self.experiment = autoliftout.run_setup_autoliftout(
+                microscope=microscope,
+                settings=settings,
+                experiment=experiment,
+                parent_ui=self,
+            )
+        if workflow == "autoliftout":            
+            if method == "autolamella-liftout":
+                settings.image.autogamma = True
+                self.experiment = autoliftout.run_autoliftout_workflow(
+                    microscope=microscope,
+                    settings=settings,
+                    experiment=experiment,
+                    parent_ui=self,
+                )
+            if method == "autolamella-serial-liftout":
+                from autolamella.workflows import serial as serial_workflow
+                self.experiment = serial_workflow.run_serial_liftout_workflow(
+                    microscope=microscope,
+                    settings=settings,
+                    experiment=experiment,
+                    parent_ui=self,
+                )
+        if workflow == "serial-liftout-landing":
+
+            from autolamella.workflows import serial as serial_workflow
+            self.experiment = serial_workflow.run_serial_liftout_landing(
+
+                microscope=microscope,
+                settings=settings,
+                experiment=experiment,
+                parent_ui=self,
+            )
 
         self.update_experiment_signal.emit(self.experiment)
 
