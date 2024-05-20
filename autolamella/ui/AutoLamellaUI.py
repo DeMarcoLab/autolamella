@@ -1812,11 +1812,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if info["eb_image"] is not None:
             eb_image = info["eb_image"]
             self.image_widget.eb_image = eb_image
-            self.image_widget.update_viewer(eb_image.data, "ELECTRON", _set_ui=True)
+            #self.image_widget.update_viewer(eb_image.data, "ELECTRON", _set_ui=True)
+            self.image_widget.set_image_in_nap_viewer(eb_image.data, "ELECTRON")
+            self.image_widget.update_image_ui_elements("ELECTRON")               
         if info["ib_image"] is not None:
             ib_image = info["ib_image"]
             self.image_widget.ib_image = ib_image
-            self.image_widget.update_viewer(ib_image.data, "ION", _set_ui=True)
+            #self.image_widget.update_viewer(ib_image.data, "ION", _set_ui=True)
+            self.image_widget.set_image_in_nap_viewer(ib_image.data, "ION")
+            self.image_widget.update_image_ui_elements("ION") 
 
         if isinstance(stages, list):
             self.milling_widget.set_milling_stages(stages)
