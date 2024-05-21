@@ -2,7 +2,7 @@ import logging
 import time
 from copy import deepcopy
 
-from fibsem.structures import FibsemImage, FibsemStagePosition, ImageSettings
+from fibsem.structures import ImageSettings
 
 from autolamella.structures import (
     AutoLamellaWaffleStage,
@@ -12,16 +12,7 @@ from autolamella.structures import (
 
 from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 
-
-from fibsem import acquire, calibration, patterning
-from fibsem.structures import Point, BeamType, MicroscopeSettings
-from fibsem.microscope import FibsemMicroscope
-from fibsem import config as fcfg
-
-
-import logging
 import os
-from copy import deepcopy
 from datetime import datetime
 
 import numpy as np
@@ -34,12 +25,7 @@ from fibsem.structures import (
     MicroscopeSettings,
     Point, FibsemRectangle
 )
-import time
-from autolamella.structures import (
-    AutoLamellaWaffleStage,
-    Experiment,
-    Lamella,
-)
+
 from fibsem.detection import detection
 from fibsem.detection.detection import (
     Feature,
