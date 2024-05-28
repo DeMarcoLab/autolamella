@@ -93,7 +93,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def __init__(self, viewer: napari.Viewer) -> None:
         super(AutoLamellaUI, self).__init__()
 
-        self.setupUi(self)
+        self.setupUi(self) #not sure what is setting up here
 
         self.label_title.setText(f"AutoLamella v{autolamella.__version__}")
 

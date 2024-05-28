@@ -40,7 +40,8 @@ milling:
     type: Fiducial
   lamella:
     stages:
-      -   application_file: Si-ccs
+      -   name: Rough Cut
+          application_file: Si-ccs
           cross_section: CleaningCrossSection
           depth: 6.5e-07
           dwell_time: 1.0e-06
@@ -55,8 +56,8 @@ milling:
           size_ratio: 1.0
           spot_size: 5.0e-08
           trench_height: 3.5e-06
-          name: Rough Cut
-      -   application_file: Si-ccs
+      -   name: Regular Cut
+          application_file: Si-ccs
           cross_section: CleaningCrossSection
           depth: 6.5e-07
           dwell_time: 1.0e-06
@@ -71,8 +72,8 @@ milling:
           size_ratio: 1.0
           spot_size: 5.0e-08
           trench_height: 2.0e-06
-          name: Regular Cut
-      -   application_file: Si-ccs
+      -   name: Polishing Cut
+          application_file: Si-ccs
           cross_section: CleaningCrossSection
           depth: 4.0e-07
           dwell_time: 1.0e-06
@@ -87,8 +88,8 @@ milling:
           size_ratio: 1.0
           spot_size: 5.0e-08
           trench_height: 5.0e-07
-          name: Polishing Cut
-      -   application_file: Si-ccs
+      -   name: Adaptive polishing
+          application_file: Si-ccs
           cross_section: CleaningCrossSection
           depth: 4.0e-07
           dwell_time: 1.0e-06
@@ -103,7 +104,7 @@ milling:
           size_ratio: 1.0
           spot_size: 5.0e-08
           trench_height: 5.0e-07
-          name: Adaptive polishing
+          
   microexpansion:
     width: 0.5e-6
     height: 18.e-6
@@ -145,3 +146,15 @@ adaptive_polish:
     window_size_m: 1e-7
     max_crack_area_m2: 2e-12
     model_path: f"{Path(__file__).parent}/dl_segmentation/2024-02-24_0013_gis_lamela_crack_pytorch_AUnet.ptchkp"
+    imaging_settings:
+      electron:
+        resolution:         [3072,2048]
+        hfw:                40.0e-6 
+        dwell_time:         200.0e-9
+        frame_integration:  8
+
+      ion:
+        resolution:         [3072,2048]
+        hfw:                40.0e-6 
+        dwell_time:         200.0e-9
+        frame_integration:  8
