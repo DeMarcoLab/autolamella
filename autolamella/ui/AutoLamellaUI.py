@@ -1362,6 +1362,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 os.path.join(self.experiment.path, "protocol.yaml"),
                 self.settings.protocol,
             )
+        
+        # Adaptive polish/milling
+        if not "adaptive_polish" in self.settings.keys():
+            logging.info("adaptive_polish key not available in protocol.")
+        else:
+            protocol_adaptive_polish = self.protocol["adaptive_polish"]
+            self.milling_widget.adaptive_polish_settings=protocol_adaptive_polish
 
         self.update_ui()
 

@@ -134,7 +134,7 @@ adaptive_polish:
     #session_name: f"Franklin_{datetime.date.today()}",
     #"session_dir": f"Z:/structbio/qmm85263/20240509_autolamella_test/AutoLamella-2024-05-09-11-01/{datetime.date.today()}",
     # "session_dir": os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop', 'adapt_mill_session_localtest_temp') ,
-    do_plots: True,
+    do_plots: True
     #"display_plots": False,
     fallback_pixel_size_m: 1.8e-8
     # Milling cycle control
