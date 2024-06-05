@@ -145,7 +145,7 @@ adaptive_polish:
     lam_height_min_m: 2e-6
     window_size_m: 1e-7
     max_crack_area_m2: 2e-12
-    model_path: f"{Path(__file__).parent}/dl_segmentation/2024-02-24_0013_gis_lamela_crack_pytorch_AUnet.ptchkp"
+    #model_path:  # comment for default
     imaging_settings:
       electron:
         resolution:         [3072,2048]
