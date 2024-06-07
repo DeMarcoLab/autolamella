@@ -152,7 +152,6 @@ adaptive_polish:
         hfw:                40.0e-6 
         dwell_time:         200.0e-9
         frame_integration:  8
-
       ion:
         resolution:         [3072,2048]
         hfw:                40.0e-6 
