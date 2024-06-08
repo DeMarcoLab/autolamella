@@ -962,7 +962,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # trench
             self.pushButton_run_waffle_trench.setVisible(_TRENCH_METHOD)
             self.pushButton_run_waffle_trench.setEnabled(_ENABLE_TRENCH)
-            self.pushButton_run_waffle_undercut.setVisible(_TRENCH_METHOD)
+            self.pushButton_run_waffle_undercut.setVisible(_TRENCH_METHOD and method != "autolamella-serial-liftout")
             self.pushButton_run_waffle_undercut.setEnabled(_ENABLE_UNDERCUT)
 
             # liftout
@@ -1013,7 +1013,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # global button visibility configuration
             SHOW_INDIVUDAL_STAGES = CONFIGURATION["SHOW_INDIVIDUAL_STAGES"]
             self.pushButton_run_waffle_trench.setVisible(SHOW_INDIVUDAL_STAGES)
-            self.pushButton_run_waffle_undercut.setVisible(SHOW_INDIVUDAL_STAGES)
+            self.pushButton_run_waffle_undercut.setVisible(SHOW_INDIVUDAL_STAGES and method != "autolamella-serial-liftout")
 
             # tab visibity / enabled
             # self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], self._WORKFLOW_RUNNING and not _ON_GRID_METHOD)
