@@ -321,7 +321,7 @@ def mill_lamella(
     update_status_ui(parent_ui, f"{lamella.info} Aligning Reference Images...")
 
     settings.image.save = True
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.hfw = stages[0].milling.hfw # fcfg.REFERENCE_HFW_SUPER
     settings.image.beam_type = BeamType.ION
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
     _ALIGNMENT_ATTEMPTS = int(settings.protocol["options"].get("alignment_attempts", 1))
@@ -483,11 +483,6 @@ def setup_lamella(
         lamella = align_feature_coincident(microscope, settings, lamella, parent_ui, validate)
 
     log_status_message(lamella, "SETUP_PATTERNS")
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
-    settings.image.filename = f"ref_{lamella.state.stage.name}_start"
-    settings.image.save = True
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    set_images_ui(parent_ui, eb_image, ib_image)
 
     # TODO: copy the entire milling protocol into each lamella protocol beforehand
     # load the default protocol unless in lamella protocol
@@ -496,6 +491,12 @@ def setup_lamella(
     lamella_stages = patterning.get_milling_stages("lamella", protocol, lamella_position)
     stages = deepcopy(lamella_stages)
     n_lamella = len(stages)
+
+    settings.image.hfw = stages[0].milling.hfw # fcfg.REFERENCE_HFW_SUPER
+    settings.image.filename = f"ref_{lamella.state.stage.name}_start"
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    set_images_ui(parent_ui, eb_image, ib_image)
 
     # feature 
     if _MILL_FEATURES := method in ["autolamella-on-grid", "autolamella-waffle" ]:
@@ -586,6 +587,7 @@ def setup_lamella(
     lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, 
         deepcopy(fiducial_stage.pattern.point), 
         lamella.protocol["fiducial"]["stages"][0]["height"])
+    alignment_hfw = fiducial_stage.milling.hfw
 
     # mill the fiducial
     if use_fiducial:
@@ -593,6 +595,7 @@ def setup_lamella(
         stages = update_milling_ui(fiducial_stage, parent_ui, 
             msg=f"Press Run Milling to mill the fiducial for {lamella._petname}. Press Continue when done.", 
             validate=validate)
+        alignment_hfw = stages[0].milling.hfw
 
     # set reduced area for fiducial alignment
     settings.image.reduced_area = lamella.fiducial_area
@@ -602,7 +605,7 @@ def setup_lamella(
     # for alignment
     settings.image.beam_type = BeamType.ION
     settings.image.save = True
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.hfw =  alignment_hfw #fcfg.REFERENCE_HFW_SUPER
     settings.image.filename = f"ref_alignment"
     settings.image.autocontrast = False # disable autocontrast for alignment
     print(f"REDUCED_AREA: ", settings.image.reduced_area)
