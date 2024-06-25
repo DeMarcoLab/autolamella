@@ -55,8 +55,10 @@ from fibsem.detection.detection import (
 )
 from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 from fibsem import config as fcfg
-
-from autolamella.workflows.ui import (set_images_ui, update_status_ui, update_detection_ui, update_milling_ui)
+from autolamella.workflows import actions
+from autolamella.workflows.ui import (set_images_ui, update_status_ui, 
+                                      update_detection_ui, update_milling_ui, 
+                                      ask_user)
 
 
 # CORE WORKFLOW STEPS
@@ -93,7 +95,11 @@ def mill_trench(
     
     log_status_message(lamella, "MILL_TRENCH")
 
-    settings.image.hfw = lamella.protocol["trench"]["stages"][0]["hfw"]
+    if "stages" in lamella.protocol["trench"]:
+      hfw = lamella.protocol["trench"]["stages"][0]["hfw"]
+    else:
+        hfw = lamella.protocol["trench"]["hfw"]
+    settings.image.hfw = hfw
     settings.image.filename = f"ref_{lamella.state.stage.name}_start"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
@@ -102,7 +108,9 @@ def mill_trench(
     
     # define trench milling stage
     settings.image.beam_type = BeamType.ION
-    stages = patterning.get_milling_stages("trench", lamella.protocol, point=Point.from_dict(lamella.protocol["trench"]["point"]))
+    stages = patterning.get_milling_stages("trench", 
+                                           lamella.protocol, 
+                                           point=Point.from_dict(lamella.protocol["trench"].get("point", {"x":0, "y":0})))
     stages = update_milling_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
@@ -467,8 +475,17 @@ def setup_lamella(
 
     log_status_message(lamella, "ALIGN_LAMELLA")
     update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
-
-    from autolamella.workflows import actions
+    
+    milling_angle = settings.protocol["options"].get("lamella_tilt_angle", 18)
+    stage_position = microscope.get_stage_position()
+    is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t)
+    if not is_close and validate and method == "autolamella-on-grid":
+        ret = ask_user(parent_ui=parent_ui, 
+                    msg=f"The current tilt ({np.rad2deg(stage_position.t)} deg) does not match the specified milling tilt ({milling_angle} deg). Press Tilt to go to the milling angle.", 
+                    pos="Tilt", neg="Skip")
+        if ret:
+            actions.move_to_lamella_angle(microscope, settings.protocol)
+            
     if method != "autolamella-on-grid":
         actions.move_to_lamella_angle(microscope, settings.protocol)
 
