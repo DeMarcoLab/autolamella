@@ -6,6 +6,7 @@ from fibsem.structures import (
     FibsemStagePosition,
     FibsemImage,
 )
+from fibsem.detection.utils import save_ml_image_mask
 import time
 
 from fibsem.detection import detection
@@ -121,14 +122,16 @@ def update_detection_ui(
             pos="Continue",
             det=det,
         )
-
+  
         det = parent_ui.det_widget._get_detected_features()
 
         # I need this to happen in the parent thread for it to work correctly
         parent_ui.det_confirm_signal.emit(True)
-    
+  
+    else:
+        save_ml_image_mask(det)
+        
     # TODO: set images in ui here
-
     return det
 
 

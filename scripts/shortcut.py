@@ -6,7 +6,9 @@ from autolamella.config import DESKTOP_SHORTCUT_PATH
 desktop = os.path.join(os.path.expanduser('~'), 'Desktop')
 
 # Specify the target file (e.g., a script or program you want to create a shortcut for)
-target_file = os.path.join(DESKTOP_SHORTCUT_PATH, "ui.bat") # Replace with your program's path
+target_file = os.path.join(DESKTOP_SHORTCUT_PATH,"scripts", "ui.bat") # Replace with your program's path
+
+print(f"Creating shortcut to '{target_file}' on the desktop...")
 
 # Create a shortcut name
 shortcut_name = 'AutoLamella.lnk'
