@@ -314,10 +314,11 @@ def mill_lamella(
     stages = patterning.get_milling_stages("lamella", lamella.protocol, 
                     point=Point.from_dict(lamella.protocol["lamella"]["point"]))
 
+    num_polishing_stages = settings.protocol["options"].get("num_polishing_stages", 1)
     if lamella.state.stage.name == AutoLamellaWaffleStage.MillPolishingCut.name:
-        stages = stages[-1]
+        stages = stages[-num_polishing_stages:]
     else:
-        stages = stages[:-1]
+        stages = stages[:-num_polishing_stages]
 
     if not isinstance(stages, list):
         stages = [stages]
