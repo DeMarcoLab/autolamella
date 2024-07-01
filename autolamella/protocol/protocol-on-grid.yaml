@@ -13,7 +13,7 @@ options:
     frame_integration: 2
   take_final_overview_image: true
   lamella_tilt_angle: 18.0
-  num_polishing_steps: 1
+  num_polishing_stages: 2
   use_fiducial: true
   use_microexpansion: true
   use_notch: false 
