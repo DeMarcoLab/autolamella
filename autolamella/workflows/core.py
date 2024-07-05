@@ -392,11 +392,11 @@ def mill_lamella(
                                                           point=Point.from_dict(lamella.protocol[_feature_name]["point"]))
             features_stages += feature_stage
 
-
-        features_stages = update_milling_ui(features_stages, parent_ui,
-            msg=f"Press Run Milling to mill the features for {lamella._petname}. Press Continue when done.",
-            validate=validate,
-        )
+        if features_stages:
+            features_stages = update_milling_ui(features_stages, parent_ui,
+                msg=f"Press Run Milling to mill the features for {lamella._petname}. Press Continue when done.",
+                validate=validate,
+            )
 
         if use_notch:
             _feature_name = "notch"
