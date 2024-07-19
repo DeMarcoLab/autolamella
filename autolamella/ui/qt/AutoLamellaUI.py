@@ -126,7 +126,7 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, -72, 732, 710))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 732, 710))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.gridLayout_4 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
         self.gridLayout_4.setObjectName("gridLayout_4")
@@ -284,6 +284,9 @@ class Ui_MainWindow(object):
         self.doubleSpinBox_section_thickness = QtWidgets.QDoubleSpinBox(self.scrollAreaWidgetContents)
         self.doubleSpinBox_section_thickness.setObjectName("doubleSpinBox_section_thickness")
         self.gridLayout_4.addWidget(self.doubleSpinBox_section_thickness, 12, 1, 1, 1)
+        self.checkBox_align_use_fiducial = QtWidgets.QCheckBox(self.scrollAreaWidgetContents)
+        self.checkBox_align_use_fiducial.setObjectName("checkBox_align_use_fiducial")
+        self.gridLayout_4.addWidget(self.checkBox_align_use_fiducial, 16, 0, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.gridLayout_2.addWidget(self.scrollArea, 0, 0, 1, 2)
         self.tabWidget.addTab(self.tab_2, "")
@@ -365,7 +368,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -423,6 +426,7 @@ class Ui_MainWindow(object):
         self.checkBox_take_final_high_quality_reference.setText(_translate("MainWindow", "Acquire Final High Quality Image"))
         self.checkBox_align_at_milling_current.setText(_translate("MainWindow", "Align at Milling Current"))
         self.label_section_thickness.setText(_translate("MainWindow", "Section Thickness (um)"))
+        self.checkBox_align_use_fiducial.setText(_translate("MainWindow", "Use Fiducial"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Protocol"))
         self.pushButton_yes.setText(_translate("MainWindow", "Yes"))
         self.label_title.setText(_translate("MainWindow", "AutoLamella"))
