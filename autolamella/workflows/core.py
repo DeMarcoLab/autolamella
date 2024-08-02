@@ -193,6 +193,11 @@ def mill_undercut(
     UNDERCUT_ANGLE_DEG = settings.protocol["options"].get("undercut_tilt_angle", -5)
     _UNDERCUT_V_OFFSET = lamella.protocol["undercut"].get("v_offset", 0e-6)
     undercut_stages = []
+    try:
+        hfw = lamella.protocol["undercut"]["stages"][0].get("hfw", fcfg.REFERENCE_HFW_HIGH)
+    except:
+        logging.warning("No hfw found in undercut protocol, using default")
+        hfw = fcfg.REFERENCE_HFW_HIGH
 
     for i in range(N_UNDERCUTS):
 
@@ -206,7 +211,7 @@ def mill_undercut(
         # detect
         log_status_message(lamella, f"ALIGN_UNDERCUT_{_n}")
         settings.image.beam_type = BeamType.ION
-        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+        settings.image.hfw = hfw
         settings.image.filename = f"ref_{lamella.state.stage.name}_align_ml_{_n}"
         settings.image.save = True
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
