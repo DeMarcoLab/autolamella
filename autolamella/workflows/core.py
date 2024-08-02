@@ -41,9 +41,27 @@ from fibsem.detection.detection import (
 )
 from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 from fibsem import config as fcfg
+from autolamella.workflows import actions
+from autolamella.workflows.ui import (set_images_ui, update_status_ui, 
+                                      update_detection_ui, update_milling_ui, 
+                                      ask_user, update_alignment_area_ui)
 
-from autolamella.workflows.ui import (set_images_ui, update_status_ui, update_detection_ui, update_milling_ui)
 
+# DEFAULTS, TODO: move to a configuration file
+DEFAULT_ALIGNMENT_AREA = {"left": 0.25, "top": 0.25, "width": 0.5, "height": 0.5}
+DEFAULT_FIDUCIAL_PROTOCOL = {
+    "height": 10.e-6,
+    "width": 1.e-6,
+    "depth": 1.0e-6,
+    "rotation": 45,
+    "milling_current": 2.0e-9,
+    "preset": "30 keV; 20 nA", # TESCAN only
+    "application_file": "Si",
+    "passes": None,
+    "hfw": 80.e-6,
+    "type": "Fiducial",
+    }
+# TODO: complete the rest of the patterns
 
 # CORE WORKFLOW STEPS
 def log_status_message(lamella: Lamella, step: str):
@@ -79,7 +97,11 @@ def mill_trench(
     
     log_status_message(lamella, "MILL_TRENCH")
 
-    settings.image.hfw = lamella.protocol["trench"]["stages"][0]["hfw"]
+    if "stages" in lamella.protocol["trench"]:
+      hfw = lamella.protocol["trench"]["stages"][0]["hfw"]
+    else:
+        hfw = lamella.protocol["trench"]["hfw"]
+    settings.image.hfw = hfw
     settings.image.filename = f"ref_{lamella.state.stage.name}_start"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
@@ -88,7 +110,9 @@ def mill_trench(
     
     # define trench milling stage
     settings.image.beam_type = BeamType.ION
-    stages = patterning.get_milling_stages("trench", lamella.protocol, point=Point.from_dict(lamella.protocol["trench"]["point"]))
+    stages = patterning.get_milling_stages("trench", 
+                                           lamella.protocol, 
+                                           point=Point.from_dict(lamella.protocol["trench"].get("point", {"x":0, "y":0})))
     stages = update_milling_ui(stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
@@ -292,10 +316,11 @@ def mill_lamella(
     stages = patterning.get_milling_stages("lamella", lamella.protocol, 
                     point=Point.from_dict(lamella.protocol["lamella"]["point"]))
 
+    num_polishing_stages = settings.protocol["options"].get("num_polishing_stages", 1)
     if lamella.state.stage.name == AutoLamellaWaffleStage.MillPolishingCut.name:
-        stages = stages[-1]
+        stages = stages[-num_polishing_stages:]
     else:
-        stages = stages[:-1]
+        stages = stages[:-num_polishing_stages]
 
     if not isinstance(stages, list):
         stages = [stages]
@@ -307,7 +332,7 @@ def mill_lamella(
     update_status_ui(parent_ui, f"{lamella.info} Aligning Reference Images...")
 
     settings.image.save = True
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.hfw = stages[0].milling.hfw # fcfg.REFERENCE_HFW_SUPER
     settings.image.beam_type = BeamType.ION
     ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
     _ALIGNMENT_ATTEMPTS = int(settings.protocol["options"].get("alignment_attempts", 1))
@@ -369,11 +394,11 @@ def mill_lamella(
                                                           point=Point.from_dict(lamella.protocol[_feature_name]["point"]))
             features_stages += feature_stage
 
-
-        features_stages = update_milling_ui(features_stages, parent_ui,
-            msg=f"Press Run Milling to mill the features for {lamella._petname}. Press Continue when done.",
-            validate=validate,
-        )
+        if features_stages:
+            features_stages = update_milling_ui(features_stages, parent_ui,
+                msg=f"Press Run Milling to mill the features for {lamella._petname}. Press Continue when done.",
+                validate=validate,
+            )
 
         if use_notch:
             _feature_name = "notch"
@@ -450,11 +475,22 @@ def setup_lamella(
     settings.image.path = lamella.path
     method = settings.protocol["options"].get("method", "autolamella-waffle")
 
+    if "fiducial" not in settings.protocol["milling"]:
+        settings.protocol["milling"]["fiducial"] = DEFAULT_FIDUCIAL_PROTOCOL
 
     log_status_message(lamella, "ALIGN_LAMELLA")
     update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
-
-    from autolamella.workflows import actions
+    
+    milling_angle = settings.protocol["options"].get("lamella_tilt_angle", 18)
+    stage_position = microscope.get_stage_position()
+    is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t)
+    if not is_close and validate and method == "autolamella-on-grid":
+        ret = ask_user(parent_ui=parent_ui, 
+                    msg=f"The current tilt ({np.rad2deg(stage_position.t)} deg) does not match the specified milling tilt ({milling_angle} deg). Press Tilt to go to the milling angle.", 
+                    pos="Tilt", neg="Skip")
+        if ret:
+            actions.move_to_lamella_angle(microscope, settings.protocol)
+            
     if method != "autolamella-on-grid":
         actions.move_to_lamella_angle(microscope, settings.protocol)
 
@@ -469,11 +505,6 @@ def setup_lamella(
         lamella = align_feature_coincident(microscope, settings, lamella, parent_ui, validate)
 
     log_status_message(lamella, "SETUP_PATTERNS")
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
-    settings.image.filename = f"ref_{lamella.state.stage.name}_start"
-    settings.image.save = True
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
-    set_images_ui(parent_ui, eb_image, ib_image)
 
     # TODO: copy the entire milling protocol into each lamella protocol beforehand
     # load the default protocol unless in lamella protocol
@@ -482,6 +513,12 @@ def setup_lamella(
     lamella_stages = patterning.get_milling_stages("lamella", protocol, lamella_position)
     stages = deepcopy(lamella_stages)
     n_lamella = len(stages)
+
+    settings.image.hfw = stages[0].milling.hfw # fcfg.REFERENCE_HFW_SUPER
+    settings.image.filename = f"ref_{lamella.state.stage.name}_start"
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    set_images_ui(parent_ui, eb_image, ib_image)
 
     # feature 
     if _MILL_FEATURES := method in ["autolamella-on-grid", "autolamella-waffle" ]:
@@ -507,15 +544,16 @@ def setup_lamella(
             stages += microexpansion_stage
 
     # fiducial
-    protocol = lamella.protocol if "fiducial" in lamella.protocol else settings.protocol["milling"]
-    FIDUCIAL_X_OFFSET = 25e-6
-    if method == "autolamella-liftout":
-        FIDUCIAL_X_OFFSET *= -1
-    fiducial_position = Point.from_dict(protocol["fiducial"].get("point", {"x": FIDUCIAL_X_OFFSET, "y": 0}))
-    fiducial_stage = patterning.get_milling_stages("fiducial", protocol, fiducial_position)
+    if use_fiducial:= settings.protocol["options"].get("use_fiducial", True):
+        protocol = lamella.protocol if "fiducial" in lamella.protocol else settings.protocol["milling"]
+        
+        FIDUCIAL_X_OFFSET = 25e-6
+        if method == "autolamella-liftout":
+            FIDUCIAL_X_OFFSET *= -1
+        
+        fiducial_position = Point.from_dict(protocol["fiducial"].get("point", {"x": FIDUCIAL_X_OFFSET, "y": 0}))
+        fiducial_stage = patterning.get_milling_stages("fiducial", protocol, fiducial_position)
 
-    use_fiducial = settings.protocol["options"].get("use_fiducial", True)
-    if use_fiducial:
         stages += fiducial_stage
     
     validate_position = True if method != "autolamella-on-grid" else validate
@@ -524,11 +562,10 @@ def setup_lamella(
             msg=f"Confirm the positions for the {lamella._petname} milling. Press Continue to Confirm.",
             validate=validate_position, # always validate non on-grid for now
             milling_enabled=False)
-       
-    from pprint import pprint
-    print("-"*80) 
-    pprint(stages)
-    print("-"*80)
+    
+    # TODO: can I remove this now...d
+    for stage in stages:
+        logging.info(f"{stage.name}: {stage}") 
 
     # lamella
     n_lamella = len(lamella_stages)
@@ -561,37 +598,49 @@ def setup_lamella(
     #     lamella.protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.to_dict()
 
     # fiducial
-    # save fiducial information
-    n_fiducial = len(fiducial_stage)
     if use_fiducial:
+        n_fiducial = len(fiducial_stage)
         fiducial_stage = deepcopy(stages[-n_fiducial:])
 
-    fiducial_stage = fiducial_stage[0] # always single stage
-    lamella.protocol["fiducial"] = deepcopy(patterning.get_protocol_from_stages(fiducial_stage))
-    lamella.protocol["fiducial"]["point"] = fiducial_stage.pattern.point.to_dict()
-    lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, 
-        deepcopy(fiducial_stage.pattern.point), 
-        lamella.protocol["fiducial"]["stages"][0]["height"])
+        # save fiducial information
+        fiducial_stage = fiducial_stage[0] # always single stage
+        lamella.protocol["fiducial"] = deepcopy(patterning.get_protocol_from_stages(fiducial_stage))
+        lamella.protocol["fiducial"]["point"] = fiducial_stage.pattern.point.to_dict()
+        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, 
+            deepcopy(fiducial_stage.pattern.point), 
+            lamella.protocol["fiducial"]["stages"][0]["height"])
+        alignment_hfw = fiducial_stage.milling.hfw
 
-    # mill the fiducial
-    if use_fiducial:
+        # mill the fiducial
         fiducial_stage = patterning.get_milling_stages("fiducial", lamella.protocol, Point.from_dict(lamella.protocol["fiducial"]["point"]))
         stages = update_milling_ui(fiducial_stage, parent_ui, 
             msg=f"Press Run Milling to mill the fiducial for {lamella._petname}. Press Continue when done.", 
             validate=validate)
+        alignment_hfw = stages[0].milling.hfw
+    else:
+        # non-fiducial based alignment
+        alignment_area_dict = settings.protocol["options"].get("alignment_area", DEFAULT_ALIGNMENT_AREA)
+        lamella.fiducial_area = FibsemRectangle.from_dict(alignment_area_dict)
+        alignment_hfw = lamella.protocol["lamella"]["stages"][0]["hfw"]
+
+    logging.info(f"ALIGNMENT AREA WORKFLOW: {lamella.fiducial_area}")
+    lamella.fiducial_area = update_alignment_area_ui(alignment_area=lamella.fiducial_area, 
+                                              parent_ui=parent_ui, 
+                                              msg="Edit Alignment Area. Press Continue when done.", 
+                                              validate=validate )
 
     # set reduced area for fiducial alignment
     settings.image.reduced_area = lamella.fiducial_area
-    print(f"REDUCED_AREA: ", lamella.fiducial_area)
+    logging.info(f"Alignment: Use Fiducial: {use_fiducial}, Alignment Area: {lamella.fiducial_area}")
 
-    # TODO: the ref should also be acquired at the milling current?
+    # TODO: the ref should also be acquired at the milling current? -> yes
     # for alignment
     settings.image.beam_type = BeamType.ION
     settings.image.save = True
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    settings.image.hfw =  alignment_hfw
     settings.image.filename = f"ref_alignment"
     settings.image.autocontrast = False # disable autocontrast for alignment
-    print(f"REDUCED_AREA: ", settings.image.reduced_area)
+    logging.info(f"REDUCED_AREA: {settings.image.reduced_area}")
     ib_image = acquire.new_image(microscope, settings.image)
     settings.image.reduced_area = None
     settings.image.autocontrast = True

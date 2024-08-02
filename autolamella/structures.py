@@ -83,6 +83,8 @@ class Lamella:
         os.makedirs(self.path, exist_ok=True)
         if self.protocol is None:
             self.protocol = {}
+        if self.history is None:
+            self.history = []
 
     def to_dict(self):
         if self.history is None:
