@@ -13,6 +13,7 @@ options:
     frame_integration: 2
   take_final_overview_image: true
   lamella_tilt_angle: 18.0
+  num_polishing_stages: 2
   use_fiducial: true
   use_microexpansion: true
   use_notch: false 
@@ -76,7 +77,7 @@ milling:
           cross_section: CleaningCrossSection
           depth: 4.0e-07
           dwell_time: 1.0e-06
-          hfw: 7.999999999999999e-05
+          hfw: 50.0e-6
           lamella_height: 6.0e-07
           lamella_width: 6.0e-06
           milling_current: 6.0e-11

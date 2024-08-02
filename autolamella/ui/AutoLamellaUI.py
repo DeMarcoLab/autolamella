@@ -83,6 +83,23 @@ def _is_method_type(method: str, method_type: str) -> bool:
         return False
 
 
+def get_method_states(method):
+    """Return the setup and ready states for each method."""
+    SETUP_STATE = (
+        AutoLamellaWaffleStage.PreSetupLamella
+        if method == "autolamella-on-grid"
+        else AutoLamellaWaffleStage.SetupTrench
+    )
+    READY_STATE = (
+        AutoLamellaWaffleStage.SetupLamella
+        if method == "autolamella-on-grid"
+        else AutoLamellaWaffleStage.ReadyTrench
+    )
+
+    return SETUP_STATE, READY_STATE
+
+
+
 class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     ui_signal = pyqtSignal(dict)
     det_confirm_signal = pyqtSignal(bool)
@@ -937,7 +954,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # trench
             self.pushButton_run_waffle_trench.setVisible(_TRENCH_METHOD)
             self.pushButton_run_waffle_trench.setEnabled(_ENABLE_TRENCH)
-            self.pushButton_run_waffle_undercut.setVisible(_TRENCH_METHOD)
+            self.pushButton_run_waffle_undercut.setVisible(_TRENCH_METHOD and method != "autolamella-serial-liftout")
             self.pushButton_run_waffle_undercut.setEnabled(_ENABLE_UNDERCUT)
 
             # liftout
@@ -988,7 +1005,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # global button visibility configuration
             SHOW_INDIVUDAL_STAGES = CONFIGURATION["SHOW_INDIVIDUAL_STAGES"]
             self.pushButton_run_waffle_trench.setVisible(SHOW_INDIVUDAL_STAGES)
-            self.pushButton_run_waffle_undercut.setVisible(SHOW_INDIVUDAL_STAGES)
+            self.pushButton_run_waffle_undercut.setVisible(SHOW_INDIVUDAL_STAGES and method != "autolamella-serial-liftout")
 
             # tab visibity / enabled
             # self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], self._WORKFLOW_RUNNING and not _ON_GRID_METHOD)
@@ -1489,6 +1506,44 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             lamella.state.microscope_state.stage_position.name = lamella._petname
 
         self.experiment.positions.append(deepcopy(lamella))
+        self.experiment.save()
+        
+        # if created from minimap, automatically mark as ready
+        if pos is not None:
+            idx = len(self.experiment.positions) - 1
+
+            method = self.settings.protocol["options"].get("method", None)
+            SETUP_STATE, READY_STATE = get_method_states(method)
+
+            from autolamella import waffle as wfl
+            self.experiment = wfl.end_of_stage_update(
+                microscope=self.microscope,
+                experiment=self.experiment,
+                lamella=lamella,
+                parent_ui=self,
+                _save_state=False,
+            )
+
+            # start ready stage
+            self.experiment.positions[idx] = wfl.start_of_stage_update(
+                microscope=self.microscope,
+                lamella=lamella,
+                next_stage=READY_STATE,
+                parent_ui=self,
+                _restore_state=False,
+            )
+
+            # update the protocol / point
+            self.experiment.positions[idx].protocol = deepcopy(self.settings.protocol["milling"])
+            
+            # end the stage
+            self.experiment = wfl.end_of_stage_update(
+                microscope=self.microscope,
+                experiment=self.experiment,
+                lamella=lamella,
+                parent_ui=self,
+                _save_state=False,
+            )
 
         self.experiment.save()
 
@@ -1577,16 +1632,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # TOGGLE BETWEEN READY AND SETUP
 
         method = self.settings.protocol["options"].get("method", None)
-        SETUP_STATE = (
-            AutoLamellaWaffleStage.PreSetupLamella
-            if method == "autolamella-on-grid"
-            else AutoLamellaWaffleStage.SetupTrench
-        )
-        READY_STATE = (
-            AutoLamellaWaffleStage.SetupLamella
-            if method == "autolamella-on-grid"
-            else AutoLamellaWaffleStage.ReadyTrench
-        )
+        SETUP_STATE, READY_STATE = get_method_states(method)
 
         lamella: Lamella = self.experiment.positions[idx]
         from autolamella import waffle as wfl
