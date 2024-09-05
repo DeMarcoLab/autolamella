@@ -370,7 +370,19 @@ def mill_lamella(
         
         settings.image = tmp
         settings.image.reduced_area = None
-    #### 
+    ####
+
+    # TODO: INSERT BEAM SHIFT ALIGN FOR SEM HERE
+    if settings.protocol["options"].get("use_sem_beam_shift_alignment", False):
+        lamella = align_feature_beam_shift(
+            microscope,
+            settings,
+            lamella=lamella,
+            parent_ui=parent_ui,
+            validate=validate,
+            beam_type=BeamType.ELECTRON,
+            hfw=settings.image.hfw,
+        )
 
     # take reference images
     update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
@@ -791,6 +803,48 @@ def align_feature_coincident(microscope: FibsemMicroscope, settings: MicroscopeS
     settings.image.save = True
     settings.image.hfw = hfw
     settings.image.filename = f"ref_{lamella.state.stage.name}_{feature.name}_align_coincident_final"
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    set_images_ui(parent_ui, eb_image, ib_image)
+
+    return lamella
+
+def align_feature_beam_shift(microscope: FibsemMicroscope, 
+                            settings: MicroscopeSettings, 
+                            lamella: Lamella, parent_ui: AutoLamellaUI, 
+                            validate: bool, 
+                            beam_type: BeamType = BeamType.ELECTRON,
+                            hfw: float = fcfg.REFERENCE_HFW_MEDIUM,
+                            feature: Feature = LamellaCentre()) -> Lamella:
+    """Align the feature to the centre of the image using the beamshift."""
+
+    # bookkeeping
+    features = [feature]
+
+    # update status
+    log_status_message(lamella, f"ALIGN_FEATURE_BEAM_SHIFT")
+    update_status_ui(parent_ui, f"{lamella.info} Aligning Feature with beam shift ({feature.name})...")
+    settings.image.beam_type = beam_type
+    settings.image.hfw = hfw
+    settings.image.filename = f"ref_{lamella.state.stage.name}_{feature.name}_align_beam_shift_ml"
+    settings.image.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    set_images_ui(parent_ui, eb_image, ib_image)
+
+    # detect
+    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info, position=lamella.state.microscope_state.stage_position)
+
+    # TODO: add movement modes; stable move, vertical move, beam shift
+
+    microscope.beam_shift(
+        dx=det.features[0].feature_m.x,
+        dy=det.features[0].feature_m.y,
+        beam_type=settings.image.beam_type
+    )
+
+    # reference images
+    settings.image.save = True
+    settings.image.hfw = hfw
+    settings.image.filename = f"ref_{lamella.state.stage.name}_{feature.name}_align_beam_shift_final"
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     set_images_ui(parent_ui, eb_image, ib_image)
 
