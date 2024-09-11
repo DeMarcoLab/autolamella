@@ -8,7 +8,7 @@ from fibsem.structures import (
 )
 import time
 
-from fibsem.detection import detection
+from fibsem.detection import detection, utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
 from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 
@@ -126,9 +126,11 @@ def update_detection_ui(
 
         # I need this to happen in the parent thread for it to work correctly
         parent_ui.det_confirm_signal.emit(True)
-    
-    # TODO: set images in ui here
 
+    else:
+        det_utils.save_ml_feature_data(det)
+
+    # TODO: set images in ui here
     return det
 
 

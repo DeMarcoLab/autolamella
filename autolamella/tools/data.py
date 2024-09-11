@@ -119,7 +119,8 @@ def calculate_statistics_dataframe(path: Path, encoding: str = "cp1252"):
                     df_beam_shift.append(deepcopy(msgd))
 
 
-                if "confirm_button" in func: # DETECTION INTERACTION
+                # TODO: confirm this parses the correct data
+                if "confirm_button" in func or "save_ml" in func: # DETECTION INTERACTION
                     # log detection data
                     msgd = parse_msg(msg)
                     detd = deepcopy(msgd)
