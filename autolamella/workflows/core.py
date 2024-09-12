@@ -528,9 +528,8 @@ def setup_lamella(
             _feature_name = "notch"
 
             protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol["milling"]
-            NOTCH_H_OFFSET = 0.5e-6                     
             notch_position = Point.from_dict(protocol[_feature_name].get("point", 
-                    {"x":lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2 + NOTCH_H_OFFSET, 
+                    {"x":lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2, 
                     "y": lamella_position.y})) 
             notch_stage = patterning.get_milling_stages(_feature_name, protocol, notch_position)
             n_notch = len(notch_stage)
