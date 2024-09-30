@@ -5,6 +5,7 @@ from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
     FibsemStagePosition,
     FibsemImage,
+    FibsemRectangle,
 )
 import time
 
@@ -222,3 +223,57 @@ def ask_user_continue_workflow(parent_ui, msg: str = "Continue with the next sta
     if validate:
         ret = ask_user(parent_ui=parent_ui, msg=msg, pos="Continue", neg="Exit")
     return ret
+
+def update_alignment_area_ui(alignment_area: FibsemRectangle, parent_ui: AutoLamellaUI, 
+        msg: str = "Edit Alignment Area", validate: bool = True) -> FibsemRectangle:
+    """ Update the alignment area in the UI and return the updated alignment area."""
+    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+
+    if not validate:
+        return alignment_area
+
+    INFO = {
+        "msg": msg,
+        "pos": "Continue",
+        "neg": None,
+        "det": None,
+        "eb_image": None,
+        "ib_image": None,
+        "movement": None,
+        "mill": None,
+        "alignment_area": alignment_area,
+    }
+    parent_ui.ui_signal.emit(INFO)
+
+    parent_ui.WAITING_FOR_USER_INTERACTION = True
+    logging.info("WAITING_FOR_USER_INTERACTION...")
+    while parent_ui.WAITING_FOR_USER_INTERACTION:
+        time.sleep(1)
+
+    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+
+    INFO = {
+        "msg": "Updating Milling Stages",
+        "pos": None,
+        "neg": None,
+        "det": None,
+        "eb_image": None,
+        "ib_image": None,
+        "movement": None,
+        "mill": None,
+        "stages": None,
+        "alignment_area": "clear",
+    }
+
+    parent_ui.WAITING_FOR_UI_UPDATE = True
+    parent_ui.ui_signal.emit(INFO)
+    logging.info(f"WAITING FOR UI UPDATE... ")
+    while parent_ui.WAITING_FOR_UI_UPDATE:
+        time.sleep(0.5)
+
+    # retrieve the updated alignment area
+    alignment_area = deepcopy(parent_ui.image_widget.get_alignment_area())
+
+    return alignment_area
+
+

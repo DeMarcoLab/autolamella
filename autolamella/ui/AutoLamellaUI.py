@@ -14,7 +14,12 @@ from qtpy import QtWidgets
 
 from fibsem import patterning, utils, constants
 from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import MicroscopeSettings, FibsemStagePosition, Point
+from fibsem.structures import (
+    MicroscopeSettings,
+    FibsemStagePosition,
+    Point,
+    FibsemRectangle,
+)
 from fibsem.segmentation.utils import list_available_checkpoints
 from fibsem.ui import (
     FibsemImageSettingsWidget,
@@ -334,6 +339,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
 
         # options
+        self.checkBox_align_use_fiducial.setChecked(
+            self.settings.protocol["options"].get("use_fiducial", True)
+        )
+
         self.beamshift_attempts.setValue(
             self.settings.protocol["options"].get("alignment_attempts", 3)
         )
@@ -487,6 +496,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
 
         # options
+        self.settings.protocol["options"]["use_fiducial"] = (
+            self.checkBox_align_use_fiducial.isChecked()
+        )
         self.settings.protocol["options"]["alignment_attempts"] = int(
             self.beamshift_attempts.value()
         )
@@ -1855,6 +1867,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         _mill = bool(info["mill"] is not None) if info["mill"] is None else info["mill"]
         _det = bool(info["det"] is not None)
         stages = info.get("stages", None)
+        alignment_area = info.get("alignment_area", None)
 
         if _det:
             self.det_widget.set_detected_features(info["det"])
@@ -1876,6 +1889,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.milling_widget.set_milling_stages(stages)
         if stages == "clear":
             self.milling_widget._remove_all_stages()
+
+        if isinstance(alignment_area, FibsemRectangle):
+            self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Image"])
+            self.image_widget.toggle_alignment_area(alignment_area)
+        if alignment_area == "clear":
+            self.image_widget.clear_alignment_area()
+        
+        if _det is None and _mill is None and alignment_area is None:
+            self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Experiment"])
 
         # ui interaction
         self.milling_widget.pushButton_run_milling.setEnabled(False)
