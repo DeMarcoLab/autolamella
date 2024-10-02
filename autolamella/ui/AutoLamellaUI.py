@@ -748,6 +748,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             return
 
+        if self.experiment is None:
+            napari.utils.notifications.show_warning(
+                f"Please load an experiment first... [No Experiment Loaded]"
+            )
+            return
+        
+        # update image path
+        self.settings.image.path = self.experiment.path
+
         # TODO: should make this more generic i guess, but this is fine for now
         self.viewer2 = napari.Viewer(ndisplay=2)
         self.minimap_widget = FibsemMinimapWidget(
