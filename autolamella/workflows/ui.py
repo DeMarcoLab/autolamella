@@ -1,6 +1,7 @@
 import logging
 from copy import deepcopy
 
+from fibsem import milling
 from fibsem.patterning import FibsemMillingStage
 from fibsem.structures import (
     FibsemStagePosition,
@@ -11,17 +12,26 @@ import time
 
 from fibsem.detection import detection, utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
-from autolamella.ui.AutoLamellaUI import AutoLamellaUI
-
-
+from autolamella.ui import AutoLamellaUI
 
 # CORE UI FUNCTIONS -> PROBS SEPARATE FILE
 def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by user.") -> bool:
+    # headless mode
+    if parent_ui is None:
+        return False
+    
     if parent_ui._ABORT_THREAD:
         raise InterruptedError(msg)
 
 
-def update_milling_ui(stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg:str, validate: bool,milling_enabled: bool = True):
+def update_milling_ui(microscope, stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg:str, validate: bool, milling_enabled: bool = True):
+    
+    # headless mode
+    if parent_ui is None:
+        if milling_enabled:
+            milling.mill_stages(microscope=microscope, stages=stages)
+        return stages
+    
     _update_mill_stages_ui(parent_ui, stages=stages)
 
     pos, neg = "Run Milling", "Continue"
@@ -103,7 +113,7 @@ def _update_mill_stages_ui(
         time.sleep(0.5)
 
 def update_detection_ui(
-    microscope, settings, features, parent_ui, validate: bool, msg: str = "Lamella", position: FibsemStagePosition = None,
+    microscope, settings, features, parent_ui: AutoLamellaUI, validate: bool, msg: str = "Lamella", position: FibsemStagePosition = None,
 ) -> DetectedFeatures:
     feat_str = ", ".join([f.name for f in features])
     update_status_ui(parent_ui, f"{msg}: Detecting Features ({feat_str})...")
@@ -115,7 +125,7 @@ def update_detection_ui(
         point=position,
     )
 
-    if validate:
+    if validate and parent_ui is not None:
         ask_user(
             parent_ui,
             msg=f"Confirm Feature Detection. Press Continue to proceed.",
@@ -140,6 +150,10 @@ def set_images_ui(
     eb_image: FibsemImage = None,
     ib_image: FibsemImage = None,
 ):
+    # headless mode
+    if parent_ui is None:
+        return
+    
     _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
 
     INFO = {
@@ -160,6 +174,10 @@ def set_images_ui(
         time.sleep(0.5)
 
 def update_status_ui(parent_ui: AutoLamellaUI, msg: str):
+
+    if parent_ui is None:
+        logging.info(msg)
+        return
 
     _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
 
@@ -186,6 +204,11 @@ def ask_user(
     mill: bool = None,
     det: DetectedFeatures = None,
 ) -> bool:
+
+    if parent_ui is None:
+        logging.warning(f"User input requested in headless mode: {msg}, always returning True.")
+        return True
+
     INFO = {
         "msg": msg,
         "pos": pos,
@@ -227,9 +250,11 @@ def ask_user_continue_workflow(parent_ui, msg: str = "Continue with the next sta
 def update_alignment_area_ui(alignment_area: FibsemRectangle, parent_ui: AutoLamellaUI, 
         msg: str = "Edit Alignment Area", validate: bool = True) -> FibsemRectangle:
     """ Update the alignment area in the UI and return the updated alignment area."""
+    
     _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
 
-    if not validate:
+    # headless mode, return the alignment area   
+    if parent_ui is None or not validate:
         return alignment_area
 
     INFO = {
@@ -277,3 +302,12 @@ def update_alignment_area_ui(alignment_area: FibsemRectangle, parent_ui: AutoLam
     return alignment_area
 
 
+
+
+def update_experiment_ui(parent_ui: AutoLamellaUI, experiment):
+    
+    # headless mode
+    if parent_ui is None:
+        return
+    
+    parent_ui.update_experiment_signal.emit(experiment)

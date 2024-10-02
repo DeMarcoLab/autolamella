@@ -4,9 +4,9 @@ from autolamella.structures import (
     AutoLamellaWaffleStage,
     Experiment,
 )
-from autolamella.ui.AutoLamellaUI import AutoLamellaUI
+from autolamella.ui import AutoLamellaUI
 from autolamella.workflows.core import ( log_status_message, mill_trench, mill_undercut, mill_lamella, setup_lamella, start_of_stage_update, end_of_stage_update)
-from autolamella.workflows.ui import ask_user, ask_user_continue_workflow
+from autolamella.workflows.ui import ask_user, ask_user_continue_workflow, update_experiment_ui
 
 WORKFLOW_STAGES = {
     AutoLamellaWaffleStage.MillTrench: mill_trench,
@@ -38,7 +38,7 @@ def run_trench_milling(
 
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
-            parent_ui.update_experiment_signal.emit(experiment)
+            update_experiment_ui(parent_ui, experiment)
     
     log_status_message(lamella, "NULL_END") # for logging purposes
 
@@ -62,12 +62,12 @@ def run_undercut_milling(
             )
             lamella = mill_undercut(microscope, settings, lamella, parent_ui)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
-            parent_ui.update_experiment_signal.emit(experiment)
+            update_experiment_ui(parent_ui, experiment)
 
             # ready lamella for next stage
             lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.SetupLamella, parent_ui=parent_ui,_restore_state=False,)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
-            parent_ui.update_experiment_signal.emit(experiment)
+            update_experiment_ui(parent_ui, experiment)
     
     log_status_message(lamella, "NULL_END") # for logging purposes
 
@@ -93,7 +93,7 @@ def run_setup_lamella(
 
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
-            parent_ui.update_experiment_signal.emit(experiment)
+            update_experiment_ui(parent_ui, experiment)
     
     log_status_message(lamella, "NULL_END") # for logging purposes
 
@@ -119,7 +119,7 @@ def run_lamella_milling(
                 lamella = WORKFLOW_STAGES[lamella.state.stage](microscope, settings, lamella, parent_ui)
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
-                parent_ui.update_experiment_signal.emit(experiment)
+                update_experiment_ui(parent_ui, experiment)
 
 
     # finish
@@ -127,7 +127,7 @@ def run_lamella_milling(
         if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut and not lamella._is_failure:
             lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.Finished, parent_ui, _restore_state=False)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
-            parent_ui.update_experiment_signal.emit(experiment)
+            update_experiment_ui(parent_ui, experiment)
 
     log_status_message(lamella, "NULL_END") # for logging purposes
 
