@@ -10,7 +10,7 @@ from autolamella.structures import (
     Lamella,
 )
 
-from autolamella.ui.AutoLamellaUI import AutoLamellaUI
+from autolamella.ui import AutoLamellaUI
 
 
 from fibsem import acquire, calibration, patterning
@@ -40,20 +40,13 @@ from autolamella.structures import (
     Experiment,
     Lamella,
 )
-from fibsem.detection import detection
 from fibsem.detection.detection import (
     Feature,
-    ImageCentre,
     LamellaCentre,
-    LamellaLeftEdge,
-    LamellaRightEdge,
     LamellaTopEdge,
     LamellaBottomEdge,
-    detect_features,
-    DetectedFeatures,
     VolumeBlockCentre
 )
-from autolamella.ui.AutoLamellaUI import AutoLamellaUI
 from fibsem import config as fcfg
 from autolamella.workflows import actions
 from autolamella.workflows.ui import (set_images_ui, update_status_ui, 
@@ -127,7 +120,7 @@ def mill_trench(
     stages = patterning.get_milling_stages("trench", 
                                            lamella.protocol, 
                                            point=Point.from_dict(lamella.protocol["trench"].get("point", {"x":0, "y":0})))
-    stages = update_milling_ui(stages, parent_ui,
+    stages = update_milling_ui(microscope, stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
@@ -252,7 +245,7 @@ def mill_undercut(
         log_status_message(lamella, f"MILL_UNDERCUT_{_n}")
 
         stages = patterning.get_milling_stages("undercut", lamella.protocol, point=point)[i]
-        stages = update_milling_ui([stages], parent_ui,
+        stages = update_milling_ui(microscope, [stages], parent_ui,
             msg=f"Press Run Milling to mill the Undercut {_n} for {lamella._petname}. Press Continue when done.",
             validate=validate,
         )
@@ -414,7 +407,7 @@ def mill_lamella(
             features_stages += feature_stage
 
         if features_stages:
-            features_stages = update_milling_ui(features_stages, parent_ui,
+            features_stages = update_milling_ui(microscope, features_stages, parent_ui,
                 msg=f"Press Run Milling to mill the features for {lamella._petname}. Press Continue when done.",
                 validate=validate,
             )
@@ -435,7 +428,7 @@ def mill_lamella(
     # mill lamella trenches
     log_status_message(lamella, "MILL_LAMELLA")
 
-    stages = update_milling_ui(stages, parent_ui,
+    stages = update_milling_ui(microscope, stages, parent_ui,
         msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
@@ -504,8 +497,9 @@ def setup_lamella(
     stage_position = microscope.get_stage_position()
     is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t)
     if not is_close and validate and method == "autolamella-on-grid":
-        ret = ask_user(parent_ui=parent_ui, 
-                    msg=f"The current tilt ({np.rad2deg(stage_position.t)} deg) does not match the specified milling tilt ({milling_angle} deg). Press Tilt to go to the milling angle.", 
+        current_t = np.rad2deg(stage_position.t)
+        ret = ask_user(parent_ui=parent_ui,
+                    msg=f"Tilt to specified milling angle ({milling_angle:.2f} deg)? Current tilt is {current_t:.2f} deg.",
                     pos="Tilt", neg="Skip")
         if ret:
             actions.move_to_lamella_angle(microscope, settings.protocol)
@@ -576,7 +570,7 @@ def setup_lamella(
     
     validate_position = True if method != "autolamella-on-grid" else validate
     if validate_position:
-        stages = update_milling_ui(stages, parent_ui, 
+        stages = update_milling_ui(microscope, stages, parent_ui, 
             msg=f"Confirm the positions for the {lamella._petname} milling. Press Continue to Confirm.",
             validate=validate_position, # always validate non on-grid for now
             milling_enabled=False)
@@ -631,7 +625,7 @@ def setup_lamella(
 
         # mill the fiducial
         fiducial_stage = patterning.get_milling_stages("fiducial", lamella.protocol, Point.from_dict(lamella.protocol["fiducial"]["point"]))
-        stages = update_milling_ui(fiducial_stage, parent_ui, 
+        stages = update_milling_ui(microscope, fiducial_stage, parent_ui, 
             msg=f"Press Run Milling to mill the fiducial for {lamella._petname}. Press Continue when done.", 
             validate=validate)
         alignment_hfw = stages[0].milling.hfw

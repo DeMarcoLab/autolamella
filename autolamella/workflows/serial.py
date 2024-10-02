@@ -48,7 +48,7 @@ from fibsem import config as fcfg
 from collections import Counter
 from autolamella.structures import Lamella, Experiment, LamellaState, AutoLamellaWaffleStage
 from autolamella.workflows.autoliftout import log_status_message, start_of_stage_update, end_of_stage_update, setup_lamella, mill_lamella
-from autolamella.workflows.ui import ask_user, update_status_ui, update_detection_ui, set_images_ui,  update_milling_ui
+from autolamella.workflows.ui import ask_user, update_status_ui, update_detection_ui, set_images_ui,  update_milling_ui, update_experiment_ui
 from autolamella.workflows.core import align_feature_coincident, mill_trench, mill_undercut
 from pprint import pprint
 
@@ -178,7 +178,7 @@ def liftout_lamella(
     point.y += _V_OFFSET
 
     stages = get_milling_stages("liftout-weld", settings.protocol["milling"], point)
-    stages = update_milling_ui(stages, parent_ui, 
+    stages = update_milling_ui(microscope, stages, parent_ui, 
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
     
@@ -208,7 +208,7 @@ def liftout_lamella(
         set_images_ui(parent_ui, None, det.fibsem_image)
 
         stages = get_milling_stages("liftout-sever", settings.protocol["milling"], point)
-        stages = update_milling_ui(stages, parent_ui, 
+        stages = update_milling_ui(microscope, stages, parent_ui, 
             msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
             validate=validate)
         
@@ -458,7 +458,7 @@ def land_lamella(
 
     # mill welds
     stages = get_milling_stages("landing-thin", mill_protocol, pt)
-    stages = update_milling_ui(stages, parent_ui, 
+    stages = update_milling_ui(microscope, stages, parent_ui, 
         msg=f"Press Run Milling to mill the thinning pattern for {lamella._petname}. Press Continue when done.", 
         validate=validate)
 
@@ -521,7 +521,7 @@ def land_lamella(
 
     # mill welds
     stages = get_milling_stages("landing-weld", settings.protocol["milling"], [left_corner, right_corner])
-    stages = update_milling_ui(stages, parent_ui, 
+    stages = update_milling_ui(microscope, stages, parent_ui, 
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
     
@@ -603,7 +603,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         point = det.features[0].feature_m
 
         stages = get_milling_stages("landing-sever", settings.protocol["milling"], point)
-        stages = update_milling_ui(stages, parent_ui, 
+        stages = update_milling_ui(microscope, stages, parent_ui, 
             msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
             validate=validate)
         
@@ -722,7 +722,7 @@ def run_serial_liftout_workflow(
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
                 
                 # update ui
-                parent_ui.update_experiment_signal.emit(experiment)
+                update_experiment_ui(parent_ui, experiment)
             else:
                 break  # go to the next lamella
 
@@ -799,7 +799,7 @@ def run_serial_liftout_landing(
         experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui=parent_ui)
                 
         # update ui
-        parent_ui.update_experiment_signal.emit(experiment)
+        update_experiment_ui(parent_ui, experiment)
 
         # land another lamella?
         _counter = Counter([p.state.stage.name for p in experiment.positions])
