@@ -20,7 +20,6 @@ from fibsem.structures import (
     Point,
     FibsemRectangle,
 )
-from fibsem.segmentation.utils import list_available_checkpoints
 from fibsem.ui import (
     FibsemImageSettingsWidget,
     FibsemMovementWidget,
@@ -42,7 +41,12 @@ from autolamella.structures import (
 )
 from autolamella.ui import stylesheets, AutoLamellaUI
 from autolamella.ui.utils import setup_experiment_ui_v2
-
+try:
+    from fibsem.segmentation.utils import list_available_checkpoints
+except ImportError as e:
+    logging.debug(f"Could not import list_available_checkpoints from fibsem.segmentation.utils: {e}")
+    def list_available_checkpoints():
+        return []
 
 _DEV_MODE = False
 DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBACK_01/experiment.yaml"
@@ -690,7 +694,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 image_widget=self.image_widget,
                 parent=self,
             )
-
             self.det_widget = FibsemEmbeddedDetectionUI(
                 viewer=self.viewer,
                 model=None,

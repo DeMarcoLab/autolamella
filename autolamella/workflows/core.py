@@ -18,7 +18,7 @@ from fibsem.structures import Point, BeamType, MicroscopeSettings
 from fibsem.microscope import FibsemMicroscope
 from fibsem import config as fcfg
 
-
+from typing import List, Tuple
 import logging
 import os
 from copy import deepcopy
@@ -722,7 +722,7 @@ def start_of_stage_update(
 
 # TODO: move to fibsem
 from fibsem import conversions
-def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float)->tuple[FibsemRectangle, bool]:
+def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float) -> Tuple[FibsemRectangle, bool]:
     pixelsize = image.metadata.pixel_size.x
     
     fiducial_centre.y = -fiducial_centre.y

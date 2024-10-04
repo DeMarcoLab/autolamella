@@ -1,13 +1,14 @@
-import os
-import json
 import datetime
+import json
+import os
+from copy import deepcopy
+from pathlib import Path
+from typing import Tuple
 
 import pandas as pd
 
-from copy import deepcopy
-from pathlib import Path
-from autolamella.structures import Lamella, Experiment, LamellaState 
-  
+from autolamella.structures import Experiment, Lamella, LamellaState
+
 
 def parse_msg(msg: str):
     """parse message json"""
@@ -33,7 +34,7 @@ def get_message(line) -> str:
     ].strip()  # should just be the message # TODO: need to check the delimeter character...
     return msg 
 
-def parse_line(line: str) -> tuple[str, str, str]:
+def parse_line(line: str) -> Tuple[str, str, str]:
     """parse a line from the log file into a tuple of timestamp, function, and message"""
 
     tsd = get_timestamp(line)
