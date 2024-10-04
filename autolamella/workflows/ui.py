@@ -9,7 +9,7 @@ from fibsem.structures import (
     FibsemRectangle,
 )
 import time
-
+from typing import List
 from fibsem.detection import detection, utils as det_utils
 from fibsem.detection.detection import DetectedFeatures
 from autolamella.ui import AutoLamellaUI
@@ -24,7 +24,7 @@ def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by u
         raise InterruptedError(msg)
 
 
-def update_milling_ui(microscope, stages: list[FibsemMillingStage], parent_ui: AutoLamellaUI, msg:str, validate: bool, milling_enabled: bool = True):
+def update_milling_ui(microscope, stages: List[FibsemMillingStage], parent_ui: AutoLamellaUI, msg:str, validate: bool, milling_enabled: bool = True):
     
     # headless mode
     if parent_ui is None:
@@ -90,7 +90,7 @@ def update_milling_ui(microscope, stages: list[FibsemMillingStage], parent_ui: A
 
 # TODO: think this can be consolidated into mill arg for ask_user?
 def _update_mill_stages_ui(
-    parent_ui: AutoLamellaUI, stages: list[FibsemMillingStage] = None
+    parent_ui: AutoLamellaUI, stages: List[FibsemMillingStage] = None
 ):
     _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
 

@@ -1,7 +1,7 @@
 import logging
 import time
 from copy import deepcopy
-
+from typing import List
 from fibsem import acquire, alignment, calibration, patterning
 from fibsem import utils as fibsem_utils
 from fibsem.detection import detection
@@ -811,7 +811,7 @@ def run_serial_liftout_landing(
 
 
 
-def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positions: list[FibsemStagePosition]) -> Lamella:
+def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positions: List[FibsemStagePosition]) -> Lamella:
 
     # create a new lamella for landing
     _counter = Counter([p.state.stage.name for p in experiment.positions])
@@ -880,7 +880,7 @@ def _prepare_manipulator(
 
     return
 
-def _calculate_landing_positions(microscope, settings) -> list[FibsemStagePosition]:
+def _calculate_landing_positions(microscope, settings) -> List[FibsemStagePosition]:
     """Calculate the landing positions for a given experiment."""
     # make user set the initial position for the landing grid
     # create a grid of positions, based on the grid sizes x, y

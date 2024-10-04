@@ -1,16 +1,23 @@
 import os
+import uuid
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
+from typing import List
 
 import fibsem.utils as utils
 import pandas as pd
 import petname
 import yaml
-from fibsem.structures import FibsemRectangle, MicroscopeState, FibsemImage, ReferenceImages
-import uuid
+from fibsem.structures import (
+    FibsemImage,
+    FibsemRectangle,
+    MicroscopeState,
+    ReferenceImages,
+)
+
 from autolamella import config as cfg
 
 
@@ -63,7 +70,7 @@ class Lamella:
     path: Path = Path()
     fiducial_area: FibsemRectangle = FibsemRectangle()
     _number: int = 0
-    history: list[LamellaState] = None
+    history: List[LamellaState] = None
     _petname: str = None
     protocol: dict = None    
     _is_failure: bool = False
@@ -173,7 +180,7 @@ class Experiment:
         )
         self._created_at: float = datetime.timestamp(datetime.now())
 
-        self.positions: list[Lamella] = []
+        self.positions: List[Lamella] = []
 
         self.program = program
         self.method = method
