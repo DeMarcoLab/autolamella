@@ -162,13 +162,15 @@ def run_autolamella_waffle(
     parent_ui: AutoLamellaUI = None,
 ) -> Experiment:
     """Run the waffle method workflow."""
+    # TODO: add more validation, so we only ask the user to complete a stage 
+    # if a lamella is ready that stage
 
     # run trench milling
     experiment = run_trench_milling(microscope, settings, experiment, parent_ui)
 
     ret = ask_user_continue_workflow(parent_ui, msg="Continue to Mill Undercut?", 
         validate=settings.protocol["options"]["supervise"].get("undercut", True))
-    if ret == False:
+    if ret is False:
         return experiment
 
     # run undercut milling
@@ -176,7 +178,7 @@ def run_autolamella_waffle(
 
     ret = ask_user_continue_workflow(parent_ui, msg="Continue to Setup Lamella?", 
         validate=settings.protocol["options"]["supervise"].get("setup_lamella", True))
-    if ret == False:
+    if ret is False:
         return experiment
 
     # run autolamella

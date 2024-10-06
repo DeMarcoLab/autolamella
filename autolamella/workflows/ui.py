@@ -50,7 +50,7 @@ def update_milling_ui(microscope, stages: List[FibsemMillingStage], parent_ui: A
         parent_ui._MILLING_RUNNING = True
         parent_ui._run_milling_signal.emit()
 
-        logging.info(f"WAITING FOR MILLING TO FINISH... ")
+        logging.info("WAITING FOR MILLING TO FINISH... ")
         while parent_ui._MILLING_RUNNING or parent_ui.image_widget.TAKING_IMAGES:
             time.sleep(1)
 
@@ -92,7 +92,7 @@ def update_milling_ui(microscope, stages: List[FibsemMillingStage], parent_ui: A
 def _update_mill_stages_ui(
     parent_ui: AutoLamellaUI, stages: List[FibsemMillingStage] = None
 ):
-    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+    _check_for_abort(parent_ui)
 
     INFO = {
         "msg": "Updating Milling Stages",
@@ -108,7 +108,7 @@ def _update_mill_stages_ui(
 
     parent_ui.WAITING_FOR_UI_UPDATE = True
     parent_ui.ui_signal.emit(INFO)
-    logging.info(f"WAITING FOR UI UPDATE... ")
+    logging.info("WAITING FOR UI UPDATE... ")
     while parent_ui.WAITING_FOR_UI_UPDATE:
         time.sleep(0.5)
 
@@ -128,7 +128,7 @@ def update_detection_ui(
     if validate and parent_ui is not None:
         ask_user(
             parent_ui,
-            msg=f"Confirm Feature Detection. Press Continue to proceed.",
+            msg="Confirm Feature Detection. Press Continue to proceed.",
             pos="Continue",
             det=det,
         )
@@ -154,7 +154,7 @@ def set_images_ui(
     if parent_ui is None:
         return
     
-    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+    _check_for_abort(parent_ui)
 
     INFO = {
         "msg": "Updating Images",
@@ -169,7 +169,7 @@ def set_images_ui(
     parent_ui.WAITING_FOR_UI_UPDATE = True
     parent_ui.ui_signal.emit(INFO)
 
-    logging.info(f"WAITING FOR UI UPDATE... ")
+    logging.info("WAITING FOR UI UPDATE... ")
     while parent_ui.WAITING_FOR_UI_UPDATE:
         time.sleep(0.5)
 
@@ -179,7 +179,7 @@ def update_status_ui(parent_ui: AutoLamellaUI, msg: str):
         logging.info(msg)
         return
 
-    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+    _check_for_abort(parent_ui)
 
     INFO = {
         "msg": msg,
@@ -251,7 +251,7 @@ def update_alignment_area_ui(alignment_area: FibsemRectangle, parent_ui: AutoLam
         msg: str = "Edit Alignment Area", validate: bool = True) -> FibsemRectangle:
     """ Update the alignment area in the UI and return the updated alignment area."""
     
-    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+    _check_for_abort(parent_ui)
 
     # headless mode, return the alignment area   
     if parent_ui is None or not validate:
@@ -275,7 +275,7 @@ def update_alignment_area_ui(alignment_area: FibsemRectangle, parent_ui: AutoLam
     while parent_ui.WAITING_FOR_USER_INTERACTION:
         time.sleep(1)
 
-    _check_for_abort(parent_ui, msg = f"Workflow aborted by user.")
+    _check_for_abort(parent_ui)
 
     INFO = {
         "msg": "Updating Milling Stages",
@@ -292,7 +292,7 @@ def update_alignment_area_ui(alignment_area: FibsemRectangle, parent_ui: AutoLam
 
     parent_ui.WAITING_FOR_UI_UPDATE = True
     parent_ui.ui_signal.emit(INFO)
-    logging.info(f"WAITING FOR UI UPDATE... ")
+    logging.info("WAITING FOR UI UPDATE... ")
     while parent_ui.WAITING_FOR_UI_UPDATE:
         time.sleep(0.5)
 

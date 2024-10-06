@@ -203,7 +203,7 @@ class Experiment:
     def save(self) -> None:
         """Save the sample data to yaml file"""
 
-        with open(os.path.join(self.path, f"experiment.yaml"), "w") as f:
+        with open(os.path.join(self.path, "experiment.yaml"), "w") as f:
             yaml.safe_dump(self.to_dict(), f, indent=4)
 
     def __repr__(self) -> str:
@@ -407,3 +407,13 @@ class Experiment:
                 print("KEY: ", k)
                 pprint(lamella.protocol[k]["stages"])
                 print('-'*100)
+
+    def at_stage(self, stage: AutoLamellaWaffleStage) -> List[Lamella]:
+        """Return a list of lamellas at a specific stage"""
+
+        return [lamella for lamella in self.positions if lamella.state.stage == stage]
+        
+    def at_failure(self) -> List[Lamella]:
+        """Return a list of lamellas that have failed"""
+
+        return [lamella for lamella in self.positions if lamella._is_failure]
