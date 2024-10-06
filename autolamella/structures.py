@@ -169,7 +169,7 @@ class Lamella:
         return reference_images
     
 class Experiment: 
-    def __init__(self, path: Path = None, name: str = cfg.EXPERIMENT_NAME, program: str = "AutoLiftout", method: str = "AutoLiftout") -> None:
+    def __init__(self, path: Path = None, name: str = cfg.EXPERIMENT_NAME, program: str = "AutoLamella", method: str = "autolamella-on-grid") -> None:
 
 
         self.name: str = name
@@ -322,7 +322,7 @@ class Experiment:
         experiment._created_at = ddict.get("created_at", None)
         experiment._id = ddict.get("_id", "NULL")
         experiment.program = ddict.get("program", "AutoLamella")
-        experiment.method = ddict.get("method", "autoLamella-default") 
+        experiment.method = ddict.get("method", "autoLamella-on-grid") 
 
         # load lamella from dict
         for lamella_dict in ddict["positions"]:
