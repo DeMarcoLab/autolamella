@@ -25,11 +25,14 @@ from fibsem.ui import (
     FibsemMovementWidget,
     FibsemSystemSetupWidget,
     FibsemMillingWidget,
-    FibsemEmbeddedDetectionUI,
     FibsemCryoDepositionWidget,
     FibsemMinimapWidget,
+    DETECTION_AVAILABLE,
     utils as fui,
 )
+
+if DETECTION_AVAILABLE: # ml dependencies are option, so we need to check if they are available
+    from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
 
 import autolamella
 import autolamella.config as cfg
@@ -282,7 +285,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         print("save milling protocol")
 
         if self._PROTOCOL_LOADED is False:
-            logging.info(f"No protocol loaded")
+            logging.info("No protocol loaded")
             return
 
         pattern = fui.create_combobox_message_box(
@@ -293,7 +296,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
 
         if pattern is None:
-            logging.info(f"No pattern selected")
+            logging.info("No pattern selected")
             return
 
         logging.info(f"Loading milling pattern: {pattern}")
@@ -308,7 +311,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         print("load milling protocol")
 
         if self._PROTOCOL_LOADED is False:
-            logging.info(f"No protocol loaded")
+            logging.info("No protocol loaded")
             return
 
         pattern = fui.create_combobox_message_box(
@@ -608,7 +611,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.settings.protocol,
             )  # Q: do we really wanna overwrite this file?
 
-        napari.utils.notifications.show_info(f"Protocol updated.")
+        napari.utils.notifications.show_info("Protocol updated.")
         self.update_ui()
 
     def setup_experiment(self):
@@ -616,7 +619,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         experiment = setup_experiment_ui_v2(self, new_experiment=new_experiment)
 
         if experiment is None:
-            napari.utils.notifications.show_info(f"Experiment not loaded.")
+            napari.utils.notifications.show_info("Experiment not loaded.")
             return
 
         self.experiment = experiment
@@ -694,10 +697,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 image_widget=self.image_widget,
                 parent=self,
             )
-            self.det_widget = FibsemEmbeddedDetectionUI(
-                viewer=self.viewer,
-                model=None,
-            )
 
             # add widgets to tabs
             self.tabWidget.insertTab(
@@ -709,9 +708,17 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.tabWidget.insertTab(
                 CONFIGURATION["TABS"]["Milling"], self.milling_widget, "Milling"
             )
-            self.tabWidget.insertTab(
-                CONFIGURATION["TABS"]["Detection"], self.det_widget, "Detection"
-            )
+
+            # add the detection widget if ml dependencies are available
+            self.det_widget = None
+            if DETECTION_AVAILABLE:
+                self.det_widget = FibsemEmbeddedDetectionUI(
+                    viewer=self.viewer,
+                    model=None,
+                )
+                self.tabWidget.insertTab(
+                    CONFIGURATION["TABS"]["Detection"], self.det_widget, "Detection"
+                )
 
             self._microscope_ui_loaded = True
             self.milling_widget.milling_position_changed.connect(
@@ -734,26 +741,27 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.image_widget.deleteLater()
             self.movement_widget.deleteLater()
             self.milling_widget.deleteLater()
-            self.det_widget.deleteLater()
+            if self.det_widget is not None:
+                self.det_widget.deleteLater()
 
             self._microscope_ui_loaded = False
 
     def _open_minimap(self):
         if self.microscope is None:
             napari.utils.notifications.show_warning(
-                f"Please connect to a microscope first... [No Microscope Connected]"
+                "Please connect to a microscope first... [No Microscope Connected]"
             )
             return
 
         if self.movement_widget is None:
             napari.utils.notifications.show_warning(
-                f"Please connect to a microscope first... [No Movement Widget]"
+                "Please connect to a microscope first... [No Movement Widget]"
             )
             return
 
         if self.experiment is None:
             napari.utils.notifications.show_warning(
-                f"Please load an experiment first... [No Experiment Loaded]"
+                "Please load an experiment first... [No Experiment Loaded]"
             )
             return
         
@@ -860,7 +868,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
 
         if path == "":
-            napari.utils.notifications.show_info(f"No file selected..")
+            napari.utils.notifications.show_info("No file selected..")
             return
 
         pdict = utils.load_yaml(path)
@@ -1152,21 +1160,21 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 else [AutoLamellaWaffleStage.ReadyTrench]
             )
             if lamella.state.stage in SETUP_STAGES:
-                self.pushButton_save_position.setText(f"Save Position")
+                self.pushButton_save_position.setText("Save Position")
                 self.pushButton_save_position.setStyleSheet(
                     stylesheets._ORANGE_PUSHBUTTON_STYLE
                 )
                 self.pushButton_save_position.setEnabled(True)
                 self.milling_widget._PATTERN_IS_MOVEABLE = True
             elif lamella.state.stage in READY_STAGES:
-                self.pushButton_save_position.setText(f"Position Ready")
+                self.pushButton_save_position.setText("Position Ready")
                 self.pushButton_save_position.setStyleSheet(
                     stylesheets._GREEN_PUSHBUTTON_STYLE
                 )
                 self.pushButton_save_position.setEnabled(True)
                 self.milling_widget._PATTERN_IS_MOVEABLE = False
             else:
-                self.pushButton_save_position.setText(f"")
+                self.pushButton_save_position.setText("")
                 self.pushButton_save_position.setStyleSheet(
                     stylesheets._DISABLED_PUSHBUTTON_STYLE
                 )
@@ -1178,7 +1186,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_lamella_landing_selected.setVisible(True)
                 if lamella.landing_selected:
                     self.pushButton_lamella_landing_selected.setText(
-                        f"Landing Position Selected"
+                        "Landing Position Selected"
                     )
                     self.pushButton_lamella_landing_selected.setStyleSheet(
                         stylesheets._GREEN_PUSHBUTTON_STYLE
@@ -1187,7 +1195,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 else:
                     self.pushButton_lamella_landing_selected.setEnabled(False)
                     self.pushButton_lamella_landing_selected.setText(
-                        f"No Landing Position"
+                        "No Landing Position"
                     )
                     self.pushButton_lamella_landing_selected.setStyleSheet(
                         stylesheets._ORANGE_PUSHBUTTON_STYLE
@@ -1401,7 +1409,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if self.settings is None:
             napari.utils.notifications.show_info(
-                f"Please connect to the microscope first."
+                "Please connect to the microscope first."
             )
             return
 
@@ -1410,7 +1418,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
 
         if PATH == "":
-            napari.utils.notifications.show_info(f"No path selected")
+            napari.utils.notifications.show_info("No path selected")
             logging.info("No path selected")
             return
 
@@ -1418,7 +1426,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._PROTOCOL_LOADED = True
         self.update_protocol_ui(_load=True)
         napari.utils.notifications.show_info(
-            f"Loaded Protocol from {os.path.basename(PATH)}"
+            "Loaded Protocol from {os.path.basename(PATH)}"
         )
 
         # save a copy of the protocol to the experiment.path
@@ -1677,8 +1685,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             and lamella.state.stage is SETUP_STATE
         ):
             ret = fui.message_box_ui(
-                title=f"Far away from lamella position",
-                text=f"The current position is far away from the initial lamella position. Move to initial lamella position? (Press No to save at current position)",
+                title="Far away from lamella position",
+                text="The current position is far away from the initial lamella position. Move to initial lamella position? (Press No to save at current position)",
             )
 
             # TODO: handle the case when user exits dialog box
@@ -1833,7 +1841,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def _run_workflow(self, workflow: str) -> None:
         try:
             self.milling_widget.milling_position_changed.disconnect()
-        except:
+        except Exception:
             pass
 
         self.worker = self._threaded_worker(
@@ -1847,7 +1855,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.worker.start()
 
     def _workflow_aborted(self):
-        logging.info(f"Workflow aborted.")
+        logging.info("Workflow aborted.")
         self._WORKFLOW_RUNNING = False
         self._ABORT_THREAD = False
 
@@ -1857,7 +1865,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 logging.info("restoring state for {}".format(lamella.info))
 
     def _workflow_finished(self):
-        logging.info(f"Workflow finished.")
+        logging.info("Workflow finished.")
         self._WORKFLOW_RUNNING = False
         self.milling_widget.milling_position_changed.connect(
             self._update_milling_position
@@ -1881,7 +1889,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         stages = info.get("stages", None)
         alignment_area = info.get("alignment_area", None)
 
-        if _det:
+        if self.det_widget is not None and _det:
             self.det_widget.set_detected_features(info["det"])
             self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Detection"])
 
@@ -1965,7 +1973,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             raise ValueError(f"Invalid method {method} for autolamella workflow")
 
         from autolamella import waffle as wfl  # avoiding circular import
-        from autolamella.workflows import autoliftout
+        if _is_method_type(method, "liftout"):
+            from autolamella.workflows import autoliftout
 
         if workflow == "trench":
             wfl.run_trench_milling(microscope, settings, experiment, parent_ui=self)
@@ -1995,7 +2004,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 )
 
         # liftout workflows
-        from autolamella.workflows import autoliftout
+        # from autolamella.workflows import autoliftout
 
         if workflow == "setup-liftout":
             self.experiment = autoliftout.run_setup_autoliftout(

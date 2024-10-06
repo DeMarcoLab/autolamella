@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autolamella"
+version = "0.3.5a0"
+description = "Automatated ion beam milling for cryo-electron microscopy sample preparation."
+authors = [
+    {name = "Patrick Cleeve", email = "patrick@openfibsem.org"},
+]
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT License"}
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Framework :: napari",
+]
+
+dependencies = [
+    "fibsem>=0.3.5a0",
+]
+
+[project.urls]
+Homepage = "https://github.com/DeMarcoLab/autolamella"
+"Bug Tracker" = "https://github.com/DeMarcoLab/autolamella/issues"
+
+[project.scripts]
+autolamella_ui = "autolamella.ui.AutoLamellaUI:main"
+autoliftout_ui = "autolamella.ui.AutoLiftoutUIv2:main"
+
+[tool.setuptools]
+packages = ["autolamella"]
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml"]
