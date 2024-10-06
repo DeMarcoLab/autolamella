@@ -1859,6 +1859,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._WORKFLOW_RUNNING = False
         self._ABORT_THREAD = False
 
+        # clear the image settings save settings etc
+        self.image_widget.checkBox_image_save_image.setChecked(False)
+        self.image_widget.lineEdit_image_path.setText(self.experiment.path)
+        self.image_widget.lineEdit_image_label.setText("default-image")
+        self.update_ui()
+
         for lamella in self.experiment.positions:
             if lamella.state.stage is not lamella.history[-1].stage:
                 lamella.state = deepcopy(lamella.history[-1])
