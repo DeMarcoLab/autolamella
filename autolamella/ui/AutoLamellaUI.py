@@ -1426,7 +1426,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._PROTOCOL_LOADED = True
         self.update_protocol_ui(_load=True)
         napari.utils.notifications.show_info(
-            "Loaded Protocol from {os.path.basename(PATH)}"
+            f"Loaded Protocol from {os.path.basename(PATH)}"
         )
 
         # save a copy of the protocol to the experiment.path

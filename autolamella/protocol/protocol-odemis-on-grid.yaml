@@ -26,7 +26,7 @@ milling:
           cross_section: CleaningCrossSection
           depth: 6.5e-07
           dwell_time: 1.0e-06
-          hfw: 50.0e-05
+          hfw: 50.0e-06
           lamella_height: 6.0e-07
           lamella_width: 10.0e-06
           milling_current: 7.4e-10
@@ -42,7 +42,7 @@ milling:
           cross_section: CleaningCrossSection
           depth: 6.5e-07
           dwell_time: 1.0e-06
-          hfw: 50.0e-05
+          hfw: 50.0e-06
           lamella_height: 6.0e-07
           lamella_width: 9.5e-06
           milling_current: 2.0e-10

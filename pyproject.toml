@@ -32,7 +32,7 @@ autolamella_ui = "autolamella.ui.AutoLamellaUI:main"
 autoliftout_ui = "autolamella.ui.AutoLiftoutUIv2:main"
 
 [tool.setuptools]
-packages = ["autolamella"]
+# packages = ["autolamella"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
