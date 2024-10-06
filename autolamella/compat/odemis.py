@@ -4,7 +4,7 @@ from datetime import datetime
 from fibsem.microscopes.odemis_microscope import add_odemis_path
 from fibsem.structures import FibsemStagePosition, MicroscopeState
 
-from autolamella.structures import AutoLamellaWaffleStage, Lamella, LamellaState
+from autolamella.structures import AutoLamellaStage, Lamella, LamellaState
 from autolamella.workflows.core import log_status_message
 
 add_odemis_path()
@@ -16,7 +16,7 @@ def create_lamella_from_feature(feature: CryoFeature, path: str, state: Microsco
     """Create a Lamella object from a CryoFeature object."""
     pos = FibsemStagePosition.from_odemis_dict(feature.stage_pos.value)
 
-    workflow_stage = AutoLamellaWaffleStage.SetupLamella
+    workflow_stage = AutoLamellaStage.SetupLamella
 
     lamella = Lamella(
             _petname=feature.name.value,

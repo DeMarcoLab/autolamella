@@ -37,7 +37,7 @@ if DETECTION_AVAILABLE: # ml dependencies are option, so we need to check if the
 import autolamella
 import autolamella.config as cfg
 from autolamella.structures import (
-    AutoLamellaWaffleStage,
+    AutoLamellaStage,
     Experiment,
     Lamella,
     LamellaState,
@@ -98,14 +98,14 @@ def _is_method_type(method: str, method_type: str) -> bool:
 def get_method_states(method):
     """Return the setup and ready states for each method."""
     SETUP_STATE = (
-        AutoLamellaWaffleStage.PreSetupLamella
+        AutoLamellaStage.PreSetupLamella
         if method == "autolamella-on-grid"
-        else AutoLamellaWaffleStage.SetupTrench
+        else AutoLamellaStage.SetupTrench
     )
     READY_STATE = (
-        AutoLamellaWaffleStage.SetupLamella
+        AutoLamellaStage.SetupLamella
         if method == "autolamella-on-grid"
-        else AutoLamellaWaffleStage.ReadyTrench
+        else AutoLamellaStage.ReadyTrench
     )
 
     return SETUP_STATE, READY_STATE
@@ -977,16 +977,16 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             # check if any of the stages are ready
             _counter = Counter([p.state.stage.name for p in self.experiment.positions])
 
-            _READY_TRENCH = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
-            _READY_UNDERCUT = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
-            _READY_LIFTOUT = _counter[AutoLamellaWaffleStage.MillUndercut.name] > 0
-            _READY_LANDING = _counter[AutoLamellaWaffleStage.LiftoutLamella.name] > 0
-            _READY_LANDED = _counter[AutoLamellaWaffleStage.LandLamella.name] > 0
-            _READY_LAMELLA = _counter[AutoLamellaWaffleStage.SetupLamella.name] > 0
+            _READY_TRENCH = _counter[AutoLamellaStage.ReadyTrench.name] > 0
+            _READY_UNDERCUT = _counter[AutoLamellaStage.MillTrench.name] > 0
+            _READY_LIFTOUT = _counter[AutoLamellaStage.MillUndercut.name] > 0
+            _READY_LANDING = _counter[AutoLamellaStage.LiftoutLamella.name] > 0
+            _READY_LANDED = _counter[AutoLamellaStage.LandLamella.name] > 0
+            _READY_LAMELLA = _counter[AutoLamellaStage.SetupLamella.name] > 0
             _READY_SETUP_LAMELLA = (
-                _counter[AutoLamellaWaffleStage.ReadyLamella.name] > 0
+                _counter[AutoLamellaStage.ReadyLamella.name] > 0
             )
-            _READY_ROUGH = _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0
+            _READY_ROUGH = _counter[AutoLamellaStage.MillRoughCut.name] > 0
             _READY_AUTOLAMELLA = _READY_SETUP_LAMELLA or _READY_ROUGH or _READY_LANDED
 
             _ENABLE_TRENCH = _TRENCH_METHOD and _READY_TRENCH
@@ -1150,14 +1150,14 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self._PROTOCOL_LOADED:
             method = self.settings.protocol["options"].get("method", None)
             SETUP_STAGES = (
-                [AutoLamellaWaffleStage.PreSetupLamella]
+                [AutoLamellaStage.PreSetupLamella]
                 if method == "autolamella-on-grid"
-                else [AutoLamellaWaffleStage.SetupTrench]
+                else [AutoLamellaStage.SetupTrench]
             )
             READY_STAGES = (
-                [AutoLamellaWaffleStage.SetupLamella]
+                [AutoLamellaStage.SetupLamella]
                 if method == "autolamella-on-grid"
-                else [AutoLamellaWaffleStage.ReadyTrench]
+                else [AutoLamellaStage.ReadyTrench]
             )
             if lamella.state.stage in SETUP_STAGES:
                 self.pushButton_save_position.setText("Save Position")
@@ -1215,7 +1215,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             #     if self.image_widget.ib_image is not None:
             #         fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
             #         for lamella in positions:
-            #             if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaWaffleStage.SetupTrench, AutoLamellaWaffleStage.ReadyTrench]:
+            #             if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaStage.SetupTrench, AutoLamellaStage.ReadyTrench]:
             #                 lamella_centre =  Point.from_dict(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
             #             else:
             #                 lamella_centre =  Point.from_dict(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
@@ -1250,26 +1250,26 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.milling_widget._PATTERN_IS_MOVEABLE = True
 
         if lamella.state.stage in [
-            AutoLamellaWaffleStage.SetupTrench,
-            AutoLamellaWaffleStage.ReadyTrench,
-            AutoLamellaWaffleStage.SetupLamella,
-            AutoLamellaWaffleStage.ReadyLamella,
-            AutoLamellaWaffleStage.PreSetupLamella,
+            AutoLamellaStage.SetupTrench,
+            AutoLamellaStage.ReadyTrench,
+            AutoLamellaStage.SetupLamella,
+            AutoLamellaStage.ReadyLamella,
+            AutoLamellaStage.PreSetupLamella,
         ]:
             if self._PROTOCOL_LOADED:
                 _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, False
 
                 if _is_method_type(method, "trench") and lamella.state.stage in [
-                    AutoLamellaWaffleStage.SetupTrench,
-                    AutoLamellaWaffleStage.ReadyTrench,
+                    AutoLamellaStage.SetupTrench,
+                    AutoLamellaStage.ReadyTrench,
                 ]:
                     _DISPLAY_TRENCH = True
 
                 # show lamella and friends
                 if lamella.state.stage in [
-                    AutoLamellaWaffleStage.SetupLamella,
-                    AutoLamellaWaffleStage.ReadyLamella,
-                    AutoLamellaWaffleStage.PreSetupLamella,
+                    AutoLamellaStage.SetupLamella,
+                    AutoLamellaStage.ReadyLamella,
+                    AutoLamellaStage.PreSetupLamella,
                 ]:
                     _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, True
 
@@ -1390,9 +1390,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         lamella: Lamella = self.experiment.positions[idx]
 
         if lamella.state.stage not in [
-            AutoLamellaWaffleStage.SetupTrench,
-            AutoLamellaWaffleStage.SetupLamella,
-            AutoLamellaWaffleStage.PreSetupLamella,
+            AutoLamellaStage.SetupTrench,
+            AutoLamellaStage.SetupLamella,
+            AutoLamellaStage.PreSetupLamella,
         ]:
             return
 
@@ -1515,9 +1515,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     def add_lamella_ui(self, pos: FibsemStagePosition = None):
         method = self.settings.protocol["options"].get("method", None)
         stage = (
-            AutoLamellaWaffleStage.PreSetupLamella
+            AutoLamellaStage.PreSetupLamella
             if method == "autolamella-on-grid"
-            else AutoLamellaWaffleStage.SetupTrench
+            else AutoLamellaStage.SetupTrench
         )
 
         lamella = Lamella(
@@ -1761,12 +1761,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.experiment.save()
 
     def _update_milling_protocol(
-        self, idx: int, method: str, stage: AutoLamellaWaffleStage
+        self, idx: int, method: str, stage: AutoLamellaStage
     ):
         stages = deepcopy(self.milling_widget.get_milling_stages())
         if _is_method_type(method, "trench") and stage in [
-            AutoLamellaWaffleStage.SetupTrench,
-            AutoLamellaWaffleStage.ReadyTrench,
+            AutoLamellaStage.SetupTrench,
+            AutoLamellaStage.ReadyTrench,
         ]:
             self.experiment.positions[idx].protocol["trench"] = deepcopy(
                 patterning.get_protocol_from_stages(stages)
@@ -1776,8 +1776,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             ].pattern.point.to_dict()
 
         if stage in [
-            AutoLamellaWaffleStage.SetupLamella,
-            AutoLamellaWaffleStage.PreSetupLamella,
+            AutoLamellaStage.SetupLamella,
+            AutoLamellaStage.PreSetupLamella,
         ]:
             n_lamella = len(self.settings.protocol["milling"]["lamella"]["stages"])
 

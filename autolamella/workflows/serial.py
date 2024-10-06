@@ -41,12 +41,12 @@ from fibsem.structures import (
 )
 import numpy as np
 from autolamella.workflows import actions
-from autolamella.structures import AutoLamellaWaffleStage, Experiment, Lamella
+from autolamella.structures import AutoLamellaStage, Experiment, Lamella
 from autolamella.ui.AutoLiftoutUIv2 import AutoLiftoutUIv2
 from fibsem import config as fcfg
 
 from collections import Counter
-from autolamella.structures import Lamella, Experiment, LamellaState, AutoLamellaWaffleStage
+from autolamella.structures import Lamella, Experiment, LamellaState, AutoLamellaStage
 from autolamella.workflows.autoliftout import log_status_message, start_of_stage_update, end_of_stage_update, setup_lamella, mill_lamella
 from autolamella.workflows.ui import ask_user, update_status_ui, update_detection_ui, set_images_ui,  update_milling_ui, update_experiment_ui
 from autolamella.workflows.core import align_feature_coincident, mill_trench, mill_undercut
@@ -656,13 +656,13 @@ def sever_lamella_block(microscope: FibsemMicroscope,
 
 # serial workflow functions
 SERIAL_WORKFLOW_STAGES = {
-    AutoLamellaWaffleStage.MillTrench: mill_trench,
-    AutoLamellaWaffleStage.MillUndercut: mill_undercut,
-    AutoLamellaWaffleStage.LiftoutLamella: liftout_lamella,
-    AutoLamellaWaffleStage.LandLamella: land_lamella,
-    AutoLamellaWaffleStage.SetupLamella: setup_lamella,
-    AutoLamellaWaffleStage.MillRoughCut: mill_lamella,
-    AutoLamellaWaffleStage.MillPolishingCut: mill_lamella,
+    AutoLamellaStage.MillTrench: mill_trench,
+    AutoLamellaStage.MillUndercut: mill_undercut,
+    AutoLamellaStage.LiftoutLamella: liftout_lamella,
+    AutoLamellaStage.LandLamella: land_lamella,
+    AutoLamellaStage.SetupLamella: setup_lamella,
+    AutoLamellaStage.MillRoughCut: mill_lamella,
+    AutoLamellaStage.MillPolishingCut: mill_lamella,
 }
 
 def run_serial_liftout_workflow(
@@ -690,8 +690,8 @@ def run_serial_liftout_workflow(
             logging.info(f"Skipping {lamella._petname} due to failure.")
             continue  # skip failures
 
-        while lamella.state.stage.value < AutoLamellaWaffleStage.LiftoutLamella.value:
-            next_stage = AutoLamellaWaffleStage(lamella.state.stage.value + 1)
+        while lamella.state.stage.value < AutoLamellaStage.LiftoutLamella.value:
+            next_stage = AutoLamellaStage(lamella.state.stage.value + 1)
             if CONFIRM_WORKFLOW_ADVANCE:
                 msg = (
                     f"""Continue Lamella {(lamella._petname)} from {next_stage.name}?"""
@@ -769,9 +769,9 @@ def run_serial_liftout_landing(
 
     # see where we are in the workflow
     _counter = Counter([p.state.stage.name for p in experiment.positions])
-    land_idx = _counter[AutoLamellaWaffleStage.LandLamella.name]
+    land_idx = _counter[AutoLamellaStage.LandLamella.name]
     # count how many at finished
-    finished_idx = _counter[AutoLamellaWaffleStage.Finished.name]
+    finished_idx = _counter[AutoLamellaStage.Finished.name]
 
     # start of workflow
     response = ask_user(parent_ui, msg=f"Land Another Lamella? ({land_idx} Lamella Landed, {finished_idx} Lamella Finished)", pos="Continue", neg="Finish")
@@ -785,10 +785,10 @@ def run_serial_liftout_landing(
 
         # advance workflow
         lamella = start_of_stage_update(microscope, lamella, 
-            next_stage=AutoLamellaWaffleStage.LandLamella, parent_ui=parent_ui)
+            next_stage=AutoLamellaStage.LandLamella, parent_ui=parent_ui)
 
         # run the next workflow stage
-        lamella = SERIAL_WORKFLOW_STAGES[AutoLamellaWaffleStage.LandLamella](
+        lamella = SERIAL_WORKFLOW_STAGES[AutoLamellaStage.LandLamella](
             microscope=microscope,
             settings=settings,
             lamella=lamella,
@@ -803,7 +803,7 @@ def run_serial_liftout_landing(
 
         # land another lamella?
         _counter = Counter([p.state.stage.name for p in experiment.positions])
-        land_idx = _counter[AutoLamellaWaffleStage.LandLamella.name]
+        land_idx = _counter[AutoLamellaStage.LandLamella.name]
         response = ask_user(parent_ui, msg=f"Land Another Lamella? ({land_idx} Lamella Landed), {finished_idx} Lamella Finished)", 
             pos="Continue", neg="Finish")
 
@@ -815,7 +815,7 @@ def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positi
 
     # create a new lamella for landing
     _counter = Counter([p.state.stage.name for p in experiment.positions])
-    land_idx = _counter[AutoLamellaWaffleStage.LandLamella.name]
+    land_idx = _counter[AutoLamellaStage.LandLamella.name]
 
     print("COUNTER: ", _counter, land_idx)
 
@@ -824,7 +824,7 @@ def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positi
     log_status_message(lamella, "CREATION")
 
     # set state
-    lamella.state.stage = AutoLamellaWaffleStage.LiftoutLamella
+    lamella.state.stage = AutoLamellaStage.LiftoutLamella
     lamella.state.microscope_state = microscope.get_microscope_state()
     lamella.state.microscope_state.stage_position = deepcopy(positions[land_idx])
     lamella.landing_state = deepcopy(lamella.state.microscope_state)

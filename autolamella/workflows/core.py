@@ -5,7 +5,7 @@ from copy import deepcopy
 from fibsem.structures import FibsemImage, FibsemStagePosition, ImageSettings
 
 from autolamella.structures import (
-    AutoLamellaWaffleStage,
+    AutoLamellaStage,
     Experiment,
     Lamella,
 )
@@ -36,7 +36,7 @@ from fibsem.structures import (
 )
 import time
 from autolamella.structures import (
-    AutoLamellaWaffleStage,
+    AutoLamellaStage,
     Experiment,
     Lamella,
 )
@@ -310,17 +310,17 @@ def mill_lamella(
 
 
     supervise_map = {
-        AutoLamellaWaffleStage.MillRoughCut.name: "mill_rough",
-        AutoLamellaWaffleStage.MillPolishingCut.name: "mill_polishing",
+        AutoLamellaStage.MillRoughCut.name: "mill_rough",
+        AutoLamellaStage.MillPolishingCut.name: "mill_polishing",
     }
     validate = settings.protocol["options"]["supervise"].get(supervise_map[lamella.state.stage.name], True)
     
     _align_at_milling_current = bool(settings.protocol["options"].get("alignment_at_milling_current", True))
     _take_reference_images = bool(
-        lamella.state.stage is AutoLamellaWaffleStage.MillRoughCut 
+        lamella.state.stage is AutoLamellaStage.MillRoughCut 
         or settings.protocol["options"].get("take_final_reference_images", True))
     _take_high_quality_ref =  bool(
-        lamella.state.stage is AutoLamellaWaffleStage.MillPolishingCut 
+        lamella.state.stage is AutoLamellaStage.MillPolishingCut 
         and settings.protocol["options"].get("high_quality_image", {}).get("enabled", False)
         )
 
@@ -329,7 +329,7 @@ def mill_lamella(
                     point=Point.from_dict(lamella.protocol["lamella"]["point"]))
 
     num_polishing_stages = settings.protocol["options"].get("num_polishing_stages", 1)
-    if lamella.state.stage.name == AutoLamellaWaffleStage.MillPolishingCut.name:
+    if lamella.state.stage.name == AutoLamellaStage.MillPolishingCut.name:
         stages = stages[-num_polishing_stages:]
     else:
         stages = stages[:-num_polishing_stages]
@@ -389,7 +389,7 @@ def mill_lamella(
     # define feature
     _MILL_FEATURES = bool(method in ["autolamella-on-grid", "autolamella-waffle"])
     features_stages = []
-    if _MILL_FEATURES and lamella.state.stage.name == AutoLamellaWaffleStage.MillRoughCut.name:
+    if _MILL_FEATURES and lamella.state.stage.name == AutoLamellaStage.MillRoughCut.name:
         log_status_message(lamella, "MILL_FEATURE")
 
         # check if using notch or microexpansion
@@ -598,10 +598,10 @@ def setup_lamella(
             lamella.protocol[_feature_name]["point"] = stages[idx].pattern.point.to_dict()
 
 #     # TODO: integrate this style
-#     # lamella.protocol[AutoLamellaWaffleStage.MillRoughCut.name] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
-#     # lamella.protocol[AutoLamellaWaffleStage.MillRoughCut.name]["point"] = stages[0].pattern.point.to_dict()
-#     # lamella.protocol[AutoLamellaWaffleStage.MillPolishingCut.name] = deepcopy(patterning.get_protocol_from_stages(stages[2]))
-#     # lamella.protocol[AutoLamellaWaffleStage.MillPolishingCut.name]["point"] = stages[2].pattern.point.to_dict()
+#     # lamella.protocol[AutoLamellaStage.MillRoughCut.name] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+#     # lamella.protocol[AutoLamellaStage.MillRoughCut.name]["point"] = stages[0].pattern.point.to_dict()
+#     # lamella.protocol[AutoLamellaStage.MillPolishingCut.name] = deepcopy(patterning.get_protocol_from_stages(stages[2]))
+#     # lamella.protocol[AutoLamellaStage.MillPolishingCut.name]["point"] = stages[2].pattern.point.to_dict()
 
     # feature
     # if "autolamella" in method:
@@ -697,7 +697,7 @@ def end_of_stage_update(
 def start_of_stage_update(
     microscope: FibsemMicroscope,
     lamella: Lamella,
-    next_stage: AutoLamellaWaffleStage,
+    next_stage: AutoLamellaStage,
     parent_ui: AutoLamellaUI, 
     _restore_state: bool = True,
 ) -> Lamella:

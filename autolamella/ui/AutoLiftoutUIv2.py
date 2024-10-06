@@ -22,7 +22,7 @@ from PyQt5.QtCore import pyqtSignal
 
 import autolamella
 from autolamella import config as cfg
-from autolamella.structures import AutoLamellaWaffleStage, Experiment, Lamella
+from autolamella.structures import AutoLamellaStage, Experiment, Lamella
 from autolamella.ui import utils as ui_utils
 from autolamella.ui.qt import AutoLiftoutUIv2
 
@@ -156,14 +156,14 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         _AUTOLAMELLA_PROGRESS = False
         if self.experiment is not None:
             _counter = Counter([p.state.stage.name for p in self.experiment.positions])
-            _LAMELLA_SETUP = _counter[AutoLamellaWaffleStage.ReadyTrench.name] > 0
-            _LAMELLA_TRENCH = _counter[AutoLamellaWaffleStage.MillTrench.name] > 0
-            _LAMELLA_UNDERCUT = _counter[AutoLamellaWaffleStage.MillUndercut.name] > 0
-            _LIFTOUT_FINISHED = _counter[AutoLamellaWaffleStage.LiftoutLamella.name] > 0
-            _LAMELLA_LANDED = _counter[AutoLamellaWaffleStage.LandLamella.name] > 0
-            _AUTOLAMELLA_PROGRESS = (_counter[AutoLamellaWaffleStage.SetupLamella.name]>0
-                or _counter[AutoLamellaWaffleStage.MillRoughCut.name] > 0 
-                or _counter[AutoLamellaWaffleStage.MillPolishingCut.name] > 0)
+            _LAMELLA_SETUP = _counter[AutoLamellaStage.ReadyTrench.name] > 0
+            _LAMELLA_TRENCH = _counter[AutoLamellaStage.MillTrench.name] > 0
+            _LAMELLA_UNDERCUT = _counter[AutoLamellaStage.MillUndercut.name] > 0
+            _LIFTOUT_FINISHED = _counter[AutoLamellaStage.LiftoutLamella.name] > 0
+            _LAMELLA_LANDED = _counter[AutoLamellaStage.LandLamella.name] > 0
+            _AUTOLAMELLA_PROGRESS = (_counter[AutoLamellaStage.SetupLamella.name]>0
+                or _counter[AutoLamellaStage.MillRoughCut.name] > 0 
+                or _counter[AutoLamellaStage.MillPolishingCut.name] > 0)
 
         # setup experiment -> connect to microscope -> select lamella -> run autoliftout -> run polishing
 

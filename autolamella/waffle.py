@@ -1,7 +1,7 @@
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings
 from autolamella.structures import (
-    AutoLamellaWaffleStage,
+    AutoLamellaStage,
     Experiment,
 )
 from autolamella.ui import AutoLamellaUI
@@ -9,11 +9,11 @@ from autolamella.workflows.core import ( log_status_message, mill_trench, mill_u
 from autolamella.workflows.ui import ask_user, ask_user_continue_workflow, update_experiment_ui
 
 WORKFLOW_STAGES = {
-    AutoLamellaWaffleStage.MillTrench: mill_trench,
-    AutoLamellaWaffleStage.MillUndercut: mill_undercut,
-    AutoLamellaWaffleStage.ReadyLamella: setup_lamella,
-    AutoLamellaWaffleStage.MillRoughCut: mill_lamella,
-    AutoLamellaWaffleStage.MillPolishingCut: mill_lamella,
+    AutoLamellaStage.MillTrench: mill_trench,
+    AutoLamellaStage.MillUndercut: mill_undercut,
+    AutoLamellaStage.ReadyLamella: setup_lamella,
+    AutoLamellaStage.MillRoughCut: mill_lamella,
+    AutoLamellaStage.MillPolishingCut: mill_lamella,
 }
 
 
@@ -25,12 +25,12 @@ def run_trench_milling(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.ReadyTrench and not lamella._is_failure:
+        if lamella.state.stage == AutoLamellaStage.ReadyTrench and not lamella._is_failure:
                         
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
-                AutoLamellaWaffleStage.MillTrench, 
+                AutoLamellaStage.MillTrench, 
                 parent_ui=parent_ui
             )
 
@@ -53,11 +53,11 @@ def run_undercut_milling(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.MillTrench and not lamella._is_failure:
+        if lamella.state.stage == AutoLamellaStage.MillTrench and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
-                AutoLamellaWaffleStage.MillUndercut,
+                AutoLamellaStage.MillUndercut,
                 parent_ui=parent_ui
             )
             lamella = mill_undercut(microscope, settings, lamella, parent_ui)
@@ -65,7 +65,7 @@ def run_undercut_milling(
             update_experiment_ui(parent_ui, experiment)
 
             # ready lamella for next stage
-            lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.SetupLamella, parent_ui=parent_ui,_restore_state=False,)
+            lamella = start_of_stage_update(microscope, lamella, AutoLamellaStage.SetupLamella, parent_ui=parent_ui,_restore_state=False,)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
             update_experiment_ui(parent_ui, experiment)
     
@@ -81,11 +81,11 @@ def run_setup_lamella(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.state.stage == AutoLamellaWaffleStage.SetupLamella and not lamella._is_failure:
+        if lamella.state.stage == AutoLamellaStage.SetupLamella and not lamella._is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,
-                AutoLamellaWaffleStage.ReadyLamella,
+                AutoLamellaStage.ReadyLamella,
                 parent_ui=parent_ui
             )
 
@@ -109,12 +109,12 @@ def run_lamella_milling(
 
 
     stages = [
-        AutoLamellaWaffleStage.MillRoughCut,
-        AutoLamellaWaffleStage.MillPolishingCut,
+        AutoLamellaStage.MillRoughCut,
+        AutoLamellaStage.MillPolishingCut,
     ]
     for stage in stages:
         for lamella in experiment.positions:
-            if lamella.state.stage == AutoLamellaWaffleStage(stage.value - 1) and not lamella._is_failure:
+            if lamella.state.stage == AutoLamellaStage(stage.value - 1) and not lamella._is_failure:
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
                 lamella = WORKFLOW_STAGES[lamella.state.stage](microscope, settings, lamella, parent_ui)
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
@@ -124,8 +124,8 @@ def run_lamella_milling(
 
     # finish
     for lamella in experiment.positions:
-        if lamella.state.stage == AutoLamellaWaffleStage.MillPolishingCut and not lamella._is_failure:
-            lamella = start_of_stage_update(microscope, lamella, AutoLamellaWaffleStage.Finished, parent_ui, _restore_state=False)
+        if lamella.state.stage == AutoLamellaStage.MillPolishingCut and not lamella._is_failure:
+            lamella = start_of_stage_update(microscope, lamella, AutoLamellaStage.Finished, parent_ui, _restore_state=False)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
             update_experiment_ui(parent_ui, experiment)
 

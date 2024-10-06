@@ -21,7 +21,7 @@ from fibsem.structures import (
 from autolamella import config as cfg
 
 
-class AutoLamellaWaffleStage(Enum):
+class AutoLamellaStage(Enum):
     SetupTrench = auto()
     ReadyTrench = auto()
     MillTrench = auto()
@@ -41,7 +41,7 @@ class AutoLamellaWaffleStage(Enum):
 @dataclass
 class LamellaState:
     microscope_state: MicroscopeState = MicroscopeState()
-    stage: AutoLamellaWaffleStage = AutoLamellaWaffleStage.SetupTrench
+    stage: AutoLamellaStage = AutoLamellaStage.SetupTrench
     start_timestamp: float = datetime.timestamp(datetime.now())
     end_timestamp: float = None
 
@@ -58,7 +58,7 @@ class LamellaState:
         state = MicroscopeState.from_dict(data["microscope_state"])
         return cls(
             microscope_state=state,
-            stage=AutoLamellaWaffleStage[data["stage"]],
+            stage=AutoLamellaStage[data["stage"]],
             start_timestamp=data["start_timestamp"],
             end_timestamp=data["end_timestamp"]
         )
@@ -408,7 +408,7 @@ class Experiment:
                 pprint(lamella.protocol[k]["stages"])
                 print('-'*100)
 
-    def at_stage(self, stage: AutoLamellaWaffleStage) -> List[Lamella]:
+    def at_stage(self, stage: AutoLamellaStage) -> List[Lamella]:
         """Return a list of lamellas at a specific stage"""
 
         return [lamella for lamella in self.positions if lamella.state.stage == stage]
