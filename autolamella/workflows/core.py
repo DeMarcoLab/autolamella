@@ -540,8 +540,11 @@ def setup_lamella(
             _feature_name = "notch"
 
             protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol["milling"]
+            h_offset = 0
+            if protocol[_feature_name].get("type", None) == "WaffleNotch":
+                h_offset = stages[0].pattern.protocol["lamella_width"] / 2
             notch_position = Point.from_dict(protocol[_feature_name].get("point", 
-                    {"x":lamella_position.x + stages[0].pattern.protocol["lamella_width"] / 2, 
+                    {"x":lamella_position.x + h_offset, 
                     "y": lamella_position.y})) 
             notch_stage = patterning.get_milling_stages(_feature_name, protocol, notch_position)
             n_notch = len(notch_stage)

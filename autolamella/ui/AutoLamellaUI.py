@@ -1312,14 +1312,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                             else self.settings.protocol["milling"]
                         )
 
-                        NOTCH_H_OFFSET = 0.5e-6
+                        # if wafflenotch, offset by half lamella width
+                        h_offset = 0
+                        if protocol[_feature_name].get("type", None) == "WaffleNotch":
+                            h_offset = stages[0].pattern.protocol["lamella_width"] / 2
                         notch_position = Point.from_dict(
                             protocol[_feature_name].get(
                                 "point",
                                 {
-                                    "x": lamella_position.x
-                                    + stages[0].pattern.protocol["lamella_width"] / 2
-                                    + NOTCH_H_OFFSET,
+                                    "x": lamella_position.x + h_offset,
                                     "y": lamella_position.y,
                                 },
                             )
