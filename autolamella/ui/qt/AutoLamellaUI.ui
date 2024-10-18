@@ -464,7 +464,14 @@
              <widget class="QComboBox" name="comboBox_options_liftout_joining_method"/>
             </item>
             <item row="14" column="1">
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_lamella_tilt_angle"/>
+             <widget class="QDoubleSpinBox" name="doubleSpinBox_lamella_tilt_angle">
+              <property name="minimum">
+               <double>-180.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>180.000000000000000</double>
+              </property>
+             </widget>
             </item>
             <item row="3" column="0">
              <widget class="QCheckBox" name="checkBox_options_confirm_next_stage">

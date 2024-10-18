@@ -225,6 +225,8 @@ class Ui_MainWindow(object):
         self.comboBox_options_liftout_joining_method.setObjectName("comboBox_options_liftout_joining_method")
         self.gridLayout_4.addWidget(self.comboBox_options_liftout_joining_method, 9, 1, 1, 1)
         self.doubleSpinBox_lamella_tilt_angle = QtWidgets.QDoubleSpinBox(self.scrollAreaWidgetContents)
+        self.doubleSpinBox_lamella_tilt_angle.setMinimum(-180.0)
+        self.doubleSpinBox_lamella_tilt_angle.setMaximum(180.0)
         self.doubleSpinBox_lamella_tilt_angle.setObjectName("doubleSpinBox_lamella_tilt_angle")
         self.gridLayout_4.addWidget(self.doubleSpinBox_lamella_tilt_angle, 14, 1, 1, 1)
         self.checkBox_options_confirm_next_stage = QtWidgets.QCheckBox(self.scrollAreaWidgetContents)
