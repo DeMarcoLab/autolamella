@@ -70,6 +70,9 @@ DEFAULT_FIDUCIAL_PROTOCOL = {
     }
 # TODO: complete the rest of the patterns
 
+# constants
+ATOL_STAGE_TILT = 0.017 # 1 degrees
+
 # CORE WORKFLOW STEPS
 def log_status_message(lamella: Lamella, step: str):
     logging.debug({"msg": "status", "petname": lamella._petname, "stage": lamella.state.stage.name, "step": step})
@@ -495,7 +498,8 @@ def setup_lamella(
     
     milling_angle = settings.protocol["options"].get("lamella_tilt_angle", 18)
     stage_position = microscope.get_stage_position()
-    is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t)
+    is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t, atol=ATOL_STAGE_TILT)
+
     if not is_close and validate and method == "autolamella-on-grid":
         current_t = np.rad2deg(stage_position.t)
         ret = ask_user(parent_ui=parent_ui,
