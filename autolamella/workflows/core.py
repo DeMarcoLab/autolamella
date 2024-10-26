@@ -55,7 +55,7 @@ from autolamella.workflows.ui import (set_images_ui, update_status_ui,
 
 
 # DEFAULTS, TODO: move to a configuration file
-DEFAULT_ALIGNMENT_AREA = {"left": 0.25, "top": 0.25, "width": 0.5, "height": 0.5}
+DEFAULT_ALIGNMENT_AREA = {"left": 0.7, "top": 0.3, "width": 0.25, "height": 0.4}
 DEFAULT_FIDUCIAL_PROTOCOL = {
     "height": 10.e-6,
     "width": 1.e-6,
