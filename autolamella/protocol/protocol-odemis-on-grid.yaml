@@ -37,7 +37,7 @@ milling:
           size_ratio: 1.0
           spot_size: 5.0e-08
           trench_height: 3.5e-06
-          name: Rough Cut
+          name: Rough Cut 01
       -   application_file: Si-ccs
           cross_section: CleaningCrossSection
           depth: 6.5e-07
@@ -53,7 +53,7 @@ milling:
           size_ratio: 1.0
           spot_size: 5.0e-08
           trench_height: 2.0e-06
-          name: Regular Cut
+          name: Rough Cut 02
       -   application_file: Si-ccs
           cross_section: CleaningCrossSection
           depth: 4.0e-07
