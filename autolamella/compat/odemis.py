@@ -79,6 +79,10 @@ def create_experiment_from_odemis(path: str, protocol: dict, name: str = "AutoLa
 
     return experiment
 
+def load_experiment(path: str) -> Experiment:
+    """Load an experiment from a path."""
+    return Experiment.load(path)
+
 def add_features_to_experiment(experiment: Experiment, features: List[CryoFeature], protocol: dict) -> Experiment:
     """Add features to an experiment."""
     odemis_project_path = os.path.dirname(experiment.path)
@@ -103,6 +107,9 @@ def add_features_to_experiment(experiment: Experiment, features: List[CryoFeatur
             # required: point, pattern_type, cross_section, depth, trench_height, width, height
             # milling current
             # each trench stage should be 0.5um less wide than the previous one
+        
+        # TODO: this currently uses the same protocol for all lamellae, 
+        # update to use different protocols for each lamella based on what the user selects in the ui
 
         experiment.positions.append(deepcopy(lamella))
         experiment.save()

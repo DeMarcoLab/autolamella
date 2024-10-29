@@ -1,3 +1,4 @@
+from typing import List
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings
 from autolamella.structures import (
@@ -105,6 +106,7 @@ def run_lamella_milling(
     settings: MicroscopeSettings,
     experiment: Experiment,
     parent_ui: AutoLamellaUI = None,
+    stages_to_complete: List[AutoLamellaStage] = [AutoLamellaStage.MillRoughCut, AutoLamellaStage.MillPolishingCut]
 ) -> Experiment:
 
 
@@ -113,6 +115,8 @@ def run_lamella_milling(
         AutoLamellaStage.MillPolishingCut,
     ]
     for stage in stages:
+        if stage not in stages_to_complete:
+            continue
         for lamella in experiment.positions:
             if lamella.state.stage == AutoLamellaStage(stage.value - 1) and not lamella._is_failure:
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
@@ -139,6 +143,7 @@ def run_autolamella(
     settings: MicroscopeSettings,
     experiment: Experiment,
     parent_ui: AutoLamellaUI = None,
+    stages_to_complete: List[AutoLamellaStage] = [AutoLamellaStage.MillRoughCut, AutoLamellaStage.MillPolishingCut]
 ) -> Experiment:
     
     # run setup
@@ -151,7 +156,7 @@ def run_autolamella(
             return experiment
 
     # run lamella milling
-    experiment = run_lamella_milling(microscope, settings, experiment, parent_ui)
+    experiment = run_lamella_milling(microscope, settings, experiment, parent_ui, stages_to_complete)
 
     return experiment
 

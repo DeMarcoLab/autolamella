@@ -93,6 +93,18 @@ class Lamella:
         if self.history is None:
             self.history = []
 
+    @property
+    def name(self) -> str:
+        return self._petname
+    
+    @property
+    def status(self) -> str:
+        return self.state.stage.name
+    
+    @property
+    def is_failure(self) -> bool:
+        return self._is_failure
+
     def to_dict(self):
         if self.history is None:
             self.history = []
