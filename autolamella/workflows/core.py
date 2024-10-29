@@ -1,59 +1,48 @@
 import logging
+import os
 import time
 from copy import deepcopy
-
-from fibsem.structures import FibsemImage, FibsemStagePosition, ImageSettings
-
-from autolamella.structures import (
-    AutoLamellaStage,
-    Experiment,
-    Lamella,
-)
-
-from autolamella.ui import AutoLamellaUI
-
-
-from fibsem import acquire, calibration, patterning
-from fibsem.structures import Point, BeamType, MicroscopeSettings
-from fibsem.microscope import FibsemMicroscope
-from fibsem import config as fcfg
-
-from typing import List, Tuple
-import logging
-import os
-from copy import deepcopy
 from datetime import datetime
+from typing import List, Tuple
 
 import numpy as np
-from fibsem import acquire, patterning,  calibration, alignment
+from fibsem import acquire, alignment, calibration, patterning
+from fibsem import config as fcfg
+from fibsem.detection.detection import (
+    Feature,
+    LamellaBottomEdge,
+    LamellaCentre,
+    LamellaTopEdge,
+    VolumeBlockCentre,
+)
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import (
     BeamType,
-    FibsemStagePosition,
     FibsemImage,
+    FibsemRectangle,
+    FibsemStagePosition,
+    ImageSettings,
     MicroscopeSettings,
-    Point, FibsemRectangle
+    Point,
 )
-import time
+from fibsem.ui.utils import calculate_fiducial_area_v2
+
 from autolamella.structures import (
     AutoLamellaStage,
     Experiment,
     Lamella,
 )
-from fibsem.detection.detection import (
-    Feature,
-    LamellaCentre,
-    LamellaTopEdge,
-    LamellaBottomEdge,
-    VolumeBlockCentre
-)
-from fibsem import config as fcfg
+from autolamella.protocol.validation import DEFAULT_ALIGNMENT_AREA, DEFAULT_FIDUCIAL_PROTOCOL
+from autolamella.ui import AutoLamellaUI
 from autolamella.workflows import actions
-from autolamella.workflows.ui import (set_images_ui, update_status_ui, 
-                                      update_detection_ui, update_milling_ui, 
-                                      ask_user, update_alignment_area_ui)
-
-
+from autolamella.workflows.ui import (
+    ask_user,
+    set_images_ui,
+    update_alignment_area_ui,
+    update_detection_ui,
+    update_milling_ui,
+    update_status_ui,
+)
 
 # TODO: complete the rest of the patterns
 
@@ -559,11 +548,10 @@ def setup_lamella(
 
         stages += fiducial_stage
     
-    validate_position = True if method != "autolamella-on-grid" else validate
-    if validate_position:
+    if validate:
         stages = update_milling_ui(microscope, stages, parent_ui, 
-            msg=f"Confirm the positions for the {lamella._petname} milling. Press Continue to Confirm.",
-            validate=validate_position, # always validate non on-grid for now
+            msg=f"Confirm the positions for the {lamella.name} milling. Press Continue to Confirm.",
+            validate=validate, # always validate non on-grid for now
             milling_enabled=False)
     
     # TODO: can I remove this now...d
@@ -600,7 +588,7 @@ def setup_lamella(
         fiducial_stage = fiducial_stage[0] # always single stage
         lamella.protocol["fiducial"] = deepcopy(patterning.get_protocol_from_stages(fiducial_stage))
         lamella.protocol["fiducial"]["point"] = fiducial_stage.pattern.point.to_dict()
-        lamella.fiducial_area, _  = _calculate_fiducial_area_v2(ib_image, 
+        lamella.fiducial_area, _  = calculate_fiducial_area_v2(ib_image, 
             deepcopy(fiducial_stage.pattern.point), 
             lamella.protocol["fiducial"]["stages"][0]["height"])
         alignment_hfw = fiducial_stage.milling.hfw
@@ -610,6 +598,11 @@ def setup_lamella(
         stages = update_milling_ui(microscope, fiducial_stage, parent_ui, 
             msg=f"Press Run Milling to mill the fiducial for {lamella._petname}. Press Continue when done.", 
             validate=validate)
+        lamella.protocol["fiducial"] = deepcopy(patterning.get_protocol_from_stages(stages))
+        lamella.protocol["fiducial"]["point"] = stages[0].pattern.point.to_dict()
+        lamella.fiducial_area, _  = calculate_fiducial_area_v2(ib_image, 
+            deepcopy(stages[0].pattern.point), 
+        lamella.protocol["fiducial"]["stages"][0]["height"])
         alignment_hfw = stages[0].milling.hfw
     else:
         # non-fiducial based alignment
@@ -702,38 +695,6 @@ def start_of_stage_update(
 
     return lamella
 
-# TODO: move to fibsem
-from fibsem import conversions
-def _calculate_fiducial_area_v2(image: FibsemImage, fiducial_centre: Point, fiducial_length:float) -> Tuple[FibsemRectangle, bool]:
-    pixelsize = image.metadata.pixel_size.x
-    
-    fiducial_centre.y = -fiducial_centre.y
-    fiducial_centre_px = conversions.convert_point_from_metres_to_pixel(
-        fiducial_centre, pixelsize
-    )
-
-    rcx = fiducial_centre_px.x / image.metadata.image_settings.resolution[0] + 0.5
-    rcy = fiducial_centre_px.y / image.metadata.image_settings.resolution[1] + 0.5
-
-    fiducial_length_px = (
-        conversions.convert_metres_to_pixels(fiducial_length, pixelsize) * 1.5 # SCALE_FACTOR
-    )
-    h_offset = fiducial_length_px / image.metadata.image_settings.resolution[0] / 2
-    v_offset = fiducial_length_px / image.metadata.image_settings.resolution[1] / 2
-
-    left = rcx - h_offset
-    top = rcy - v_offset
-    width = 2 * h_offset
-    height = 2 * v_offset
-
-    if left < 0 or (left + width) > 1 or top < 0 or (top + height) > 1:
-        flag = True
-    else:
-        flag = False
-
-    fiducial_area = FibsemRectangle(left, top, width, height)
-
-    return fiducial_area, flag
 
 def align_feature_coincident(microscope: FibsemMicroscope, settings: MicroscopeSettings, 
                               lamella: Lamella, parent_ui: AutoLamellaUI, 
