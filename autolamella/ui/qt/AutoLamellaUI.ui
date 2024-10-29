@@ -36,7 +36,7 @@
     <item row="1" column="0" colspan="2">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -595,13 +595,6 @@
       </widget>
      </widget>
     </item>
-    <item row="4" column="0">
-     <widget class="QPushButton" name="pushButton_yes">
-      <property name="text">
-       <string>Yes</string>
-      </property>
-     </widget>
-    </item>
     <item row="2" column="0" colspan="2">
      <spacer name="verticalSpacer_4">
       <property name="orientation">
@@ -614,6 +607,27 @@
        </size>
       </property>
      </spacer>
+    </item>
+    <item row="4" column="0" colspan="2">
+     <widget class="QLabel" name="label_instructions">
+      <property name="text">
+       <string>Instructions</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="1">
+     <widget class="QPushButton" name="pushButton_no">
+      <property name="text">
+       <string>No</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0">
+     <widget class="QPushButton" name="pushButton_yes">
+      <property name="text">
+       <string>Yes</string>
+      </property>
+     </widget>
     </item>
     <item row="0" column="0" colspan="2">
      <widget class="QLabel" name="label_title">
@@ -632,17 +646,10 @@
       </property>
      </widget>
     </item>
-    <item row="4" column="1">
-     <widget class="QPushButton" name="pushButton_no">
-      <property name="text">
-       <string>No</string>
-      </property>
-     </widget>
-    </item>
     <item row="3" column="0" colspan="2">
-     <widget class="QLabel" name="label_instructions">
+     <widget class="QLabel" name="label_workflow_information">
       <property name="text">
-       <string>Instructions</string>
+       <string>Workflow Information</string>
       </property>
      </widget>
     </item>

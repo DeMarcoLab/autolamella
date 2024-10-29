@@ -173,7 +173,7 @@ def set_images_ui(
     while parent_ui.WAITING_FOR_UI_UPDATE:
         time.sleep(0.5)
 
-def update_status_ui(parent_ui: AutoLamellaUI, msg: str):
+def update_status_ui(parent_ui: AutoLamellaUI, msg: str, workflow_info: str = None) -> None:
 
     if parent_ui is None:
         logging.info(msg)
@@ -190,6 +190,7 @@ def update_status_ui(parent_ui: AutoLamellaUI, msg: str):
         "ib_image": None,
         "movement": None,
         "mill": None,
+        "workflow_info": workflow_info,
     }
     parent_ui.ui_signal.emit(INFO)
 

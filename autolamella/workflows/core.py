@@ -723,7 +723,7 @@ def start_of_stage_update(
     lamella.state.stage = deepcopy(next_stage)
     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
     log_status_message(lamella, "STARTED")
-    update_status_ui(parent_ui, f"{lamella.info} Starting...")
+    update_status_ui(parent_ui, f"{lamella.info} Starting...", workflow_info=f"{lamella.info}")
 
     return lamella
 

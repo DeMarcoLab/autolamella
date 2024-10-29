@@ -281,6 +281,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.comboBox_options_trench_start_position.addItems(_AVAILABLE_POSITIONS_)
         self.comboBox_options_landing_start_position.addItems(_AVAILABLE_POSITIONS_)
 
+        # workflow info
+        self._set_workflow_info(show=False)
+
     def _save_milling_protocol(self):
         print("save milling protocol")
 
@@ -1479,6 +1482,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         else:
             self.pushButton_yes.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
 
+    def _set_workflow_info(self, msg: str = None, show:bool = True):
+        if msg is not None:
+            self.label_workflow_information.setText(msg)
+        self.label_workflow_information.setVisible(show)
+
     def push_interaction_button(self):
         logging.info("Sender: {}".format(self.sender().objectName()))
 
@@ -1504,7 +1512,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         return
 
     def go_to_lamella_ui(self):
-        print("go to lamella ui")
 
         idx = self.comboBox_current_lamella.currentIndex()
         lamella: Lamella = self.experiment.positions[idx]
@@ -1889,6 +1896,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # set electron image as active layer
         self.viewer.layers.selection.active = self.image_widget.eb_layer
 
+        self._set_workflow_info(msg=None, show=False)
+
+
     def _ui_signal(self, info: dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
         _mill = bool(info["mill"] is not None) if info["mill"] is None else info["mill"]
@@ -1932,6 +1942,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # instruction message
         self._set_instructions(info["msg"], info["pos"], info["neg"])
+        self._set_workflow_info(info.get("workflow_info", None))
 
         self.WAITING_FOR_UI_UPDATE = False
 
