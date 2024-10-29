@@ -109,7 +109,8 @@ DEFAULT_PROTOCOL = {
         "vheight": 2.0e-06,
         "vwidth": 2.0e-07,
         "type": "WaffleNotch"
-    }
+    },
+    "fiducial": DEFAULT_FIDUCIAL_PROTOCOL,
 }
 
 def validate_protocol(protocol: dict):
@@ -129,7 +130,7 @@ def validate_protocol(protocol: dict):
     for key in REQUIRED_MILLING_KEYS:
         if key not in protocol["milling"]:
             # add default values if missing
-            print(f"Adding default milling stage for {key}")
+            logging.info(f"Adding default milling stage for {key}")
             protocol["milling"][key] = DEFAULT_PROTOCOL[key]
     
     # TODO: validate that the protocol is correct, and has all the required keys for each milling stage

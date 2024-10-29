@@ -24,9 +24,8 @@ from fibsem.structures import (
     ImageSettings,
     MicroscopeSettings,
     Point,
+    calculate_fiducial_area_v2
 )
-from fibsem.ui.utils import calculate_fiducial_area_v2
-
 from autolamella.structures import (
     AutoLamellaStage,
     Experiment,
