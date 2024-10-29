@@ -317,7 +317,7 @@ class Experiment:
 
     @staticmethod
     def load(fname: Path) -> 'Experiment':
-        """Load a sample from disk."""
+        """Load an experiment from disk."""
 
         # read and open existing yaml file
         path = Path(fname).with_suffix(".yaml")
@@ -334,7 +334,8 @@ class Experiment:
         experiment._created_at = ddict.get("created_at", None)
         experiment._id = ddict.get("_id", "NULL")
         experiment.program = ddict.get("program", "AutoLamella")
-        experiment.method = ddict.get("method", "autoLamella-on-grid") 
+        experiment.method = ddict.get("method", "autoLamella-on-grid")
+        experiment.path = os.path.dirname(fname) # TODO: make sure the paths are correctly re-assigned when loaded on a different machine
 
         # load lamella from dict
         for lamella_dict in ddict["positions"]:
@@ -345,6 +346,7 @@ class Experiment:
     
     def _create_protocol_dataframe(self) -> pd.DataFrame:
         plist = []
+        exp_name = self.name
         for lamella in self.positions:
             if lamella.protocol:
                 for k in lamella.protocol:
@@ -366,7 +368,9 @@ class Experiment:
 
                             ddict["MillingStage"] = i
                             ddict["WorkflowStage"] = k
-                            ddict["Lamella"] = lamella._petname
+                            ddict["Lamella"] = lamella.name
+                            ddict["Experiment"] = exp_name
+                            # TODO: add point information
 
                             plist.append(deepcopy(ddict))
 
@@ -377,7 +381,8 @@ class Experiment:
         cols.remove("Lamella")
         cols.remove("WorkflowStage")
         cols.remove("MillingStage")
-        cols = ["Lamella", "WorkflowStage", "MillingStage"] + cols
+        cols.remove("Experiment")
+        cols = ["Experiment", "Lamella", "WorkflowStage", "MillingStage"] + cols
         df = df[cols]
 
 
