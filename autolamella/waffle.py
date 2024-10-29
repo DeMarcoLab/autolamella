@@ -1,3 +1,4 @@
+import logging
 from typing import List
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings
@@ -116,6 +117,7 @@ def run_lamella_milling(
     ]
     for stage in stages:
         if stage not in stages_to_complete:
+            logging.info(f"Skipping stage {stage} as it is not in stages_to_complete {stages_to_complete}")
             continue
         for lamella in experiment.positions:
             if lamella.state.stage == AutoLamellaStage(stage.value - 1) and not lamella._is_failure:
