@@ -21,7 +21,6 @@ milling:
         application_file: Si
         cleaning_cross_section: false
         depth: 1.5e-06
-        enabled: true
         height: 1.0e-05
         hfw: 8.0e-05
         milling_current: 7.6e-09
@@ -75,7 +74,6 @@ milling:
         application_file: Si-ccs
         depth: 2.5e-06
         distance: 2.0e-06
-        enabled: true
         flip: 0
         hfw: 80e-6
         hheight: 2.0e-07

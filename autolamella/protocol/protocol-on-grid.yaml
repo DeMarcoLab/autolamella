@@ -28,7 +28,6 @@ options:
     mill_polishing: true
 milling:
   fiducial:
-    enabled: true
     height: 10.e-6
     width: 1.e-6
     depth: 1.0e-6
@@ -113,7 +112,6 @@ milling:
     application_file: Si
     depth: 2.5e-06
     distance: 2.0e-06
-    enabled: true
     flip: 0
     hfw: 80e-6
     hheight: 2.0e-07
