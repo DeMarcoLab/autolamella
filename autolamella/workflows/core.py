@@ -54,20 +54,7 @@ from autolamella.workflows.ui import (set_images_ui, update_status_ui,
                                       ask_user, update_alignment_area_ui)
 
 
-# DEFAULTS, TODO: move to a configuration file
-DEFAULT_ALIGNMENT_AREA = {"left": 0.7, "top": 0.3, "width": 0.25, "height": 0.4}
-DEFAULT_FIDUCIAL_PROTOCOL = {
-    "height": 10.e-6,
-    "width": 1.e-6,
-    "depth": 1.0e-6,
-    "rotation": 45,
-    "milling_current": 2.0e-9,
-    "preset": "30 keV; 20 nA", # TESCAN only
-    "application_file": "Si",
-    "passes": None,
-    "hfw": 80.e-6,
-    "type": "Fiducial",
-    }
+
 # TODO: complete the rest of the patterns
 
 # constants
@@ -307,7 +294,6 @@ def mill_lamella(
     lamella: Lamella,
     parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
-    validate = settings.protocol["options"]["supervise"].get("lamella", True)
     settings.image.path = lamella.path
     method = settings.protocol["options"].get("method", "autolamella-waffle")
 
@@ -328,14 +314,10 @@ def mill_lamella(
         )
 
     # milling stages
-    stages = patterning.get_milling_stages("lamella", lamella.protocol, 
-                    point=Point.from_dict(lamella.protocol["lamella"]["point"]))
-
-    num_polishing_stages = settings.protocol["options"].get("num_polishing_stages", 1)
-    if lamella.state.stage.name == AutoLamellaStage.MillPolishingCut.name:
-        stages = stages[-num_polishing_stages:]
-    else:
-        stages = stages[:-num_polishing_stages]
+    milling_stage_name = supervise_map[lamella.state.stage.name]
+    stages = patterning.get_milling_stages(key=milling_stage_name, 
+                                           protocol=lamella.protocol, 
+                                           point=Point.from_dict(lamella.protocol[milling_stage_name]["point"]))
 
     if not isinstance(stages, list):
         stages = [stages]
@@ -435,10 +417,10 @@ def mill_lamella(
         msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
-   
-    # TODO: refactor this so it is like the original protocol
-    lamella.protocol[lamella.state.stage.name] = deepcopy(patterning.get_protocol_from_stages(stages[:n_lamella]))
-    lamella.protocol[lamella.state.stage.name]["point"] = stages[0].pattern.point.to_dict()
+
+    # log the protocol
+    lamella.protocol[milling_stage_name] = deepcopy(patterning.get_protocol_from_stages(stages[:n_lamella]))
+    lamella.protocol[milling_stage_name]["point"] = stages[0].pattern.point.to_dict()
 
     if _take_reference_images:
         # take reference images
@@ -523,13 +505,15 @@ def setup_lamella(
 
     log_status_message(lamella, "SETUP_PATTERNS")
 
-    # TODO: copy the entire milling protocol into each lamella protocol beforehand
-    # load the default protocol unless in lamella protocol
-    protocol = lamella.protocol if "lamella" in lamella.protocol else settings.protocol["milling"]
-    lamella_position = Point.from_dict(protocol["lamella"].get("point", {"x": 0, "y": 0})) 
-    lamella_stages = patterning.get_milling_stages("lamella", protocol, lamella_position)
+    protocol = lamella.protocol
+    lamella_position = Point.from_dict(protocol["mill_rough"].get("point", {"x": 0, "y": 0})) 
+    rough_mill_stages = patterning.get_milling_stages("mill_rough", protocol, lamella_position)
+    polishing_mill_stages = patterning.get_milling_stages("mill_polishing", protocol, lamella_position)
+    lamella_stages = rough_mill_stages + polishing_mill_stages
     stages = deepcopy(lamella_stages)
     n_lamella = len(stages)
+    n_mill_rough = len(rough_mill_stages)
+    n_mill_polishing = len(polishing_mill_stages)
 
     settings.image.hfw = stages[0].milling.hfw # fcfg.REFERENCE_HFW_SUPER
     settings.image.filename = f"ref_{lamella.state.stage.name}_start"
@@ -586,11 +570,14 @@ def setup_lamella(
     for stage in stages:
         logging.info(f"{stage.name}: {stage}") 
 
-    # lamella
-    n_lamella = len(lamella_stages)
-    lamella.protocol["lamella"] = deepcopy(patterning.get_protocol_from_stages(stages[:n_lamella]))
-    lamella.protocol["lamella"]["point"] = stages[0].pattern.point.to_dict()
+    # rough milling
+    lamella.protocol["mill_rough"] = deepcopy(patterning.get_protocol_from_stages(stages[:n_mill_rough]))
+    lamella.protocol["mill_rough"]["point"] = stages[0].pattern.point.to_dict()
 
+    # polishing
+    lamella.protocol["mill_polishing"] = deepcopy(patterning.get_protocol_from_stages(stages[n_mill_rough:n_lamella]))
+    lamella.protocol["mill_polishing"]["point"] = stages[n_mill_rough].pattern.point.to_dict()
+    
     if _MILL_FEATURES:
         if use_notch:
             _feature_name = "notch"
@@ -603,18 +590,6 @@ def setup_lamella(
             idx = n_lamella + use_notch
             lamella.protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(stages[idx]))
             lamella.protocol[_feature_name]["point"] = stages[idx].pattern.point.to_dict()
-
-#     # TODO: integrate this style
-#     # lamella.protocol[AutoLamellaStage.MillRoughCut.name] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
-#     # lamella.protocol[AutoLamellaStage.MillRoughCut.name]["point"] = stages[0].pattern.point.to_dict()
-#     # lamella.protocol[AutoLamellaStage.MillPolishingCut.name] = deepcopy(patterning.get_protocol_from_stages(stages[2]))
-#     # lamella.protocol[AutoLamellaStage.MillPolishingCut.name]["point"] = stages[2].pattern.point.to_dict()
-
-    # feature
-    # if "autolamella" in method:
-    #     n_features = len(feature_stage)
-    #     lamella.protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(stages[n_lamella:n_lamella+n_features]))
-    #     lamella.protocol[_feature_name]["point"] = stages[n_lamella].pattern.point.to_dict()
 
     # fiducial
     if use_fiducial:
@@ -640,7 +615,7 @@ def setup_lamella(
         # non-fiducial based alignment
         alignment_area_dict = settings.protocol["options"].get("alignment_area", DEFAULT_ALIGNMENT_AREA)
         lamella.fiducial_area = FibsemRectangle.from_dict(alignment_area_dict)
-        alignment_hfw = lamella.protocol["lamella"]["stages"][0]["hfw"]
+        alignment_hfw = lamella.protocol["mill_rough"]["stages"][0]["hfw"]
 
     logging.info(f"ALIGNMENT AREA WORKFLOW: {lamella.fiducial_area}")
     lamella.fiducial_area = update_alignment_area_ui(alignment_area=lamella.fiducial_area, 

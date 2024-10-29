@@ -28,3 +28,4 @@ autolamella/db/fibsem.db
 autolamella/liftout/log/*
 autolamella/protocol/protocol-on-grid_sg20240301.yaml
 build/*
+autolamella/protocol/protocol-on-grid-previous.yaml

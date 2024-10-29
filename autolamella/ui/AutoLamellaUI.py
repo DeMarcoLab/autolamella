@@ -44,6 +44,7 @@ from autolamella.structures import (
 )
 from autolamella.ui import stylesheets, AutoLamellaUI
 from autolamella.ui.utils import setup_experiment_ui_v2
+from autolamella.protocol.validation import validate_protocol
 try:
     from fibsem.segmentation.utils import list_available_checkpoints
 except ImportError as e:
@@ -1209,45 +1210,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             else:
                 self.pushButton_lamella_landing_selected.setVisible(False)
 
-            # if self.checkBox_show_lamella_in_view.isChecked():
-            #     lamellas = []
-            #     text = []
-            #     positions = deepcopy(self.experiment.positions)
-
-            #     # TODO: we can wrap this up a bit, for re-use
-            #     if self.image_widget.ib_image is not None:
-            #         fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
-            #         for lamella in positions:
-            #             if method == "autolamella-waffle" and lamella.state.stage in [AutoLamellaStage.SetupTrench, AutoLamellaStage.ReadyTrench]:
-            #                 lamella_centre =  Point.from_dict(lamella.protocol.get("trench", {}).get("point", {"x": 0, "y": 0})) # centre of pattern in the image
-            #             else:
-            #                 lamella_centre =  Point.from_dict(lamella.protocol.get("lamella", {}).get("point", {"x": 0, "y": 0}))
-
-            #             current_position = lamella.state.microscope_state.stage_position
-            #             lamella_position = self.microscope.project_stable_move(
-            #                             dx=lamella_centre.x, dy=lamella_centre.y,
-            #                             beam_type=BeamType.ION,
-            #                             base_position=current_position)
-            #             lamella_position.name = lamella._petname
-            #             lamellas.append(lamella_position)
-
-            #     from fibsem.imaging._tile import _reproject_positions
-            #     points = _reproject_positions(self.image_widget.ib_image, lamellas, _bound = True)
-            #     for i in range(len(points)):
-            #         temp = Point(x= points[i].y, y =points[i].x)
-            #         temp.y += self.image_widget.eb_image.data.shape[1] #napari dimensions are swapped
-            #         temp.name = points[i].name
-            #         points[i] = temp
-            #         text.append(points[i].name)
-            #     position_text = {
-            #         "string": text,
-            #         "color": "lime",
-            #         "translation": np.array([-25, 0])
-            #     }
-            #     self.viewer.add_points(points, text=position_text, size=10, symbol="x", face_color="lime", edge_color="white", name="lamella_positions")
-            # else:
-            #     fui._remove_all_layers(self.viewer, layer_type = napari.layers.points.points.Points)
-
         # update the milling widget
         if self._WORKFLOW_RUNNING:
             self.milling_widget._PATTERN_IS_MOVEABLE = True
@@ -1290,17 +1252,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     )
 
                 if _DISPLAY_LAMELLA:
-                    protocol = (
-                        lamella.protocol
-                        if "lamella" in lamella.protocol
-                        else self.settings.protocol["milling"]
-                    )
+                    protocol = lamella.protocol
                     lamella_position = Point.from_dict(
-                        protocol["lamella"].get("point", {"x": 0, "y": 0})
+                        protocol["mill_rough"].get("point", {"x": 0, "y": 0})
                     )
-                    stages = patterning.get_milling_stages(
-                        "lamella", protocol, lamella_position
-                    )
+                    mill_rough_stages = patterning.get_milling_stages("mill_rough", protocol, lamella_position)
+                    mill_polishing_stages = patterning.get_milling_stages("mill_polishing", protocol, lamella_position)
+                    stages = mill_rough_stages + mill_polishing_stages
 
                     use_notch = self.settings.protocol["options"].get("use_notch", True)
                     use_microexpansion = self.settings.protocol["options"].get(
@@ -1426,7 +1384,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             logging.info("No path selected")
             return
 
-        self.settings.protocol = utils.load_protocol(protocol_path=PATH)
+        protocol = validate_protocol(utils.load_protocol(protocol_path=PATH))
+
+        self.settings.protocol = protocol
         self._PROTOCOL_LOADED = True
         self.update_protocol_ui(_load=True)
         napari.utils.notifications.show_info(
@@ -1537,6 +1497,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 start_timestamp=datetime.timestamp(datetime.now()),
             ),
         )
+        # set the initial protocol
+        lamella.protocol = deepcopy(self.settings.protocol["milling"])
         from autolamella.workflows.core import log_status_message
 
         log_status_message(lamella, "STARTED")
@@ -1787,15 +1749,28 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             AutoLamellaStage.SetupLamella,
             AutoLamellaStage.PreSetupLamella,
         ]:
-            n_lamella = len(self.settings.protocol["milling"]["lamella"]["stages"])
 
-            # lamella
-            self.experiment.positions[idx].protocol["lamella"] = deepcopy(
-                patterning.get_protocol_from_stages(stages[:n_lamella])
+            n_mill_rough = len(self.settings.protocol["milling"]["mill_rough"]["stages"])
+            n_mill_polishing = len(self.settings.protocol["milling"]["mill_polishing"]["stages"])
+
+            # rough milling
+            self.experiment.positions[idx].protocol["mill_rough"] = deepcopy(
+                patterning.get_protocol_from_stages(stages[:n_mill_rough])
             )
-            self.experiment.positions[idx].protocol["lamella"]["point"] = stages[
+            self.experiment.positions[idx].protocol["mill_rough"]["point"] = stages[
                 0
             ].pattern.point.to_dict()
+
+            # polishing
+            self.experiment.positions[idx].protocol["mill_polishing"] = deepcopy(
+                patterning.get_protocol_from_stages(stages[n_mill_rough:n_mill_rough+n_mill_polishing])
+            )
+            self.experiment.positions[idx].protocol["mill_polishing"]["point"] = stages[
+                n_mill_rough
+            ].pattern.point.to_dict()
+            
+            # total number of stages in lamella
+            n_lamella = n_mill_rough + n_mill_polishing 
 
             # stress relief features
             use_notch = self.settings.protocol["options"].get("use_notch", True)

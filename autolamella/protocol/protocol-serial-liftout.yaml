@@ -35,7 +35,6 @@ options:
         undercut: true
         setup_lamella: true
         mill_rough: true
-        mill_regular: true
         mill_polishing: true
 milling:
     flatten:

@@ -354,15 +354,7 @@ class Experiment:
 
                     if "stages" not in lamella.protocol[k]:
                         continue # skip non milling stages
-                    #     ddict = lamella.protocol[k]
-                    #     if not isinstance(ddict, dict):
-                    #         ddict = {k: lamella.protocol[k], "key": k, "milling_stage": 0, "lamella": lamella._petname}
-                    #     ddict["milling_stage"] = 0
-                    #     ddict["stage"] = k
-                    #     ddict["lamella"] = lamella._petname
-                    #     plist.append(deepcopy(ddict))
-
-
+      
                     else:
                         for i, ddict in enumerate(lamella.protocol[k]["stages"]):
 

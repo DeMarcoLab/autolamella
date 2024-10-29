@@ -13,7 +13,6 @@ options:
     frame_integration: 2
   take_final_overview_image: true
   lamella_tilt_angle: 18.0
-  num_polishing_stages: 2
   use_fiducial: true
   use_microexpansion: true
   use_notch: false 
@@ -21,10 +20,7 @@ options:
     trench: false
     undercut: true
     setup_lamella: true
-    features: true
-    lamella: true
     mill_rough: true
-    mill_regular: true
     mill_polishing: true
 milling:
   fiducial:
@@ -38,44 +34,38 @@ milling:
     passes: null
     hfw: 80.e-6
     type: Fiducial
-  lamella:
+  mill_rough:
     stages:
       -   application_file: Si-ccs
           cross_section: CleaningCrossSection
           depth: 6.5e-07
-          dwell_time: 1.0e-06
           hfw: 50.0e-06
           lamella_height: 6.0e-07
           lamella_width: 10.0e-06
           milling_current: 7.4e-10
           offset: 2.0e-06
-          patterning_mode: Serial
-          preset: ''
-          rate: 0.0001
           size_ratio: 1.0
-          spot_size: 5.0e-08
           trench_height: 3.5e-06
-          name: Rough Cut
+          name: Rough Mill 01
+          type: Trench
       -   application_file: Si-ccs
           cross_section: CleaningCrossSection
           depth: 6.5e-07
-          dwell_time: 1.0e-06
           hfw: 50.0e-06
           lamella_height: 6.0e-07
           lamella_width: 9.5e-06
           milling_current: 2.0e-10
           offset: 5.0e-07
           patterning_mode: Serial
-          preset: ''
-          rate: 0.0001
           size_ratio: 1.0
-          spot_size: 5.0e-08
           trench_height: 2.0e-06
-          name: Regular Cut
+          name: Rough Mill 02
+          type: Trench
+  mill_polishing:
+    stages:
       -   application_file: Si-ccs
           cross_section: CleaningCrossSection
           depth: 4.0e-07
-          dwell_time: 1.0e-06
           hfw: 50.0e-6
           lamella_height: 450.0e-9
           lamella_width: 9.0e-06
@@ -84,11 +74,11 @@ milling:
           patterning_mode: Serial
           size_ratio: 1.0
           trench_height: 7.0e-07
-          name: Polishing Cut 01
+          name: Polishing Mill 01
+          type: Trench
       -   application_file: Si-ccs
           cross_section: CleaningCrossSection
           depth: 4.0e-07
-          dwell_time: 1.0e-06
           hfw: 50.0e-6
           lamella_height: 300.0e-9
           lamella_width: 9.0e-06
@@ -97,7 +87,8 @@ milling:
           patterning_mode: Serial
           size_ratio: 1.0
           trench_height: 2.5e-07
-          name: Polishing Cut 02
+          name: Polishing Mill 02
+          type: Trench
   microexpansion:
     width: 0.5e-6
     height: 18.e-6
