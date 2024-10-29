@@ -9,7 +9,6 @@ from fibsem.structures import FibsemImage, FibsemStagePosition
 from fibsem.utils import save_yaml
 
 from autolamella.structures import AutoLamellaStage, Experiment, Lamella, LamellaState
-from autolamella.waffle import run_autolamella
 from autolamella.workflows.core import log_status_message
 
 add_odemis_path()

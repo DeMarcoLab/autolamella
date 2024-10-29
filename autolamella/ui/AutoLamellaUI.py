@@ -1518,8 +1518,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             method = self.settings.protocol["options"].get("method", None)
             SETUP_STATE, READY_STATE = get_method_states(method)
 
-            from autolamella import waffle as wfl
-            self.experiment = wfl.end_of_stage_update(
+            from autolamella.workflows.core import end_of_stage_update, start_of_stage_update
+            self.experiment = end_of_stage_update(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 lamella=lamella,
@@ -1528,7 +1528,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
 
             # start ready stage
-            self.experiment.positions[idx] = wfl.start_of_stage_update(
+            self.experiment.positions[idx] = start_of_stage_update(
                 microscope=self.microscope,
                 lamella=lamella,
                 next_stage=READY_STATE,
@@ -1540,7 +1540,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.experiment.positions[idx].protocol = deepcopy(self.settings.protocol["milling"])
             
             # end the stage
-            self.experiment = wfl.end_of_stage_update(
+            self.experiment = end_of_stage_update(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 lamella=lamella,
@@ -1638,7 +1638,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         SETUP_STATE, READY_STATE = get_method_states(method)
 
         lamella: Lamella = self.experiment.positions[idx]
-        from autolamella import waffle as wfl
+        from autolamella.workflows.core import start_of_stage_update, end_of_stage_update
 
         if lamella.state.stage not in [SETUP_STATE, READY_STATE]:
             return
@@ -1669,7 +1669,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 )
 
         # end of stage update
-        self.experiment = wfl.end_of_stage_update(
+        self.experiment = end_of_stage_update(
             microscope=self.microscope,
             experiment=self.experiment,
             lamella=lamella,
@@ -1679,7 +1679,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if lamella.state.stage is SETUP_STATE:
             # start of stage update
-            self.experiment.positions[idx] = wfl.start_of_stage_update(
+            self.experiment.positions[idx] = start_of_stage_update(
                 microscope=self.microscope,
                 lamella=lamella,
                 next_stage=READY_STATE,
@@ -1698,7 +1698,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.image_widget.ib_image.save(fname)
             self.milling_widget._PATTERN_IS_MOVEABLE = False
 
-            self.experiment = wfl.end_of_stage_update(
+            self.experiment = end_of_stage_update(
                 microscope=self.microscope,
                 experiment=self.experiment,
                 lamella=lamella,
@@ -1707,7 +1707,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
 
         elif lamella.state.stage is READY_STATE:
-            self.experiment.positions[idx] = wfl.start_of_stage_update(
+            self.experiment.positions[idx] = start_of_stage_update(
                 self.microscope,
                 lamella,
                 SETUP_STATE,
@@ -1965,7 +1965,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if method not in cfg.__AUTOLAMELLA_METHODS__:
             raise ValueError(f"Invalid method {method} for autolamella workflow")
 
-        from autolamella import waffle as wfl  # avoiding circular import
+        from autolamella.workflows import runners as wfl  # avoiding circular import
         if _is_method_type(method, "liftout"):
             from autolamella.workflows import autoliftout
 
