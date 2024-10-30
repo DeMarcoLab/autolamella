@@ -1,20 +1,26 @@
 import os
 from copy import deepcopy
 from datetime import datetime
-from typing import List
+from typing import List, Dict, Optional
 
 from fibsem.microscopes.odemis_microscope import add_odemis_path
 from fibsem.patterning import get_milling_stages, get_protocol_from_stages
 from fibsem.structures import FibsemImage, FibsemStagePosition
 from fibsem.utils import save_yaml
 
+from autolamella.protocol.validation import (
+    MICROEXPANSION_KEY,
+    MILL_POLISHING_KEY,
+    MILL_ROUGH_KEY,
+)
 from autolamella.structures import AutoLamellaStage, Experiment, Lamella, LamellaState
 from autolamella.workflows.core import log_status_message
 
 add_odemis_path()
 
 from odemis.acq.feature import CryoFeature
-from odemis.acq.move import FM_IMAGING, SEM_IMAGING, MILLING
+from odemis.acq.move import FM_IMAGING, MILLING, SEM_IMAGING
+from odemis.acq.milling.tasks import MillingTask
 
 def create_lamella_from_feature(feature: CryoFeature, 
                                 path: str,
@@ -43,6 +49,9 @@ def create_lamella_from_feature(feature: CryoFeature,
                 start_timestamp=datetime.timestamp(datetime.now()),
             ),
         )
+
+    # add the milling protocol
+    lamella.protocol = convert_milling_tasks_to_milling_protocol(feature.milling_tasks)
 
     log_status_message(lamella, "STARTED") # for logging
 
@@ -102,11 +111,12 @@ def add_features_to_experiment(experiment: Experiment, features: List[CryoFeatur
                                         num=len(experiment.positions) + 1, 
                                         reference_image_path=reference_image_path,
                                         workflow_stage=AutoLamellaStage.ReadyLamella)
-        # add milling protocol
-        for k in protocol["milling"].keys():
-            stages = get_milling_stages(k, protocol["milling"])
-            lamella.protocol[k] = get_protocol_from_stages(stages)
-            lamella.protocol[k]["point"] = stages[0].pattern.point.to_dict()
+        
+        # # add milling protocol
+        # for k in protocol["milling"].keys():
+        #     stages = get_milling_stages(k, protocol["milling"])
+        #     lamella.protocol[k] = get_protocol_from_stages(stages)
+        #     lamella.protocol[k]["point"] = stages[0].pattern.point.to_dict()
             # required: point, pattern_type, cross_section, depth, trench_height, width, height
             # milling current
             # each trench stage should be 0.5um less wide than the previous one
@@ -117,3 +127,90 @@ def add_features_to_experiment(experiment: Experiment, features: List[CryoFeatur
         experiment.positions.append(deepcopy(lamella))
         experiment.save()
     return experiment
+
+# convert odemis milling task to autolamella protocol
+ODEMIS_TO_AUTOLAMELLA = {
+    "trench": {
+        "width": "lamella_width",
+        "spacing": "lamella_height",
+        "height": "trench_height",
+        "depth": "depth",
+        "current": "milling_current",
+        "field_of_view": "hfw",
+        "voltage": "milling_voltage",
+        "name": "name",
+        "pattern": "type",
+        "mode": "patterning_mode", 
+        "channel": "milling_channel", 
+    },
+    "microexpansion": {
+        "spacing": "distance",
+        "depth": "depth",
+        "current": "milling_current",
+        "field_of_view": "hfw",
+        "voltage": "milling_voltage",
+        "name": "name",
+        "pattern": "type",
+        "mode": "patterning_mode", 
+        "channel": "milling_channel", 
+    }
+}
+
+  
+# remap the odemis milling task to autolamella protocol
+def remap_milling_task(task: dict) -> dict:
+    remap = ODEMIS_TO_AUTOLAMELLA[task["pattern"]] # TODO: make this more generic
+    new_task = {}
+    for key, value in task.items():
+        if key in remap:
+            new_key = remap[key]
+            new_task[new_key] = value
+        else:
+            new_task[key] = value
+
+    return new_task
+
+def remap_milling_task_to_protocol(task: MillingTask) -> dict:
+
+    task1 = task.to_json()
+    task1.update(task1["milling"])
+    task1.update(task1["patterns"][0]) # only support one pattern for now
+    del task1["patterns"]
+    del task1["milling"]
+    
+    protocol = remap_milling_task(task1)
+    protocol["name"] = task.name
+    
+    return protocol
+
+def _convert_to_stages_protocol(pprotocol) -> dict:
+
+    rough_keys = [key for key in pprotocol if "rough" in key.lower()]
+    polishing_keys = [key for key in pprotocol if "polishing" in key.lower()]
+    microexpansion_keys = [key for key in pprotocol if "microexpansion" in key.lower()]
+    
+    # point is the same across all
+    point = {"x": pprotocol[rough_keys[0]]["center_x"], 
+            "y": pprotocol[rough_keys[0]]["center_y"]}
+
+    protocol = {}
+    protocol[MILL_ROUGH_KEY] = {
+            "point": point,
+            "stages": [pprotocol[key] for key in rough_keys]
+    }
+    protocol[MILL_POLISHING_KEY] = {
+            "point": point,
+            "stages": [pprotocol[key] for key in polishing_keys]
+    }
+    protocol[MICROEXPANSION_KEY] = {
+            "point": point,
+            "stages": [pprotocol[key] for key in microexpansion_keys]
+    }
+    return protocol
+
+def convert_milling_tasks_to_milling_protocol(milling_tasks: Dict[str, MillingTask]) -> dict:
+    tmp_protocol = {}
+    for key in milling_tasks:
+        tmp_protocol[key] = remap_milling_task_to_protocol(milling_tasks[key])
+    protocol = _convert_to_stages_protocol(tmp_protocol)
+    return protocol

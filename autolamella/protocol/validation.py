@@ -1,8 +1,15 @@
 import logging
 
+MILL_ROUGH_KEY = "mill_rough"
+MILL_POLISHING_KEY = "mill_polishing"
+MICROEXPANSION_KEY = "microexpansion"
+FIDUCIAL_KEY = "fiducial"
+NOTCH_KEY = "notch"
+TRENCH_KEY = "trench"
 
 # required milling keys
-REQUIRED_MILLING_KEYS = ["mill_rough", "mill_polishing", "microexpansion", "fiducial", "notch"]
+REQUIRED_MILLING_KEYS = [MILL_ROUGH_KEY, MILL_POLISHING_KEY, 
+                         MICROEXPANSION_KEY, FIDUCIAL_KEY, NOTCH_KEY]
 
 # default configuration
 DEFAULT_ALIGNMENT_AREA = {"left": 0.7, "top": 0.3, "width": 0.25, "height": 0.4}
@@ -17,8 +24,9 @@ DEFAULT_FIDUCIAL_PROTOCOL = {
     "type": "Fiducial",
     }
 
+
 DEFAULT_PROTOCOL = {
-    "mill_rough": {
+    MILL_ROUGH_KEY: {
         "stages": [
             {
                 "application_file": "Si-ccs",
@@ -52,7 +60,7 @@ DEFAULT_PROTOCOL = {
             }
         ]
     },
-    "mill_polishing": {
+    MILL_POLISHING_KEY: {
         "stages": [
             {
                 "application_file": "Si-ccs",
@@ -86,7 +94,7 @@ DEFAULT_PROTOCOL = {
             }
         ]
     },
-    "microexpansion": {
+    MICROEXPANSION_KEY: {
         "width": 0.5e-6,
         "height": 18.e-6,
         "depth": 1.0e-6,
@@ -96,7 +104,7 @@ DEFAULT_PROTOCOL = {
         "application_file": "Si",
         "type": "MicroExpansion"
     },
-    "notch": {
+    NOTCH_KEY: {
         "application_file": "Si",
         "depth": 2.5e-06,
         "distance": 2.0e-06,
@@ -110,9 +118,10 @@ DEFAULT_PROTOCOL = {
         "vwidth": 2.0e-07,
         "type": "WaffleNotch"
     },
-    "fiducial": DEFAULT_FIDUCIAL_PROTOCOL,
+    FIDUCIAL_KEY: DEFAULT_FIDUCIAL_PROTOCOL,
 }
 
+# TODO: this is validate milling protocol, extend to full protocol
 def validate_protocol(protocol: dict):
     """Converts the protocol to the new format if necessary and validates it."""
     # upconvert to new protocol
@@ -122,8 +131,8 @@ def validate_protocol(protocol: dict):
         num_polishing_stages = protocol["options"].get("num_polishing_stages", 1)
         lamella_protocol = protocol["milling"]["lamella"]["stages"]
             
-        protocol["milling"]["mill_rough"] = {"stages": lamella_protocol[:-num_polishing_stages]}
-        protocol["milling"]["mill_polishing"] = {"stages": lamella_protocol[-num_polishing_stages:]}
+        protocol["milling"][MILL_ROUGH_KEY] = {"stages": lamella_protocol[:-num_polishing_stages]}
+        protocol["milling"][MILL_POLISHING_KEY] = {"stages": lamella_protocol[-num_polishing_stages:]}
 
         # del protocol["milling"]["lamella"] # TODO: refactor the rest of the methods so we can remove this... don't remove just yet
 
