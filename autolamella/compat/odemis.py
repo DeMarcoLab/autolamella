@@ -14,7 +14,7 @@ from autolamella.workflows.core import log_status_message
 add_odemis_path()
 
 from odemis.acq.feature import CryoFeature
-
+from odemis.acq.move import FM_IMAGING, SEM_IMAGING, MILLING
 
 def create_lamella_from_feature(feature: CryoFeature, 
                                 path: str,
@@ -22,7 +22,11 @@ def create_lamella_from_feature(feature: CryoFeature,
                                 reference_image_path: str,
                                 workflow_stage: AutoLamellaStage = AutoLamellaStage.SetupLamella) -> Lamella:
     """Create a Lamella object from a CryoFeature object."""
-    pos = FibsemStagePosition.from_odemis_dict(feature.stage_pos.value)
+
+    # sem_position = feature.posture_positions[SEM_IMAGING]
+    feature_position = feature.posture_positions[MILLING]
+
+    pos = FibsemStagePosition.from_odemis_dict(feature_position)
 
     # get the microscope state from the reference image
     image: FibsemImage = FibsemImage.load_odemis_image(reference_image_path)
@@ -61,19 +65,19 @@ def save_reference_image(odemis_image_path: str, path: str, filename: str = "ref
     image.metadata.image_settings.save = True
     image.metadata.image_settings.path = path
     image.metadata.image_settings.filename = filename
-    
+
     # save
     image.save()
 
 
-def create_experiment_from_odemis(path: str, protocol: dict, name: str = "AutoLamella", program: str = "Odemis", method: str = "on-grid") -> Experiment:
+def create_experiment_from_odemis(path: str, protocol: dict, name: str = "AutoLamella", program: str = "Odemis", method: str = "autolamella-on-grid") -> Experiment:
     """Create an experiment from an Odemis project folder."""
 
     experiment_name = f"{name}-{os.path.basename(path)}"
     experiment = Experiment(path=path, name=experiment_name, program=program, method=method)
     experiment.save()
 
-    # save the protocol
+    # save the protocol in the experiment folder
     save_yaml(os.path.join(experiment.path, "protocol.yaml"), protocol)
 
     return experiment
