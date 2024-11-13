@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import List, Dict, Optional
 
 from fibsem.microscopes.odemis_microscope import add_odemis_path
-from fibsem.patterning import get_milling_stages, get_protocol_from_stages
 from fibsem.structures import FibsemImage, FibsemStagePosition
 from fibsem.utils import save_yaml
 
@@ -20,7 +19,7 @@ add_odemis_path()
 
 from odemis.acq.feature import CryoFeature
 from odemis.acq.move import FM_IMAGING, MILLING, SEM_IMAGING
-from odemis.acq.milling.tasks import MillingTask
+from odemis.acq.milling.tasks import MillingTaskSettings  # noqa: E402
 
 def create_lamella_from_feature(feature: CryoFeature, 
                                 path: str,
@@ -95,7 +94,7 @@ def load_experiment(path: str) -> Experiment:
     """Load an experiment from a path."""
     return Experiment.load(path)
 
-def add_features_to_experiment(experiment: Experiment, features: List[CryoFeature], protocol: dict) -> Experiment:
+def add_features_to_experiment(experiment: Experiment, features: List[CryoFeature]) -> Experiment:
     """Add features to an experiment."""
     odemis_project_path = os.path.dirname(experiment.path)
 
@@ -112,18 +111,6 @@ def add_features_to_experiment(experiment: Experiment, features: List[CryoFeatur
                                         reference_image_path=reference_image_path,
                                         workflow_stage=AutoLamellaStage.ReadyLamella)
         
-        # # add milling protocol
-        # for k in protocol["milling"].keys():
-        #     stages = get_milling_stages(k, protocol["milling"])
-        #     lamella.protocol[k] = get_protocol_from_stages(stages)
-        #     lamella.protocol[k]["point"] = stages[0].pattern.point.to_dict()
-            # required: point, pattern_type, cross_section, depth, trench_height, width, height
-            # milling current
-            # each trench stage should be 0.5um less wide than the previous one
-        
-        # TODO: this currently uses the same protocol for all lamellae, 
-        # update to use different protocols for each lamella based on what the user selects in the ui
-
         experiment.positions.append(deepcopy(lamella))
         experiment.save()
     return experiment
@@ -170,7 +157,7 @@ def remap_milling_task(task: dict) -> dict:
 
     return new_task
 
-def remap_milling_task_to_protocol(task: MillingTask) -> dict:
+def remap_milling_task_to_protocol(task: MillingTaskSettings) -> dict:
 
     task1 = task.to_json()
     task1.update(task1["milling"])
@@ -208,7 +195,7 @@ def _convert_to_stages_protocol(pprotocol) -> dict:
     }
     return protocol
 
-def convert_milling_tasks_to_milling_protocol(milling_tasks: Dict[str, MillingTask]) -> dict:
+def convert_milling_tasks_to_milling_protocol(milling_tasks: Dict[str, MillingTaskSettings]) -> dict:
     tmp_protocol = {}
     for key in milling_tasks:
         tmp_protocol[key] = remap_milling_task_to_protocol(milling_tasks[key])
