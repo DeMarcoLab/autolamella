@@ -1,3 +1,8 @@
+import sys
+try:
+    sys.modules.pop("PySide6.QtCore")
+except Exception as e:
+    pass
 import logging
 import os
 from copy import deepcopy
