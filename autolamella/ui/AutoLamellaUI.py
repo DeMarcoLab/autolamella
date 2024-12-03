@@ -24,6 +24,7 @@ from fibsem.structures import (
     FibsemStagePosition,
     Point,
     FibsemRectangle,
+    FibsemImage,
 )
 from fibsem.ui import (
     FibsemImageSettingsWidget,
@@ -56,6 +57,25 @@ except ImportError as e:
     logging.debug(f"Could not import list_available_checkpoints from fibsem.segmentation.utils: {e}")
     def list_available_checkpoints():
         return []
+
+
+
+
+CORRELATION_THREEDCT_AVAILABLE = False
+try:
+    from tdct.app import CorrelationUI
+    logging.info("CorrelationUI imported from tdct.app")
+    CORRELATION_THREEDCT_AVAILABLE = True
+except ImportError as e:
+    logging.debug(f"Could not import CorrelationUI from tdct.app: {e}")
+    CorrelationUI = None
+
+logging.info(f"CORRELATION_THREEDCT_AVAILABLE: {CORRELATION_THREEDCT_AVAILABLE}")
+
+
+
+
+
 
 _DEV_MODE = False
 DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBACK_01/experiment.yaml"
@@ -160,6 +180,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.movement_widget: FibsemMovementWidget = None
         self.milling_widget: FibsemMillingWidget = None
         self.minimap_widget: FibsemMinimapWidget = None
+        self.correlation_widget: CorrelationUI = None
 
         self.WAITING_FOR_USER_INTERACTION: bool = False
         self.USER_RESPONSE: bool = False
@@ -243,6 +264,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
+        self.actionOpen_3D_Correlation.triggered.connect(self._open_3d_correlation)
 
         # stop workflow
         self.pushButton_stop_workflow.clicked.connect(self._stop_workflow_thread)
@@ -754,6 +776,26 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.det_widget.deleteLater()
 
             self._microscope_ui_loaded = False
+
+
+    def _open_3d_correlation(self):
+
+        logging.info(f"Opening 3D Correlation UI")
+
+        if not CORRELATION_THREEDCT_AVAILABLE:
+            napari.utils.notifications.show_warning(
+                "3D Correlation UI not available. Please install tdct."
+            )
+            return
+
+        self.correlation_viewer = napari.Viewer()
+        self.correlation_widget = CorrelationUI(self.correlation_viewer)
+
+        # create a button to run correlation
+        self.correlation_viewer.window.add_dock_widget(
+            self.correlation_widget, area="right", name="3DCT Correlation", tabify=True
+        )
+        napari.run(max_loop_level=3)
 
     def _open_minimap(self):
         if self.microscope is None:
@@ -1885,6 +1927,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         _det = bool(info["det"] is not None)
         stages = info.get("stages", None)
         alignment_area = info.get("alignment_area", None)
+        correlate = info.get("correlate", False)
 
         if self.det_widget is not None and _det:
             self.det_widget.set_detected_features(info["det"])
@@ -1912,7 +1955,22 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.image_widget.toggle_alignment_area(alignment_area)
         if alignment_area == "clear":
             self.image_widget.clear_alignment_area()
-        
+
+        if correlate:
+            self._open_3d_correlation()
+            fib_image: FibsemImage = self.image_widget.ib_image
+            md = fib_image.metadata.image_settings
+            filename = os.path.join(md.path, md.filename)
+            self.correlation_widget.set_project_path(str(md.path))
+            self.correlation_widget.load_fib_image(image=fib_image.data, 
+                                                   pixel_size=fib_image.metadata.pixel_size.x, 
+                                                   filename=filename)
+            
+            # TODO: save a copy of the fm image in the dir?
+            # TODO: close the viewer, or just clear the data?
+            # TODO: test!
+            # TODO: add checks to see if correlation is installed?
+
         if _det is None and _mill is None and alignment_area is None:
             self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Experiment"])
 

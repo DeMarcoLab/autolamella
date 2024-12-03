@@ -204,6 +204,7 @@ def ask_user(
     movement: bool = True,
     mill: bool = None,
     det: DetectedFeatures = None,
+    correlate: bool = False,
 ) -> bool:
 
     if parent_ui is None:
@@ -219,6 +220,7 @@ def ask_user(
         "ib_image": None,
         "movement": movement,
         "mill": mill,
+        "correlate": correlate,
     }
     parent_ui.ui_signal.emit(INFO)
 
@@ -312,3 +314,26 @@ def update_experiment_ui(parent_ui: AutoLamellaUI, experiment):
         return
     
     parent_ui.update_experiment_signal.emit(experiment)
+
+def ask_user_to_correlate(parent_ui: AutoLamellaUI, validate: bool = True):
+
+    # headless mode
+    if parent_ui is None:
+        return 
+    
+    msg = "Use Fluorescence Correlation? Press Continue when done."
+    pos, neg = "Correlate", "Skip"
+
+    if validate: # correlation must be validated
+        response = ask_user(parent_ui, msg=msg, pos=pos, neg=neg)
+        if response:
+            response = ask_user(parent_ui, msg="Press Continue when finished correlating.", 
+                                pos="Continue", 
+                                correlate=True)
+
+            # close the correlation widget?
+            try:
+                return parent_ui.correlation_widget.correlation_results 
+            except Exception as e:
+                logging.warning(f"Correlation results not found in UI. {e}")
+                return None

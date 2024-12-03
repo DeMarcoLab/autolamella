@@ -41,6 +41,7 @@ from autolamella.workflows.ui import (
     update_detection_ui,
     update_milling_ui,
     update_status_ui,
+    ask_user_to_correlate,
 )
 
 # TODO: complete the rest of the patterns
@@ -547,6 +548,30 @@ def setup_lamella(
 
         stages += fiducial_stage
     
+    # correlation time
+    # TODO: allow the user to re-imaging before correlation?
+    log_status_message(lamella, "START_CORRELATION")
+    cor_ret = ask_user_to_correlate(parent_ui=parent_ui, validate=validate)
+    try:
+        dat = cor_ret["output"]["poi"][0]["px_um"]
+        point = Point(x=dat[0]*1e-6, y=dat[1]*1e-6)
+        # print("POINT WAS: ", point)
+        # point = (10e-6, -5e-6)
+    except Exception as e:
+        logging.error(f"Correlation failed: {e}")
+        point = None
+
+    if point is not None:
+        logging.info(f"Correlated point: {point}, updating all stages...")
+        for stage in stages:
+            if isinstance(stage.pattern, patterning.FiducialPattern):
+                continue # skip fiducial
+            stage.pattern.define(stage.pattern.protocol, Point(x=point[0], y=point[1]))
+
+    log_status_message(lamella, "END_CORRELATION")
+
+    # TODO: get the correlated position and update the milling positions for each stage
+
     if validate:
         stages = update_milling_ui(microscope, stages, parent_ui, 
             msg=f"Confirm the positions for the {lamella.name} milling. Press Continue to Confirm.",

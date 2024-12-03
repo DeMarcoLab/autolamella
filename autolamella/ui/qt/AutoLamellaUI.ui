@@ -684,6 +684,7 @@
     <addaction name="actionOpen_Minimap"/>
     <addaction name="actionLoad_Milling_Pattern"/>
     <addaction name="actionSave_Milling_Pattern"/>
+    <addaction name="actionOpen_3D_Correlation"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -759,6 +760,11 @@
   <action name="actionInformation">
    <property name="text">
     <string>Information</string>
+   </property>
+  </action>
+  <action name="actionOpen_3D_Correlation">
+   <property name="text">
+    <string>Open 3D Correlation</string>
    </property>
   </action>
  </widget>
