@@ -27,9 +27,8 @@ from fibsem.detection.detection import (
     LandingGridLeftEdge,
     LandingGridRightEdge,
 )
-
 from fibsem.microscope import FibsemMicroscope
-from fibsem.patterning import FibsemMillingStage, get_milling_stages
+from fibsem.milling import FibsemMillingStage, get_milling_stages, get_protocol_from_stages
 from fibsem.structures import (
     BeamType,
     FibsemRectangle,
@@ -182,7 +181,7 @@ def liftout_lamella(
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
     
-    lamella.protocol["liftout-weld"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+    lamella.protocol["liftout-weld"] = deepcopy(get_protocol_from_stages(stages[0]))
     lamella.protocol["liftout-weld"]["point"] = stages[0].pattern.point.to_dict()
 
     # reference images
@@ -212,7 +211,7 @@ def liftout_lamella(
             msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
             validate=validate)
         
-        lamella.protocol["liftout-sever"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+        lamella.protocol["liftout-sever"] = deepcopy(get_protocol_from_stages(stages[0]))
         lamella.protocol["liftout-sever"]["point"] = stages[0].pattern.point.to_dict()
 
         # reference images
@@ -462,7 +461,7 @@ def land_lamella(
         msg=f"Press Run Milling to mill the thinning pattern for {lamella._petname}. Press Continue when done.", 
         validate=validate)
 
-    lamella.protocol["landing-thin"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+    lamella.protocol["landing-thin"] = deepcopy(get_protocol_from_stages(stages[0]))
     lamella.protocol["landing-thin"]["point"] = stages[0].pattern.point.to_dict()
 
     # reference images
@@ -525,7 +524,7 @@ def land_lamella(
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
     
-    lamella.protocol["landing-weld"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+    lamella.protocol["landing-weld"] = deepcopy(get_protocol_from_stages(stages[0]))
     lamella.protocol["landing-weld"]["point"] = stages[0].pattern.point.to_dict()
 
     # reference images
@@ -607,7 +606,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
             msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
             validate=validate)
         
-        lamella.protocol["landing-sever"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+        lamella.protocol["landing-sever"] = deepcopy(get_protocol_from_stages(stages[0]))
         lamella.protocol["landing-sever"]["point"] = stages[0].pattern.point.to_dict()
 
         # reference images

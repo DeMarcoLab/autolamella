@@ -6,7 +6,7 @@ from pathlib import Path
 
 import os
 import numpy as np
-from fibsem import acquire, alignment, calibration, patterning
+from fibsem import acquire, alignment, calibration
 from fibsem import utils as fibsem_utils
 from fibsem import validation
 from fibsem.detection import detection
@@ -25,7 +25,7 @@ from fibsem.detection.detection import (
 )
 from fibsem.imaging import utils as image_utils
 from fibsem.microscope import FibsemMicroscope
-from fibsem.patterning import FibsemMillingStage, get_milling_stages
+from fibsem.milling import FibsemMillingStage, get_milling_stages, get_protocol_from_stages
 from fibsem.structures import (
     BeamType,
     FibsemRectangle,
@@ -139,7 +139,7 @@ def liftout_lamella(
             msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
             validate=validate)
         
-        lamella.protocol["join"] = deepcopy(patterning.get_protocol_from_stages(stages))
+        lamella.protocol["join"] = deepcopy(get_protocol_from_stages(stages))
         lamella.protocol["join"]["point"] = stages[0].pattern.point.to_dict()
 
     logging.info(
@@ -549,7 +549,7 @@ def mill_lamella_edge(
         msg=f"Press Run Milling to mill the sever for {lamella._petname}. Press Continue when done.", 
         validate=validate)
 
-    lamella.protocol[f"{lamella.state.stage.name}_sever"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+    lamella.protocol[f"{lamella.state.stage.name}_sever"] = deepcopy(get_protocol_from_stages(stages[0]))
     lamella.protocol[f"{lamella.state.stage.name}_sever"]["point"] = stages[0].pattern.point.to_dict()
 
     # take reference images
@@ -640,7 +640,7 @@ def land_lamella_on_post(
         msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
         validate=validate)
     
-    lamella.protocol["weld"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+    lamella.protocol["weld"] = deepcopy(get_protocol_from_stages(stages[0]))
     lamella.protocol["weld"]["point"] = stages[0].pattern.point.to_dict()
 
     # final reference images
@@ -806,7 +806,7 @@ def reset_needle(
         msg=f"Press Run Milling to mill the sharpen for {lamella._petname}. Press Continue when done.", 
         validate=validate)
 
-    lamella.protocol["reset"] = deepcopy(patterning.get_protocol_from_stages(stages[0]))
+    lamella.protocol["reset"] = deepcopy(get_protocol_from_stages(stages[0]))
     lamella.protocol["reset"]["point"] = stages[0].pattern.point.to_dict()
 
     #################################################################################################
@@ -1041,7 +1041,7 @@ def select_initial_lamella_positions(
     set_images_ui(parent_ui, eb_image, ib_image)
 
     log_status_message(lamella, "SELECT_LAMELLA_POSITION")
-    stages = patterning.get_milling_stages("trench", settings.protocol["milling"])
+    stages = get_milling_stages("trench", settings.protocol["milling"])
     stages = update_milling_ui(microscope, stages, parent_ui,
         msg=f"Select a position and milling pattern for {lamella._petname}. Press Continue when done.",
         validate=True,
@@ -1049,7 +1049,7 @@ def select_initial_lamella_positions(
     )
     
     # log the protocol
-    lamella.protocol["trench"] = deepcopy(patterning.get_protocol_from_stages(stages))
+    lamella.protocol["trench"] = deepcopy(get_protocol_from_stages(stages))
     lamella.protocol["trench"]["point"] = stages[0].pattern.point.to_dict()
     
     # need to set the imaging settings too?
@@ -1147,7 +1147,7 @@ def select_landing_sample_positions(
         msg=f"Select the landing position and prepare (mill) the area for {lamella._petname}. Press Continue when done.", 
         validate=True)
     
-    lamella.protocol["flatten"] = deepcopy(patterning.get_protocol_from_stages(stages))
+    lamella.protocol["flatten"] = deepcopy(get_protocol_from_stages(stages))
     lamella.protocol["flatten"]["point"] = stages[0].pattern.point.to_dict()
     lamella.landing_state = microscope.get_microscope_state()
 

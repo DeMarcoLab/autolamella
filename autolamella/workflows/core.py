@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List, Tuple
 
 import numpy as np
-from fibsem import acquire, alignment, calibration, patterning
+from fibsem import acquire, alignment, calibration
 from fibsem import config as fcfg
 from fibsem.detection.detection import (
     Feature,
@@ -26,6 +26,7 @@ from fibsem.structures import (
     Point,
     calculate_fiducial_area_v2
 )
+from fibsem.milling import get_milling_stages, get_protocol_from_stages
 from autolamella.structures import (
     AutoLamellaStage,
     Experiment,
@@ -95,7 +96,7 @@ def mill_trench(
     
     # define trench milling stage
     settings.image.beam_type = BeamType.ION
-    stages = patterning.get_milling_stages("trench", 
+    stages = get_milling_stages("trench", 
                                            lamella.protocol, 
                                            point=Point.from_dict(lamella.protocol["trench"].get("point", {"x":0, "y":0})))
     stages = update_milling_ui(microscope, stages, parent_ui,
@@ -104,7 +105,7 @@ def mill_trench(
     )
     
     # log the protocol
-    lamella.protocol["trench"] = deepcopy(patterning.get_protocol_from_stages(stages))
+    lamella.protocol["trench"] = deepcopy(get_protocol_from_stages(stages))
     lamella.protocol["trench"]["point"] = stages[0].pattern.point.to_dict()
     
     # charge neutralisation
@@ -222,7 +223,7 @@ def mill_undercut(
         # mill undercut 1
         log_status_message(lamella, f"MILL_UNDERCUT_{_n}")
 
-        stages = patterning.get_milling_stages("undercut", lamella.protocol, point=point)[i]
+        stages = get_milling_stages("undercut", lamella.protocol, point=point)[i]
         stages = update_milling_ui(microscope, [stages], parent_ui,
             msg=f"Press Run Milling to mill the Undercut {_n} for {lamella._petname}. Press Continue when done.",
             validate=validate,
@@ -231,7 +232,7 @@ def mill_undercut(
         undercut_stages.append(stages[0])
 
     # log undercut stages
-    lamella.protocol["undercut"] = deepcopy(patterning.get_protocol_from_stages(undercut_stages))
+    lamella.protocol["undercut"] = deepcopy(get_protocol_from_stages(undercut_stages))
     lamella.protocol["undercut"]["point"] = undercut_stages[0].pattern.point.to_dict()
 
     # take reference images
@@ -303,7 +304,7 @@ def mill_lamella(
 
     # milling stages
     milling_stage_name = supervise_map[lamella.state.stage.name]
-    stages = patterning.get_milling_stages(key=milling_stage_name, 
+    stages = get_milling_stages(key=milling_stage_name, 
                                            protocol=lamella.protocol, 
                                            point=Point.from_dict(lamella.protocol[milling_stage_name]["point"]))
 
@@ -369,13 +370,13 @@ def mill_lamella(
         if use_notch := bool(settings.protocol["options"].get("use_notch", False)):
             _feature_name = "notch"
 
-            feature_stage = patterning.get_milling_stages(_feature_name, lamella.protocol, 
+            feature_stage = get_milling_stages(_feature_name, lamella.protocol, 
                                                           point=Point.from_dict(lamella.protocol[_feature_name]["point"]))
             features_stages += feature_stage
 
         if use_microexpansion := bool(settings.protocol["options"].get("use_microexpansion", False)):
             _feature_name = "microexpansion"
-            feature_stage = patterning.get_milling_stages(_feature_name, lamella.protocol, 
+            feature_stage = get_milling_stages(_feature_name, lamella.protocol, 
                                                           point=Point.from_dict(lamella.protocol[_feature_name]["point"]))
             features_stages += feature_stage
 
@@ -388,13 +389,13 @@ def mill_lamella(
         if use_notch:
             _feature_name = "notch"
             idx = 0
-            lamella.protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(features_stages[idx]))
+            lamella.protocol[_feature_name] = deepcopy(get_protocol_from_stages(features_stages[idx]))
             lamella.protocol[_feature_name]["point"] = features_stages[idx].pattern.point.to_dict()
 
         if use_microexpansion:
             _feature_name = "microexpansion"
             idx = use_notch
-            lamella.protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(features_stages[idx]))
+            lamella.protocol[_feature_name] = deepcopy(get_protocol_from_stages(features_stages[idx]))
             lamella.protocol[_feature_name]["point"] = features_stages[idx].pattern.point.to_dict()
 
 
@@ -407,7 +408,7 @@ def mill_lamella(
     )
 
     # log the protocol
-    lamella.protocol[milling_stage_name] = deepcopy(patterning.get_protocol_from_stages(stages[:n_lamella]))
+    lamella.protocol[milling_stage_name] = deepcopy(get_protocol_from_stages(stages[:n_lamella]))
     lamella.protocol[milling_stage_name]["point"] = stages[0].pattern.point.to_dict()
 
     if _take_reference_images:
@@ -495,8 +496,8 @@ def setup_lamella(
 
     protocol = lamella.protocol
     lamella_position = Point.from_dict(protocol["mill_rough"].get("point", {"x": 0, "y": 0})) 
-    rough_mill_stages = patterning.get_milling_stages("mill_rough", protocol, lamella_position)
-    polishing_mill_stages = patterning.get_milling_stages("mill_polishing", protocol, lamella_position)
+    rough_mill_stages = get_milling_stages("mill_rough", protocol, lamella_position)
+    polishing_mill_stages = get_milling_stages("mill_polishing", protocol, lamella_position)
     lamella_stages = rough_mill_stages + polishing_mill_stages
     stages = deepcopy(lamella_stages)
     n_lamella = len(stages)
@@ -522,7 +523,7 @@ def setup_lamella(
             notch_position = Point.from_dict(protocol[_feature_name].get("point", 
                     {"x":lamella_position.x + h_offset, 
                     "y": lamella_position.y})) 
-            notch_stage = patterning.get_milling_stages(_feature_name, protocol, notch_position)
+            notch_stage = get_milling_stages(_feature_name, protocol, notch_position)
             n_notch = len(notch_stage)
             stages += notch_stage
 
@@ -530,7 +531,7 @@ def setup_lamella(
             _feature_name = "microexpansion"
             protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol["milling"]                  
             feature_position = Point.from_dict(protocol[_feature_name].get("point", {"x": 0, "y": 0})) 
-            microexpansion_stage = patterning.get_milling_stages(_feature_name, protocol, feature_position)
+            microexpansion_stage = get_milling_stages(_feature_name, protocol, feature_position)
             n_microexpansion = len(microexpansion_stage)
             stages += microexpansion_stage
 
@@ -543,7 +544,7 @@ def setup_lamella(
             FIDUCIAL_X_OFFSET *= -1
         
         fiducial_position = Point.from_dict(protocol["fiducial"].get("point", {"x": FIDUCIAL_X_OFFSET, "y": 0}))
-        fiducial_stage = patterning.get_milling_stages("fiducial", protocol, fiducial_position)
+        fiducial_stage = get_milling_stages("fiducial", protocol, fiducial_position)
 
         stages += fiducial_stage
     
@@ -558,24 +559,24 @@ def setup_lamella(
         logging.info(f"{stage.name}: {stage}") 
 
     # rough milling
-    lamella.protocol["mill_rough"] = deepcopy(patterning.get_protocol_from_stages(stages[:n_mill_rough]))
+    lamella.protocol["mill_rough"] = deepcopy(get_protocol_from_stages(stages[:n_mill_rough]))
     lamella.protocol["mill_rough"]["point"] = stages[0].pattern.point.to_dict()
 
     # polishing
-    lamella.protocol["mill_polishing"] = deepcopy(patterning.get_protocol_from_stages(stages[n_mill_rough:n_lamella]))
+    lamella.protocol["mill_polishing"] = deepcopy(get_protocol_from_stages(stages[n_mill_rough:n_lamella]))
     lamella.protocol["mill_polishing"]["point"] = stages[n_mill_rough].pattern.point.to_dict()
     
     if _MILL_FEATURES:
         if use_notch:
             _feature_name = "notch"
             idx = n_lamella
-            lamella.protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(stages[idx]))
+            lamella.protocol[_feature_name] = deepcopy(get_protocol_from_stages(stages[idx]))
             lamella.protocol[_feature_name]["point"] = stages[idx].pattern.point.to_dict()
 
         if use_microexpansion:
             _feature_name = "microexpansion"
             idx = n_lamella + use_notch
-            lamella.protocol[_feature_name] = deepcopy(patterning.get_protocol_from_stages(stages[idx]))
+            lamella.protocol[_feature_name] = deepcopy(get_protocol_from_stages(stages[idx]))
             lamella.protocol[_feature_name]["point"] = stages[idx].pattern.point.to_dict()
 
     # fiducial
@@ -585,7 +586,7 @@ def setup_lamella(
 
         # save fiducial information
         fiducial_stage = fiducial_stage[0] # always single stage
-        lamella.protocol["fiducial"] = deepcopy(patterning.get_protocol_from_stages(fiducial_stage))
+        lamella.protocol["fiducial"] = deepcopy(get_protocol_from_stages(fiducial_stage))
         lamella.protocol["fiducial"]["point"] = fiducial_stage.pattern.point.to_dict()
         lamella.fiducial_area, _  = calculate_fiducial_area_v2(ib_image, 
             deepcopy(fiducial_stage.pattern.point), 
@@ -593,11 +594,11 @@ def setup_lamella(
         alignment_hfw = fiducial_stage.milling.hfw
 
         # mill the fiducial
-        fiducial_stage = patterning.get_milling_stages("fiducial", lamella.protocol, Point.from_dict(lamella.protocol["fiducial"]["point"]))
+        fiducial_stage = get_milling_stages("fiducial", lamella.protocol, Point.from_dict(lamella.protocol["fiducial"]["point"]))
         stages = update_milling_ui(microscope, fiducial_stage, parent_ui, 
             msg=f"Press Run Milling to mill the fiducial for {lamella._petname}. Press Continue when done.", 
             validate=validate)
-        lamella.protocol["fiducial"] = deepcopy(patterning.get_protocol_from_stages(stages))
+        lamella.protocol["fiducial"] = deepcopy(get_protocol_from_stages(stages))
         lamella.protocol["fiducial"]["point"] = stages[0].pattern.point.to_dict()
         lamella.fiducial_area, _  = calculate_fiducial_area_v2(ib_image, 
             deepcopy(stages[0].pattern.point), 

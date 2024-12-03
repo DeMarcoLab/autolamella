@@ -2,7 +2,7 @@ import logging
 from copy import deepcopy
 
 from fibsem import milling
-from fibsem.patterning import FibsemMillingStage
+from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
     FibsemStagePosition,
     FibsemImage,
