@@ -58,9 +58,7 @@ except ImportError as e:
     def list_available_checkpoints():
         return []
 
-
-
-
+# 3D Correlation Widget
 CORRELATION_THREEDCT_AVAILABLE = False
 try:
     from tdct.app import CorrelationUI
@@ -71,10 +69,6 @@ except ImportError as e:
     CorrelationUI = None
 
 logging.info(f"CORRELATION_THREEDCT_AVAILABLE: {CORRELATION_THREEDCT_AVAILABLE}")
-
-
-
-
 
 
 _DEV_MODE = False
@@ -144,6 +138,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     update_experiment_signal = pyqtSignal(Experiment)
     _run_milling_signal = pyqtSignal()
     _minimap_signal = pyqtSignal(object)
+    correlation_widget_signal = pyqtSignal(dict)
 
     def __init__(self, viewer: napari.Viewer) -> None:
         super(AutoLamellaUI, self).__init__()
@@ -181,6 +176,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.milling_widget: FibsemMillingWidget = None
         self.minimap_widget: FibsemMinimapWidget = None
         self.correlation_widget: CorrelationUI = None
+        self.correlation_viewer: napari.Viewer = None
 
         self.WAITING_FOR_USER_INTERACTION: bool = False
         self.USER_RESPONSE: bool = False
@@ -264,7 +260,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
         self.actionLoad_Positions.triggered.connect(self._load_positions)
         self.actionOpen_Minimap.triggered.connect(self._open_minimap)
-        self.actionOpen_3D_Correlation.triggered.connect(self._open_3d_correlation)
+        self.actionOpen_3D_Correlation.triggered.connect(self.open_3d_correlation_widget)
 
         # stop workflow
         self.pushButton_stop_workflow.clicked.connect(self._stop_workflow_thread)
@@ -286,6 +282,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.update_experiment_signal.connect(self._update_experiment)
         self.ui_signal.connect(self._ui_signal)
         self._run_milling_signal.connect(self._run_milling)
+        self.correlation_widget_signal.connect(self._handle_correlation_signal)
 
         self.pushButton_add_lamella.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_remove_lamella.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
@@ -778,15 +775,21 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self._microscope_ui_loaded = False
 
 
-    def _open_3d_correlation(self):
-
-        logging.info(f"Opening 3D Correlation UI")
+    def open_3d_correlation_widget(self):
 
         if not CORRELATION_THREEDCT_AVAILABLE:
             napari.utils.notifications.show_warning(
                 "3D Correlation UI not available. Please install tdct."
             )
             return
+        
+        if self.correlation_widget is not None:
+            self.correlation_widget.close()
+            self.correlation_widget = None
+
+        if self.correlation_viewer is not None:
+            self.correlation_viewer.close()
+            self.correlation_viewer = None
 
         self.correlation_viewer = napari.Viewer()
         self.correlation_widget = CorrelationUI(self.correlation_viewer)
@@ -1957,7 +1960,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.image_widget.clear_alignment_area()
 
         if correlate:
-            self._open_3d_correlation()
+            self.open_3d_correlation_widget()
             fib_image: FibsemImage = self.image_widget.ib_image
             md = fib_image.metadata.image_settings
             filename = os.path.join(md.path, md.filename)
@@ -1967,9 +1970,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                                                    filename=filename)
             
             # TODO: save a copy of the fm image in the dir?
-            # TODO: close the viewer, or just clear the data?
             # TODO: test!
-            # TODO: add checks to see if correlation is installed?
+            # TODO: develop an integrate version, without having to open a new window?
 
         if _det is None and _mill is None and alignment_area is None:
             self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Experiment"])
@@ -1983,6 +1985,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self._set_workflow_info(info.get("workflow_info", None))
 
         self.WAITING_FOR_UI_UPDATE = False
+
+
+    def _handle_correlation_signal(self, info: dict) -> None:
+        if info.get("finished", False):
+            self.correlation_widget.close()
+            self.correlation_viewer.close()
+            self.correlation_widget = None
+            self.correlation_viewer = None
+            self.viewer.layers.selection.active = self.image_widget.eb_layer
 
     def _update_experiment(self, experiment: Experiment):
         self.experiment = experiment

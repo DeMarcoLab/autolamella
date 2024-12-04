@@ -331,9 +331,13 @@ def ask_user_to_correlate(parent_ui: AutoLamellaUI, validate: bool = True):
                                 pos="Continue", 
                                 correlate=True)
 
-            # close the correlation widget?
+            cor_ret = None
             try:
-                return parent_ui.correlation_widget.correlation_results 
+                cor_ret =  parent_ui.correlation_widget.correlation_results 
             except Exception as e:
                 logging.warning(f"Correlation results not found in UI. {e}")
-                return None
+
+            # close the correlation widget
+            parent_ui.correlation_widget_signal.emit({"finished": True})
+
+            return cor_ret
