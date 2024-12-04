@@ -101,8 +101,8 @@ def add_features_to_experiment(experiment: Experiment, features: List[CryoFeatur
     for feature in features:
     
         # reference image path
-        reference_image_path = os.path.join(odemis_project_path, "test-image-FIBSEM-001.ome.tiff") 
-        # reference_image_path = os.path.join(odemis_project_path, f"{feature.name.value}-Reference-FIB.ome.tiff") # TODO: update for each feature
+        # reference_image_path = os.path.join(odemis_project_path, "test-image-FIBSEM-001.ome.tiff") 
+        reference_image_path = os.path.join(odemis_project_path, f"{feature.name.value}-Reference-FIB.ome.tiff") # TODO: update for each feature
 
         # create lamella
         lamella = create_lamella_from_feature(feature,
