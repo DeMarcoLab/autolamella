@@ -656,6 +656,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         )
         if self.settings is not None:
             self.settings.image.path = self.experiment.path
+            self.image_widget.lineEdit_image_path.setText(str(self.experiment.path))
 
         # register metadata
         if cfg._REGISTER_METADATA:
@@ -775,7 +776,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self._microscope_ui_loaded = False
 
 
-    def open_3d_correlation_widget(self):
+    def open_3d_correlation_widget(self, use_image_path: bool = False):
 
         if not CORRELATION_THREEDCT_AVAILABLE:
             napari.utils.notifications.show_warning(
@@ -783,22 +784,54 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             return
         
-        if self.correlation_widget is not None:
-            self.correlation_widget.close()
-            self.correlation_widget = None
-
-        if self.correlation_viewer is not None:
-            self.correlation_viewer.close()
-            self.correlation_viewer = None
+        # attempt to close the windows
+        try:
+            if self.correlation_widget is not None:
+                self.correlation_widget.close()
+                self.correlation_widget = None
+        except Exception as e:
+            logging.warning(f"Error closing correlation widget: {e}")
+        try:
+            if self.correlation_viewer is not None:
+                self.correlation_viewer.close()
+                self.correlation_viewer = None
+        except Exception as e:
+            logging.warning(f"Error closing correlation viewer: {e}")
 
         self.correlation_viewer = napari.Viewer()
         self.correlation_widget = CorrelationUI(self.correlation_viewer)
+        self.correlation_widget.close_signal.connect(self._close_correlation_widget)
+
+        # load fib image, if available
+        fib_image: FibsemImage = self.image_widget.ib_image
+        if fib_image is not None:
+            md = fib_image.metadata.image_settings
+            filename = os.path.join(md.path, md.filename)
+            self.correlation_widget.set_project_path(str(md.path))
+            self.correlation_widget.load_fib_image(image=fib_image.data, 
+                                                    pixel_size=fib_image.metadata.pixel_size.x, 
+                                                    filename=filename)
+        else:
+            napari.utils.notifications.show_warning("No FIBSEM image available...")
+            self.correlation_widget.set_project_path(self.experiment.path)
+
 
         # create a button to run correlation
         self.correlation_viewer.window.add_dock_widget(
-            self.correlation_widget, area="right", name="3DCT Correlation", tabify=True
+            self.correlation_widget, 
+            area="right", 
+            name="3DCT Correlation", 
+            tabify=True
         )
         napari.run(max_loop_level=3)
+
+    def _close_correlation_widget(self):
+        # note: this signal doesn't seem to be emitted?
+        del self.correlation_widget
+        del self.correlation_viewer
+        self.correlation_widget = None
+        self.correlation_viewer = None
+        logging.debug("The correlation widget has been closed and signal emitted.")
 
     def _open_minimap(self):
         if self.microscope is None:
@@ -966,6 +999,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.actionSave_Protocol.setVisible(_protocol_loaded)
         self.actionCryo_Deposition.setVisible(_protocol_loaded)
         self.actionOpen_Minimap.setVisible(_protocol_loaded)
+        self.actionOpen_3D_Correlation.setVisible(_protocol_loaded)
         self.actionLoad_Minimap_Image.setVisible(
             _protocol_loaded and cfg._MINIMAP_VISUALISATION
         )
@@ -1923,7 +1957,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self._set_workflow_info(msg=None, show=False)
 
-
     def _ui_signal(self, info: dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
         _mill = bool(info["mill"] is not None) if info["mill"] is None else info["mill"]
@@ -1961,13 +1994,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         if correlate:
             self.open_3d_correlation_widget()
-            fib_image: FibsemImage = self.image_widget.ib_image
-            md = fib_image.metadata.image_settings
-            filename = os.path.join(md.path, md.filename)
-            self.correlation_widget.set_project_path(str(md.path))
-            self.correlation_widget.load_fib_image(image=fib_image.data, 
-                                                   pixel_size=fib_image.metadata.pixel_size.x, 
-                                                   filename=filename)
             
             # TODO: save a copy of the fm image in the dir?
             # TODO: test!
@@ -1986,11 +2012,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         self.WAITING_FOR_UI_UPDATE = False
 
-
     def _handle_correlation_signal(self, info: dict) -> None:
         if info.get("finished", False):
-            self.correlation_widget.close()
             self.correlation_viewer.close()
+            # self.correlation_widget.close() 
             self.correlation_widget = None
             self.correlation_viewer = None
             self.viewer.layers.selection.active = self.image_widget.eb_layer
