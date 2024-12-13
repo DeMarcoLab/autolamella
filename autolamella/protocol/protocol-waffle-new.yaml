@@ -92,6 +92,7 @@ milling:
             name: WaffleNotch
             vheight: 2.0e-06
             vwidth: 2.0e-07
+            point: {"x": 7.0e-6, "y": 0.0e-6}
         strategy: {}
     trench:
     -   milling:

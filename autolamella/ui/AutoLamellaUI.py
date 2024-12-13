@@ -1,56 +1,66 @@
 import sys
+
 try:
     sys.modules.pop("PySide6.QtCore")
 except Exception as e:
     pass
 import logging
 import os
+from collections import Counter
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from collections import Counter
 
 import napari
 import yaml
-
+from fibsem import constants, utils
+from fibsem.microscope import FibsemMicroscope
+from fibsem.milling import get_milling_stages, get_protocol_from_stages
+from fibsem.structures import (
+    FibsemRectangle,
+    FibsemStagePosition,
+    MicroscopeSettings,
+    Point,
+)
+from fibsem.ui import (
+    DETECTION_AVAILABLE,
+    FibsemCryoDepositionWidget,
+    FibsemImageSettingsWidget,
+    FibsemMillingWidget,
+    FibsemMinimapWidget,
+    FibsemMovementWidget,
+    FibsemSystemSetupWidget,
+)
+from fibsem.ui import (
+    utils as fui,
+)
 from napari.qt.threading import thread_worker
 from PyQt5.QtCore import pyqtSignal
 from qtpy import QtWidgets
-
-from fibsem import utils, constants
-from fibsem.microscope import FibsemMicroscope
-from fibsem.structures import (
-    MicroscopeSettings,
-    FibsemStagePosition,
-    Point,
-    FibsemRectangle,
-)
-from fibsem.ui import (
-    FibsemImageSettingsWidget,
-    FibsemMovementWidget,
-    FibsemSystemSetupWidget,
-    FibsemMillingWidget,
-    FibsemCryoDepositionWidget,
-    FibsemMinimapWidget,
-    DETECTION_AVAILABLE,
-    utils as fui,
-)
-from fibsem.milling import get_milling_stages, get_protocol_from_stages
 
 if DETECTION_AVAILABLE: # ml dependencies are option, so we need to check if they are available
     from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
 
 import autolamella
 import autolamella.config as cfg
+from autolamella.protocol.validation import (
+    FIDUCIAL_KEY,
+    MICROEXPANSION_KEY,
+    MILL_POLISHING_KEY,
+    MILL_ROUGH_KEY,
+    NOTCH_KEY,
+    TRENCH_KEY,
+    validate_protocol,
+)
 from autolamella.structures import (
     AutoLamellaStage,
     Experiment,
     Lamella,
     LamellaState,
 )
-from autolamella.ui import stylesheets, AutoLamellaUI
+from autolamella.ui import AutoLamellaUI, stylesheets
 from autolamella.ui.utils import setup_experiment_ui_v2
-from autolamella.protocol.validation import validate_protocol
+
 try:
     from fibsem.segmentation.utils import list_available_checkpoints
 except ImportError as e:
@@ -1228,13 +1238,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             AutoLamellaStage.PreSetupLamella,
         ]:
             if self._PROTOCOL_LOADED:
-                _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, False
+                DISPLAY_TRENCH, DISPLAY_LAMELLA = False, False
 
                 if _is_method_type(method, "trench") and lamella.state.stage in [
                     AutoLamellaStage.SetupTrench,
                     AutoLamellaStage.ReadyTrench,
                 ]:
-                    _DISPLAY_TRENCH = True
+                    DISPLAY_TRENCH = True
 
                 # show lamella and friends
                 if lamella.state.stage in [
@@ -1242,91 +1252,31 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     AutoLamellaStage.ReadyLamella,
                     AutoLamellaStage.PreSetupLamella,
                 ]:
-                    _DISPLAY_TRENCH, _DISPLAY_LAMELLA = False, True
+                    DISPLAY_TRENCH, DISPLAY_LAMELLA = False, True
 
-                if _DISPLAY_TRENCH:
-                    protocol = (
-                        lamella.protocol
-                        if "trench" in lamella.protocol
-                        else self.settings.protocol["milling"]
-                    )
-                    trench_position = Point.from_dict(
-                        protocol["trench"].get("point", {"x": 0, "y": 0})
-                    )
-                    stages = get_milling_stages(
-                        "trench", protocol, trench_position
-                    )
 
-                if _DISPLAY_LAMELLA:
-                    protocol = lamella.protocol
-                    lamella_position = Point.from_dict(
-                        protocol["mill_rough"].get("point", {"x": 0, "y": 0})
-                    )
-                    mill_rough_stages = get_milling_stages("mill_rough", protocol, lamella_position)
-                    mill_polishing_stages = get_milling_stages("mill_polishing", protocol, lamella_position)
+
+                if DISPLAY_TRENCH:
+                    stages = get_milling_stages(TRENCH_KEY, lamella.protocol)
+
+                # TODO: get the CONSTANT names for the protocols from .protocol.validation
+
+                if DISPLAY_LAMELLA:
+                    mill_rough_stages = get_milling_stages(MILL_ROUGH_KEY, lamella.protocol)
+                    mill_polishing_stages = get_milling_stages(MILL_POLISHING_KEY, lamella.protocol)
                     stages = mill_rough_stages + mill_polishing_stages
 
-                    use_notch = self.settings.protocol["options"].get("use_notch", True)
-                    use_microexpansion = self.settings.protocol["options"].get(
-                        "use_microexpansion", True
-                    )
+                    if self.settings.protocol["options"].get("use_notch", True):
+                        # if wafflenotch, offset by half lamella width (NOW DONE IN PROTOCOL)
+                        stages.extend(get_milling_stages(NOTCH_KEY, lamella.protocol))
 
-                    if use_notch:
-                        _feature_name = "notch"
-                        protocol = (
-                            lamella.protocol
-                            if _feature_name in lamella.protocol
-                            else self.settings.protocol["milling"]
-                        )
-
-                        # if wafflenotch, offset by half lamella width
-                        h_offset = 0
-                        if protocol[_feature_name].get("type", None) == "WaffleNotch":
-                            h_offset = stages[0].pattern.protocol["lamella_width"] / 2
-                        notch_position = Point.from_dict(
-                            protocol[_feature_name].get(
-                                "point",
-                                {
-                                    "x": lamella_position.x + h_offset,
-                                    "y": lamella_position.y,
-                                },
-                            )
-                        )
-                        notch_stage = get_milling_stages(
-                            _feature_name, protocol, notch_position
-                        )
-                        stages += notch_stage
-
-                    if use_microexpansion:
-                        _feature_name = "microexpansion"
-                        protocol = (
-                            lamella.protocol
-                            if _feature_name in lamella.protocol
-                            else self.settings.protocol["milling"]
-                        )
-
-                        feature_position = Point.from_dict(
-                            protocol[_feature_name].get("point", {"x": 0, "y": 0})
-                        )
-                        microexpansion_stage = get_milling_stages(
-                            _feature_name, protocol, feature_position
-                        )
-                        stages += microexpansion_stage
+                    # microexpansion
+                    if self.settings.protocol["options"].get("use_microexpansion", True):
+                        stages.extend(get_milling_stages(MICROEXPANSION_KEY, lamella.protocol))
 
                     # fiducial
                     if self.settings.protocol["options"].get("use_fiducial", True):
-                        protocol = (
-                            lamella.protocol
-                            if "fiducial" in lamella.protocol
-                            else self.settings.protocol["milling"]
-                        )
-                        fiducial_position = Point.from_dict(
-                            protocol["fiducial"].get("point", {"x": 25e-6, "y": 0})
-                        )
-                        fiducial_stage = get_milling_stages(
-                            "fiducial", protocol, fiducial_position
-                        )
-                        stages += fiducial_stage
+                        stages.extend(get_milling_stages(FIDUCIAL_KEY, lamella.protocol))
 
                 self.milling_widget.set_milling_stages(stages)
 
@@ -1524,7 +1474,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             method = self.settings.protocol["options"].get("method", None)
             SETUP_STATE, READY_STATE = get_method_states(method)
 
-            from autolamella.workflows.core import end_of_stage_update, start_of_stage_update
+            from autolamella.workflows.core import (
+                end_of_stage_update,
+                start_of_stage_update,
+            )
             self.experiment = end_of_stage_update(
                 microscope=self.microscope,
                 experiment=self.experiment,
@@ -1644,7 +1597,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         SETUP_STATE, READY_STATE = get_method_states(method)
 
         lamella: Lamella = self.experiment.positions[idx]
-        from autolamella.workflows.core import start_of_stage_update, end_of_stage_update
+        from autolamella.workflows.core import (
+            end_of_stage_update,
+            start_of_stage_update,
+        )
 
         if lamella.state.stage not in [SETUP_STATE, READY_STATE]:
             return
@@ -1744,39 +1700,25 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             AutoLamellaStage.SetupTrench,
             AutoLamellaStage.ReadyTrench,
         ]:
-            self.experiment.positions[idx].protocol["trench"] = deepcopy(
-                get_protocol_from_stages(stages)
-            )
-            self.experiment.positions[idx].protocol["trench"]["point"] = stages[
-                0
-            ].pattern.point.to_dict()
+            self.experiment.positions[idx].protocol[TRENCH_KEY] = get_protocol_from_stages(stages)
 
         if stage in [
             AutoLamellaStage.SetupLamella,
             AutoLamellaStage.PreSetupLamella,
         ]:
 
-            n_mill_rough = len(self.settings.protocol["milling"]["mill_rough"]["stages"])
-            n_mill_polishing = len(self.settings.protocol["milling"]["mill_polishing"]["stages"])
+            # TODO: allow the user to select the number of rough and polishing stages?, and re-assign?
+            n_mill_rough = len(self.settings.protocol["milling"][MILL_ROUGH_KEY])
+            n_mill_polishing = len(self.settings.protocol["milling"][MILL_POLISHING_KEY])
 
             # rough milling
-            self.experiment.positions[idx].protocol["mill_rough"] = deepcopy(
-                get_protocol_from_stages(stages[:n_mill_rough])
-            )
-            self.experiment.positions[idx].protocol["mill_rough"]["point"] = stages[
-                0
-            ].pattern.point.to_dict()
+            self.experiment.positions[idx].protocol[MILL_ROUGH_KEY] = get_protocol_from_stages(stages[:n_mill_rough])
 
             # polishing
-            self.experiment.positions[idx].protocol["mill_polishing"] = deepcopy(
-                get_protocol_from_stages(stages[n_mill_rough:n_mill_rough+n_mill_polishing])
-            )
-            self.experiment.positions[idx].protocol["mill_polishing"]["point"] = stages[
-                n_mill_rough
-            ].pattern.point.to_dict()
+            self.experiment.positions[idx].protocol[MILL_POLISHING_KEY] = get_protocol_from_stages(stages[n_mill_rough:n_mill_rough+n_mill_polishing])
             
             # total number of stages in lamella
-            n_lamella = n_mill_rough + n_mill_polishing 
+            n_lamella = n_mill_rough + n_mill_polishing
 
             # stress relief features
             use_notch = self.settings.protocol["options"].get("use_notch", True)
@@ -1785,31 +1727,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
 
             if use_notch:
-                _feature_name = "notch"
-                self.experiment.positions[idx].protocol[_feature_name] = deepcopy(
-                    get_protocol_from_stages(stages[n_lamella])
-                )
-                self.experiment.positions[idx].protocol[_feature_name]["point"] = (
-                    stages[n_lamella].pattern.point.to_dict()
-                )
+                self.experiment.positions[idx].protocol[NOTCH_KEY] = get_protocol_from_stages(stages[n_lamella])
 
             if use_microexpansion:
-                _feature_name = "microexpansion"
-                self.experiment.positions[idx].protocol[_feature_name] = deepcopy(
-                    get_protocol_from_stages(stages[n_lamella + use_notch])
-                )
-                self.experiment.positions[idx].protocol[_feature_name]["point"] = (
-                    stages[n_lamella + use_notch].pattern.point.to_dict()
-                )
+                self.experiment.positions[idx].protocol[MICROEXPANSION_KEY] = get_protocol_from_stages(stages[n_lamella + use_notch])
 
             # fiducial (optional)
             if self.settings.protocol["options"].get("use_fiducial", True):
-                self.experiment.positions[idx].protocol["fiducial"] = deepcopy(
-                    get_protocol_from_stages(stages[-1])
-                )
-                self.experiment.positions[idx].protocol["fiducial"]["point"] = stages[
-                    -1
-                ].pattern.point.to_dict()
+                self.experiment.positions[idx].protocol[FIDUCIAL_KEY] = get_protocol_from_stages(stages[-1])
+
 
     def _run_milling(self):
         self._MILLING_RUNNING = True
