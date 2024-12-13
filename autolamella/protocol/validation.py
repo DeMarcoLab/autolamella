@@ -134,7 +134,7 @@ def validate_protocol(protocol: dict):
         protocol["milling"][MILL_ROUGH_KEY] = {"stages": lamella_protocol[:-num_polishing_stages]}
         protocol["milling"][MILL_POLISHING_KEY] = {"stages": lamella_protocol[-num_polishing_stages:]}
 
-        # del protocol["milling"]["lamella"] # TODO: refactor the rest of the methods so we can remove this... don't remove just yet
+        del protocol["milling"]["lamella"] # TODO: refactor the rest of the methods so we can remove this... don't remove just yet
 
     for key in REQUIRED_MILLING_KEYS:
         if key not in protocol["milling"]:
