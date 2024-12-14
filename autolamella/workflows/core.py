@@ -16,6 +16,7 @@ from fibsem.detection.detection import (
     VolumeBlockCentre,
 )
 from fibsem.microscope import FibsemMicroscope
+from fibsem.milling import get_milling_stages, get_protocol_from_stages
 from fibsem.structures import (
     BeamType,
     FibsemImage,
@@ -24,15 +25,25 @@ from fibsem.structures import (
     ImageSettings,
     MicroscopeSettings,
     Point,
-    calculate_fiducial_area_v2
+    calculate_fiducial_area_v2,
 )
-from fibsem.milling import get_milling_stages, get_protocol_from_stages
+
+from autolamella.protocol.validation import (
+    DEFAULT_ALIGNMENT_AREA,
+    DEFAULT_FIDUCIAL_PROTOCOL,
+    MICROEXPANSION_KEY,
+    MILL_POLISHING_KEY,
+    MILL_ROUGH_KEY,
+    NOTCH_KEY,
+    TRENCH_KEY,
+    FIDUCIAL_KEY,
+    UNDERCUT_KEY
+)
 from autolamella.structures import (
     AutoLamellaStage,
     Experiment,
     Lamella,
 )
-from autolamella.protocol.validation import DEFAULT_ALIGNMENT_AREA, DEFAULT_FIDUCIAL_PROTOCOL
 from autolamella.ui import AutoLamellaUI
 from autolamella.workflows import actions
 from autolamella.workflows.ui import (
@@ -83,11 +94,11 @@ def mill_trench(
     
     log_status_message(lamella, "MILL_TRENCH")
 
-    if "stages" in lamella.protocol["trench"]:
-      hfw = lamella.protocol["trench"]["stages"][0]["hfw"]
-    else:
-        hfw = lamella.protocol["trench"]["hfw"]
-    settings.image.hfw = hfw
+    # get trench milling stages
+    stages = get_milling_stages(TRENCH_KEY, lamella.protocol)
+
+    # acquire reference images
+    settings.image.hfw = stages[0].milling.hfw
     settings.image.filename = f"ref_{lamella.state.stage.name}_start"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
@@ -95,18 +106,13 @@ def mill_trench(
     update_status_ui(parent_ui, f"{lamella.info} Preparing Trench...")
     
     # define trench milling stage
-    settings.image.beam_type = BeamType.ION
-    stages = get_milling_stages("trench", 
-                                           lamella.protocol, 
-                                           point=Point.from_dict(lamella.protocol["trench"].get("point", {"x":0, "y":0})))
     stages = update_milling_ui(microscope, stages, parent_ui,
         msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
         validate=validate,
     )
     
     # log the protocol
-    lamella.protocol["trench"] = deepcopy(get_protocol_from_stages(stages))
-    lamella.protocol["trench"]["point"] = stages[0].pattern.point.to_dict()
+    lamella.protocol[TRENCH_KEY] = deepcopy(get_protocol_from_stages(stages))
     
     # charge neutralisation
     log_status_message(lamella, "CHARGE_NEUTRALISATION")
@@ -169,36 +175,26 @@ def mill_undercut(
                                        feature=feature)
     
     # mill under cut
-    lamella.protocol["undercut"] = deepcopy(settings.protocol["milling"]["undercut"])
-
-    # coerce old protocol into new
-    if "stages" not in lamella.protocol["undercut"]:
-        lamella.protocol["undercut"] = deepcopy({"stages": [lamella.protocol["undercut"]]})
-    N_UNDERCUTS = len(lamella.protocol["undercut"]["stages"])
-
+    undercut_stages = get_milling_stages(UNDERCUT_KEY, lamella.protocol)
+    post_milled_undercut_stages = []
     UNDERCUT_ANGLE_DEG = settings.protocol["options"].get("undercut_tilt_angle", -5)
-    _UNDERCUT_V_OFFSET = lamella.protocol["undercut"].get("v_offset", 0e-6)
-    undercut_stages = []
-    try:
-        hfw = lamella.protocol["undercut"]["stages"][0].get("hfw", fcfg.REFERENCE_HFW_HIGH)
-    except:
-        logging.warning("No hfw found in undercut protocol, using default")
-        hfw = fcfg.REFERENCE_HFW_HIGH
+    
+    hfw = undercut_stages[0].milling.hfw
 
-    for i in range(N_UNDERCUTS):
+    for i, undercut_stage in enumerate(undercut_stages):
 
-        _n = f"{i+1:02d}" # helper
+        nid = f"{i+1:02d}" # helper
 
         # tilt down, align to trench
-        log_status_message(lamella, f"TILT_UNDERCUT_{_n}")
+        log_status_message(lamella, f"TILT_UNDERCUT_{nid}")
         update_status_ui(parent_ui, f"{lamella.info} Tilting to Undercut Position...")
         microscope.move_stage_relative(FibsemStagePosition(t=np.deg2rad(UNDERCUT_ANGLE_DEG)))
 
         # detect
-        log_status_message(lamella, f"ALIGN_UNDERCUT_{_n}")
+        log_status_message(lamella, f"ALIGN_UNDERCUT_{nid}")
         settings.image.beam_type = BeamType.ION
         settings.image.hfw = hfw
-        settings.image.filename = f"ref_{lamella.state.stage.name}_align_ml_{_n}"
+        settings.image.filename = f"ref_{lamella.state.stage.name}_align_ml_{nid}"
         settings.image.save = True
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         set_images_ui(parent_ui, eb_image, ib_image)
@@ -214,26 +210,26 @@ def mill_undercut(
         #     lamella.protocol["undercut"]["height"] /= 2
 
         if method == "autolamella-liftout":
-            offset = lamella.protocol["undercut"]["stages"][i].get("trench_width", 2e-6) / 2 + _UNDERCUT_V_OFFSET
+            offset = undercut_stage.pattern.trench_width / 2 + 1e-6
         else:         
-            offset = lamella.protocol["undercut"]["stages"][i].get("height", 10) / 2 + _UNDERCUT_V_OFFSET
+            offset = undercut_stage.pattern.height / 2
         point = deepcopy(det.features[0].feature_m)     
         point.y += offset if np.isclose(scan_rotation, 0) else -offset
 
-        # mill undercut 1
-        log_status_message(lamella, f"MILL_UNDERCUT_{_n}")
+        # set pattern position
+        undercut_stage.pattern.point = point
 
-        stages = get_milling_stages("undercut", lamella.protocol, point=point)[i]
-        stages = update_milling_ui(microscope, [stages], parent_ui,
-            msg=f"Press Run Milling to mill the Undercut {_n} for {lamella._petname}. Press Continue when done.",
+        # mill undercut 1
+        log_status_message(lamella, f"MILL_UNDERCUT_{nid}")
+        stages = update_milling_ui(microscope, [undercut_stage], parent_ui,
+            msg=f"Press Run Milling to mill the Undercut {nid} for {lamella._petname}. Press Continue when done.",
             validate=validate,
         )
         
-        undercut_stages.append(stages[0])
+        post_milled_undercut_stages.extend(stages)
 
     # log undercut stages
-    lamella.protocol["undercut"] = deepcopy(get_protocol_from_stages(undercut_stages))
-    lamella.protocol["undercut"]["point"] = undercut_stages[0].pattern.point.to_dict()
+    lamella.protocol[UNDERCUT_KEY] = get_protocol_from_stages(post_milled_undercut_stages)
 
     # take reference images
     log_status_message(lamella, "REFERENCE_IMAGES")
@@ -288,8 +284,8 @@ def mill_lamella(
 
 
     supervise_map = {
-        AutoLamellaStage.MillRoughCut.name: "mill_rough",
-        AutoLamellaStage.MillPolishingCut.name: "mill_polishing",
+        AutoLamellaStage.MillRoughCut.name: MILL_ROUGH_KEY,
+        AutoLamellaStage.MillPolishingCut.name: MILL_POLISHING_KEY,
     }
     validate = settings.protocol["options"]["supervise"].get(supervise_map[lamella.state.stage.name], True)
     
@@ -304,9 +300,7 @@ def mill_lamella(
 
     # milling stages
     milling_stage_name = supervise_map[lamella.state.stage.name]
-    stages = get_milling_stages(key=milling_stage_name, 
-                                           protocol=lamella.protocol, 
-                                           point=Point.from_dict(lamella.protocol[milling_stage_name]["point"]))
+    stages = get_milling_stages(key=milling_stage_name, protocol=lamella.protocol)
 
     if not isinstance(stages, list):
         stages = [stages]
@@ -368,18 +362,11 @@ def mill_lamella(
 
         # check if using notch or microexpansion
         if use_notch := bool(settings.protocol["options"].get("use_notch", False)):
-            _feature_name = "notch"
-
-            feature_stage = get_milling_stages(_feature_name, lamella.protocol, 
-                                                          point=Point.from_dict(lamella.protocol[_feature_name]["point"]))
-            features_stages += feature_stage
+            features_stages.extend(get_milling_stages(NOTCH_KEY, lamella.protocol))                                                  
 
         if use_microexpansion := bool(settings.protocol["options"].get("use_microexpansion", False)):
-            _feature_name = "microexpansion"
-            feature_stage = get_milling_stages(_feature_name, lamella.protocol, 
-                                                          point=Point.from_dict(lamella.protocol[_feature_name]["point"]))
-            features_stages += feature_stage
-
+            features_stages.extend(get_milling_stages(MICROEXPANSION_KEY, lamella.protocol)) 
+                    
         if features_stages:
             features_stages = update_milling_ui(microscope, features_stages, parent_ui,
                 msg=f"Press Run Milling to mill the features for {lamella._petname}. Press Continue when done.",
@@ -387,16 +374,12 @@ def mill_lamella(
             )
 
         if use_notch:
-            _feature_name = "notch"
             idx = 0
-            lamella.protocol[_feature_name] = deepcopy(get_protocol_from_stages(features_stages[idx]))
-            lamella.protocol[_feature_name]["point"] = features_stages[idx].pattern.point.to_dict()
+            lamella.protocol[NOTCH_KEY] = get_protocol_from_stages(features_stages[idx])
 
         if use_microexpansion:
-            _feature_name = "microexpansion"
             idx = use_notch
-            lamella.protocol[_feature_name] = deepcopy(get_protocol_from_stages(features_stages[idx]))
-            lamella.protocol[_feature_name]["point"] = features_stages[idx].pattern.point.to_dict()
+            lamella.protocol[NOTCH_KEY] = get_protocol_from_stages(features_stages[idx])
 
 
     # mill lamella trenches
@@ -408,8 +391,7 @@ def mill_lamella(
     )
 
     # log the protocol
-    lamella.protocol[milling_stage_name] = deepcopy(get_protocol_from_stages(stages[:n_lamella]))
-    lamella.protocol[milling_stage_name]["point"] = stages[0].pattern.point.to_dict()
+    lamella.protocol[milling_stage_name] = get_protocol_from_stages(stages[:n_lamella])
 
     if _take_reference_images:
         # take reference images
@@ -461,8 +443,8 @@ def setup_lamella(
     settings.image.path = lamella.path
     method = settings.protocol["options"].get("method", "autolamella-waffle")
 
-    if "fiducial" not in settings.protocol["milling"]:
-        settings.protocol["milling"]["fiducial"] = DEFAULT_FIDUCIAL_PROTOCOL
+    if FIDUCIAL_KEY not in lamella.protocol:
+        lamella.protocol[FIDUCIAL_KEY] = DEFAULT_FIDUCIAL_PROTOCOL
 
     log_status_message(lamella, "ALIGN_LAMELLA")
     update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
@@ -495,9 +477,8 @@ def setup_lamella(
     log_status_message(lamella, "SETUP_PATTERNS")
 
     protocol = lamella.protocol
-    lamella_position = Point.from_dict(protocol["mill_rough"].get("point", {"x": 0, "y": 0})) 
-    rough_mill_stages = get_milling_stages("mill_rough", protocol, lamella_position)
-    polishing_mill_stages = get_milling_stages("mill_polishing", protocol, lamella_position)
+    rough_mill_stages = get_milling_stages(MILL_ROUGH_KEY, protocol)
+    polishing_mill_stages = get_milling_stages(MILL_POLISHING_KEY, protocol) # TODO: store this on the lamella object, rather than re-calling from protocol?
     lamella_stages = rough_mill_stages + polishing_mill_stages
     stages = deepcopy(lamella_stages)
     n_lamella = len(stages)
@@ -514,39 +495,18 @@ def setup_lamella(
     if _MILL_FEATURES := method in ["autolamella-on-grid", "autolamella-waffle" ]:
 
         if use_notch := bool(settings.protocol["options"].get("use_notch", False)):
-            _feature_name = "notch"
+            stages.extend(get_milling_stages(NOTCH_KEY, protocol))
 
-            protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol["milling"]
-            h_offset = 0
-            if protocol[_feature_name].get("type", None) == "WaffleNotch":
-                h_offset = stages[0].pattern.protocol["lamella_width"] / 2
-            notch_position = Point.from_dict(protocol[_feature_name].get("point", 
-                    {"x":lamella_position.x + h_offset, 
-                    "y": lamella_position.y})) 
-            notch_stage = get_milling_stages(_feature_name, protocol, notch_position)
-            n_notch = len(notch_stage)
-            stages += notch_stage
 
         if use_microexpansion := bool(settings.protocol["options"].get("use_microexpansion", False)):
-            _feature_name = "microexpansion"
-            protocol = lamella.protocol if _feature_name in lamella.protocol else settings.protocol["milling"]                  
-            feature_position = Point.from_dict(protocol[_feature_name].get("point", {"x": 0, "y": 0})) 
-            microexpansion_stage = get_milling_stages(_feature_name, protocol, feature_position)
-            n_microexpansion = len(microexpansion_stage)
-            stages += microexpansion_stage
+            stages.extend(get_milling_stages(MICROEXPANSION_KEY, protocol))
+
 
     # fiducial
     if use_fiducial:= settings.protocol["options"].get("use_fiducial", True):
-        protocol = lamella.protocol if "fiducial" in lamella.protocol else settings.protocol["milling"]
-        
-        FIDUCIAL_X_OFFSET = 25e-6
-        if method == "autolamella-liftout":
-            FIDUCIAL_X_OFFSET *= -1
-        
-        fiducial_position = Point.from_dict(protocol["fiducial"].get("point", {"x": FIDUCIAL_X_OFFSET, "y": 0}))
-        fiducial_stage = get_milling_stages("fiducial", protocol, fiducial_position)
+        fiducial_stage = get_milling_stages(FIDUCIAL_KEY, protocol)
 
-        stages += fiducial_stage
+        stages += fiducial_stage # TODO: remove dependency on this
     
     if validate:
         stages = update_milling_ui(microscope, stages, parent_ui, 
@@ -555,29 +515,38 @@ def setup_lamella(
             milling_enabled=False)
     
     # TODO: can I remove this now...d
-    for stage in stages:
-        logging.info(f"{stage.name}: {stage}") 
+    # for stage in stages:
+        # logging.info(f"{stage.name}: {stage}") 
 
     # rough milling
-    lamella.protocol["mill_rough"] = deepcopy(get_protocol_from_stages(stages[:n_mill_rough]))
-    lamella.protocol["mill_rough"]["point"] = stages[0].pattern.point.to_dict()
+    lamella.protocol[MILL_ROUGH_KEY] = deepcopy(get_protocol_from_stages(stages[:n_mill_rough]))
 
     # polishing
-    lamella.protocol["mill_polishing"] = deepcopy(get_protocol_from_stages(stages[n_mill_rough:n_lamella]))
-    lamella.protocol["mill_polishing"]["point"] = stages[n_mill_rough].pattern.point.to_dict()
+    lamella.protocol[MILL_POLISHING_KEY] = deepcopy(get_protocol_from_stages(stages[n_mill_rough:n_lamella]))
     
+
+    # WORKFLOW: 
+        # STAGE 1
+        # STAGE 2
+        # STAgE 3
+        # STAGE 4 etc
+
+    # MILL_ROUGH
+    #   MICROEXPANSION
+    #   NOTCH
+    #   ROUGH_MILL_01
+    #   ROUGH_MILL_02
+    # MILL_POLISHING
+
+    # TODO: instead of having these as separate parts of the milling config, just include them in the mill_rough part?
     if _MILL_FEATURES:
         if use_notch:
-            _feature_name = "notch"
             idx = n_lamella
-            lamella.protocol[_feature_name] = deepcopy(get_protocol_from_stages(stages[idx]))
-            lamella.protocol[_feature_name]["point"] = stages[idx].pattern.point.to_dict()
+            lamella.protocol[NOTCH_KEY] = deepcopy(get_protocol_from_stages(stages[idx]))
 
         if use_microexpansion:
-            _feature_name = "microexpansion"
             idx = n_lamella + use_notch
-            lamella.protocol[_feature_name] = deepcopy(get_protocol_from_stages(stages[idx]))
-            lamella.protocol[_feature_name]["point"] = stages[idx].pattern.point.to_dict()
+            lamella.protocol[MICROEXPANSION_KEY] = deepcopy(get_protocol_from_stages(stages[idx]))
 
     # fiducial
     if use_fiducial:
@@ -586,29 +555,27 @@ def setup_lamella(
 
         # save fiducial information
         fiducial_stage = fiducial_stage[0] # always single stage
-        lamella.protocol["fiducial"] = deepcopy(get_protocol_from_stages(fiducial_stage))
-        lamella.protocol["fiducial"]["point"] = fiducial_stage.pattern.point.to_dict()
+        lamella.protocol[FIDUCIAL_KEY] = deepcopy(get_protocol_from_stages(fiducial_stage))
         lamella.fiducial_area, _  = calculate_fiducial_area_v2(ib_image, 
             deepcopy(fiducial_stage.pattern.point), 
-            lamella.protocol["fiducial"]["stages"][0]["height"])
+            fiducial_stage.pattern.height)
         alignment_hfw = fiducial_stage.milling.hfw
 
         # mill the fiducial
-        fiducial_stage = get_milling_stages("fiducial", lamella.protocol, Point.from_dict(lamella.protocol["fiducial"]["point"]))
+        fiducial_stage = get_milling_stages(FIDUCIAL_KEY, lamella.protocol)
         stages = update_milling_ui(microscope, fiducial_stage, parent_ui, 
             msg=f"Press Run Milling to mill the fiducial for {lamella._petname}. Press Continue when done.", 
             validate=validate)
-        lamella.protocol["fiducial"] = deepcopy(get_protocol_from_stages(stages))
-        lamella.protocol["fiducial"]["point"] = stages[0].pattern.point.to_dict()
+        lamella.protocol[FIDUCIAL_KEY] = deepcopy(get_protocol_from_stages(stages))
         lamella.fiducial_area, _  = calculate_fiducial_area_v2(ib_image, 
             deepcopy(stages[0].pattern.point), 
-        lamella.protocol["fiducial"]["stages"][0]["height"])
+            stages[0].pattern.height)
         alignment_hfw = stages[0].milling.hfw
     else:
         # non-fiducial based alignment
         alignment_area_dict = settings.protocol["options"].get("alignment_area", DEFAULT_ALIGNMENT_AREA)
         lamella.fiducial_area = FibsemRectangle.from_dict(alignment_area_dict)
-        alignment_hfw = lamella.protocol["mill_rough"]["stages"][0]["hfw"]
+        alignment_hfw = lamella.protocol[MILL_ROUGH_KEY][0]["hfw"]
 
     logging.info(f"ALIGNMENT AREA WORKFLOW: {lamella.fiducial_area}")
     lamella.fiducial_area = update_alignment_area_ui(alignment_area=lamella.fiducial_area, 

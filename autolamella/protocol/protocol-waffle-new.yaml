@@ -14,6 +14,7 @@ milling:
             passes: null
             rotation: 45
             width: 1.0e-06
+            point: {"x": 25.0e-6, "y": 0.0e-6}
         strategy: {}
     microexpansion:
     -   milling:

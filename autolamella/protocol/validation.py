@@ -9,6 +9,7 @@ MICROEXPANSION_KEY = "microexpansion"
 FIDUCIAL_KEY = "fiducial"
 NOTCH_KEY = "notch"
 TRENCH_KEY = "trench"
+UNDERCUT_KEY = "undercut"
 
 # milling
 MILLING_KEYS = [
