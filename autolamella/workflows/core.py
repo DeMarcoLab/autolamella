@@ -312,10 +312,10 @@ def mill_lamella(
     update_status_ui(parent_ui, f"{lamella.info} Aligning Reference Images...")
 
     settings.image.save = True
-    settings.image.hfw = stages[0].milling.hfw # fcfg.REFERENCE_HFW_SUPER
+    settings.image.hfw = stages[0].milling.hfw
     settings.image.beam_type = BeamType.ION
-    ref_image = FibsemImage.load(os.path.join(lamella.path, f"ref_alignment_ib.tif"))
-    _ALIGNMENT_ATTEMPTS = int(settings.protocol["options"].get("alignment_attempts", 1))
+    ref_image = FibsemImage.load(os.path.join(lamella.path, "ref_alignment_ib.tif"))
+    ALIGNMENT_ATTEMPTS = int(settings.protocol["options"].get("alignment_attempts", 1))
 
     # beam alignment
     alignment_current = stages[0].milling.milling_current if _align_at_milling_current else None
@@ -328,7 +328,7 @@ def mill_lamella(
                                         ref_image=ref_image, 
                                         beam_type=BeamType.ION, 
                                         alignment_current=alignment_current,
-                                        steps=_ALIGNMENT_ATTEMPTS)
+                                        steps=ALIGNMENT_ATTEMPTS)
     else:
         logging.warning(f"Using alignment method v1 for {lamella._petname}... This method will be depreciated in the next version..")
         # V1
@@ -341,7 +341,7 @@ def mill_lamella(
             ref_image=ref_image, 
             reduced_area=lamella.fiducial_area, 
             alignment_current=alignment_current, 
-            steps=_ALIGNMENT_ATTEMPTS)
+            steps=ALIGNMENT_ATTEMPTS)
         
         settings.image = tmp
         settings.image.reduced_area = None

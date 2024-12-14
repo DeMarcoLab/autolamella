@@ -656,7 +656,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
         if isinstance(stages, list):
             self.milling_widget.set_milling_stages(stages)
         if stages == "clear":
-            self.milling_widget._remove_all_stages()
+            self.milling_widget.clear_all_milling_stages()
 
         # ui interaction
         self.milling_widget.pushButton_run_milling.setEnabled(False)
@@ -675,7 +675,7 @@ class AutoLiftoutUIv2(AutoLiftoutUIv2.Ui_MainWindow, QtWidgets.QMainWindow):
     def _threaded_worker(self, microscope, settings, experiment, workflow="setup"):
         
         self._WORKFLOW_RUNNING = True
-        self.milling_widget._remove_all_stages()
+        self.milling_widget.clear_all_milling_stages()
         self.WAITING_FOR_USER_INTERACTION = False
         self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
         logging.info(f"RUNNING {workflow.upper()} WORKFLOW")

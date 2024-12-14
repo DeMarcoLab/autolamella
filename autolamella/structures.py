@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 
 import fibsem.utils as utils
 import pandas as pd
@@ -16,7 +16,9 @@ from fibsem.structures import (
     FibsemRectangle,
     MicroscopeState,
     ReferenceImages,
+    
 )
+from fibsem.milling import FibsemMillingStage
 
 from autolamella import config as cfg
 
@@ -34,8 +36,6 @@ class AutoLamellaStage(Enum):
     MillPolishingCut = auto()
     Finished = auto()
     PreSetupLamella = auto()
-
-
 
 
 @dataclass
@@ -80,7 +80,7 @@ class Lamella:
     landing_state: MicroscopeState = MicroscopeState()
     landing_selected: bool = False
     _id: str = None
-
+    milling_stages: Dict[str, List[FibsemMillingStage]] = None
     
     def __post_init__(self):
         if self._petname is None:
