@@ -721,9 +721,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             self.movement_widget = FibsemMovementWidget(
                 microscope=self.microscope,
-                settings=self.settings,
                 viewer=self.viewer,
-                image_widget=self.image_widget,
                 parent=self,
             )
             self.milling_widget = FibsemMillingWidget(
@@ -828,7 +826,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         ]
 
         self.movement_widget.positions_signal.connect(self.minimap_connection)
-        self.movement_widget.move_signal.connect(self.minimap_connection)
         self.minimap_connection(positions=positions)
 
         # self.minimap_widget.positions = positions
