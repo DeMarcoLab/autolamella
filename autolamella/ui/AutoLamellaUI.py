@@ -148,7 +148,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     ui_signal = pyqtSignal(dict)
     det_confirm_signal = pyqtSignal(bool)
     update_experiment_signal = pyqtSignal(Experiment)
-    _run_milling_signal = pyqtSignal()
+    run_milling_signal = pyqtSignal()
     _minimap_signal = pyqtSignal(object)
 
     def __init__(self, viewer: napari.Viewer) -> None:
@@ -189,7 +189,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.WAITING_FOR_USER_INTERACTION: bool = False
         self.USER_RESPONSE: bool = False
         self.WAITING_FOR_UI_UPDATE: bool = False
-        self._MILLING_RUNNING: bool = False
+        self.MILLING_IS_RUNNING: bool = False
         self._WORKFLOW_RUNNING: bool = False
         self._ABORT_THREAD: bool = False
 
@@ -288,7 +288,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.det_confirm_signal.connect(self._confirm_det)
         self.update_experiment_signal.connect(self._update_experiment)
         self.ui_signal.connect(self._ui_signal)
-        self._run_milling_signal.connect(self._run_milling)
+        self.run_milling_signal.connect(self._run_milling)
 
         self.pushButton_add_lamella.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
         self.pushButton_remove_lamella.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
@@ -727,9 +727,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             self.milling_widget = FibsemMillingWidget(
                 microscope=self.microscope,
-                settings=self.settings,
                 viewer=self.viewer,
-                image_widget=self.image_widget,
                 parent=self,
             )
 
@@ -759,7 +757,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.milling_widget.milling_position_changed.connect(
                 self._update_milling_position
             )
-            self.milling_widget._milling_finished.connect(self._milling_finished)
+            self.milling_widget.milling_progress_signal.connect(self._milling_finished)
             self.image_widget.picture_signal.connect(self.update_lamella_ui)
         else:
             if self.image_widget is None:
@@ -1740,12 +1738,15 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
 
     def _run_milling(self):
-        self._MILLING_RUNNING = True
+        self.MILLING_IS_RUNNING = True
         self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Milling"])
         self.milling_widget.run_milling()
 
-    def _milling_finished(self):
-        self._MILLING_RUNNING = False
+    def _milling_finished(self, ddict: dict) -> None:
+
+        is_finished = ddict.get("finished", False)
+        if is_finished:
+            self.MILLING_IS_RUNNING = False
 
     def _confirm_det(self):
         if self.det_widget is not None:
