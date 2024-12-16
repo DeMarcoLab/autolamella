@@ -22,6 +22,7 @@ from fibsem.structures import (
     FibsemStagePosition,
     MicroscopeSettings,
     Point,
+    BeamType,
 )
 from fibsem.ui import (
     DETECTION_AVAILABLE,
@@ -1828,11 +1829,11 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if info["eb_image"] is not None:
             eb_image = info["eb_image"]
             self.image_widget.eb_image = eb_image
-            self.image_widget.update_viewer(eb_image.data, "ELECTRON", _set_ui=True)
+            self.image_widget.update_viewer(arr=eb_image.data, beam_type=BeamType.ELECTRON, set_ui_from_image=True)
         if info["ib_image"] is not None:
             ib_image = info["ib_image"]
             self.image_widget.ib_image = ib_image
-            self.image_widget.update_viewer(ib_image.data, "ION", _set_ui=True)
+            self.image_widget.update_viewer(arr=ib_image.data, beam_type=BeamType.ION, set_ui_from_image=True)
 
         if isinstance(stages, list):
             self.milling_widget.set_milling_stages(stages)
