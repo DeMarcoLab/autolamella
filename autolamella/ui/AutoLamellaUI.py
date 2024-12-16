@@ -758,7 +758,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self._update_milling_position
             )
             self.milling_widget.milling_progress_signal.connect(self._milling_finished)
-            self.image_widget.picture_signal.connect(self.update_lamella_ui)
+            self.image_widget.acquisition_progress_signal.connect(self.handle_acquisition_update)
         else:
             if self.image_widget is None:
                 return
@@ -1254,12 +1254,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 ]:
                     DISPLAY_TRENCH, DISPLAY_LAMELLA = False, True
 
-
-
                 if DISPLAY_TRENCH:
                     stages = get_milling_stages(TRENCH_KEY, lamella.protocol)
 
-                # TODO: get the CONSTANT names for the protocols from .protocol.validation
+                # TODO: convert to using .stages directly on lamella, rather than always reading from protocol
 
                 if DISPLAY_LAMELLA:
                     mill_rough_stages = get_milling_stages(MILL_ROUGH_KEY, lamella.protocol)
@@ -1748,6 +1746,10 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if is_finished:
             self.MILLING_IS_RUNNING = False
 
+    def handle_acquisition_update(self, ddict: dict) -> None:
+        if ddict.get("finished", False):
+            self.update_lamella_ui()
+
     def _confirm_det(self):
         if self.det_widget is not None:
             self.det_widget.confirm_button_clicked()
@@ -1804,7 +1806,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.update_ui()
 
         # set electron image as active layer
-        self.viewer.layers.selection.active = self.image_widget.eb_layer
+        self.image_widget.restore_active_layer_for_movement()
 
         self._set_workflow_info(msg=None, show=False)
 

@@ -51,7 +51,7 @@ def update_milling_ui(microscope, stages: List[FibsemMillingStage], parent_ui: A
         parent_ui.run_milling_signal.emit() # TODO: have the signal change the state, rather than here
 
         logging.info("WAITING FOR MILLING TO FINISH... ")
-        while parent_ui.MILLING_IS_RUNNING or parent_ui.image_widget.TAKING_IMAGES:
+        while parent_ui.MILLING_IS_RUNNING or parent_ui.image_widget.ACQUIRING_IMAGES:
             time.sleep(1)
 
         update_status_ui(
@@ -76,7 +76,7 @@ def update_milling_ui(microscope, stages: List[FibsemMillingStage], parent_ui: A
     #     parent_ui.run_milling_signal.emit()
         
     #     logging.info(f"WAITING FOR MILLING TO FINISH... ")
-    #     while parent_ui.MILLING_IS_RUNNING or parent_ui.image_widget.TAKING_IMAGES:
+    #     while parent_ui.MILLING_IS_RUNNING or parent_ui.image_widget.ACQUIRING_IMAGES:
     #         time.sleep(1)
         
     #     update_status_ui(
