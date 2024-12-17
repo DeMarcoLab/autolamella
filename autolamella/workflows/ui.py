@@ -1,18 +1,21 @@
 import logging
+import time
 from copy import deepcopy
+from typing import List
 
 from fibsem import milling
+from fibsem.detection import detection
+from fibsem.detection import utils as det_utils
+from fibsem.detection.detection import DetectedFeatures
 from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
-    FibsemStagePosition,
     FibsemImage,
     FibsemRectangle,
+    FibsemStagePosition,
 )
-import time
-from typing import List
-from fibsem.detection import detection, utils as det_utils
-from fibsem.detection.detection import DetectedFeatures
+
 from autolamella.ui import AutoLamellaUI
+
 
 # CORE UI FUNCTIONS -> PROBS SEPARATE FILE
 def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by user.") -> bool:
@@ -20,7 +23,7 @@ def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by u
     if parent_ui is None:
         return False
     
-    if parent_ui._ABORT_THREAD:
+    if parent_ui.STOP_WORKFLOW:
         raise InterruptedError(msg)
 
 

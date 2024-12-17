@@ -29,7 +29,7 @@ def setup_experiment_ui_v2(
 
 def load_experiment_ui(parent) -> Experiment:
    
-    PATH = fui._get_file_ui(
+    PATH = fui.open_existing_file_dialog(
         msg="Select an experiment file", path=cfg.LOG_PATH, parent=parent
     )
 
@@ -43,7 +43,7 @@ def load_experiment_ui(parent) -> Experiment:
 def create_experiment_ui(parent,
 ) -> Experiment:
 
-    PATH = fui._get_directory_ui(
+    PATH = fui.open_existing_directory_dialog(
         msg="Select a directory to save the experiment",
         path=cfg.LOG_PATH,
         parent=parent,
@@ -59,7 +59,7 @@ def create_experiment_ui(parent,
 
     now = datetime.now()
     DATE = now.strftime("%Y-%m-%d-%H-%M")
-    NAME, okPressed = fui._get_text_ui(
+    NAME, okPressed = fui.open_text_input_dialog(
         msg="Enter a name for the experiment", title="Experiment Name", default=f"{cfg.EXPERIMENT_NAME}-{DATE}", parent=parent
     )
 

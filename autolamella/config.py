@@ -14,7 +14,7 @@ EXPERIMENT_NAME = "AutoLamella"
 
 HFW_THRESHOLD = 0.005 # 0.5% of the image height
 
-__AUTOLAMELLA_METHODS__ = ["autolamella-on-grid", "autolamella-waffle", "autolamella-serial-liftout"]#, "Autoliftout-Default", "Autoliftout-Serial-Liftout"]
+AUTOLAMELLA_METHODS = ["autolamella-on-grid", "autolamella-waffle", "autolamella-serial-liftout"]#, "Autoliftout-Default", "Autoliftout-Serial-Liftout"]
 __AUTOLIFTOUT_METHODS__ = ["autolamella-liftout", "autolamella-serial-liftout"]
 __AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__ = ["None", "Weld"]
 __AUTOLIFTOUT_LANDING_JOIN_METHODS__ = ["Weld"]

@@ -2,7 +2,7 @@ import sys
 
 try:
     sys.modules.pop("PySide6.QtCore")
-except Exception as e:
+except Exception:
     pass
 import logging
 import os
@@ -10,19 +10,20 @@ from collections import Counter
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple, List, Dict
+from typing import Dict, List, Tuple
 
 import napari
+import napari.utils.notifications
 import yaml
 from fibsem import constants, utils
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import get_milling_stages, get_protocol_from_stages
 from fibsem.structures import (
+    BeamType,
     FibsemRectangle,
     FibsemStagePosition,
     MicroscopeSettings,
     Point,
-    BeamType,
 )
 from fibsem.ui import (
     DETECTION_AVAILABLE,
@@ -33,7 +34,7 @@ from fibsem.ui import (
     FibsemMovementWidget,
     FibsemSystemSetupWidget,
 )
-from fibsem.ui import _stylesheets as stylesheets
+from fibsem.ui import stylesheets
 from fibsem.ui import (
     utils as fui,
 )
@@ -62,7 +63,7 @@ from autolamella.structures import (
     Lamella,
     LamellaState,
 )
-from autolamella.ui import AutoLamellaUI
+from autolamella.ui import AutoLamellaUI as AutoLamellaMainUI
 from autolamella.ui.utils import setup_experiment_ui_v2
 
 try:
@@ -72,12 +73,7 @@ except ImportError as e:
     def list_available_checkpoints():
         return []
 
-_DEV_MODE = False
-DEV_EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/TEST_DEV_FEEDBACK_01/experiment.yaml"
-DEV_PROTOCOL_PATH = cfg.PROTOCOL_PATH
-
-
-__AUTOLAMELLA_CHECKPOINTS__ = list_available_checkpoints()
+AUTOLAMELLA_CHECKPOINTS = list_available_checkpoints()
 
 CONFIGURATION = {
     "TABS_ID": {
@@ -116,7 +112,6 @@ TRENCH_METHODS = [
 ]
 LIFTOUT_METHODS = ["autolamella-liftout", "autolamella-serial-liftout"]
 
-
 def _is_method_type(method: str, method_type: str) -> bool:
     if method_type == "trench":
         return method in TRENCH_METHODS
@@ -126,7 +121,6 @@ def _is_method_type(method: str, method_type: str) -> bool:
         return method in ON_GRID_METHODS
     else:
         return False
-
 
 def get_method_states(method: str) -> Tuple[AutoLamellaStage, AutoLamellaStage]:
     """Return the setup and ready states for each method."""
@@ -143,9 +137,13 @@ def get_method_states(method: str) -> Tuple[AutoLamellaStage, AutoLamellaStage]:
 
     return SETUP_STATE, READY_STATE
 
+PREPARTION_WORKFLOW_STAGES = [
+    AutoLamellaStage.SetupTrench, AutoLamellaStage.ReadyTrench,
+    AutoLamellaStage.SetupLamella,AutoLamellaStage.ReadyLamella,
+    AutoLamellaStage.PreSetupLamella,
+]
 
-
-class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
+class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
     ui_signal = pyqtSignal(dict)
     det_confirm_signal = pyqtSignal(bool)
     update_experiment_signal = pyqtSignal(Experiment)
@@ -153,7 +151,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
     _minimap_signal = pyqtSignal(object)
 
     def __init__(self, viewer: napari.Viewer) -> None:
-        super(AutoLamellaUI, self).__init__()
+        super().__init__()
 
         self.setupUi(self)
 
@@ -163,9 +161,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
         self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
 
-        self.IS_PROTOCOL_LOADED = False
-        self.IS_MICROSCOPE_UI_LOADED = False
-        self.UPDATING_PROTOCOL_UI = False
+        self.IS_PROTOCOL_LOADED: bool = False
+        self.IS_MICROSCOPE_UI_LOADED: bool = False
+        self.UPDATING_PROTOCOL_UI: bool = False
 
         self.experiment: Experiment = None
         self.worker = None
@@ -191,26 +189,18 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.USER_RESPONSE: bool = False
         self.WAITING_FOR_UI_UPDATE: bool = False
         self.MILLING_IS_RUNNING: bool = False
-        self._WORKFLOW_RUNNING: bool = False
-        self._ABORT_THREAD: bool = False
+        self.WORKFLOW_IS_RUNNING: bool = False
+        self.STOP_WORKFLOW: bool = False
 
         # setup connections
         self.setup_connections()
-
-        self.update_ui()
-
-        if _DEV_MODE:
-            self._auto_load()
 
     def setup_connections(self):
         self.pushButton_add_lamella.clicked.connect(
             lambda: self.add_lamella_ui(pos=None)
         )
-        self.pushButton_add_lamella.setEnabled(False)
         self.pushButton_remove_lamella.clicked.connect(self.remove_lamella_ui)
-        self.pushButton_remove_lamella.setEnabled(False)
         self.pushButton_go_to_lamella.clicked.connect(self.go_to_lamella_ui)
-        self.pushButton_go_to_lamella.setEnabled(False)
         self.comboBox_current_lamella.currentIndexChanged.connect(
             self.update_lamella_ui
         )
@@ -273,13 +263,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # stop workflow
         self.pushButton_stop_workflow.clicked.connect(self._stop_workflow_thread)
         self.pushButton_stop_workflow.setVisible(False)
-        self.pushButton_stop_workflow.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
-
-        self.actionLoad_Milling_Pattern.triggered.connect(self._load_milling_protocol)
-        self.actionSave_Milling_Pattern.triggered.connect(self._save_milling_protocol)
 
         self.actionInformation.triggered.connect(
-            lambda: fui.show_information_dialog(self.microscope, self)
+            lambda: fui.open_information_dialog(self.microscope, self)
         )
 
         self.pushButton_yes.clicked.connect(self.push_interaction_button)
@@ -291,16 +277,17 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.ui_signal.connect(self._ui_signal)
         self.run_milling_signal.connect(self._run_milling)
 
-        self.pushButton_add_lamella.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
-        self.pushButton_remove_lamella.setStyleSheet(stylesheets._RED_PUSHBUTTON_STYLE)
-        self.pushButton_go_to_lamella.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
+        self.pushButton_stop_workflow.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
+        self.pushButton_add_lamella.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+        self.pushButton_remove_lamella.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
+        self.pushButton_go_to_lamella.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
 
         # comboboxes
-        self.comboBox_method.addItems(cfg.__AUTOLAMELLA_METHODS__)
+        self.comboBox_method.addItems(cfg.AUTOLAMELLA_METHODS)
         self.comboBox_method.currentIndexChanged.connect(
             lambda: self.update_protocol_ui(False)
         )
-        self.comboBox_ml_checkpoint.addItems(__AUTOLAMELLA_CHECKPOINTS__)
+        self.comboBox_ml_checkpoint.addItems(AUTOLAMELLA_CHECKPOINTS)
 
         self.comboBox_options_liftout_joining_method.addItems(
             cfg.__AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__
@@ -316,51 +303,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         # workflow info
         self._set_workflow_info(show=False)
 
-    def _save_milling_protocol(self):
-        print("save milling protocol")
-
-        if self.IS_PROTOCOL_LOADED is False:
-            logging.info("No protocol loaded")
-            return
-
-        pattern = fui.create_combobox_message_box(
-            text="Select a milling pattern to save as",
-            title="Save Milling Pattern",
-            options=self.settings.protocol["milling"].keys(),
-            parent=self,
-        )
-
-        if pattern is None:
-            logging.info("No pattern selected")
-            return
-
-        logging.info(f"Loading milling pattern: {pattern}")
-        stages = self.milling_widget.get_milling_stages()
-        protocol = get_protocol_from_stages(stages)
-
-        self.settings.protocol["milling"][pattern] = protocol
-
-        # TODO: also allow to create new patterns
-
-    def _load_milling_protocol(self):
-        print("load milling protocol")
-
-        if self.IS_PROTOCOL_LOADED is False:
-            logging.info("No protocol loaded")
-            return
-
-        pattern = fui.create_combobox_message_box(
-            text="Select a milling pattern to load",
-            title="Load Milling Pattern",
-            options=self.settings.protocol["milling"].keys(),
-            parent=self,
-        )
-
-        logging.info(f"Loading milling pattern: {pattern}")
-        stages = get_milling_stages(
-            pattern, self.settings.protocol["milling"]
-        )
-        self.milling_widget.set_milling_stages(stages)
+        # refresh ui
+        self.update_ui()
 
     def update_protocol_ui(self, _load: bool = True):
         if not self.IS_PROTOCOL_LOADED or self.UPDATING_PROTOCOL_UI:
@@ -371,7 +315,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if _load:
             method = self.settings.protocol["options"]["method"]
             self.comboBox_method.setCurrentIndex(
-                cfg.__AUTOLAMELLA_METHODS__.index(method.lower())
+                cfg.AUTOLAMELLA_METHODS.index(method.lower())
             )  # TODO: coerce this to be a supported method, alert the user if not
         else:
             method = self.comboBox_method.currentText().lower()
@@ -627,7 +571,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
 
         if self.sender() == self.actionSave_Protocol:
-            path = fui._get_save_file_ui(
+            path = fui.open_save_file_dialog(
                 msg="Save protocol",
                 path=cfg.PROTOCOL_PATH,
                 _filter="*yaml",
@@ -893,7 +837,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.minimap_connection(positions=positions)
 
     def _load_positions(self):
-        path = fui._get_file_ui(
+        path = fui.open_existing_file_dialog(
             msg="Select a position file to load",
             path=self.experiment.path,
             _filter="*yaml",
@@ -1061,35 +1005,35 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.label_run_autolamella_info.setVisible(_ENABLE_FULL_AUTOLAMELLA)
 
             self.pushButton_run_waffle_trench.setStyleSheet(
-                stylesheets._GREEN_PUSHBUTTON_STYLE
+                stylesheets.GREEN_PUSHBUTTON_STYLE
                 if _ENABLE_TRENCH
-                else stylesheets._DISABLED_PUSHBUTTON_STYLE
+                else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             self.pushButton_run_waffle_undercut.setStyleSheet(
-                stylesheets._GREEN_PUSHBUTTON_STYLE
+                stylesheets.GREEN_PUSHBUTTON_STYLE
                 if _ENABLE_UNDERCUT
-                else stylesheets._DISABLED_PUSHBUTTON_STYLE
+                else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             self.pushButton_run_setup_autolamella.setStyleSheet(
-                stylesheets._GREEN_PUSHBUTTON_STYLE
+                stylesheets.GREEN_PUSHBUTTON_STYLE
                 if _ENABLE_FULL_AUTOLAMELLA
-                else stylesheets._DISABLED_PUSHBUTTON_STYLE
+                else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             # liftout
             self.pushButton_setup_autoliftout.setStyleSheet(
-                stylesheets._GREEN_PUSHBUTTON_STYLE
+                stylesheets.GREEN_PUSHBUTTON_STYLE
                 if IS_LIFTOUT_METHOD
-                else stylesheets._DISABLED_PUSHBUTTON_STYLE
+                else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             self.pushButton_run_autoliftout.setStyleSheet(
-                stylesheets._GREEN_PUSHBUTTON_STYLE
+                stylesheets.GREEN_PUSHBUTTON_STYLE
                 if _ENABLE_LIFTOUT
-                else stylesheets._DISABLED_PUSHBUTTON_STYLE
+                else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             self.pushButton_run_serial_liftout_landing.setStyleSheet(
-                stylesheets._GREEN_PUSHBUTTON_STYLE
+                stylesheets.GREEN_PUSHBUTTON_STYLE
                 if _ENABLE_LANDING
-                else stylesheets._DISABLED_PUSHBUTTON_STYLE
+                else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
 
             # global button visibility configuration
@@ -1098,23 +1042,23 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.pushButton_run_waffle_undercut.setVisible(SHOW_INDIVUDAL_STAGES and method != "autolamella-serial-liftout")
 
             # tab visibity / enabled
-            # self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], self._WORKFLOW_RUNNING and not _ON_GRID_METHOD)
-            # self.tabWidget.setTabEnabled(CONFIGURATION["TABS"]["Connection"], not self._WORKFLOW_RUNNING)
-            # self.tabWidget.setTabEnabled(CONFIGURATION["TABS"]["Experiment"], not self._WORKFLOW_RUNNING)
-            # self.tabWidget.setTabEnabled(CONFIGURATION["TABS"]["Protocol"], not self._WORKFLOW_RUNNING)
+            # self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], self.WORKFLOW_IS_RUNNING and not _ON_GRID_METHOD)
+            # self.tabWidget.setTabEnabled(CONFIGURATION["TABS"]["Connection"], not self.WORKFLOW_IS_RUNNING)
+            # self.tabWidget.setTabEnabled(CONFIGURATION["TABS"]["Experiment"], not self.WORKFLOW_IS_RUNNING)
+            # self.tabWidget.setTabEnabled(CONFIGURATION["TABS"]["Protocol"], not self.WORKFLOW_IS_RUNNING)
 
-            if self._WORKFLOW_RUNNING:
+            if self.WORKFLOW_IS_RUNNING:
                 self.pushButton_run_waffle_trench.setEnabled(False)
                 self.pushButton_run_waffle_undercut.setEnabled(False)
                 self.pushButton_run_setup_autolamella.setEnabled(False)
                 self.pushButton_run_waffle_trench.setStyleSheet(
-                    stylesheets._DISABLED_PUSHBUTTON_STYLE
+                    stylesheets.DISABLED_PUSHBUTTON_STYLE
                 )
                 self.pushButton_run_waffle_undercut.setStyleSheet(
-                    stylesheets._DISABLED_PUSHBUTTON_STYLE
+                    stylesheets.DISABLED_PUSHBUTTON_STYLE
                 )
                 self.pushButton_run_setup_autolamella.setStyleSheet(
-                    stylesheets._DISABLED_PUSHBUTTON_STYLE
+                    stylesheets.DISABLED_PUSHBUTTON_STYLE
                 )
 
         # Current Lamella Status
@@ -1158,7 +1102,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         if self.experiment.positions == []:
             return
 
-        if self._WORKFLOW_RUNNING:
+        if self.WORKFLOW_IS_RUNNING:
             return
 
         idx = self.comboBox_current_lamella.currentIndex()
@@ -1182,21 +1126,21 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             if lamella.state.stage in SETUP_STAGES:
                 self.pushButton_save_position.setText("Save Position")
                 self.pushButton_save_position.setStyleSheet(
-                    stylesheets._ORANGE_PUSHBUTTON_STYLE
+                    stylesheets.ORANGE_PUSHBUTTON_STYLE
                 )
                 self.pushButton_save_position.setEnabled(True)
                 self.milling_widget.CAN_MOVE_PATTERN = True
             elif lamella.state.stage in READY_STAGES:
                 self.pushButton_save_position.setText("Position Ready")
                 self.pushButton_save_position.setStyleSheet(
-                    stylesheets._GREEN_PUSHBUTTON_STYLE
+                    stylesheets.GREEN_PUSHBUTTON_STYLE
                 )
                 self.pushButton_save_position.setEnabled(True)
                 self.milling_widget.CAN_MOVE_PATTERN = False
             else:
                 self.pushButton_save_position.setText("")
                 self.pushButton_save_position.setStyleSheet(
-                    stylesheets._DISABLED_PUSHBUTTON_STYLE
+                    stylesheets.DISABLED_PUSHBUTTON_STYLE
                 )
                 self.pushButton_save_position.setEnabled(False)
                 self.milling_widget.CAN_MOVE_PATTERN = True
@@ -1209,7 +1153,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         "Landing Position Selected"
                     )
                     self.pushButton_lamella_landing_selected.setStyleSheet(
-                        stylesheets._GREEN_PUSHBUTTON_STYLE
+                        stylesheets.GREEN_PUSHBUTTON_STYLE
                     )
                     self.pushButton_lamella_landing_selected.setEnabled(True)
                 else:
@@ -1218,7 +1162,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         "No Landing Position"
                     )
                     self.pushButton_lamella_landing_selected.setStyleSheet(
-                        stylesheets._ORANGE_PUSHBUTTON_STYLE
+                        stylesheets.ORANGE_PUSHBUTTON_STYLE
                     )
                     self.pushButton_lamella_landing_selected.setToolTip(
                         "Run Setup Liftout to select a Landing Position"
@@ -1227,16 +1171,12 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                 self.pushButton_lamella_landing_selected.setVisible(False)
 
         # update the milling widget
-        if self._WORKFLOW_RUNNING:
+        if self.WORKFLOW_IS_RUNNING:
             self.milling_widget.CAN_MOVE_PATTERN = True
 
-        if lamella.state.stage in [
-            AutoLamellaStage.SetupTrench,
-            AutoLamellaStage.ReadyTrench,
-            AutoLamellaStage.SetupLamella,
-            AutoLamellaStage.ReadyLamella,
-            AutoLamellaStage.PreSetupLamella,
-        ]:
+
+
+        if lamella.state.stage in PREPARTION_WORKFLOW_STAGES:
             if self.IS_PROTOCOL_LOADED:
                 DISPLAY_TRENCH, DISPLAY_LAMELLA = False, False
 
@@ -1265,7 +1205,6 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                     stages = mill_rough_stages + mill_polishing_stages
 
                     if self.settings.protocol["options"].get("use_notch", True):
-                        # if wafflenotch, offset by half lamella width (NOW DONE IN PROTOCOL)
                         stages.extend(get_milling_stages(NOTCH_KEY, lamella.protocol))
 
                     # microexpansion
@@ -1277,6 +1216,19 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
                         stages.extend(get_milling_stages(FIDUCIAL_KEY, lamella.protocol))
 
                 self.milling_widget.set_milling_stages(stages)
+
+                # TODO: migrate to this structure instead of the above
+                # milling_workflows: Dict[str, List[FibsemMillingStage]]: 
+                #     # MILL_ROUGH_KEY: [FibsemMillingStage, FibsemMillingStage]
+                #     # MILL_POLISHING_KEY: [FibsemMillingStage, FibsemMillingStage]
+                #     # NOTCH_KEY: [FibsemMillingStage]
+                #     # MICROEXPANSION_KEY: [FibsemMilling
+                #     # FIDUCIAL_KEY: [FibsemMillingStage]
+
+                # milling widget?
+                # add / remove workflow?
+                # when used independently, only single workflow?
+                # when used in autolamella, multiple workflows?
 
         if lamella._is_failure:
             self.pushButton_fail_lamella.setText("Mark Lamella as Active")
@@ -1329,7 +1281,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             )
             return
 
-        PATH = fui._get_file_ui(
+        PATH = fui.open_existing_file_dialog(
             msg="Select a protocol file", path=cfg.PROTOCOL_PATH, parent=self
         )
 
@@ -1363,7 +1315,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         cryo_deposition_widget.exec_()
 
     def save_protocol(self):
-        fname = fui._get_save_file_ui(msg="Select protocol file", path=cfg.LOG_PATH)
+        fname = fui.open_save_file_dialog(msg="Select protocol file", path=cfg.LOG_PATH)
         if fname == "":
             return
 
@@ -1392,9 +1344,9 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_no.setVisible(neg is not None)
 
         if pos == "Run Milling":
-            self.pushButton_yes.setStyleSheet(stylesheets._GREEN_PUSHBUTTON_STYLE)
+            self.pushButton_yes.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
         else:
-            self.pushButton_yes.setStyleSheet(stylesheets._BLUE_PUSHBUTTON_STYLE)
+            self.pushButton_yes.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
 
     def _set_workflow_info(self, msg: str = None, show:bool = True):
         if msg is not None:
@@ -1495,7 +1447,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             # update the protocol / point
             self.experiment.positions[idx].protocol = deepcopy(self.settings.protocol["milling"])
-            
+
             # end the stage
             self.experiment = end_of_stage_update(
                 microscope=self.microscope,
@@ -1541,7 +1493,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         # if marking as failure, get user reason for failure
         if not is_failure:
-            msg, ret = fui._get_text_ui(
+            msg, ret = fui.open_text_input_dialog(
                 msg="Enter failure reason:",
                 title=f"Mark Lamella {petname} as failure?",
                 default="",
@@ -1755,7 +1707,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.det_widget.confirm_button_clicked()
 
     def _stop_workflow_thread(self):
-        self._ABORT_THREAD = True
+        self.STOP_WORKFLOW = True
         napari.utils.notifications.show_error("Abort requested")
 
     def _run_workflow(self, workflow: str) -> None:
@@ -1776,8 +1728,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def _workflow_aborted(self):
         logging.info("Workflow aborted.")
-        self._WORKFLOW_RUNNING = False
-        self._ABORT_THREAD = False
+        self.WORKFLOW_IS_RUNNING = False
+        self.STOP_WORKFLOW = False
 
         # clear the image settings save settings etc
         self.image_widget.checkBox_image_save_image.setChecked(False)
@@ -1792,7 +1744,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
     def _workflow_finished(self):
         logging.info("Workflow finished.")
-        self._WORKFLOW_RUNNING = False
+        self.WORKFLOW_IS_RUNNING = False
         self.milling_widget.milling_position_changed.connect(
             self._update_milling_position
         )
@@ -1871,8 +1823,8 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         experiment: Experiment,
         workflow: str = "trench",
     ):
-        self._ABORT_THREAD = False
-        self._WORKFLOW_RUNNING = True
+        self.STOP_WORKFLOW = False
+        self.WORKFLOW_IS_RUNNING = True
         self.milling_widget.CAN_MOVE_PATTERN = True
         self.milling_widget.clear_all_milling_stages()
         self.WAITING_FOR_USER_INTERACTION = False
@@ -1883,13 +1835,13 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         self.pushButton_run_waffle_undercut.setEnabled(False)
         self.pushButton_run_setup_autolamella.setEnabled(False)
         self.pushButton_run_waffle_trench.setStyleSheet(
-            stylesheets._DISABLED_PUSHBUTTON_STYLE
+            stylesheets.DISABLED_PUSHBUTTON_STYLE
         )
         self.pushButton_run_waffle_undercut.setStyleSheet(
-            stylesheets._DISABLED_PUSHBUTTON_STYLE
+            stylesheets.DISABLED_PUSHBUTTON_STYLE
         )
         self.pushButton_run_setup_autolamella.setStyleSheet(
-            stylesheets._DISABLED_PUSHBUTTON_STYLE
+            stylesheets.DISABLED_PUSHBUTTON_STYLE
         )
 
         self.pushButton_stop_workflow.setVisible(True)
@@ -1899,7 +1851,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
         method = settings.protocol["options"].get("method", None)
 
-        if method not in cfg.__AUTOLAMELLA_METHODS__:
+        if method not in cfg.AUTOLAMELLA_METHODS:
             raise ValueError(f"Invalid method {method} for autolamella workflow")
 
         from autolamella.workflows import runners as wfl  # avoiding circular import

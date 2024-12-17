@@ -514,10 +514,6 @@ def setup_lamella(
             validate=validate, # always validate non on-grid for now
             milling_enabled=False)
     
-    # TODO: can I remove this now...d
-    # for stage in stages:
-        # logging.info(f"{stage.name}: {stage}") 
-
     # rough milling
     lamella.protocol[MILL_ROUGH_KEY] = deepcopy(get_protocol_from_stages(stages[:n_mill_rough]))
 
@@ -575,7 +571,7 @@ def setup_lamella(
         # non-fiducial based alignment
         alignment_area_dict = settings.protocol["options"].get("alignment_area", DEFAULT_ALIGNMENT_AREA)
         lamella.fiducial_area = FibsemRectangle.from_dict(alignment_area_dict)
-        alignment_hfw = lamella.protocol[MILL_ROUGH_KEY][0]["hfw"]
+        alignment_hfw = stages[0].milling.hfw
 
     logging.info(f"ALIGNMENT AREA WORKFLOW: {lamella.fiducial_area}")
     lamella.fiducial_area = update_alignment_area_ui(alignment_area=lamella.fiducial_area, 

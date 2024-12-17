@@ -43,17 +43,31 @@
         <string>Experiment</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="8" column="1">
-         <widget class="QComboBox" name="comboBox_current_lamella"/>
-        </item>
-        <item row="11" column="0">
-         <widget class="QPushButton" name="pushButton_lamella_landing_selected">
+        <item row="19" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_waffle_undercut">
           <property name="text">
-           <string>Landing Position Selected</string>
+           <string>Run Undercut Milling</string>
           </property>
          </widget>
         </item>
-        <item row="16" column="0" colspan="2">
+        <item row="8" column="1">
+         <widget class="QComboBox" name="comboBox_current_lamella"/>
+        </item>
+        <item row="11" column="1">
+         <widget class="QPushButton" name="pushButton_fail_lamella">
+          <property name="text">
+           <string>Mark Lamella As Failed</string>
+          </property>
+         </widget>
+        </item>
+        <item row="21" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_serial_liftout_landing">
+          <property name="text">
+           <string>Run Landing Workflow</string>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="0" colspan="2">
          <spacer name="verticalSpacer">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
@@ -66,13 +80,6 @@
           </property>
          </spacer>
         </item>
-        <item row="22" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_autoliftout">
-          <property name="text">
-           <string>Run Liftout Workflow</string>
-          </property>
-         </widget>
-        </item>
         <item row="1" column="0" colspan="2">
          <widget class="QLabel" name="label_experiment_name">
           <property name="text">
@@ -80,38 +87,34 @@
           </property>
          </widget>
         </item>
-        <item row="24" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_setup_autolamella">
+        <item row="2" column="0" colspan="2">
+         <widget class="QLabel" name="label_protocol_name">
           <property name="text">
-           <string>Run AutoLamella</string>
+           <string>Protocol:</string>
           </property>
          </widget>
         </item>
-        <item row="7" column="0">
-         <widget class="QPushButton" name="pushButton_add_lamella">
+        <item row="10" column="0">
+         <widget class="QPushButton" name="pushButton_save_position">
           <property name="text">
-           <string>Add Lamella</string>
+           <string>Save Position</string>
           </property>
          </widget>
         </item>
-        <item row="14" column="0" colspan="2">
-         <widget class="QLabel" name="label_info">
+        <item row="25" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_stop_workflow">
           <property name="text">
-           <string>No Lamella Selected</string>
+           <string>Stop Workflow</string>
           </property>
          </widget>
+        </item>
+        <item row="12" column="0">
+         <widget class="QComboBox" name="comboBox_lamella_history"/>
         </item>
         <item row="12" column="1">
          <widget class="QPushButton" name="pushButton_revert_stage">
           <property name="text">
            <string>Time Travel To</string>
-          </property>
-         </widget>
-        </item>
-        <item row="27" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_stop_workflow">
-          <property name="text">
-           <string>Stop Workflow</string>
           </property>
          </widget>
         </item>
@@ -122,20 +125,64 @@
           </property>
          </widget>
         </item>
-        <item row="11" column="1">
-         <widget class="QPushButton" name="pushButton_fail_lamella">
+        <item row="18" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_waffle_trench">
           <property name="text">
-           <string>Mark Lamella As Failed</string>
+           <string>Run Trench Milling</string>
+          </property>
+          <property name="default">
+           <bool>false</bool>
+          </property>
+          <property name="flat">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
-        <item row="12" column="0">
-         <widget class="QComboBox" name="comboBox_lamella_history"/>
+        <item row="7" column="0">
+         <widget class="QPushButton" name="pushButton_add_lamella">
+          <property name="text">
+           <string>Add Lamella</string>
+          </property>
+         </widget>
         </item>
-        <item row="26" column="0" colspan="2">
+        <item row="15" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_setup_autoliftout">
+          <property name="text">
+           <string>Run Setup Liftout</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="0">
+         <widget class="QLabel" name="label_current_lamella_header">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="text">
+           <string>Current Lamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="24" column="0" colspan="2">
          <widget class="QLabel" name="label_run_autolamella_info">
           <property name="text">
            <string>Run AutoLamella will run all workflows stages.</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="0" colspan="2">
+         <widget class="QLabel" name="label_info">
+          <property name="text">
+           <string>No Lamella Selected</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0">
+         <widget class="QPushButton" name="pushButton_lamella_landing_selected">
+          <property name="text">
+           <string>Landing Position Selected</string>
           </property>
          </widget>
         </item>
@@ -153,23 +200,10 @@
           </property>
          </widget>
         </item>
-        <item row="21" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_undercut">
-          <property name="text">
-           <string>Run Undercut Milling</string>
-          </property>
-         </widget>
-        </item>
         <item row="20" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_waffle_trench">
+         <widget class="QPushButton" name="pushButton_run_autoliftout">
           <property name="text">
-           <string>Run Trench Milling</string>
-          </property>
-          <property name="default">
-           <bool>false</bool>
-          </property>
-          <property name="flat">
-           <bool>false</bool>
+           <string>Run Liftout Workflow</string>
           </property>
          </widget>
         </item>
@@ -183,51 +217,10 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0" colspan="2">
-         <widget class="QLabel" name="label_protocol_name">
+        <item row="22" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_setup_autolamella">
           <property name="text">
-           <string>Protocol:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="0">
-         <widget class="QLabel" name="label_current_lamella_header">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>Current Lamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="17" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_setup_autoliftout">
-          <property name="text">
-           <string>Run Setup Liftout</string>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="0">
-         <widget class="QPushButton" name="pushButton_save_position">
-          <property name="text">
-           <string>Save Position</string>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="0">
-         <widget class="QCheckBox" name="checkBox_show_lamella_in_view">
-          <property name="text">
-           <string>Show Lamellas In View</string>
-          </property>
-         </widget>
-        </item>
-        <item row="23" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_serial_liftout_landing">
-          <property name="text">
-           <string>Run Landing Workflow</string>
+           <string>Run AutoLamella</string>
           </property>
          </widget>
         </item>
