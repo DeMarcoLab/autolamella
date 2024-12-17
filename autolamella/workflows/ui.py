@@ -6,12 +6,14 @@ from typing import List
 from fibsem import milling
 from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
-from fibsem.detection.detection import DetectedFeatures
+from fibsem.detection.detection import DetectedFeatures, Feature
+from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
     FibsemImage,
     FibsemRectangle,
     FibsemStagePosition,
+    MicroscopeSettings,
 )
 
 from autolamella.ui import AutoLamellaUI
@@ -99,24 +101,21 @@ def _update_mill_stages_ui(
 
     INFO = {
         "msg": "Updating Milling Stages",
-        "pos": None,
-        "neg": None,
-        "det": None,
-        "eb_image": None,
-        "ib_image": None,
-        "movement": None,
-        "mill": None,
         "stages": stages,
     }
 
     parent_ui.WAITING_FOR_UI_UPDATE = True
-    parent_ui.ui_signal.emit(INFO)
+    parent_ui.workflow_update_signal.emit(INFO)
     logging.info("WAITING FOR UI UPDATE... ")
     while parent_ui.WAITING_FOR_UI_UPDATE:
         time.sleep(0.5)
 
 def update_detection_ui(
-    microscope, settings, features, parent_ui: AutoLamellaUI, validate: bool, msg: str = "Lamella", position: FibsemStagePosition = None,
+    microscope: FibsemMicroscope, 
+    settings: MicroscopeSettings, 
+    features: List[Feature], 
+    parent_ui: AutoLamellaUI, validate: bool, 
+    msg: str = "Lamella", position: FibsemStagePosition = None,
 ) -> DetectedFeatures:
     feat_str = ", ".join([f.name for f in features])
     update_status_ui(parent_ui, f"{msg}: Detecting Features ({feat_str})...")
@@ -161,16 +160,12 @@ def set_images_ui(
 
     INFO = {
         "msg": "Updating Images",
-        "pos": None,
-        "neg": None,
-        "det": None,
-        "eb_image": eb_image,
-        "ib_image": ib_image,
-        "movement": None,
-        "mill": None,
+        "sem_image": eb_image,
+        "fib_image": ib_image,
+
     }
     parent_ui.WAITING_FOR_UI_UPDATE = True
-    parent_ui.ui_signal.emit(INFO)
+    parent_ui.workflow_update_signal.emit(INFO)
 
     logging.info("WAITING FOR UI UPDATE... ")
     while parent_ui.WAITING_FOR_UI_UPDATE:
@@ -186,16 +181,9 @@ def update_status_ui(parent_ui: AutoLamellaUI, msg: str, workflow_info: str = No
 
     INFO = {
         "msg": msg,
-        "pos": None,
-        "neg": None,
-        "det": None,
-        "eb_image": None,
-        "ib_image": None,
-        "movement": None,
-        "mill": None,
         "workflow_info": workflow_info,
     }
-    parent_ui.ui_signal.emit(INFO)
+    parent_ui.workflow_update_signal.emit(INFO)
 
 
 def ask_user(
@@ -203,8 +191,6 @@ def ask_user(
     msg: str,
     pos: str,
     neg: str = None,
-    image: bool = True,
-    movement: bool = True,
     mill: bool = None,
     det: DetectedFeatures = None,
 ) -> bool:
@@ -218,12 +204,9 @@ def ask_user(
         "pos": pos,
         "neg": neg,
         "det": det,
-        "eb_image": None,
-        "ib_image": None,
-        "movement": movement,
-        "mill": mill,
+        "milling_enabled": mill,
     }
-    parent_ui.ui_signal.emit(INFO)
+    parent_ui.workflow_update_signal.emit(INFO)
 
     parent_ui.WAITING_FOR_USER_INTERACTION = True
     logging.info("WAITING_FOR_USER_INTERACTION...")
@@ -232,15 +215,8 @@ def ask_user(
 
     INFO = {
         "msg": "",
-        "pos": None,
-        "neg": None,
-        "det": None,
-        "eb_image": None,
-        "ib_image": None,
-        "movement": None,
-        "mill": None,
     }
-    parent_ui.ui_signal.emit(INFO)
+    parent_ui.workflow_update_signal.emit(INFO) # clear the message
 
     return parent_ui.USER_RESPONSE
 
@@ -264,15 +240,9 @@ def update_alignment_area_ui(alignment_area: FibsemRectangle, parent_ui: AutoLam
     INFO = {
         "msg": msg,
         "pos": "Continue",
-        "neg": None,
-        "det": None,
-        "eb_image": None,
-        "ib_image": None,
-        "movement": None,
-        "mill": None,
         "alignment_area": alignment_area,
     }
-    parent_ui.ui_signal.emit(INFO)
+    parent_ui.workflow_update_signal.emit(INFO)
 
     parent_ui.WAITING_FOR_USER_INTERACTION = True
     logging.info("WAITING_FOR_USER_INTERACTION...")
@@ -282,20 +252,12 @@ def update_alignment_area_ui(alignment_area: FibsemRectangle, parent_ui: AutoLam
     _check_for_abort(parent_ui)
 
     INFO = {
-        "msg": "Updating Milling Stages",
-        "pos": None,
-        "neg": None,
-        "det": None,
-        "eb_image": None,
-        "ib_image": None,
-        "movement": None,
-        "mill": None,
-        "stages": None,
+        "msg": "Clearing Alignment Area",
         "alignment_area": "clear",
     }
 
     parent_ui.WAITING_FOR_UI_UPDATE = True
-    parent_ui.ui_signal.emit(INFO)
+    parent_ui.workflow_update_signal.emit(INFO)
     logging.info("WAITING FOR UI UPDATE... ")
     while parent_ui.WAITING_FOR_UI_UPDATE:
         time.sleep(0.5)
@@ -304,9 +266,6 @@ def update_alignment_area_ui(alignment_area: FibsemRectangle, parent_ui: AutoLam
     alignment_area = deepcopy(parent_ui.image_widget.get_alignment_area())
 
     return alignment_area
-
-
-
 
 def update_experiment_ui(parent_ui: AutoLamellaUI, experiment):
     

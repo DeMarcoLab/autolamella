@@ -63,7 +63,7 @@ from autolamella.structures import (
     Lamella,
     LamellaState,
 )
-from autolamella.ui import AutoLamellaUI as AutoLamellaMainUI
+from autolamella.ui import AutoLamellaMainUI
 from autolamella.ui.utils import setup_experiment_ui_v2
 
 try:
@@ -144,7 +144,7 @@ PREPARTION_WORKFLOW_STAGES = [
 ]
 
 class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
-    ui_signal = pyqtSignal(dict)
+    workflow_update_signal = pyqtSignal(dict)
     det_confirm_signal = pyqtSignal(bool)
     update_experiment_signal = pyqtSignal(Experiment)
     run_milling_signal = pyqtSignal()
@@ -241,12 +241,6 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self.pushButton_update_protocol.clicked.connect(self.export_protocol_ui)
 
-        self.checkBox_show_lamella_in_view.setChecked(False)
-        self.checkBox_show_lamella_in_view.setVisible(
-            False
-        )  # disabled: causes display issue with milling pattern
-        self.checkBox_show_lamella_in_view.stateChanged.connect(self.update_lamella_ui)
-
         # system widget
         self.system_widget.connected_signal.connect(self.connect_to_microscope)
         self.system_widget.disconnected_signal.connect(self.disconnect_from_microscope)
@@ -274,7 +268,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # signals
         self.det_confirm_signal.connect(self._confirm_det)
         self.update_experiment_signal.connect(self._update_experiment)
-        self.ui_signal.connect(self._ui_signal)
+        self.workflow_update_signal.connect(self.handle_workflow_update)
         self.run_milling_signal.connect(self._run_milling)
 
         self.pushButton_stop_workflow.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
@@ -700,7 +694,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.milling_widget.milling_position_changed.connect(
                 self._update_milling_position
             )
-            self.milling_widget.milling_progress_signal.connect(self._milling_finished)
+            self.milling_widget.milling_progress_signal.connect(self.handle_milling_update)
             self.image_widget.acquisition_progress_signal.connect(self.handle_acquisition_update)
         else:
             if self.image_widget is None:
@@ -974,8 +968,6 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             _ENABLE_LANDING = IS_LIFTOUT_METHOD and _READY_LANDING
             _ENABLE_LAMELLA = _READY_LAMELLA
             _ENABLE_AUTOLAMELLA = _READY_AUTOLAMELLA
-
-            # TODO: handle failed lamella with the button display
 
             # if any of the stages are ready, enable the autolamella button
             _ENABLE_FULL_AUTOLAMELLA = (
@@ -1281,22 +1273,21 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             )
             return
 
-        PATH = fui.open_existing_file_dialog(
+        PROTOCOL_PATH = fui.open_existing_file_dialog(
             msg="Select a protocol file", path=cfg.PROTOCOL_PATH, parent=self
         )
 
-        if PATH == "":
+        if PROTOCOL_PATH == "":
             napari.utils.notifications.show_info("No path selected")
-            logging.info("No path selected")
             return
 
-        protocol = validate_protocol(utils.load_protocol(protocol_path=PATH))
+        protocol = validate_protocol(utils.load_protocol(protocol_path=PROTOCOL_PATH))
 
         self.settings.protocol = protocol
         self.IS_PROTOCOL_LOADED = True
         self.update_protocol_ui(_load=True)
         napari.utils.notifications.show_info(
-            f"Loaded Protocol from {os.path.basename(PATH)}"
+            f"Loaded Protocol from {os.path.basename(PROTOCOL_PATH)}"
         )
 
         # save a copy of the protocol to the experiment.path
@@ -1359,23 +1350,6 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # positve / negative response
         self.USER_RESPONSE = bool(self.sender() == self.pushButton_yes)
         self.WAITING_FOR_USER_INTERACTION = False
-
-    def _auto_load(self):
-        # connect to microscope
-        self.system_widget.connect_to_microscope()
-
-        # load experiment
-        self.experiment = Experiment.load(DEV_EXP_PATH)
-        self.settings.image.path = self.experiment.path
-        self.update_lamella_combobox()
-
-        # load protocol
-        self.settings.protocol = utils.load_protocol(protocol_path=DEV_PROTOCOL_PATH)
-        self.IS_PROTOCOL_LOADED = True
-        self.update_protocol_ui(_load=True)
-
-        self.update_ui()
-        return
 
     def go_to_lamella_ui(self):
 
@@ -1692,7 +1666,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Milling"])
         self.milling_widget.run_milling()
 
-    def _milling_finished(self, ddict: dict) -> None:
+    def handle_milling_update(self, ddict: dict) -> None:
 
         is_finished = ddict.get("finished", False)
         if is_finished:
@@ -1708,7 +1682,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def _stop_workflow_thread(self):
         self.STOP_WORKFLOW = True
-        napari.utils.notifications.show_error("Abort requested")
+        napari.utils.notifications.show_error("Abort requested by user.")
 
     def _run_workflow(self, workflow: str) -> None:
         try:
@@ -1762,50 +1736,58 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self._set_workflow_info(msg=None, show=False)
 
-
-    def _ui_signal(self, info: dict) -> None:
+    def handle_workflow_update(self, info: dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
-        _mill = bool(info["mill"] is not None) if info["mill"] is None else info["mill"]
-        _det = bool(info["det"] is not None)
-        stages = info.get("stages", None)
-        alignment_area = info.get("alignment_area", None)
 
-        if self.det_widget is not None and _det:
-            self.det_widget.set_detected_features(info["det"])
-            self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Detection"])
+        # update the image viewer
+        sem_image = info.get("sem_image", None)
+        if sem_image is not None:
+            self.image_widget.eb_image = sem_image
+            self.image_widget.update_viewer(arr=sem_image.data, 
+                                            beam_type=BeamType.ELECTRON, 
+                                            set_ui_from_image=True)
+        
+        fib_image = info.get("fib_image", None)
+        if fib_image is not None:
+            self.image_widget.ib_image = fib_image
+            self.image_widget.update_viewer(arr=fib_image.data, 
+                                            beam_type=BeamType.ION, 
+                                            set_ui_from_image=True)
 
-        if _mill:
+        # what?
+        enable_milling = info.get("milling_enabled", None)
+        if enable_milling is not None:
             self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Milling"])
 
-        if info["eb_image"] is not None:
-            eb_image = info["eb_image"]
-            self.image_widget.eb_image = eb_image
-            self.image_widget.update_viewer(arr=eb_image.data, beam_type=BeamType.ELECTRON, set_ui_from_image=True)
-        if info["ib_image"] is not None:
-            ib_image = info["ib_image"]
-            self.image_widget.ib_image = ib_image
-            self.image_widget.update_viewer(arr=ib_image.data, beam_type=BeamType.ION, set_ui_from_image=True)
-
-        if isinstance(stages, list):
-            self.milling_widget.set_milling_stages(stages)
-        if stages == "clear":
+        # update milling stages
+        milling_stages = info.get("stages", None)
+        if isinstance(milling_stages, list):
+            self.milling_widget.set_milling_stages(milling_stages)
+        if milling_stages == "clear":
             self.milling_widget.clear_all_milling_stages()
+        detections = info.get("det", None)
+        if self.det_widget is not None and detections is not None:
+            self.det_widget.set_detected_features(detections)
+            self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Detection"])
 
+        # update the alignment area
+        alignment_area = info.get("alignment_area", None)
         if isinstance(alignment_area, FibsemRectangle):
             self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Image"])
             self.image_widget.toggle_alignment_area(alignment_area)
         if alignment_area == "clear":
             self.image_widget.clear_alignment_area()
         
-        if _det is None and _mill is None and alignment_area is None:
+        # no specific interaction, just update the ui
+        if detections is None and enable_milling is None and alignment_area is None:
             self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Experiment"])
 
         # ui interaction
         self.milling_widget.pushButton_run_milling.setEnabled(False)
-        self.milling_widget.pushButton_run_milling.setVisible(False)
+        self.milling_widget.pushButton_run_milling.setVisible(False) # TODO: re-enable??
 
         # instruction message
-        self._set_instructions(info["msg"], info["pos"], info["neg"])
+        self._set_instructions(info["msg"], info.get("pos", None), info.get("neg", None))
         self._set_workflow_info(info.get("workflow_info", None))
 
         self.WAITING_FOR_UI_UPDATE = False
@@ -1929,13 +1911,12 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 def main():
     autolamella_ui = AutoLamellaUI(viewer=napari.Viewer())
     autolamella_ui.viewer.window.add_dock_widget(
-        autolamella_ui,
+        widget=autolamella_ui,
         area="right",
         add_vertical_stretch=True,
         name=f"AutoLamella v{autolamella.__version__}",
     )
     napari.run()
-
 
 if __name__ == "__main__":
     main()

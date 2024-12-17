@@ -120,7 +120,7 @@ def run_lamella_milling(
             logging.info(f"Skipping stage {stage} as it is not in stages_to_complete {stages_to_complete}")
             continue
         for lamella in experiment.positions:
-            if lamella.state.stage == AutoLamellaStage(stage.value - 1) and not lamella._is_failure:
+            if lamella.state.stage == AutoLamellaStage(stage.value - 1) and not lamella.is_failure:
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
                 lamella = WORKFLOW_STAGES[lamella.state.stage](microscope, settings, lamella, parent_ui)
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
