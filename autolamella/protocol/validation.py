@@ -2,7 +2,6 @@ import logging
 from typing import List
 from copy import deepcopy
 
-
 MILL_ROUGH_KEY = "mill_rough"
 MILL_POLISHING_KEY = "mill_polishing"
 MICROEXPANSION_KEY = "microexpansion"
@@ -10,6 +9,10 @@ FIDUCIAL_KEY = "fiducial"
 NOTCH_KEY = "notch"
 TRENCH_KEY = "trench"
 UNDERCUT_KEY = "undercut"
+SETUP_LAMELLA_KEY = "setup_lamella"
+LIFTOUT_KEY = "liftout"
+LANDING_KEY = "landing"
+RESET_KEY = "reset"
 
 # milling
 MILLING_KEYS = [

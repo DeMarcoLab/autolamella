@@ -1,29 +1,31 @@
 import os
 import uuid
+from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, List
 
 import fibsem.utils as utils
 import pandas as pd
 import petname
 import yaml
+from fibsem.milling import FibsemMillingStage
 from fibsem.structures import (
     FibsemImage,
     FibsemRectangle,
     MicroscopeState,
     ReferenceImages,
-    
 )
-from fibsem.milling import FibsemMillingStage
 
 from autolamella import config as cfg
-
+from autolamella.protocol.validation import MILL_POLISHING_KEY, MILL_ROUGH_KEY, TRENCH_KEY, UNDERCUT_KEY, SETUP_LAMELLA_KEY, LIFTOUT_KEY, LANDING_KEY
+from fibsem.milling import get_milling_stages, get_protocol_from_stages
 
 class AutoLamellaStage(Enum):
+    # Created = auto()
     SetupTrench = auto()
     ReadyTrench = auto()
     MillTrench = auto()
@@ -36,7 +38,10 @@ class AutoLamellaStage(Enum):
     MillPolishingCut = auto()
     Finished = auto()
     PreSetupLamella = auto()
+# TODO: investigate removing PreSetupLamella
 
+    def __str__(self) -> str:
+        return self.name
 
 @dataclass
 class LamellaState:
@@ -62,7 +67,6 @@ class LamellaState:
             start_timestamp=data["start_timestamp"],
             end_timestamp=data["end_timestamp"]
         )
-    
 
 @dataclass
 class Lamella:
@@ -80,8 +84,9 @@ class Lamella:
     landing_state: MicroscopeState = MicroscopeState()
     landing_selected: bool = False
     _id: str = None
-    milling_stages: Dict[str, List[FibsemMillingStage]] = None
-    
+    milling_workflows: Dict[str, List[FibsemMillingStage]] = None
+    states: Dict[AutoLamellaStage, LamellaState] = None
+
     def __post_init__(self):
         if self._petname is None:
             self._petname = f"{self._number:02d}-{petname.generate(2)}"
@@ -92,6 +97,18 @@ class Lamella:
             self.protocol = {}
         if self.history is None:
             self.history = []
+        if self.milling_workflows is None:
+            self.milling_workflows = {}
+        if self.states is None:
+            self.states = {}
+
+    @property
+    def finished(self) -> bool:
+        return self.state.stage == AutoLamellaStage.Finished
+
+    @property
+    def workflow_stages_completed(self) -> List[AutoLamellaStage]:
+        return list(self.states.keys())
 
     @property
     def name(self) -> str:
@@ -104,6 +121,12 @@ class Lamella:
     @property
     def is_failure(self) -> bool:
         return self._is_failure
+
+    @is_failure.setter
+    def is_failure(self, value: bool) -> None:
+        self._is_failure = value
+        if value:
+            self.failure_timestamp = datetime.timestamp(datetime.now())
 
     def to_dict(self):
         if self.history is None:
@@ -153,7 +176,6 @@ class Lamella:
             landing_state = MicroscopeState.from_dict(data.get("landing_state", MicroscopeState().to_dict())), # tmp solution
             landing_selected = bool(data.get("landing_selected", False)),
         )
-    
 
     def load_reference_image(self, fname) -> FibsemImage:
         """Load a specific reference image for this lamella from disk
@@ -224,7 +246,7 @@ class Experiment:
         Path: {self.path}
         Positions: {len(self.positions)}
         """
-    
+
     def __to_dataframe__(self) -> pd.DataFrame:
 
         exp_data = []
@@ -426,3 +448,144 @@ class Experiment:
         """Return a list of lamellas that have failed"""
 
         return [lamella for lamella in self.positions if lamella._is_failure]
+
+
+########## PROTOCOL V2 ##########
+
+@dataclass
+class FibsemProtocol(ABC):
+    pass
+
+@dataclass
+class AutoLamellaMethod(ABC):
+    name: str
+    workflow: List[AutoLamellaStage]
+
+@dataclass
+class AutoLamellaOnGridMethod:
+    name = "AutoLamella-OnGrid"
+    workflow = [
+        AutoLamellaStage.SetupLamella,
+        AutoLamellaStage.ReadyLamella,
+        AutoLamellaStage.MillRoughCut,
+        AutoLamellaStage.MillPolishingCut,
+        AutoLamellaStage.Finished,
+    ]
+
+@dataclass
+class AutoLamellaWaffleMethod:
+    name = "AutoLamella-Waffle"
+    workflow = [
+        AutoLamellaStage.SetupTrench,
+        AutoLamellaStage.ReadyTrench,
+        AutoLamellaStage.MillTrench,
+        AutoLamellaStage.MillUndercut,
+        AutoLamellaStage.SetupLamella,
+        AutoLamellaStage.ReadyLamella,
+        AutoLamellaStage.MillRoughCut,
+        AutoLamellaStage.MillPolishingCut,
+        AutoLamellaStage.Finished,
+    ]
+
+DEFAULT_AUTOLAMELLA_METHOD = AutoLamellaOnGridMethod.name
+
+WORKFLOW_STAGE_TO_PROTOCOL_KEY = {
+    AutoLamellaStage.MillTrench: TRENCH_KEY,
+    AutoLamellaStage.MillUndercut: UNDERCUT_KEY,
+    AutoLamellaStage.SetupLamella: SETUP_LAMELLA_KEY,
+    AutoLamellaStage.LiftoutLamella: LIFTOUT_KEY,
+    AutoLamellaStage.LandLamella: LANDING_KEY,
+    AutoLamellaStage.MillRoughCut: MILL_ROUGH_KEY,
+    AutoLamellaStage.MillPolishingCut: MILL_POLISHING_KEY,
+}
+
+@dataclass
+class AutoLamellaProtocolOptions:
+    use_fiducial: bool
+    use_microexpansion: bool
+    use_notch: bool
+    take_final_reference_images: bool
+    alignment_attempts: int 
+    alignment_at_milling_current: bool
+    milling_tilt_angle: float
+    undercut_tilt_angle: float
+    checkpoint: str
+
+    def to_dict(self):
+        return {
+            "use_fiducial": self.use_fiducial,
+            "use_notch": self.use_notch,
+            "use_microexpansion": self.use_microexpansion,
+            "take_final_reference_images": self.take_final_reference_images,
+            "alignment_attempts": self.alignment_attempts,
+            "alignment_at_milling_current": self.alignment_at_milling_current,
+            "milling_tilt_angle": self.milling_tilt_angle,
+            "undercut_tilt_angle": self.undercut_tilt_angle,
+            "checkpoint": self.checkpoint,
+        }
+
+    @classmethod
+    def from_dict(cls, ddict: dict) -> 'AutoLamellaProtocolOptions':        
+        return cls(
+            use_fiducial=ddict.get("use_fiducial", True),
+            use_notch=ddict.get("use_notch", False),
+            use_microexpansion=ddict.get("use_microexpansion", True),
+            take_final_reference_images=ddict["take_final_reference_images"],
+            alignment_attempts=ddict.get("alignment_attempts", 3),
+            alignment_at_milling_current=ddict.get("alignment_at_milling_current", False),
+            milling_tilt_angle=ddict.get("milling_tilt_angle", ddict.get("lamella_tilt_angle", 18)),
+            undercut_tilt_angle=ddict.get("undercut_tilt_angle", -5),
+            checkpoint=ddict.get("checkpoint", "autolamella-mega-20240107.pt")
+        )
+
+def get_autolamella_method(name: str) -> AutoLamellaMethod:
+    if name in ["AutoLamella-OnGrid", "autolamella-on-grid", "on-grid"]:
+        return AutoLamellaOnGridMethod()
+    
+    if name in ["AutoLamella-Waffle", "autolamella-waffle", "waffle"]:
+        return AutoLamellaWaffleMethod()
+
+    # TODO: add more methods here
+
+def get_supervision(stage: AutoLamellaStage, protocol: dict) -> bool:
+    key = WORKFLOW_STAGE_TO_PROTOCOL_KEY.get(stage, None)
+    return protocol.get("supervise", {}).get(key, True)
+
+@dataclass
+class AutoLamellaProtocol(FibsemProtocol):
+    name: str
+    method: AutoLamellaMethod
+    supervision: Dict[AutoLamellaStage, bool]
+    configuration: dict                             # microscope configuration
+    options: AutoLamellaProtocolOptions             # options for the protocol
+    milling: Dict[str, List[FibsemMillingStage]]    # milling stages
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "method": self.method.name,
+            "supervision": {k.name: v for k, v in self.supervision.items()},
+            "configuration": self.configuration,
+            "options": self.options.to_dict(),
+            "milling": {k: get_protocol_from_stages(v) for k, v in self.milling.items()},
+        }
+
+    @classmethod
+    def from_dict(cls, ddict):
+
+        method = get_autolamella_method(ddict.get("method", DEFAULT_AUTOLAMELLA_METHOD))
+
+        # load the supervision tasks
+        supervision_tasks = {k: get_supervision(k, ddict["options"]) for k in WORKFLOW_STAGE_TO_PROTOCOL_KEY.keys()}
+        # filter out tasks that arent part of the method
+        supervision_tasks = {k: v for k, v in supervision_tasks.items() if k in method.workflow}
+        
+        return cls(
+            name=ddict["name"],
+            method=method,
+            supervision=supervision_tasks,
+            configuration=ddict.get("configuration", {}),
+            options=AutoLamellaProtocolOptions.from_dict(ddict["options"]),
+            milling={k: get_milling_stages(k, ddict["milling"]) for k in ddict["milling"]}
+        )
+    # TODO: tests before integration
