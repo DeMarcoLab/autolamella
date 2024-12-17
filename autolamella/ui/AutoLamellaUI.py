@@ -811,12 +811,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             add_vertical_stretch=False,
             name="OpenFIBSEM Minimap",
         )
-        self.minimap_widget._stage_position_moved.connect(
-            self.movement_widget._stage_position_moved
-        )
-        self.minimap_widget._minimap_positions.connect(
-            self.movement_widget.minimap_window_positions
-        )
+
         self.minimap_widget._minimap_positions.connect(self.update_experiment_positions)
 
         # TODO: sync these positions properly
@@ -825,7 +820,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             for lamella in self.experiment.positions
         ]
 
-        self.movement_widget.positions_signal.connect(self.minimap_connection)
+        self.movement_widget.movement_progress_signal.connect(self.handle_movement_progress)
         self.minimap_connection(positions=positions)
 
         # self.minimap_widget.positions = positions
@@ -865,11 +860,18 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
             self.experiment.save()
             self.update_ui()
 
-    def minimap_connection(self, positions=None):
+    def minimap_connection(self):
         if self.minimap_widget is None:
             return
         else:
-            self._minimap_signal.emit(positions)
+            self._minimap_signal.emit()
+
+    def handle_movement_progress(self, ddict: dict):
+
+        is_finished = ddict.get("finished", False)
+        if is_finished:
+            self.minimap_connection() # sync minimap with updated positions
+
 
     # add lmaella from minimap
     def _add_lamella_from_minimap(self, position: FibsemStagePosition):
@@ -1429,7 +1431,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
         lamella: Lamella = self.experiment.positions[idx]
         position = lamella.state.microscope_state.stage_position
 
-        self.movement_widget.go_to_saved_position(position)
+        self.movement_widget.move_to_position(position)
         logging.info(f"Moved to position of {lamella.info}.")
 
     def add_lamella_ui(self, pos: FibsemStagePosition = None):
@@ -1622,7 +1624,7 @@ class AutoLamellaUI(QtWidgets.QMainWindow, AutoLamellaUI.Ui_MainWindow):
 
             if ret is True:
                 # move to lamella position
-                self.movement_widget.go_to_saved_position(
+                self.movement_widget.move_to_position(
                     lamella.state.microscope_state.stage_position
                 )
 
