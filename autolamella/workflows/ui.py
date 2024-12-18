@@ -28,8 +28,12 @@ def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by u
     if parent_ui.STOP_WORKFLOW:
         raise InterruptedError(msg)
 
-
-def update_milling_ui(microscope, stages: List[FibsemMillingStage], parent_ui: AutoLamellaUI, msg:str, validate: bool, milling_enabled: bool = True):
+def update_milling_ui(microscope: FibsemMicroscope, 
+                      stages: List[FibsemMillingStage], 
+                      parent_ui: AutoLamellaUI, 
+                      msg:str, 
+                      validate: bool, 
+                      milling_enabled: bool = True):
     
     # headless mode
     if parent_ui is None:
@@ -138,7 +142,7 @@ def update_detection_ui(
         det = parent_ui.det_widget._get_detected_features()
 
         # I need this to happen in the parent thread for it to work correctly
-        parent_ui.det_confirm_signal.emit(True)
+        parent_ui.detection_confirmed_signal.emit(True)
 
     else:
         det_utils.save_ml_feature_data(det)

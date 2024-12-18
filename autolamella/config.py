@@ -6,7 +6,7 @@ BASE_PATH: Path = os.path.dirname(__file__)
 LOG_PATH: Path = os.path.join(BASE_PATH, 'log')
 CONFIG_PATH: Path = os.path.join(BASE_PATH)
 PROTOCOL_PATH: Path = os.path.join(BASE_PATH, "protocol", "protocol-on-grid.yaml")
-DESKTOP_SHORTCUT_PATH= os.path.dirname(autolamella.__path__[0]) 
+DESKTOP_SHORTCUT_PATH= os.path.dirname(autolamella.__path__[0])
 
 os.makedirs(LOG_PATH, exist_ok=True)
 
@@ -16,8 +16,8 @@ HFW_THRESHOLD = 0.005 # 0.5% of the image height
 
 AUTOLAMELLA_METHODS = ["autolamella-on-grid", "autolamella-waffle", "autolamella-serial-liftout"]#, "Autoliftout-Default", "Autoliftout-Serial-Liftout"]
 __AUTOLIFTOUT_METHODS__ = ["autolamella-liftout", "autolamella-serial-liftout"]
-__AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__ = ["None", "Weld"]
-__AUTOLIFTOUT_LANDING_JOIN_METHODS__ = ["Weld"]
+LIFTOUT_JOIN_METHODS = ["None", "Weld"]
+LIFTOUT_LANDING_JOIN_METHODS = ["Weld"]
 
 # machine learning
 from fibsem.config import __DEFAULT_CHECKPOINT__

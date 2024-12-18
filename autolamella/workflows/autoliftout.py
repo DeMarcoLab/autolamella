@@ -1217,7 +1217,7 @@ def finish_setup_autoliftout(
 ):
     """Finish the setup stage for autolifout/autolamella"""
 
-    parent_ui._set_instructions(msg="Ready for AutoLiftout", pos=None, neg=None)
+    parent_ui.set_instructions_msg(msg="Ready for AutoLiftout", pos=None, neg=None)
 
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaStage.SetupTrench:

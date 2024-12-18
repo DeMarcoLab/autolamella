@@ -10,7 +10,7 @@ from collections import Counter
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 import napari
 import napari.utils.notifications
@@ -137,18 +137,26 @@ def get_method_states(method: str) -> Tuple[AutoLamellaStage, AutoLamellaStage]:
 
     return SETUP_STATE, READY_STATE
 
+def _find_matching_position(position: FibsemStagePosition, experiment: Experiment) -> int:
+    """Find the matching position in the experiment."""
+    lamella_names = [lamella.name for lamella in experiment.positions]
+    idx = lamella_names.index(position.name)
+    return idx
+
 PREPARTION_WORKFLOW_STAGES = [
     AutoLamellaStage.SetupTrench, AutoLamellaStage.ReadyTrench,
     AutoLamellaStage.SetupLamella,AutoLamellaStage.ReadyLamella,
     AutoLamellaStage.PreSetupLamella,
 ]
 
+# TODO: when autolamella is closed, also close the minimap...
 class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
     workflow_update_signal = pyqtSignal(dict)
-    det_confirm_signal = pyqtSignal(bool)
+    detection_confirmed_signal = pyqtSignal(bool)
     update_experiment_signal = pyqtSignal(Experiment)
     run_milling_signal = pyqtSignal()
-    _minimap_signal = pyqtSignal(object)
+    sync_positions_to_minimap_signal = pyqtSignal(list)
+    lamella_created_signal = pyqtSignal(Lamella)
 
     def __init__(self, viewer: napari.Viewer) -> None:
         super().__init__()
@@ -158,11 +166,16 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.label_title.setText(f"AutoLamella v{autolamella.__version__}")
 
         self.viewer = viewer
-        self.viewer.window._qt_viewer.dockLayerList.setVisible(False)
-        self.viewer.window._qt_viewer.dockLayerControls.setVisible(False)
+        self.viewer.window.main_menu.setVisible(False)
+        self.viewer.window.qt_viewer.dockLayerList.setVisible(False)
+        self.viewer.window.qt_viewer.dockLayerControls.setVisible(False)
 
-        self.IS_PROTOCOL_LOADED: bool = False
+        # @self.viewer.bind_key("Ctrl+M") # TODO: this has weird behaviour for the menu visible / hover
+        # def _show_main_menu(viewer: napari.Viewer):
+        #     viewer.window.main_menu.setVisible(True)
+
         self.IS_MICROSCOPE_UI_LOADED: bool = False
+        self.IS_PROTOCOL_LOADED: bool = False
         self.UPDATING_PROTOCOL_UI: bool = False
 
         self.experiment: Experiment = None
@@ -196,6 +209,8 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.setup_connections()
 
     def setup_connections(self):
+
+        # lamella controls
         self.pushButton_add_lamella.clicked.connect(
             lambda: self.add_lamella_ui(pos=None)
         )
@@ -208,6 +223,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_fail_lamella.clicked.connect(self.fail_lamella_ui)
         self.pushButton_revert_stage.clicked.connect(self.revert_stage)
 
+        # workflow controls
         self.pushButton_run_waffle_trench.clicked.connect(
             lambda: self._run_workflow(workflow="trench")
         )
@@ -250,26 +266,25 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Experiment.triggered.connect(self.setup_experiment)
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
         self.actionSave_Protocol.triggered.connect(self.export_protocol_ui)
+        # tool menu
         self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
-        self.actionLoad_Positions.triggered.connect(self._load_positions)
-        self.actionOpen_Minimap.triggered.connect(self._open_minimap)
-
-        # stop workflow
-        self.pushButton_stop_workflow.clicked.connect(self._stop_workflow_thread)
-        self.pushButton_stop_workflow.setVisible(False)
-
+        self.actionOpen_Minimap.triggered.connect(self.open_minimap_widget)
+        # help menu
         self.actionInformation.triggered.connect(
             lambda: fui.open_information_dialog(self.microscope, self)
         )
 
+        # workflow interaction
+        self.pushButton_stop_workflow.setVisible(False)
+        self.pushButton_stop_workflow.clicked.connect(self._stop_workflow_thread)
         self.pushButton_yes.clicked.connect(self.push_interaction_button)
         self.pushButton_no.clicked.connect(self.push_interaction_button)
 
         # signals
-        self.det_confirm_signal.connect(self._confirm_det)
-        self.update_experiment_signal.connect(self._update_experiment)
+        self.detection_confirmed_signal.connect(self.handle_confirmed_detection_signal)
+        self.update_experiment_signal.connect(self.hande_update_experiment_signal)
         self.workflow_update_signal.connect(self.handle_workflow_update)
-        self.run_milling_signal.connect(self._run_milling)
+        self.run_milling_signal.connect(self.run_milling)
 
         self.pushButton_stop_workflow.setStyleSheet(stylesheets.RED_PUSHBUTTON_STYLE)
         self.pushButton_add_lamella.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
@@ -283,19 +298,15 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         )
         self.comboBox_ml_checkpoint.addItems(AUTOLAMELLA_CHECKPOINTS)
 
-        self.comboBox_options_liftout_joining_method.addItems(
-            cfg.__AUTOLIFTOUT_LIFTOUT_JOIN_METHODS__
-        )
-        self.comboBox_options_landing_joining_method.addItems(
-            cfg.__AUTOLIFTOUT_LANDING_JOIN_METHODS__
-        )
+        self.comboBox_options_liftout_joining_method.addItems(cfg.LIFTOUT_JOIN_METHODS)
+        self.comboBox_options_landing_joining_method.addItems(cfg.LIFTOUT_LANDING_JOIN_METHODS)
 
         AVAILABLE_POSITIONS = utils._get_positions()
         self.comboBox_options_trench_start_position.addItems(AVAILABLE_POSITIONS)
         self.comboBox_options_landing_start_position.addItems(AVAILABLE_POSITIONS)
 
         # workflow info
-        self._set_workflow_info(show=False)
+        self.set_current_workflow_message(msg=None, show=False)
 
         # refresh ui
         self.update_ui()
@@ -632,6 +643,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
     # TODO: move this to system wideget??
     # TODO: create a dialog to get the user to connect to microscope and create load experiment before continuing
+    # then remove the system widget entirely... you will always be connected once you start
     def connect_to_microscope(self):
         self.microscope = self.system_widget.microscope
         self.settings = self.system_widget.settings
@@ -716,7 +728,9 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
             self.IS_MICROSCOPE_UI_LOADED = False
 
-    def _open_minimap(self):
+#### MINIMAP
+
+    def open_minimap_widget(self):
         if self.microscope is None:
             napari.utils.notifications.show_warning(
                 "Please connect to a microscope first... [No Microscope Connected]"
@@ -737,117 +751,85 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         
         # update image path
         self.settings.image.path = self.experiment.path
+        self.image_widget.image_settings.path = self.experiment.path
 
-        # TODO: should make this more generic i guess, but this is fine for now
-        self.viewer2 = napari.Viewer(ndisplay=2)
+        self.viewer_minimap = napari.Viewer(ndisplay=2)
         self.minimap_widget = FibsemMinimapWidget(
-            self.microscope, deepcopy(self.settings), viewer=self.viewer2, parent=self
+            viewer=self.viewer_minimap,
+            parent=self
         )
-        self.viewer2.window.add_dock_widget(
-            self.minimap_widget,
+        self.viewer_minimap.window.add_dock_widget(
+            widget=self.minimap_widget,
             area="right",
-            add_vertical_stretch=False,
-            name="OpenFIBSEM Minimap",
+            add_vertical_stretch=True,
+            name="AutoLamella Minimap",
         )
 
-        self.minimap_widget._minimap_positions.connect(self.update_experiment_positions)
+        self.sync_experiment_positions_to_minimap()
 
-        # TODO: sync these positions properly
-        positions = [
-            lamella.state.microscope_state.stage_position
-            for lamella in self.experiment.positions
-        ]
-
-        self.movement_widget.movement_progress_signal.connect(self.handle_movement_progress)
-        self.minimap_connection(positions=positions)
-
-        # self.minimap_widget.positions = positions
-        # self.minimap_widget._update_position_info()
-        # self.minimap_widget._update_viewer()
-
-        if cfg._AUTO_SYNC_MINIMAP:
-            self.minimap_widget._stage_position_added.connect(
-                self._add_lamella_from_minimap
-            )
+        self.minimap_widget.stage_position_added_signal.connect(
+            self.add_position_from_minimap
+        )
+        self.minimap_widget.stage_position_updated_signal.connect(
+            self.update_position_from_minimap
+        )
+        self.minimap_widget.stage_position_removed_signal.connect(
+            self.remove_position_from_minimap
+        )
         napari.run(max_loop_level=2)
 
-    def update_experiment_positions(self, positions=None):
-        if positions is None:
+    def add_position_from_minimap(self, position: FibsemStagePosition):
+        """Add the position to the experiment when added in the minimap."""
+        lamella = self.add_lamella_ui(position)
+        self.lamella_created_signal.emit(lamella)
+
+    def update_position_from_minimap(self, position: FibsemStagePosition):
+        """Update the position in the experiment when updated in the minimap."""
+        idx = _find_matching_position(position, self.experiment)
+        if idx == -1:
+            logging.warning(f"Position {position.name} not found in experiment.")
             return
 
-        if len(positions) < len(self.experiment.positions):
-            idx = 0
-            position_names = [p.name for p in positions]
-            # find index of missing position
-            for lamella in self.experiment.positions:
-                if lamella._petname not in position_names:
-                    break
-                idx += 1
+        self.experiment.positions[idx].state.microscope_state.stage_position = position
+        self.experiment.save()
+        self.update_ui() # TODO: convert to signals
 
-            self.experiment.positions.pop(idx)
-            self.experiment.save()
-            self.update_lamella_combobox()
-            self.update_ui()
+    def remove_position_from_minimap(self, position: FibsemStagePosition):
+        """Remove the corresponding position from the experiment when removed from the minimap."""
+        idx = _find_matching_position(position, self.experiment)
+        
+        # check if not found
+        if idx == -1:
+            logging.warning(f"Position {position.name} not found in experiment.")
+            return
 
-        # modify exisitng position
-        else:
-            for idx, pos in enumerate(positions):
-                self.experiment.positions[
-                    idx
-                ].state.microscope_state.stage_position = pos
-            self.experiment.save()
-            self.update_ui()
+        self.experiment.positions.pop(idx)
+        self.experiment.save()
+        self.update_lamella_combobox()
+        self.update_ui() # TODO: convert to signals
 
-    def minimap_connection(self):
+    def sync_experiment_positions_to_minimap(self):
+        """Sync the current experiment positions to the minimap."""
+
+        # TODO: replace this manual syncing with a shared data model
         if self.minimap_widget is None:
+            logging.debug("Minimap widget not loaded.")
             return
-        else:
-            self._minimap_signal.emit()
 
-    def handle_movement_progress(self, ddict: dict):
-
-        is_finished = ddict.get("finished", False)
-        if is_finished:
-            self.minimap_connection() # sync minimap with updated positions
-
-
-    # add lmaella from minimap
-    def _add_lamella_from_minimap(self, position: FibsemStagePosition):
-        self.add_lamella_ui(position)
-
-        self._update_stage_positions()
-
-    def _update_stage_positions(self):
-        # add lamella to experiment from tile manager
         if self.experiment is None:
             logging.warning("No experiment loaded")
             return
-
+        
+        # get the updated positions
         positions = [
             lamella.state.microscope_state.stage_position
             for lamella in self.experiment.positions
         ]
 
-        self.minimap_connection(positions=positions)
+        self.sync_positions_to_minimap_signal.emit(positions)
 
-    def _load_positions(self):
-        path = fui.open_existing_file_dialog(
-            msg="Select a position file to load",
-            path=self.experiment.path,
-            _filter="*yaml",
-            parent=self,
-        )
 
-        if path == "":
-            napari.utils.notifications.show_info("No file selected..")
-            return
-
-        pdict = utils.load_yaml(path)
-
-        positions = [FibsemStagePosition.from_dict(p) for p in pdict]
-
-        for pos in positions:
-            self.add_lamella_ui(pos)
+##### LAMELLA CONTROLS
 
     def update_ui(self):
         """Update the ui based on the current state of the application."""
@@ -855,9 +837,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         IS_EXPERIMENT_LOADED = bool(self.experiment is not None)
         IS_MICROSCOPE_CONNECTED = bool(self.microscope is not None)
         IS_PROTOCOL_LOADED = bool(self.settings is not None) and self.IS_PROTOCOL_LOADED
-        HAS_LAMELLA = (
-            bool(self.experiment.positions) if IS_EXPERIMENT_LOADED else False
-        )
+        HAS_LAMELLA = bool(self.experiment.positions) and IS_EXPERIMENT_LOADED
 
         # force order: connect -> experiment -> protocol
         self.tabWidget.setTabVisible(
@@ -879,30 +859,28 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_lamella_landing_selected.setVisible(HAS_LAMELLA)
 
         # experiment loaded
+        # file menu
         self.actionLoad_Protocol.setVisible(IS_EXPERIMENT_LOADED)
         self.actionSave_Protocol.setVisible(IS_PROTOCOL_LOADED)
+        # tool menu
+        self.menuTools.setVisible(IS_PROTOCOL_LOADED)
         self.actionCryo_Deposition.setVisible(IS_PROTOCOL_LOADED)
         self.actionOpen_Minimap.setVisible(IS_PROTOCOL_LOADED)
-        self.actionLoad_Minimap_Image.setVisible(
-            IS_PROTOCOL_LOADED and cfg._MINIMAP_VISUALISATION
-        )
+        self.actionLoad_Minimap_Image.setVisible(IS_PROTOCOL_LOADED)
         self.actionLoad_Positions.setVisible(IS_PROTOCOL_LOADED)
-        self.actionLoad_Milling_Pattern.setVisible(
-            IS_PROTOCOL_LOADED and False
-        )  # disable
-        self.actionSave_Milling_Pattern.setVisible(
-            IS_PROTOCOL_LOADED and False
-        )  # disable
+        # help menu
 
         # labels
         if IS_EXPERIMENT_LOADED:
             self.label_experiment_name.setText(f"Experiment: {self.experiment.name}")
 
+            # TODO: migrate to list view + interactive buttons / checkboxes
+            # Lamella Name: Status (Failure Note)
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
                 fnote = f"{lamella.failure_note[:10]}"
                 fmsg = f"\t FAILED ({fnote})" if lamella._is_failure else ""
-                msg += f"Lamella {lamella._petname} \t\t {lamella.state.stage.name} {fmsg} \n"
+                msg += f"Lamella {lamella.name} \t\t {lamella.status} {fmsg} \n"
             self.label_info.setText(msg)
 
             self.comboBox_current_lamella.setVisible(HAS_LAMELLA)
@@ -948,40 +926,40 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             # check if any of the stages are ready
             workflow_state_counter = Counter([p.state.stage.name for p in self.experiment.positions])
 
-            _READY_TRENCH = workflow_state_counter[AutoLamellaStage.ReadyTrench.name] > 0
+            READY_TRENCH = workflow_state_counter[AutoLamellaStage.ReadyTrench.name] > 0
             _READY_UNDERCUT = workflow_state_counter[AutoLamellaStage.MillTrench.name] > 0
             _READY_LIFTOUT = workflow_state_counter[AutoLamellaStage.MillUndercut.name] > 0
             _READY_LANDING = workflow_state_counter[AutoLamellaStage.LiftoutLamella.name] > 0
             _READY_LANDED = workflow_state_counter[AutoLamellaStage.LandLamella.name] > 0
-            _READY_LAMELLA = workflow_state_counter[AutoLamellaStage.SetupLamella.name] > 0
-            _READY_SETUP_LAMELLA = (
+            READY_LAMELLA = workflow_state_counter[AutoLamellaStage.SetupLamella.name] > 0
+            READY_SETUP_LAMELLA = (
                 workflow_state_counter[AutoLamellaStage.ReadyLamella.name] > 0
             )
-            _READY_ROUGH = workflow_state_counter[AutoLamellaStage.MillRoughCut.name] > 0
-            _READY_AUTOLAMELLA = _READY_SETUP_LAMELLA or _READY_ROUGH or _READY_LANDED
+            READY_ROUGH = workflow_state_counter[AutoLamellaStage.MillRoughCut.name] > 0
+            READY_AUTOLAMELLA = READY_SETUP_LAMELLA or READY_ROUGH or _READY_LANDED
 
-            _ENABLE_TRENCH = IS_TRENCH_METHOD and _READY_TRENCH
-            _ENABLE_UNDERCUT = IS_TRENCH_METHOD and _READY_UNDERCUT
+            ENABLE_TRENCH = IS_TRENCH_METHOD and READY_TRENCH
+            ENABLE_UNDERCUT = IS_TRENCH_METHOD and _READY_UNDERCUT
             _ENABLE_LIFTOUT = IS_LIFTOUT_METHOD and (
-                _READY_TRENCH or _READY_UNDERCUT or _READY_LIFTOUT
+                READY_TRENCH or _READY_UNDERCUT or _READY_LIFTOUT
             )
             _ENABLE_LANDING = IS_LIFTOUT_METHOD and _READY_LANDING
-            _ENABLE_LAMELLA = _READY_LAMELLA
-            _ENABLE_AUTOLAMELLA = _READY_AUTOLAMELLA
+            ENABLE_LAMELLA = READY_LAMELLA
+            ENABLE_AUTOLAMELLA = READY_AUTOLAMELLA
 
             # if any of the stages are ready, enable the autolamella button
-            _ENABLE_FULL_AUTOLAMELLA = (
-                _ENABLE_LAMELLA
-                or _ENABLE_AUTOLAMELLA
-                or _ENABLE_TRENCH
-                or _ENABLE_UNDERCUT
+            ENABLE_FULL_AUTOLAMELLA = (
+                ENABLE_LAMELLA
+                or ENABLE_AUTOLAMELLA
+                or ENABLE_TRENCH
+                or ENABLE_UNDERCUT
             )
 
             # trench
             self.pushButton_run_waffle_trench.setVisible(IS_TRENCH_METHOD)
-            self.pushButton_run_waffle_trench.setEnabled(_ENABLE_TRENCH)
+            self.pushButton_run_waffle_trench.setEnabled(ENABLE_TRENCH)
             self.pushButton_run_waffle_undercut.setVisible(IS_TRENCH_METHOD and method != "autolamella-serial-liftout")
-            self.pushButton_run_waffle_undercut.setEnabled(_ENABLE_UNDERCUT)
+            self.pushButton_run_waffle_undercut.setEnabled(ENABLE_UNDERCUT)
 
             # liftout
             self.pushButton_setup_autoliftout.setVisible(IS_LIFTOUT_METHOD)
@@ -993,22 +971,22 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.pushButton_run_serial_liftout_landing.setEnabled(_ENABLE_LANDING)
             # autolamella
             self.pushButton_run_setup_autolamella.setVisible(True)
-            self.pushButton_run_setup_autolamella.setEnabled(_ENABLE_FULL_AUTOLAMELLA)
-            self.label_run_autolamella_info.setVisible(_ENABLE_FULL_AUTOLAMELLA)
+            self.pushButton_run_setup_autolamella.setEnabled(ENABLE_FULL_AUTOLAMELLA)
+            self.label_run_autolamella_info.setVisible(ENABLE_FULL_AUTOLAMELLA)
 
             self.pushButton_run_waffle_trench.setStyleSheet(
                 stylesheets.GREEN_PUSHBUTTON_STYLE
-                if _ENABLE_TRENCH
+                if ENABLE_TRENCH
                 else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             self.pushButton_run_waffle_undercut.setStyleSheet(
                 stylesheets.GREEN_PUSHBUTTON_STYLE
-                if _ENABLE_UNDERCUT
+                if ENABLE_UNDERCUT
                 else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             self.pushButton_run_setup_autolamella.setStyleSheet(
                 stylesheets.GREEN_PUSHBUTTON_STYLE
-                if _ENABLE_FULL_AUTOLAMELLA
+                if ENABLE_FULL_AUTOLAMELLA
                 else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             # liftout
@@ -1030,8 +1008,8 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
             # global button visibility configuration
             SHOW_INDIVUDAL_STAGES = CONFIGURATION["SHOW_INDIVIDUAL_STAGES"]
-            self.pushButton_run_waffle_trench.setVisible(SHOW_INDIVUDAL_STAGES)
-            self.pushButton_run_waffle_undercut.setVisible(SHOW_INDIVUDAL_STAGES and method != "autolamella-serial-liftout")
+            self.pushButton_run_waffle_trench.setVisible(SHOW_INDIVUDAL_STAGES and IS_TRENCH_METHOD)
+            self.pushButton_run_waffle_undercut.setVisible(SHOW_INDIVUDAL_STAGES and IS_TRENCH_METHOD and method != "autolamella-serial-liftout")
 
             # tab visibity / enabled
             # self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], self.WORKFLOW_IS_RUNNING and not _ON_GRID_METHOD)
@@ -1058,15 +1036,15 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.update_lamella_ui()
 
         if not IS_MICROSCOPE_CONNECTED:
-            self._set_instructions(INSTRUCTIONS["NOT_CONNECTED"])
+            self.set_instructions_msg(INSTRUCTIONS["NOT_CONNECTED"])
         elif not IS_EXPERIMENT_LOADED:
-            self._set_instructions(INSTRUCTIONS["NO_EXPERIMENT"])
+            self.set_instructions_msg(INSTRUCTIONS["NO_EXPERIMENT"])
         elif not IS_PROTOCOL_LOADED:
-            self._set_instructions(INSTRUCTIONS["NO_PROTOCOL"])
+            self.set_instructions_msg(INSTRUCTIONS["NO_PROTOCOL"])
         elif not HAS_LAMELLA:
-            self._set_instructions(INSTRUCTIONS["NO_LAMELLA"])
+            self.set_instructions_msg(INSTRUCTIONS["NO_LAMELLA"])
         elif HAS_LAMELLA:
-            self._set_instructions(INSTRUCTIONS["AUTOLAMELLA_READY"])
+            self.set_instructions_msg(INSTRUCTIONS["AUTOLAMELLA_READY"])
 
     def update_lamella_combobox(self, latest: bool = False):
         # detail combobox
@@ -1166,8 +1144,6 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if self.WORKFLOW_IS_RUNNING:
             self.milling_widget.CAN_MOVE_PATTERN = True
 
-
-
         if lamella.state.stage in PREPARTION_WORKFLOW_STAGES:
             if self.IS_PROTOCOL_LOADED:
                 DISPLAY_TRENCH, DISPLAY_LAMELLA = False, False
@@ -1222,7 +1198,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 # when used independently, only single workflow?
                 # when used in autolamella, multiple workflows?
 
-        if lamella._is_failure:
+        if lamella.is_failure:
             self.pushButton_fail_lamella.setText("Mark Lamella as Active")
         else:
             self.pushButton_fail_lamella.setText("Mark Lamella As Failed")
@@ -1231,9 +1207,9 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             return f"{state.stage.name} ({datetime.fromtimestamp(state.end_timestamp).strftime('%I:%M%p')})"
 
         self.comboBox_lamella_history.clear()
-        _lamella_history = bool(lamella.history)
-        self.comboBox_lamella_history.setVisible(_lamella_history)
-        self.pushButton_revert_stage.setVisible(_lamella_history)
+        has_history = bool(lamella.history)
+        self.comboBox_lamella_history.setVisible(has_history)
+        self.pushButton_revert_stage.setVisible(has_history)
         self.comboBox_lamella_history.addItems(
             [_to_str(state) for state in lamella.history]
         )
@@ -1318,7 +1294,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         logging.info("Protocol saved to file")
 
-    def _set_instructions(
+    def set_instructions_msg(
         self,
         msg: str = "",
         pos: str = None,
@@ -1339,28 +1315,39 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         else:
             self.pushButton_yes.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
 
-    def _set_workflow_info(self, msg: str = None, show:bool = True):
+    def set_current_workflow_message(self, msg: Optional[str] = None, show: bool = True):
+        """Set the current workflow information message"""
         if msg is not None:
             self.label_workflow_information.setText(msg)
         self.label_workflow_information.setVisible(show)
 
     def push_interaction_button(self):
-        logging.info("Sender: {}".format(self.sender().objectName()))
+        """Handle the user interaction with the workflow."""
+        logging.debug("Sender: {}".format(self.sender().objectName()))
 
         # positve / negative response
         self.USER_RESPONSE = bool(self.sender() == self.pushButton_yes)
         self.WAITING_FOR_USER_INTERACTION = False
 
     def go_to_lamella_ui(self):
+        """Move the stage to the position of the selected lamella."""
 
         idx = self.comboBox_current_lamella.currentIndex()
+        if idx == -1:
+            return
         lamella: Lamella = self.experiment.positions[idx]
-        position = lamella.state.microscope_state.stage_position
+        stage_position = lamella.state.microscope_state.stage_position
 
-        self.movement_widget.move_to_position(position)
-        logging.info(f"Moved to position of {lamella.info}.")
+        logging.info(f"Moving to position of {lamella.name}.")
+        self.movement_widget.move_to_position(stage_position)
 
-    def add_lamella_ui(self, pos: FibsemStagePosition = None):
+    def add_lamella_ui(self, pos: Optional[FibsemStagePosition] = None) -> Lamella:
+        """Add a lamella to the experiment.
+        Args:
+            pos: The stage position of the lamella. If None, the current stage position is used.
+        Returns:
+            lamella: The created lamella.
+        """
         method = self.settings.protocol["options"].get("method", None)
         stage = (
             AutoLamellaStage.PreSetupLamella
@@ -1385,11 +1372,9 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         if pos is not None:
             lamella.state.microscope_state.stage_position = deepcopy(pos)
-
-            lamella.state.microscope_state.stage_position.name = lamella._petname
+            lamella.state.microscope_state.stage_position.name = lamella.name
 
         self.experiment.positions.append(deepcopy(lamella))
-        self.experiment.save()
         
         # if created from minimap, automatically mark as ready
         if pos is not None:
@@ -1434,11 +1419,13 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.experiment.save()
 
         logging.info(
-            f"Added lamella {lamella._petname} to experiment {self.experiment.name}."
+            f"Added lamella {lamella.name} to experiment {self.experiment.name}."
         )
 
         self.update_lamella_combobox(latest=True)
         self.update_ui()
+
+        return lamella
 
     def remove_lamella_ui(self):
         idx = self.comboBox_current_lamella.currentIndex()
@@ -1449,7 +1436,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.update_lamella_combobox()
         self.update_ui()
 
-        self._update_stage_positions()  # update the minimap
+        self.sync_experiment_positions_to_minimap()  # update the minimap
 
         # clear milling widget if no lamella
         if self.experiment.positions == []:
@@ -1460,22 +1447,24 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def fail_lamella_ui(self):
         idx = self.comboBox_current_lamella.currentIndex()
+        if idx == -1:
+            return
 
         # get the current state
-        is_failure = self.experiment.positions[idx]._is_failure
-        petname = self.experiment.positions[idx]._petname
+        is_failure = self.experiment.positions[idx].is_failure
+        name = self.experiment.positions[idx].name
 
         # if marking as failure, get user reason for failure
         if not is_failure:
             msg, ret = fui.open_text_input_dialog(
                 msg="Enter failure reason:",
-                title=f"Mark Lamella {petname} as failure?",
+                title=f"Mark Lamella {name} as failure?",
                 default="",
                 parent=self,
             )
 
             if ret is False:
-                logging.debug(f"User cancelled marking lamella {petname} as failure.")
+                logging.debug(f"User cancelled marking lamella {name} as failure.")
                 return
 
             self.experiment.positions[idx]._is_failure = True
@@ -1605,13 +1594,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         lamella.state.microscope_state.stage_position.name = lamella._petname
 
-        if self.minimap_widget is not None:
-            positions = [
-                lamella.state.microscope_state.stage_position
-                for lamella in self.experiment.positions
-            ]
-            self.minimap_connection(positions=positions)
-
+        self.sync_experiment_positions_to_minimap()
         self.update_lamella_combobox()
         self.update_ui()
         self.experiment.save()
@@ -1660,8 +1643,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             if self.settings.protocol["options"].get("use_fiducial", True):
                 self.experiment.positions[idx].protocol[FIDUCIAL_KEY] = get_protocol_from_stages(stages[-1])
 
-
-    def _run_milling(self):
+    def run_milling(self):
         self.MILLING_IS_RUNNING = True
         self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Milling"])
         self.milling_widget.run_milling()
@@ -1676,7 +1658,8 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if ddict.get("finished", False):
             self.update_lamella_ui()
 
-    def _confirm_det(self):
+    def handle_confirmed_detection_signal(self):
+        # TODO: this seem very redundant if we just use the signal directly
         if self.det_widget is not None:
             self.det_widget.confirm_button_clicked()
 
@@ -1685,6 +1668,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         napari.utils.notifications.show_error("Abort requested by user.")
 
     def _run_workflow(self, workflow: str) -> None:
+        """Run the specified workflow."""
         try:
             self.milling_widget.milling_position_changed.disconnect()
         except Exception:
@@ -1701,22 +1685,18 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.worker.start()
 
     def _workflow_aborted(self):
+        """Handle the abortion of the workflow."""
         logging.info("Workflow aborted.")
-        self.WORKFLOW_IS_RUNNING = False
-        self.STOP_WORKFLOW = False
-
-        # clear the image settings save settings etc
-        self.image_widget.checkBox_image_save_image.setChecked(False)
-        self.image_widget.lineEdit_image_path.setText(self.experiment.path)
-        self.image_widget.lineEdit_image_label.setText("default-image")
-        self.update_ui()
 
         for lamella in self.experiment.positions:
             if lamella.state.stage is not lamella.history[-1].stage:
                 lamella.state = deepcopy(lamella.history[-1])
                 logging.info("restoring state for {}".format(lamella.info))
 
+        self._workflow_finished()
+
     def _workflow_finished(self):
+        """Handle the completion of the workflow."""
         logging.info("Workflow finished.")
         self.WORKFLOW_IS_RUNNING = False
         self.milling_widget.milling_position_changed.connect(
@@ -1734,7 +1714,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # set electron image as active layer
         self.image_widget.restore_active_layer_for_movement()
 
-        self._set_workflow_info(msg=None, show=False)
+        self.set_current_workflow_message(msg=None, show=False)
 
     def handle_workflow_update(self, info: dict) -> None:
         """Update the UI with the given information, ready for user interaction"""
@@ -1787,12 +1767,13 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.milling_widget.pushButton_run_milling.setVisible(False) # TODO: re-enable??
 
         # instruction message
-        self._set_instructions(info["msg"], info.get("pos", None), info.get("neg", None))
-        self._set_workflow_info(info.get("workflow_info", None))
+        self.set_instructions_msg(info["msg"], info.get("pos", None), info.get("neg", None))
+        self.set_current_workflow_message(info.get("workflow_info", None))
 
         self.WAITING_FOR_UI_UPDATE = False
 
-    def _update_experiment(self, experiment: Experiment):
+    def hande_update_experiment_signal(self, experiment: Experiment):
+        """Callback for updating the experiment object."""
         self.experiment = experiment
         self.update_lamella_combobox()
         self.update_ui()
@@ -1825,13 +1806,12 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_run_setup_autolamella.setStyleSheet(
             stylesheets.DISABLED_PUSHBUTTON_STYLE
         )
-
         self.pushButton_stop_workflow.setVisible(True)
-
-        self._set_instructions(f"Running {workflow.title()} workflow...", None, None)
-        logging.info(f"RUNNING {workflow.upper()} WORKFLOW")
-
+        self.set_instructions_msg(f"Running {workflow.title()} workflow...")
         method = settings.protocol["options"].get("method", None)
+
+        logging.info(f"Started {workflow.title()} Workflow...")
+        # TODO: everything above here should happen outside the thread
 
         if method not in cfg.AUTOLAMELLA_METHODS:
             raise ValueError(f"Invalid method {method} for autolamella workflow")
@@ -1906,7 +1886,6 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             )
 
         self.update_experiment_signal.emit(self.experiment)
-
 
 def main():
     autolamella_ui = AutoLamellaUI(viewer=napari.Viewer())

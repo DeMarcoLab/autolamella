@@ -673,10 +673,7 @@
     </property>
     <addaction name="actionCryo_Deposition"/>
     <addaction name="separator"/>
-    <addaction name="actionLoad_Positions"/>
     <addaction name="actionOpen_Minimap"/>
-    <addaction name="actionLoad_Milling_Pattern"/>
-    <addaction name="actionSave_Milling_Pattern"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">

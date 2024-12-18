@@ -62,7 +62,7 @@ ATOL_STAGE_TILT = 0.017 # 1 degrees
 
 # CORE WORKFLOW STEPS
 def log_status_message(lamella: Lamella, step: str):
-    logging.debug({"msg": "status", "petname": lamella._petname, "stage": lamella.state.stage.name, "step": step})
+    logging.debug({"msg": "status", "petname": lamella._petname, "stage": lamella.status, "step": step})
 
 def log_status_message_raw(stage: str, step: str, petname: str = "null"):
     logging.debug({"msg": "status", "petname": petname, stage: stage, "step": step })   
@@ -99,7 +99,7 @@ def mill_trench(
 
     # acquire reference images
     settings.image.hfw = stages[0].milling.hfw
-    settings.image.filename = f"ref_{lamella.state.stage.name}_start"
+    settings.image.filename = f"ref_{lamella.status}_start"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     set_images_ui(parent_ui, eb_image, ib_image)
@@ -126,7 +126,7 @@ def mill_trench(
         microscope=microscope,
         image_settings=settings.image,
         hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH],
-        filename=f"ref_{lamella.state.stage.name}_final",
+        filename=f"ref_{lamella.status}_final",
     )
     set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -194,7 +194,7 @@ def mill_undercut(
         log_status_message(lamella, f"ALIGN_UNDERCUT_{nid}")
         settings.image.beam_type = BeamType.ION
         settings.image.hfw = hfw
-        settings.image.filename = f"ref_{lamella.state.stage.name}_align_ml_{nid}"
+        settings.image.filename = f"ref_{lamella.status}_align_ml_{nid}"
         settings.image.save = True
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         set_images_ui(parent_ui, eb_image, ib_image)
@@ -237,7 +237,7 @@ def mill_undercut(
     settings.image.beam_type = BeamType.ION
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
     settings.image.save = True
-    settings.image.filename=f"ref_{lamella.state.stage.name}_undercut"
+    settings.image.filename=f"ref_{lamella.status}_undercut"
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     set_images_ui(parent_ui, eb_image, ib_image)
 
@@ -267,7 +267,7 @@ def mill_undercut(
         microscope=microscope,
         image_settings=settings.image,
         hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH],
-        filename=f"ref_{lamella.state.stage.name}_final",
+        filename=f"ref_{lamella.status}_final",
     )
     set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -287,7 +287,7 @@ def mill_lamella(
         AutoLamellaStage.MillRoughCut.name: MILL_ROUGH_KEY,
         AutoLamellaStage.MillPolishingCut.name: MILL_POLISHING_KEY,
     }
-    validate = settings.protocol["options"]["supervise"].get(supervise_map[lamella.state.stage.name], True)
+    validate = settings.protocol["options"]["supervise"].get(supervise_map[lamella.status], True)
     
     _align_at_milling_current = bool(settings.protocol["options"].get("alignment_at_milling_current", True))
     _take_reference_images = bool(
@@ -299,7 +299,7 @@ def mill_lamella(
         )
 
     # milling stages
-    milling_stage_name = supervise_map[lamella.state.stage.name]
+    milling_stage_name = supervise_map[lamella.status]
     stages = get_milling_stages(key=milling_stage_name, protocol=lamella.protocol)
 
     if not isinstance(stages, list):
@@ -334,7 +334,7 @@ def mill_lamella(
         # V1
         tmp = deepcopy(settings.image)
         settings.image = ImageSettings.fromFibsemImage(ref_image)
-        settings.image.filename = f"alignment_target_{lamella.state.stage.name}"
+        settings.image.filename = f"alignment_target_{lamella.status}"
         settings.image.autocontrast = False
         alignment._multi_step_alignment(microscope=microscope, 
             image_settings=settings.image, 
@@ -349,15 +349,15 @@ def mill_lamella(
 
     # take reference images
     update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
-    settings.image.filename = f"ref_{lamella.state.stage.name}_start"
+    settings.image.filename = f"ref_{lamella.status}_start"
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     set_images_ui(parent_ui, eb_image, ib_image)
 
 
     # define feature
-    _MILL_FEATURES = bool(method in ["autolamella-on-grid", "autolamella-waffle"])
+    MILL_FEATURES = bool(method in ["autolamella-on-grid", "autolamella-waffle"])
     features_stages = []
-    if _MILL_FEATURES and lamella.state.stage.name == AutoLamellaStage.MillRoughCut.name:
+    if MILL_FEATURES and lamella.status == AutoLamellaStage.MillRoughCut.name:
         log_status_message(lamella, "MILL_FEATURE")
 
         # check if using notch or microexpansion
@@ -401,7 +401,7 @@ def mill_lamella(
             microscope=microscope,
             image_settings=settings.image,
             hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
-            filename=f"ref_{lamella.state.stage.name}_final",
+            filename=f"ref_{lamella.status}_final",
         )
         set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -417,7 +417,7 @@ def mill_lamella(
         hq_settings = settings.protocol["options"].get("high_quality_image", ddict)
         # take high quality reference images
         settings.image.save = True
-        settings.image.filename = f"ref_{lamella.state.stage.name}_final_ultra"
+        settings.image.filename = f"ref_{lamella.status}_final_ultra"
         settings.image.hfw = hq_settings["hfw"]
         settings.image.dwell_time = hq_settings["dwell_time"]
         settings.image.resolution = hq_settings["resolution"]
@@ -486,21 +486,19 @@ def setup_lamella(
     n_mill_polishing = len(polishing_mill_stages)
 
     settings.image.hfw = stages[0].milling.hfw # fcfg.REFERENCE_HFW_SUPER
-    settings.image.filename = f"ref_{lamella.state.stage.name}_start"
+    settings.image.filename = f"ref_{lamella.status}_start"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     set_images_ui(parent_ui, eb_image, ib_image)
 
     # feature 
-    if _MILL_FEATURES := method in ["autolamella-on-grid", "autolamella-waffle" ]:
+    if MILL_FEATURES := method in ["autolamella-on-grid", "autolamella-waffle" ]:
 
         if use_notch := bool(settings.protocol["options"].get("use_notch", False)):
             stages.extend(get_milling_stages(NOTCH_KEY, protocol))
 
-
         if use_microexpansion := bool(settings.protocol["options"].get("use_microexpansion", False)):
             stages.extend(get_milling_stages(MICROEXPANSION_KEY, protocol))
-
 
     # fiducial
     if use_fiducial:= settings.protocol["options"].get("use_fiducial", True):
@@ -513,14 +511,13 @@ def setup_lamella(
             msg=f"Confirm the positions for the {lamella.name} milling. Press Continue to Confirm.",
             validate=validate, # always validate non on-grid for now
             milling_enabled=False)
-    
+
     # rough milling
     lamella.protocol[MILL_ROUGH_KEY] = deepcopy(get_protocol_from_stages(stages[:n_mill_rough]))
 
     # polishing
     lamella.protocol[MILL_POLISHING_KEY] = deepcopy(get_protocol_from_stages(stages[n_mill_rough:n_lamella]))
     
-
     # WORKFLOW: 
         # STAGE 1
         # STAGE 2
@@ -535,7 +532,7 @@ def setup_lamella(
     # MILL_POLISHING
 
     # TODO: instead of having these as separate parts of the milling config, just include them in the mill_rough part?
-    if _MILL_FEATURES:
+    if MILL_FEATURES:
         if use_notch:
             idx = n_lamella
             lamella.protocol[NOTCH_KEY] = deepcopy(get_protocol_from_stages(stages[idx]))
@@ -588,7 +585,7 @@ def setup_lamella(
     settings.image.beam_type = BeamType.ION
     settings.image.save = True
     settings.image.hfw =  alignment_hfw
-    settings.image.filename = f"ref_alignment"
+    settings.image.filename = "ref_alignment"
     settings.image.autocontrast = False # disable autocontrast for alignment
     logging.info(f"REDUCED_AREA: {settings.image.reduced_area}")
     ib_image = acquire.new_image(microscope, settings.image)
@@ -602,7 +599,7 @@ def setup_lamella(
         microscope,
         settings.image,
         hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
-        filename=f"ref_{lamella.state.stage.name}_final",
+        filename=f"ref_{lamella.status}_final",
     )
     set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
@@ -670,11 +667,11 @@ def align_feature_coincident(microscope: FibsemMicroscope, settings: MicroscopeS
     features = [feature]
 
     # update status
-    log_status_message(lamella, f"ALIGN_FEATURE_COINCIDENT")
+    log_status_message(lamella, "ALIGN_FEATURE_COINCIDENT")
     update_status_ui(parent_ui, f"{lamella.info} Aligning Feature Coincident ({feature.name})...")
     settings.image.beam_type = BeamType.ELECTRON
     settings.image.hfw = hfw
-    settings.image.filename = f"ref_{lamella.state.stage.name}_{feature.name}_align_coincident_ml"
+    settings.image.filename = f"ref_{lamella.status}_{feature.name}_align_coincident_ml"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     set_images_ui(parent_ui, eb_image, ib_image)
@@ -703,7 +700,7 @@ def align_feature_coincident(microscope: FibsemMicroscope, settings: MicroscopeS
     # reference images
     settings.image.save = True
     settings.image.hfw = hfw
-    settings.image.filename = f"ref_{lamella.state.stage.name}_{feature.name}_align_coincident_final"
+    settings.image.filename = f"ref_{lamella.status}_{feature.name}_align_coincident_final"
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     set_images_ui(parent_ui, eb_image, ib_image)
 
