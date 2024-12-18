@@ -62,7 +62,7 @@ ATOL_STAGE_TILT = 0.017 # 1 degrees
 
 # CORE WORKFLOW STEPS
 def log_status_message(lamella: Lamella, step: str):
-    logging.debug({"msg": "status", "petname": lamella._petname, "stage": lamella.status, "step": step})
+    logging.debug({"msg": "status", "petname": lamella.petname, "stage": lamella.status, "step": step})
 
 def log_status_message_raw(stage: str, step: str, petname: str = "null"):
     logging.debug({"msg": "status", "petname": petname, stage: stage, "step": step })   
@@ -107,7 +107,7 @@ def mill_trench(
     
     # define trench milling stage
     stages = update_milling_ui(microscope, stages, parent_ui,
-        msg=f"Press Run Milling to mill the trenches for {lamella._petname}. Press Continue when done.",
+        msg=f"Press Run Milling to mill the trenches for {lamella.petname}. Press Continue when done.",
         validate=validate,
     )
     
@@ -222,7 +222,7 @@ def mill_undercut(
         # mill undercut 1
         log_status_message(lamella, f"MILL_UNDERCUT_{nid}")
         stages = update_milling_ui(microscope, [undercut_stage], parent_ui,
-            msg=f"Press Run Milling to mill the Undercut {nid} for {lamella._petname}. Press Continue when done.",
+            msg=f"Press Run Milling to mill the Undercut {nid} for {lamella.petname}. Press Continue when done.",
             validate=validate,
         )
         
@@ -330,7 +330,7 @@ def mill_lamella(
                                         alignment_current=alignment_current,
                                         steps=ALIGNMENT_ATTEMPTS)
     else:
-        logging.warning(f"Using alignment method v1 for {lamella._petname}... This method will be depreciated in the next version..")
+        logging.warning(f"Using alignment method v1 for {lamella.petname}... This method will be depreciated in the next version..")
         # V1
         tmp = deepcopy(settings.image)
         settings.image = ImageSettings.fromFibsemImage(ref_image)
@@ -339,7 +339,7 @@ def mill_lamella(
         alignment._multi_step_alignment(microscope=microscope, 
             image_settings=settings.image, 
             ref_image=ref_image, 
-            reduced_area=lamella.fiducial_area, 
+            reduced_area=lamella.alignment_area, 
             alignment_current=alignment_current, 
             steps=ALIGNMENT_ATTEMPTS)
         
@@ -369,7 +369,7 @@ def mill_lamella(
                     
         if features_stages:
             features_stages = update_milling_ui(microscope, features_stages, parent_ui,
-                msg=f"Press Run Milling to mill the features for {lamella._petname}. Press Continue when done.",
+                msg=f"Press Run Milling to mill the features for {lamella.petname}. Press Continue when done.",
                 validate=validate,
             )
 
@@ -386,7 +386,7 @@ def mill_lamella(
     log_status_message(lamella, "MILL_LAMELLA")
 
     stages = update_milling_ui(microscope, stages, parent_ui,
-        msg=f"Press Run Milling to mill the Trenches for {lamella._petname}. Press Continue when done.",
+        msg=f"Press Run Milling to mill the Trenches for {lamella.petname}. Press Continue when done.",
         validate=validate,
     )
 
@@ -485,7 +485,7 @@ def setup_lamella(
     n_mill_rough = len(rough_mill_stages)
     n_mill_polishing = len(polishing_mill_stages)
 
-    settings.image.hfw = stages[0].milling.hfw # fcfg.REFERENCE_HFW_SUPER
+    settings.image.hfw = stages[0].milling.hfw
     settings.image.filename = f"ref_{lamella.status}_start"
     settings.image.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
@@ -549,7 +549,7 @@ def setup_lamella(
         # save fiducial information
         fiducial_stage = fiducial_stage[0] # always single stage
         lamella.protocol[FIDUCIAL_KEY] = deepcopy(get_protocol_from_stages(fiducial_stage))
-        lamella.fiducial_area, _  = calculate_fiducial_area_v2(ib_image, 
+        lamella.alignment_area, _  = calculate_fiducial_area_v2(ib_image, 
             deepcopy(fiducial_stage.pattern.point), 
             fiducial_stage.pattern.height)
         alignment_hfw = fiducial_stage.milling.hfw
@@ -557,28 +557,28 @@ def setup_lamella(
         # mill the fiducial
         fiducial_stage = get_milling_stages(FIDUCIAL_KEY, lamella.protocol)
         stages = update_milling_ui(microscope, fiducial_stage, parent_ui, 
-            msg=f"Press Run Milling to mill the fiducial for {lamella._petname}. Press Continue when done.", 
+            msg=f"Press Run Milling to mill the fiducial for {lamella.petname}. Press Continue when done.", 
             validate=validate)
         lamella.protocol[FIDUCIAL_KEY] = deepcopy(get_protocol_from_stages(stages))
-        lamella.fiducial_area, _  = calculate_fiducial_area_v2(ib_image, 
+        lamella.alignment_area, _  = calculate_fiducial_area_v2(ib_image, 
             deepcopy(stages[0].pattern.point), 
             stages[0].pattern.height)
         alignment_hfw = stages[0].milling.hfw
     else:
         # non-fiducial based alignment
         alignment_area_dict = settings.protocol["options"].get("alignment_area", DEFAULT_ALIGNMENT_AREA)
-        lamella.fiducial_area = FibsemRectangle.from_dict(alignment_area_dict)
+        lamella.alignment_area = FibsemRectangle.from_dict(alignment_area_dict)
         alignment_hfw = stages[0].milling.hfw
 
-    logging.info(f"ALIGNMENT AREA WORKFLOW: {lamella.fiducial_area}")
-    lamella.fiducial_area = update_alignment_area_ui(alignment_area=lamella.fiducial_area, 
+    logging.info(f"ALIGNMENT AREA WORKFLOW: {lamella.alignment_area}")
+    lamella.alignment_area = update_alignment_area_ui(alignment_area=lamella.alignment_area, 
                                               parent_ui=parent_ui, 
                                               msg="Edit Alignment Area. Press Continue when done.", 
                                               validate=validate )
 
     # set reduced area for fiducial alignment
-    settings.image.reduced_area = lamella.fiducial_area
-    logging.info(f"Alignment: Use Fiducial: {use_fiducial}, Alignment Area: {lamella.fiducial_area}")
+    settings.image.reduced_area = lamella.alignment_area
+    logging.info(f"Alignment: Use Fiducial: {use_fiducial}, Alignment Area: {lamella.alignment_area}")
 
     # TODO: the ref should also be acquired at the milling current? -> yes
     # for alignment
@@ -603,24 +603,23 @@ def setup_lamella(
     )
     set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
-
     return lamella
 
 
 def end_of_stage_update(
-    microscope: FibsemMicroscope, experiment: Experiment, lamella: Lamella, parent_ui: AutoLamellaUI, _save_state: bool = True,
+    microscope: FibsemMicroscope, experiment: Experiment, lamella: Lamella, parent_ui: AutoLamellaUI, save_state: bool = True,
 ) -> Experiment:
     """Save the current microscope state configuration to disk, and log that the stage has been completed."""
 
     # save state information
-    if _save_state:
+    if save_state:
         lamella.state.microscope_state = microscope.get_microscope_state()
     lamella.state.end_timestamp = datetime.timestamp(datetime.now())
 
     # write history
     lamella.history.append(deepcopy(lamella.state))
 
-    # # update and save experiment
+    # update and save experiment
     experiment.save()
 
     log_status_message(lamella, "FINISHED")
@@ -628,21 +627,20 @@ def end_of_stage_update(
 
     return experiment
 
-
 def start_of_stage_update(
     microscope: FibsemMicroscope,
     lamella: Lamella,
     next_stage: AutoLamellaStage,
     parent_ui: AutoLamellaUI, 
-    _restore_state: bool = True,
+    restore_state: bool = True,
 ) -> Lamella:
     """Check the last completed stage and reload the microscope state if required. Log that the stage has started."""
     last_completed_stage = lamella.state.stage
 
     # restore to the last state
-    if last_completed_stage.value == next_stage.value - 1 and _restore_state:
+    if last_completed_stage.value == next_stage.value - 1 and restore_state:
         logging.info(
-            f"{lamella._petname} restarting from end of stage: {last_completed_stage.name}"
+            f"{lamella.name} restarting from end of stage: {last_completed_stage.name}"
         )
         update_status_ui(parent_ui, f"{lamella.info} Restoring Last State...")
         microscope.set_microscope_state(lamella.state.microscope_state)

@@ -128,7 +128,7 @@ def liftout_lamella(
         settings.image.filename = f"ref_{lamella.state.stage.name}_manipualtor_validation_electron"
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         set_images_ui(parent_ui, eb_image, ib_image)
-        response = ask_user(parent_ui, msg=f"No more movements in Electron, move manualy if required. Press Continue to proceed for {lamella._petname}.", pos="Continue")
+        response = ask_user(parent_ui, msg=f"No more movements in Electron, move manualy if required. Press Continue to proceed for {lamella.petname}.", pos="Continue")
 
 
     # align manipulator to top of lamella in ion x3
@@ -178,7 +178,7 @@ def liftout_lamella(
 
     stages = get_milling_stages("liftout-weld", settings.protocol["milling"], point)
     stages = update_milling_ui(microscope, stages, parent_ui, 
-        msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
+        msg=f"Press Run Milling to mill the weld for {lamella.petname}. Press Continue when done.", 
         validate=validate)
     
     lamella.protocol["liftout-weld"] = deepcopy(get_protocol_from_stages(stages[0]))
@@ -208,7 +208,7 @@ def liftout_lamella(
 
         stages = get_milling_stages("liftout-sever", settings.protocol["milling"], point)
         stages = update_milling_ui(microscope, stages, parent_ui, 
-            msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
+            msg=f"Press Run Milling to sever for {lamella.petname}. Press Continue when done.", 
             validate=validate)
         
         lamella.protocol["liftout-sever"] = deepcopy(get_protocol_from_stages(stages[0]))
@@ -233,10 +233,10 @@ def liftout_lamella(
 
         # TODO: implemented automated detection for separation of volume from trench
         if validate:
-            response = ask_user(parent_ui, msg=f"Press Continue to confirm to separation of volume for {lamella._petname}.", pos="Continue", neg="Repeat")
+            response = ask_user(parent_ui, msg=f"Press Continue to confirm to separation of volume for {lamella.petname}.", pos="Continue", neg="Repeat")
 
         if response:
-            logging.info(f"Volume Severed for {lamella._petname}, response: {response}")
+            logging.info(f"Volume Severed for {lamella.petname}, response: {response}")
             break
 
     # retract slowly at first
@@ -296,7 +296,7 @@ def land_lamella(
 
 
     if validate:
-        response = ask_user(parent_ui, msg=f"Press Continue to confirm to landing position for {lamella._petname}.", pos="Continue")
+        response = ask_user(parent_ui, msg=f"Press Continue to confirm to landing position for {lamella.petname}.", pos="Continue")
 
     # INSER MANIPUALTOR TO PARK
     log_status_message(lamella, "INSERT_MANIPULATOR")
@@ -340,7 +340,7 @@ def land_lamella(
         eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
         set_images_ui(parent_ui, eb_image, ib_image)
 
-        response = ask_user(parent_ui, msg=f"No more movements in Electron, Press Continue to confirm to manipulator position for {lamella._petname}.", pos="Continue")
+        response = ask_user(parent_ui, msg=f"No more movements in Electron, Press Continue to confirm to manipulator position for {lamella.petname}.", pos="Continue")
 
 
     # DETECT LAMELLA BOTTOM EDGE, LandingGridCentre_TOP
@@ -458,7 +458,7 @@ def land_lamella(
     # mill welds
     stages = get_milling_stages("landing-thin", mill_protocol, pt)
     stages = update_milling_ui(microscope, stages, parent_ui, 
-        msg=f"Press Run Milling to mill the thinning pattern for {lamella._petname}. Press Continue when done.", 
+        msg=f"Press Run Milling to mill the thinning pattern for {lamella.petname}. Press Continue when done.", 
         validate=validate)
 
     lamella.protocol["landing-thin"] = deepcopy(get_protocol_from_stages(stages[0]))
@@ -496,7 +496,7 @@ def land_lamella(
     )
 
     if validate:
-        response = ask_user(parent_ui, msg=f"No more movements, move manually if required, Press Continue to continue to landing welds for {lamella._petname}.", pos="Continue")
+        response = ask_user(parent_ui, msg=f"No more movements, move manually if required, Press Continue to continue to landing welds for {lamella.petname}.", pos="Continue")
 
 
     # WELD BOTH SIDES
@@ -521,7 +521,7 @@ def land_lamella(
     # mill welds
     stages = get_milling_stages("landing-weld", settings.protocol["milling"], [left_corner, right_corner])
     stages = update_milling_ui(microscope, stages, parent_ui, 
-        msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
+        msg=f"Press Run Milling to mill the weld for {lamella.petname}. Press Continue when done.", 
         validate=validate)
     
     lamella.protocol["landing-weld"] = deepcopy(get_protocol_from_stages(stages[0]))
@@ -603,7 +603,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
 
         stages = get_milling_stages("landing-sever", settings.protocol["milling"], point)
         stages = update_milling_ui(microscope, stages, parent_ui, 
-            msg=f"Press Run Milling to sever for {lamella._petname}. Press Continue when done.", 
+            msg=f"Press Run Milling to sever for {lamella.petname}. Press Continue when done.", 
             validate=validate)
         
         lamella.protocol["landing-sever"] = deepcopy(get_protocol_from_stages(stages[0]))
@@ -642,7 +642,7 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         
         # check with the user
         if validate:
-            response = ask_user(parent_ui, msg=f"Confirm Lamella has been severed for {lamella._petname}. Distance measured was {det.distance.y*1e6} um. (Threshold = {threshold*1e6}) um", 
+            response = ask_user(parent_ui, msg=f"Confirm Lamella has been severed for {lamella.petname}. Distance measured was {det.distance.y*1e6} um. (Threshold = {threshold*1e6}) um", 
                                 pos="Confirm", neg="Retry")
             confirm_severed = response
 
@@ -685,15 +685,15 @@ def run_serial_liftout_workflow(
     # standard workflow
     lamella: Lamella
     for lamella in experiment.positions:
-        if lamella._is_failure:
-            logging.info(f"Skipping {lamella._petname} due to failure.")
+        if lamella.is_failure:
+            logging.info(f"Skipping {lamella.petname} due to failure.")
             continue  # skip failures
 
         while lamella.state.stage.value < AutoLamellaStage.LiftoutLamella.value:
             next_stage = AutoLamellaStage(lamella.state.stage.value + 1)
             if CONFIRM_WORKFLOW_ADVANCE:
                 msg = (
-                    f"""Continue Lamella {(lamella._petname)} from {next_stage.name}?"""
+                    f"""Continue Lamella {(lamella.petname)} from {next_stage.name}?"""
                 )
                 response = ask_user(parent_ui, msg=msg, pos="Continue", neg="Skip")
 
@@ -819,7 +819,7 @@ def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positi
     print("COUNTER: ", _counter, land_idx)
 
     num = max(len(experiment.positions) + 1, 1)
-    lamella = Lamella(path=experiment.path, _number=num)
+    lamella = Lamella(path=experiment.path, number=num)
     log_status_message(lamella, "CREATION")
 
     # set state

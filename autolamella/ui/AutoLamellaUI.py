@@ -62,6 +62,7 @@ from autolamella.structures import (
     Experiment,
     Lamella,
     LamellaState,
+    create_new_lamella,
 )
 from autolamella.ui import AutoLamellaMainUI
 from autolamella.ui.utils import setup_experiment_ui_v2
@@ -143,11 +144,18 @@ def _find_matching_position(position: FibsemStagePosition, experiment: Experimen
     idx = lamella_names.index(position.name)
     return idx
 
-PREPARTION_WORKFLOW_STAGES = [
-    AutoLamellaStage.SetupTrench, AutoLamellaStage.ReadyTrench,
-    AutoLamellaStage.SetupLamella,AutoLamellaStage.ReadyLamella,
+
+# preparation stages
+TRENCH_PREPARATION_STAGES = [
+    AutoLamellaStage.SetupTrench,
+    AutoLamellaStage.ReadyTrench,
+]
+LAMELLA_PREPARATION_STAGES = [
+    AutoLamellaStage.SetupLamella,
+    AutoLamellaStage.ReadyLamella,
     AutoLamellaStage.PreSetupLamella,
 ]
+PREPARTION_WORKFLOW_STAGES = TRENCH_PREPARATION_STAGES + LAMELLA_PREPARATION_STAGES
 
 # TODO: when autolamella is closed, also close the minimap...
 class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
@@ -175,7 +183,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         #     viewer.window.main_menu.setVisible(True)
 
         self.IS_MICROSCOPE_UI_LOADED: bool = False
-        self.IS_PROTOCOL_LOADED: bool = False
+        self.is_protocol_loaded: bool = False
         self.UPDATING_PROTOCOL_UI: bool = False
 
         self.experiment: Experiment = None
@@ -212,10 +220,10 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # lamella controls
         self.pushButton_add_lamella.clicked.connect(
-            lambda: self.add_lamella_ui(pos=None)
+            lambda: self.add_new_lamella(pos=None)
         )
         self.pushButton_remove_lamella.clicked.connect(self.remove_lamella_ui)
-        self.pushButton_go_to_lamella.clicked.connect(self.go_to_lamella_ui)
+        self.pushButton_go_to_lamella.clicked.connect(self.move_to_lamella_position)
         self.comboBox_current_lamella.currentIndexChanged.connect(
             self.update_lamella_ui
         )
@@ -268,6 +276,8 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionSave_Protocol.triggered.connect(self.export_protocol_ui)
         # tool menu
         self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
+        self.actionCryo_Deposition.setEnabled(False) # TMP: disable until tested
+        self.actionCryo_Deposition.setToolTip("Cryo Deposition is currently disabled via the UI.")
         self.actionOpen_Minimap.triggered.connect(self.open_minimap_widget)
         # help menu
         self.actionInformation.triggered.connect(
@@ -312,7 +322,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.update_ui()
 
     def update_protocol_ui(self, _load: bool = True):
-        if not self.IS_PROTOCOL_LOADED or self.UPDATING_PROTOCOL_UI:
+        if not self.is_protocol_loaded or self.UPDATING_PROTOCOL_UI:
             return
 
         self.UPDATING_PROTOCOL_UI = True
@@ -373,8 +383,8 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         )
 
         # TRENCH METHOD ONLY (waffle, serial-liftout)
-        IS_TRENCH_METHOD = _is_method_type(method, "trench")
-        if IS_TRENCH_METHOD:
+        is_trench_method = _is_method_type(method, "trench")
+        if is_trench_method:
             # supervision
             self.checkBox_trench.setChecked(
                 self.settings.protocol["options"]["supervise"].get("trench", True)
@@ -386,7 +396,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             # machine learning
             self.comboBox_ml_checkpoint.setCurrentText(
                 self.settings.protocol["options"].get(
-                    "checkpoint", cfg.__DEFAULT_CHECKPOINT__
+                    "checkpoint", cfg.DEFAULT_CHECKPOINT
                 )
             )
 
@@ -395,51 +405,51 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 self.settings.protocol["options"].get("undercut_tilt_angle", -5)
             )
 
-        self.checkBox_trench.setVisible(IS_TRENCH_METHOD)
-        self.checkBox_undercut.setVisible(IS_TRENCH_METHOD)
+        self.checkBox_trench.setVisible(is_trench_method)
+        self.checkBox_undercut.setVisible(is_trench_method)
 
-        self.label_ml_header.setVisible(IS_TRENCH_METHOD)
-        self.label_ml_checkpoint.setVisible(IS_TRENCH_METHOD)
-        self.comboBox_ml_checkpoint.setVisible(IS_TRENCH_METHOD)
+        self.label_ml_header.setVisible(is_trench_method)
+        self.label_ml_checkpoint.setVisible(is_trench_method)
+        self.comboBox_ml_checkpoint.setVisible(is_trench_method)
 
-        self.doubleSpinBox_undercut_tilt.setVisible(IS_TRENCH_METHOD)
-        self.label_protocol_undercut_tilt_angle.setVisible(IS_TRENCH_METHOD)
+        self.doubleSpinBox_undercut_tilt.setVisible(is_trench_method)
+        self.label_protocol_undercut_tilt_angle.setVisible(is_trench_method)
 
         # autoliftout components
-        IS_LIFTOUT_METHOD = _is_method_type(method, "liftout")
+        is_liftout_method = _is_method_type(method, "liftout")
         IS_CLASSIC_LIFTOUT_METHOD = method == "autolamella-liftout"
         IS_SERIAL_LIFTOUT_METHOD = method == "autolamella-serial-liftout"
-        self.checkBox_options_confirm_next_stage.setVisible(IS_LIFTOUT_METHOD)
-        self.label_options_trench_start_position.setVisible(IS_LIFTOUT_METHOD)
+        self.checkBox_options_confirm_next_stage.setVisible(is_liftout_method)
+        self.label_options_trench_start_position.setVisible(is_liftout_method)
         self.label_options_liftout_joining_method.setVisible(
-            IS_LIFTOUT_METHOD and IS_CLASSIC_LIFTOUT_METHOD
+            is_liftout_method and IS_CLASSIC_LIFTOUT_METHOD
         )
-        self.label_options_landing_start_position.setVisible(IS_LIFTOUT_METHOD)
+        self.label_options_landing_start_position.setVisible(is_liftout_method)
         self.label_options_landing_joining_method.setVisible(
-            IS_LIFTOUT_METHOD and IS_CLASSIC_LIFTOUT_METHOD
+            is_liftout_method and IS_CLASSIC_LIFTOUT_METHOD
         )
-        self.comboBox_options_trench_start_position.setVisible(IS_LIFTOUT_METHOD)
+        self.comboBox_options_trench_start_position.setVisible(is_liftout_method)
         self.comboBox_options_liftout_joining_method.setVisible(
-            IS_LIFTOUT_METHOD and IS_CLASSIC_LIFTOUT_METHOD
+            is_liftout_method and IS_CLASSIC_LIFTOUT_METHOD
         )
-        self.comboBox_options_landing_start_position.setVisible(IS_LIFTOUT_METHOD)
+        self.comboBox_options_landing_start_position.setVisible(is_liftout_method)
         self.comboBox_options_landing_joining_method.setVisible(
-            IS_LIFTOUT_METHOD and IS_CLASSIC_LIFTOUT_METHOD
+            is_liftout_method and IS_CLASSIC_LIFTOUT_METHOD
         )
         self.label_section_thickness.setVisible(
-            IS_LIFTOUT_METHOD and IS_SERIAL_LIFTOUT_METHOD
+            is_liftout_method and IS_SERIAL_LIFTOUT_METHOD
         )
         self.doubleSpinBox_section_thickness.setVisible(
-            IS_LIFTOUT_METHOD and IS_SERIAL_LIFTOUT_METHOD
+            is_liftout_method and IS_SERIAL_LIFTOUT_METHOD
         )
-        self.checkBox_supervise_liftout.setVisible(IS_LIFTOUT_METHOD)
-        self.checkBox_supervise_landing.setVisible(IS_LIFTOUT_METHOD)
+        self.checkBox_supervise_liftout.setVisible(is_liftout_method)
+        self.checkBox_supervise_landing.setVisible(is_liftout_method)
 
         # disable some options for serial liftout
-        self.checkBox_use_microexpansion.setVisible(not IS_LIFTOUT_METHOD)
-        self.checkBox_use_notch.setVisible(not IS_LIFTOUT_METHOD)
+        self.checkBox_use_microexpansion.setVisible(not is_liftout_method)
+        self.checkBox_use_notch.setVisible(not is_liftout_method)
 
-        if IS_LIFTOUT_METHOD:
+        if is_liftout_method:
             self.checkBox_options_confirm_next_stage.setChecked(
                 self.settings.protocol["options"].get("confirm_next_stage", True)
             )
@@ -479,7 +489,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.UPDATING_PROTOCOL_UI = False
 
     def export_protocol_ui(self):
-        if self.IS_PROTOCOL_LOADED is False:
+        if self.is_protocol_loaded is False:
             return
         self.settings.protocol["options"]["name"] = self.lineEdit_name.text()
         self.settings.protocol["options"]["method"] = (
@@ -633,7 +643,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 self.settings.protocol = utils.load_protocol(
                     protocol_path=PROTOCOL_PATH
                 )
-                self.IS_PROTOCOL_LOADED = True
+                self.is_protocol_loaded = True
                 self.update_protocol_ui(_load=True)
 
         self.update_lamella_combobox()
@@ -780,7 +790,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def add_position_from_minimap(self, position: FibsemStagePosition):
         """Add the position to the experiment when added in the minimap."""
-        lamella = self.add_lamella_ui(position)
+        lamella = self.add_new_lamella(position)
         self.lamella_created_signal.emit(lamella)
 
     def update_position_from_minimap(self, position: FibsemStagePosition):
@@ -834,44 +844,46 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
     def update_ui(self):
         """Update the ui based on the current state of the application."""
 
-        IS_EXPERIMENT_LOADED = bool(self.experiment is not None)
-        IS_MICROSCOPE_CONNECTED = bool(self.microscope is not None)
-        IS_PROTOCOL_LOADED = bool(self.settings is not None) and self.IS_PROTOCOL_LOADED
-        HAS_LAMELLA = bool(self.experiment.positions) and IS_EXPERIMENT_LOADED
+        # state flags
+        is_experiment_loaded = bool(self.experiment is not None)
+        is_microscope_connected = bool(self.microscope is not None)
+        is_protocol_loaded = bool(self.settings is not None) and self.is_protocol_loaded
+        has_lamella = bool(self.experiment.positions) if is_experiment_loaded else False
+        is_experiment_ready = is_experiment_loaded and is_protocol_loaded
 
         # force order: connect -> experiment -> protocol
         self.tabWidget.setTabVisible(
-            CONFIGURATION["TABS"]["Experiment"], IS_MICROSCOPE_CONNECTED
+            CONFIGURATION["TABS"]["Experiment"], is_microscope_connected
         )
         self.tabWidget.setTabVisible(
-            CONFIGURATION["TABS"]["Protocol"], IS_PROTOCOL_LOADED
+            CONFIGURATION["TABS"]["Protocol"], is_protocol_loaded
         )
-        self.actionNew_Experiment.setVisible(IS_MICROSCOPE_CONNECTED)
-        self.actionLoad_Experiment.setVisible(IS_MICROSCOPE_CONNECTED)
-        self.actionInformation.setVisible(IS_MICROSCOPE_CONNECTED)
+        self.actionNew_Experiment.setVisible(is_microscope_connected)
+        self.actionLoad_Experiment.setVisible(is_microscope_connected)
+        self.actionInformation.setVisible(is_microscope_connected)
 
         # workflow
 
         # setup experiment -> connect to microscope -> select lamella -> run autolamella
-        self.pushButton_fail_lamella.setVisible(HAS_LAMELLA)
-        self.pushButton_revert_stage.setVisible(HAS_LAMELLA)
-        self.comboBox_lamella_history.setVisible(HAS_LAMELLA)
-        self.pushButton_lamella_landing_selected.setVisible(HAS_LAMELLA)
+        self.pushButton_fail_lamella.setVisible(has_lamella)
+        self.pushButton_revert_stage.setVisible(has_lamella)
+        self.comboBox_lamella_history.setVisible(has_lamella)
+        self.pushButton_lamella_landing_selected.setVisible(has_lamella)
 
         # experiment loaded
         # file menu
-        self.actionLoad_Protocol.setVisible(IS_EXPERIMENT_LOADED)
-        self.actionSave_Protocol.setVisible(IS_PROTOCOL_LOADED)
+        self.actionLoad_Protocol.setVisible(is_experiment_loaded)
+        self.actionSave_Protocol.setVisible(is_protocol_loaded)
         # tool menu
-        self.menuTools.setVisible(IS_PROTOCOL_LOADED)
-        self.actionCryo_Deposition.setVisible(IS_PROTOCOL_LOADED)
-        self.actionOpen_Minimap.setVisible(IS_PROTOCOL_LOADED)
-        self.actionLoad_Minimap_Image.setVisible(IS_PROTOCOL_LOADED)
-        self.actionLoad_Positions.setVisible(IS_PROTOCOL_LOADED)
+        self.menuTools.setVisible(is_protocol_loaded)
+        self.actionCryo_Deposition.setVisible(is_protocol_loaded)
+        self.actionOpen_Minimap.setVisible(is_protocol_loaded)
+        self.actionLoad_Minimap_Image.setVisible(is_protocol_loaded)
+        self.actionLoad_Positions.setVisible(is_protocol_loaded)
         # help menu
 
         # labels
-        if IS_EXPERIMENT_LOADED:
+        if is_experiment_loaded:
             self.label_experiment_name.setText(f"Experiment: {self.experiment.name}")
 
             # TODO: migrate to list view + interactive buttons / checkboxes
@@ -879,137 +891,126 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             msg = "\nLamella Info:\n"
             for lamella in self.experiment.positions:
                 fnote = f"{lamella.failure_note[:10]}"
-                fmsg = f"\t FAILED ({fnote})" if lamella._is_failure else ""
+                fmsg = f"\t FAILED ({fnote})" if lamella.is_failure else ""
                 msg += f"Lamella {lamella.name} \t\t {lamella.status} {fmsg} \n"
             self.label_info.setText(msg)
 
-            self.comboBox_current_lamella.setVisible(HAS_LAMELLA)
+            self.comboBox_current_lamella.setVisible(has_lamella)
 
-        if IS_PROTOCOL_LOADED:
+        if is_protocol_loaded:
             method = self.settings.protocol["options"].get("method", "NULL")
             self.label_protocol_name.setText(
                 f"Protocol: {self.settings.protocol['options'].get('name', 'protocol')} ({method.title()} Method)"
             )
 
         # buttons
-        self.pushButton_add_lamella.setEnabled(IS_PROTOCOL_LOADED and IS_EXPERIMENT_LOADED)
-        self.pushButton_remove_lamella.setEnabled(HAS_LAMELLA)
-        self.pushButton_save_position.setEnabled(HAS_LAMELLA)
-        self.pushButton_go_to_lamella.setEnabled(HAS_LAMELLA)
+        self.pushButton_add_lamella.setEnabled(is_experiment_ready)
+        self.pushButton_remove_lamella.setEnabled(has_lamella)
+        self.pushButton_save_position.setEnabled(has_lamella)
+        self.pushButton_go_to_lamella.setEnabled(has_lamella)
 
         # set visible if protocol loaded
-        self.pushButton_add_lamella.setVisible(IS_PROTOCOL_LOADED and IS_EXPERIMENT_LOADED)
-        self.pushButton_remove_lamella.setVisible(
-            IS_PROTOCOL_LOADED and IS_EXPERIMENT_LOADED
-        )
-        self.pushButton_save_position.setVisible(
-            IS_PROTOCOL_LOADED and IS_EXPERIMENT_LOADED
-        )
-        self.pushButton_go_to_lamella.setVisible(
-            IS_PROTOCOL_LOADED and IS_EXPERIMENT_LOADED
-        )
-        self.label_current_lamella_header.setVisible(
-            IS_PROTOCOL_LOADED and IS_EXPERIMENT_LOADED
-        )
-        self.comboBox_current_lamella.setVisible(
-            IS_PROTOCOL_LOADED and IS_EXPERIMENT_LOADED
-        )
-        self.label_info.setVisible(IS_PROTOCOL_LOADED and IS_EXPERIMENT_LOADED)
-        self.label_setup_header.setVisible(IS_PROTOCOL_LOADED and IS_EXPERIMENT_LOADED)
+        self.pushButton_add_lamella.setVisible(is_experiment_ready)
+        self.pushButton_remove_lamella.setVisible(is_experiment_ready)
+        self.pushButton_save_position.setVisible(is_experiment_ready)
+        self.pushButton_go_to_lamella.setVisible(is_experiment_ready)
+        self.label_current_lamella_header.setVisible(is_experiment_ready)
+        self.comboBox_current_lamella.setVisible(is_experiment_ready)
+        self.label_info.setVisible(is_experiment_ready)
+        self.label_setup_header.setVisible(is_experiment_ready)
 
-        if IS_EXPERIMENT_LOADED and IS_PROTOCOL_LOADED:
-            # workflow buttons
+        # workflow buttons
+        if is_experiment_ready:
             method = self.settings.protocol["options"].get("method", None)
-            IS_TRENCH_METHOD = _is_method_type(method, "trench")
-            IS_LIFTOUT_METHOD = _is_method_type(method, "liftout")
+            is_trench_method = _is_method_type(method, "trench")
+            is_liftout_method = _is_method_type(method, "liftout")
+            is_serial_liftout_method = method == "autolamella-serial-liftout"
 
-            # check if any of the stages are ready
+
+            # check the status of each lamella
             workflow_state_counter = Counter([p.state.stage.name for p in self.experiment.positions])
+            ready_for_trench = workflow_state_counter[AutoLamellaStage.ReadyTrench.name] > 0
+            ready_for_undercut = workflow_state_counter[AutoLamellaStage.MillTrench.name] > 0
+            ready_for_liftout = workflow_state_counter[AutoLamellaStage.MillUndercut.name] > 0
+            ready_for_landing = workflow_state_counter[AutoLamellaStage.LiftoutLamella.name] > 0
+            has_landed = workflow_state_counter[AutoLamellaStage.LandLamella.name] > 0
+            ready_for_setup_lamella = workflow_state_counter[AutoLamellaStage.SetupLamella.name] > 0
+            ready_for_rough = (workflow_state_counter[AutoLamellaStage.ReadyLamella.name] > 0)
+            ready_for_polish = workflow_state_counter[AutoLamellaStage.MillRoughCut.name] > 0
+            ready_for_autolamella = ready_for_rough or ready_for_polish or has_landed
 
-            READY_TRENCH = workflow_state_counter[AutoLamellaStage.ReadyTrench.name] > 0
-            _READY_UNDERCUT = workflow_state_counter[AutoLamellaStage.MillTrench.name] > 0
-            _READY_LIFTOUT = workflow_state_counter[AutoLamellaStage.MillUndercut.name] > 0
-            _READY_LANDING = workflow_state_counter[AutoLamellaStage.LiftoutLamella.name] > 0
-            _READY_LANDED = workflow_state_counter[AutoLamellaStage.LandLamella.name] > 0
-            READY_LAMELLA = workflow_state_counter[AutoLamellaStage.SetupLamella.name] > 0
-            READY_SETUP_LAMELLA = (
-                workflow_state_counter[AutoLamellaStage.ReadyLamella.name] > 0
+            # flags to enable workflows
+            enable_trench = is_trench_method and ready_for_trench
+            enable_undercut = is_trench_method and ready_for_undercut
+            enable_liftout = is_liftout_method and (
+                ready_for_trench 
+                or ready_for_undercut 
+                or ready_for_liftout
             )
-            READY_ROUGH = workflow_state_counter[AutoLamellaStage.MillRoughCut.name] > 0
-            READY_AUTOLAMELLA = READY_SETUP_LAMELLA or READY_ROUGH or _READY_LANDED
-
-            ENABLE_TRENCH = IS_TRENCH_METHOD and READY_TRENCH
-            ENABLE_UNDERCUT = IS_TRENCH_METHOD and _READY_UNDERCUT
-            _ENABLE_LIFTOUT = IS_LIFTOUT_METHOD and (
-                READY_TRENCH or _READY_UNDERCUT or _READY_LIFTOUT
-            )
-            _ENABLE_LANDING = IS_LIFTOUT_METHOD and _READY_LANDING
-            ENABLE_LAMELLA = READY_LAMELLA
-            ENABLE_AUTOLAMELLA = READY_AUTOLAMELLA
+            enable_landing = is_liftout_method and ready_for_landing
+            enable_lamella = ready_for_setup_lamella
+            enable_autolamella = ready_for_autolamella
 
             # if any of the stages are ready, enable the autolamella button
-            ENABLE_FULL_AUTOLAMELLA = (
-                ENABLE_LAMELLA
-                or ENABLE_AUTOLAMELLA
-                or ENABLE_TRENCH
-                or ENABLE_UNDERCUT
+            enable_full_autolamella = (
+                enable_lamella
+                or enable_autolamella
+                or enable_trench
+                or enable_undercut
             )
 
             # trench
-            self.pushButton_run_waffle_trench.setVisible(IS_TRENCH_METHOD)
-            self.pushButton_run_waffle_trench.setEnabled(ENABLE_TRENCH)
-            self.pushButton_run_waffle_undercut.setVisible(IS_TRENCH_METHOD and method != "autolamella-serial-liftout")
-            self.pushButton_run_waffle_undercut.setEnabled(ENABLE_UNDERCUT)
-
+            self.pushButton_run_waffle_trench.setVisible(is_trench_method)
+            self.pushButton_run_waffle_trench.setEnabled(enable_trench)
+            self.pushButton_run_waffle_undercut.setVisible(is_trench_method and not is_serial_liftout_method)
+            self.pushButton_run_waffle_undercut.setEnabled(enable_undercut)
             # liftout
-            self.pushButton_setup_autoliftout.setVisible(IS_LIFTOUT_METHOD)
-            self.pushButton_run_autoliftout.setVisible(IS_LIFTOUT_METHOD)
-            self.pushButton_run_serial_liftout_landing.setVisible(
-                method == "autolamella-serial-liftout"
-            )
-            self.pushButton_run_autoliftout.setEnabled(_ENABLE_LIFTOUT)
-            self.pushButton_run_serial_liftout_landing.setEnabled(_ENABLE_LANDING)
+            self.pushButton_setup_autoliftout.setVisible(is_liftout_method)
+            self.pushButton_run_autoliftout.setVisible(is_liftout_method)
+            self.pushButton_run_serial_liftout_landing.setVisible(is_serial_liftout_method)
+            self.pushButton_run_autoliftout.setEnabled(enable_liftout)
+            self.pushButton_run_serial_liftout_landing.setEnabled(enable_landing)
             # autolamella
             self.pushButton_run_setup_autolamella.setVisible(True)
-            self.pushButton_run_setup_autolamella.setEnabled(ENABLE_FULL_AUTOLAMELLA)
-            self.label_run_autolamella_info.setVisible(ENABLE_FULL_AUTOLAMELLA)
+            self.pushButton_run_setup_autolamella.setEnabled(enable_full_autolamella)
+            self.label_run_autolamella_info.setVisible(enable_full_autolamella)
 
             self.pushButton_run_waffle_trench.setStyleSheet(
                 stylesheets.GREEN_PUSHBUTTON_STYLE
-                if ENABLE_TRENCH
+                if enable_trench
                 else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             self.pushButton_run_waffle_undercut.setStyleSheet(
                 stylesheets.GREEN_PUSHBUTTON_STYLE
-                if ENABLE_UNDERCUT
+                if enable_undercut
                 else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             self.pushButton_run_setup_autolamella.setStyleSheet(
                 stylesheets.GREEN_PUSHBUTTON_STYLE
-                if ENABLE_FULL_AUTOLAMELLA
+                if enable_full_autolamella
                 else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             # liftout
             self.pushButton_setup_autoliftout.setStyleSheet(
                 stylesheets.GREEN_PUSHBUTTON_STYLE
-                if IS_LIFTOUT_METHOD
+                if is_liftout_method
                 else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             self.pushButton_run_autoliftout.setStyleSheet(
                 stylesheets.GREEN_PUSHBUTTON_STYLE
-                if _ENABLE_LIFTOUT
+                if enable_liftout
                 else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
             self.pushButton_run_serial_liftout_landing.setStyleSheet(
                 stylesheets.GREEN_PUSHBUTTON_STYLE
-                if _ENABLE_LANDING
+                if enable_landing
                 else stylesheets.DISABLED_PUSHBUTTON_STYLE
             )
 
             # global button visibility configuration
-            SHOW_INDIVUDAL_STAGES = CONFIGURATION["SHOW_INDIVIDUAL_STAGES"]
-            self.pushButton_run_waffle_trench.setVisible(SHOW_INDIVUDAL_STAGES and IS_TRENCH_METHOD)
-            self.pushButton_run_waffle_undercut.setVisible(SHOW_INDIVUDAL_STAGES and IS_TRENCH_METHOD and method != "autolamella-serial-liftout")
+            show_individual_workflows = CONFIGURATION["SHOW_INDIVIDUAL_STAGES"]
+            self.pushButton_run_waffle_trench.setVisible(show_individual_workflows and is_trench_method)
+            self.pushButton_run_waffle_undercut.setVisible(show_individual_workflows and is_trench_method and method != "autolamella-serial-liftout")
 
             # tab visibity / enabled
             # self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], self.WORKFLOW_IS_RUNNING and not _ON_GRID_METHOD)
@@ -1032,18 +1033,18 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 )
 
         # Current Lamella Status
-        if HAS_LAMELLA:
+        if has_lamella:
             self.update_lamella_ui()
 
-        if not IS_MICROSCOPE_CONNECTED:
+        if not is_microscope_connected:
             self.set_instructions_msg(INSTRUCTIONS["NOT_CONNECTED"])
-        elif not IS_EXPERIMENT_LOADED:
+        elif not is_experiment_loaded:
             self.set_instructions_msg(INSTRUCTIONS["NO_EXPERIMENT"])
-        elif not IS_PROTOCOL_LOADED:
+        elif not is_protocol_loaded:
             self.set_instructions_msg(INSTRUCTIONS["NO_PROTOCOL"])
-        elif not HAS_LAMELLA:
+        elif not has_lamella:
             self.set_instructions_msg(INSTRUCTIONS["NO_LAMELLA"])
-        elif HAS_LAMELLA:
+        elif has_lamella:
             self.set_instructions_msg(INSTRUCTIONS["AUTOLAMELLA_READY"])
 
     def update_lamella_combobox(self, latest: bool = False):
@@ -1076,31 +1077,26 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             return
 
         idx = self.comboBox_current_lamella.currentIndex()
-        lamella: Lamella = self.experiment.positions[idx]
+        if idx == -1:
+            return
 
+        lamella: Lamella = self.experiment.positions[idx]
         logging.info(f"Updating Lamella UI for {lamella.info}")
 
         # buttons
-        if self.IS_PROTOCOL_LOADED:
+        if self.is_protocol_loaded:
+            
             method = self.settings.protocol["options"].get("method", None)
-            SETUP_STAGES = (
-                [AutoLamellaStage.PreSetupLamella]
-                if method == "autolamella-on-grid"
-                else [AutoLamellaStage.SetupTrench]
-            )
-            READY_STAGES = (
-                [AutoLamellaStage.SetupLamella]
-                if method == "autolamella-on-grid"
-                else [AutoLamellaStage.ReadyTrench]
-            )
-            if lamella.state.stage in SETUP_STAGES:
+            setup_state, ready_state = get_method_states(method)
+
+            if lamella.state.stage is setup_state:
                 self.pushButton_save_position.setText("Save Position")
                 self.pushButton_save_position.setStyleSheet(
                     stylesheets.ORANGE_PUSHBUTTON_STYLE
                 )
                 self.pushButton_save_position.setEnabled(True)
                 self.milling_widget.CAN_MOVE_PATTERN = True
-            elif lamella.state.stage in READY_STAGES:
+            elif lamella.state.stage is ready_state:
                 self.pushButton_save_position.setText("Position Ready")
                 self.pushButton_save_position.setStyleSheet(
                     stylesheets.GREEN_PUSHBUTTON_STYLE
@@ -1116,7 +1112,8 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 self.milling_widget.CAN_MOVE_PATTERN = True
 
             # landing grid selected
-            if _is_method_type(method, "liftout"):
+            if _is_method_type(method, "liftout"): 
+                # TODO: refactor how this is handled, only select it during workflow...
                 self.pushButton_lamella_landing_selected.setVisible(True)
                 if lamella.landing_selected:
                     self.pushButton_lamella_landing_selected.setText(
@@ -1145,74 +1142,62 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.milling_widget.CAN_MOVE_PATTERN = True
 
         if lamella.state.stage in PREPARTION_WORKFLOW_STAGES:
-            if self.IS_PROTOCOL_LOADED:
-                DISPLAY_TRENCH, DISPLAY_LAMELLA = False, False
+            if not self.is_protocol_loaded:
+                raise ValueError("I SHOULDNT BE ABLE TO GET HERE")
+                
+            display_trench = bool(lamella.state.stage in TRENCH_PREPARATION_STAGES)
+            display_lamella = bool(lamella.state.stage in LAMELLA_PREPARATION_STAGES)
 
-                if _is_method_type(method, "trench") and lamella.state.stage in [
-                    AutoLamellaStage.SetupTrench,
-                    AutoLamellaStage.ReadyTrench,
-                ]:
-                    DISPLAY_TRENCH = True
+            if display_trench:
+                stages = get_milling_stages(TRENCH_KEY, lamella.protocol)
 
-                # show lamella and friends
-                if lamella.state.stage in [
-                    AutoLamellaStage.SetupLamella,
-                    AutoLamellaStage.ReadyLamella,
-                    AutoLamellaStage.PreSetupLamella,
-                ]:
-                    DISPLAY_TRENCH, DISPLAY_LAMELLA = False, True
+            # TODO: convert to using .stages directly on lamella, rather than always reading from protocol
 
-                if DISPLAY_TRENCH:
-                    stages = get_milling_stages(TRENCH_KEY, lamella.protocol)
+            if display_lamella:
+                mill_rough_stages = get_milling_stages(MILL_ROUGH_KEY, lamella.protocol)
+                mill_polishing_stages = get_milling_stages(MILL_POLISHING_KEY, lamella.protocol)
+                stages = mill_rough_stages + mill_polishing_stages
 
-                # TODO: convert to using .stages directly on lamella, rather than always reading from protocol
+                if self.settings.protocol["options"].get("use_notch", True):
+                    stages.extend(get_milling_stages(NOTCH_KEY, lamella.protocol))
 
-                if DISPLAY_LAMELLA:
-                    mill_rough_stages = get_milling_stages(MILL_ROUGH_KEY, lamella.protocol)
-                    mill_polishing_stages = get_milling_stages(MILL_POLISHING_KEY, lamella.protocol)
-                    stages = mill_rough_stages + mill_polishing_stages
+                # microexpansion
+                if self.settings.protocol["options"].get("use_microexpansion", True):
+                    stages.extend(get_milling_stages(MICROEXPANSION_KEY, lamella.protocol))
 
-                    if self.settings.protocol["options"].get("use_notch", True):
-                        stages.extend(get_milling_stages(NOTCH_KEY, lamella.protocol))
+                # fiducial
+                if self.settings.protocol["options"].get("use_fiducial", True):
+                    stages.extend(get_milling_stages(FIDUCIAL_KEY, lamella.protocol))
 
-                    # microexpansion
-                    if self.settings.protocol["options"].get("use_microexpansion", True):
-                        stages.extend(get_milling_stages(MICROEXPANSION_KEY, lamella.protocol))
+            self.milling_widget.set_milling_stages(stages)
 
-                    # fiducial
-                    if self.settings.protocol["options"].get("use_fiducial", True):
-                        stages.extend(get_milling_stages(FIDUCIAL_KEY, lamella.protocol))
+            # TODO: migrate to this structure instead of the above
+            # milling_workflows: Dict[str, List[FibsemMillingStage]]: 
+            #     # MILL_ROUGH_KEY: [FibsemMillingStage, FibsemMillingStage]
+            #     # MILL_POLISHING_KEY: [FibsemMillingStage, FibsemMillingStage]
+            #     # NOTCH_KEY: [FibsemMillingStage]
+            #     # MICROEXPANSION_KEY: [FibsemMilling
+            #     # FIDUCIAL_KEY: [FibsemMillingStage]
 
-                self.milling_widget.set_milling_stages(stages)
-
-                # TODO: migrate to this structure instead of the above
-                # milling_workflows: Dict[str, List[FibsemMillingStage]]: 
-                #     # MILL_ROUGH_KEY: [FibsemMillingStage, FibsemMillingStage]
-                #     # MILL_POLISHING_KEY: [FibsemMillingStage, FibsemMillingStage]
-                #     # NOTCH_KEY: [FibsemMillingStage]
-                #     # MICROEXPANSION_KEY: [FibsemMilling
-                #     # FIDUCIAL_KEY: [FibsemMillingStage]
-
-                # milling widget?
-                # add / remove workflow?
-                # when used independently, only single workflow?
-                # when used in autolamella, multiple workflows?
-
-        if lamella.is_failure:
-            self.pushButton_fail_lamella.setText("Mark Lamella as Active")
-        else:
-            self.pushButton_fail_lamella.setText("Mark Lamella As Failed")
-
-        def _to_str(state: LamellaState):
+            # milling widget?
+            # add / remove workflow?
+            # when used independently, only single workflow?
+            # when used in autolamella, multiple workflows?
+        
+        # failure button
+        msg = "Mark Lamella as Active" if lamella.is_failure else "Mark Lamella As Failed"
+        self.pushButton_fail_lamella.setText(msg)
+        
+        # time travel controls
+        def to_state_str(state: LamellaState):
             return f"{state.stage.name} ({datetime.fromtimestamp(state.end_timestamp).strftime('%I:%M%p')})"
 
-        self.comboBox_lamella_history.clear()
         has_history = bool(lamella.history)
         self.comboBox_lamella_history.setVisible(has_history)
         self.pushButton_revert_stage.setVisible(has_history)
-        self.comboBox_lamella_history.addItems(
-            [_to_str(state) for state in lamella.history]
-        )
+        if has_history:
+            self.comboBox_lamella_history.clear()
+            self.comboBox_lamella_history.addItems([to_state_str(state) for state in lamella.history])
 
     def _update_milling_position(self):
         # triggered when milling position is moved
@@ -1260,7 +1245,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         protocol = validate_protocol(utils.load_protocol(protocol_path=PROTOCOL_PATH))
 
         self.settings.protocol = protocol
-        self.IS_PROTOCOL_LOADED = True
+        self.is_protocol_loaded = True
         self.update_protocol_ui(_load=True)
         napari.utils.notifications.show_info(
             f"Loaded Protocol from {os.path.basename(PROTOCOL_PATH)}"
@@ -1281,33 +1266,26 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         )
         cryo_deposition_widget.exec_()
 
-    def save_protocol(self):
-        fname = fui.open_save_file_dialog(msg="Select protocol file", path=cfg.LOG_PATH)
-        if fname == "":
-            return
-
-        # give protocol path as suffix .yaml if not
-        fname = Path(fname).with_suffix(".yaml")
-
-        with open(os.path.join(fname), "w") as f:
-            yaml.safe_dump(self.settings.protocol, f, indent=4)
-
-        logging.info("Protocol saved to file")
-
     def set_instructions_msg(
         self,
         msg: str = "",
-        pos: str = None,
-        neg: str = None,
-    ):
+        pos: Optional[str] = None,
+        neg: Optional[str] = None,
+    ) -> None:
+        """Set the instructions message, and user interaction buttons.
+        Args:
+            msg: The message to display.
+            pos: The positive button text.
+            neg: The negative button text.
+        """
         self.label_instructions.setText(msg)
         self.pushButton_yes.setText(pos)
         self.pushButton_no.setText(neg)
 
         # enable buttons
         self.pushButton_yes.setEnabled(pos is not None)
-        self.pushButton_no.setEnabled(neg is not None)
         self.pushButton_yes.setVisible(pos is not None)
+        self.pushButton_no.setEnabled(neg is not None)
         self.pushButton_no.setVisible(neg is not None)
 
         if pos == "Run Milling":
@@ -1329,7 +1307,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.USER_RESPONSE = bool(self.sender() == self.pushButton_yes)
         self.WAITING_FOR_USER_INTERACTION = False
 
-    def go_to_lamella_ui(self):
+    def move_to_lamella_position(self):
         """Move the stage to the position of the selected lamella."""
 
         idx = self.comboBox_current_lamella.currentIndex()
@@ -1341,47 +1319,37 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         logging.info(f"Moving to position of {lamella.name}.")
         self.movement_widget.move_to_position(stage_position)
 
-    def add_lamella_ui(self, pos: Optional[FibsemStagePosition] = None) -> Lamella:
+    def add_new_lamella(self, stage_position: Optional[FibsemStagePosition] = None) -> Lamella:
         """Add a lamella to the experiment.
         Args:
             pos: The stage position of the lamella. If None, the current stage position is used.
         Returns:
             lamella: The created lamella.
         """
+        # get the setup/ready state
         method = self.settings.protocol["options"].get("method", None)
-        stage = (
-            AutoLamellaStage.PreSetupLamella
-            if method == "autolamella-on-grid"
-            else AutoLamellaStage.SetupTrench
-        )
+        setup_state, ready_state = get_method_states(method)
 
-        lamella = Lamella(
-            path=self.experiment.path,
-            _number=len(self.experiment.positions) + 1,
-            state=LamellaState(
-                stage=stage,
-                microscope_state=self.microscope.get_microscope_state(),
-                start_timestamp=datetime.timestamp(datetime.now()),
-            ),
-        )
-        # set the initial protocol
-        lamella.protocol = deepcopy(self.settings.protocol["milling"])
+        # get microscope state
+        microscope_state = self.microscope.get_microscope_state()  
+        if stage_position is not None: 
+            microscope_state.stage_position = deepcopy(stage_position)
+
+        # create the lamella
+        state = LamellaState(stage=setup_state, microscope_state=microscope_state)
+        lamella = create_new_lamella(experiment_path=self.experiment.path, 
+                                     number=len(self.experiment.positions) + 1, 
+                                     state=state, 
+                                     protocol=self.settings.protocol["milling"])
+
         from autolamella.workflows.core import log_status_message
-
         log_status_message(lamella, "STARTED")
-
-        if pos is not None:
-            lamella.state.microscope_state.stage_position = deepcopy(pos)
-            lamella.state.microscope_state.stage_position.name = lamella.name
-
         self.experiment.positions.append(deepcopy(lamella))
         
         # if created from minimap, automatically mark as ready
-        if pos is not None:
-            idx = len(self.experiment.positions) - 1
+        if stage_position is not None:
 
-            method = self.settings.protocol["options"].get("method", None)
-            SETUP_STATE, READY_STATE = get_method_states(method)
+            # TODO: this is excessive, we need a cleaner way to do this
 
             from autolamella.workflows.core import (
                 end_of_stage_update,
@@ -1392,20 +1360,17 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 experiment=self.experiment,
                 lamella=lamella,
                 parent_ui=self,
-                _save_state=False,
+                save_state=False,
             )
 
             # start ready stage
-            self.experiment.positions[idx] = start_of_stage_update(
+            self.experiment.positions[-1] = start_of_stage_update(
                 microscope=self.microscope,
                 lamella=lamella,
-                next_stage=READY_STATE,
+                next_stage=ready_state,
                 parent_ui=self,
-                _restore_state=False,
+                restore_state=False,
             )
-
-            # update the protocol / point
-            self.experiment.positions[idx].protocol = deepcopy(self.settings.protocol["milling"])
 
             # end the stage
             self.experiment = end_of_stage_update(
@@ -1413,15 +1378,10 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 experiment=self.experiment,
                 lamella=lamella,
                 parent_ui=self,
-                _save_state=False,
+                save_state=False,
             )
 
         self.experiment.save()
-
-        logging.info(
-            f"Added lamella {lamella.name} to experiment {self.experiment.name}."
-        )
-
         self.update_lamella_combobox(latest=True)
         self.update_ui()
 
@@ -1467,13 +1427,13 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 logging.debug(f"User cancelled marking lamella {name} as failure.")
                 return
 
-            self.experiment.positions[idx]._is_failure = True
+            self.experiment.positions[idx].is_failure = True
             self.experiment.positions[idx].failure_note = msg
             self.experiment.positions[idx].failure_timestamp = datetime.timestamp(
                 datetime.now()
             )
         else:
-            self.experiment.positions[idx]._is_failure = False
+            self.experiment.positions[idx].is_failure = False
             self.experiment.positions[idx].failure_note = ""
             self.experiment.positions[idx].failure_timestamp = None
 
@@ -1549,7 +1509,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             experiment=self.experiment,
             lamella=lamella,
             parent_ui=self,
-            _save_state=True,
+            save_state=True,
         )
 
         if lamella.state.stage is SETUP_STATE:
@@ -1559,7 +1519,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 lamella=lamella,
                 next_stage=READY_STATE,
                 parent_ui=self,
-                _restore_state=False,
+                restore_state=False,
             )
 
             # update the protocol / point
@@ -1578,7 +1538,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 experiment=self.experiment,
                 lamella=lamella,
                 parent_ui=self,
-                _save_state=True,
+                save_state=True,
             )
 
         elif lamella.state.stage is READY_STATE:
@@ -1587,12 +1547,12 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 lamella,
                 SETUP_STATE,
                 parent_ui=self,
-                _restore_state=False,
+                restore_state=False,
             )
 
             self.milling_widget.CAN_MOVE_PATTERN = True
 
-        lamella.state.microscope_state.stage_position.name = lamella._petname
+        lamella.state.microscope_state.stage_position.name = lamella.petname
 
         self.sync_experiment_positions_to_minimap()
         self.update_lamella_combobox()

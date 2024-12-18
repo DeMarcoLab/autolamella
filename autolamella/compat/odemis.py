@@ -39,9 +39,9 @@ def create_lamella_from_feature(feature: CryoFeature,
 
     # create the lamella with the correct state
     lamella = Lamella(
-            _petname=feature.name.value,
+            petname=feature.name.value,
             path=path,
-            _number=num,
+            number=num,
             state=LamellaState(
                 stage=workflow_stage,
                 microscope_state=state,
@@ -56,7 +56,7 @@ def create_lamella_from_feature(feature: CryoFeature,
 
     # update the position
     lamella.state.microscope_state.stage_position = deepcopy(pos)
-    lamella.state.microscope_state.stage_position.name = lamella._petname
+    lamella.state.microscope_state.stage_position.name = lamella.petname
 
     # save the reference image in required format and location
     save_reference_image(reference_image_path, lamella.path)

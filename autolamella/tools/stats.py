@@ -469,7 +469,7 @@ with tab_workflow:
         key2 = cols[0].selectbox(label="Stage Position", options=df_history["stage"].unique())
 
         @st.cache_data
-        def _plot_positions(image_fname, key2, df_history):
+        def plot_stage_positions_on_image(image_fname, key2, df_history):
             image = FibsemImage.load(image_fname)
 
             # loop through stages and create empty list
@@ -481,17 +481,17 @@ with tab_workflow:
                 for state in lamella.history:
                     if state.stage.name in positions.keys():
                         _names = [pos.name for pos in positions[state.stage.name]]
-                        if lamella._petname not in _names:
+                        if lamella.petname not in _names:
                             positions[state.stage.name].append(state.microscope_state.stage_position)
-                            positions[state.stage.name][-1].name = f"{lamella._petname}"
+                            positions[state.stage.name][-1].name = f"{lamella.petname}"
 
                         # go to next lamella if added 
 
-            fig = _tile._plot_positions(image, positions[key2], show=True)
+            fig = _tile.plot_stage_positions_on_image(image, positions[key2], show=True)
 
             return fig, positions
 
-        fig, positions = _plot_positions(image_fname, key2, df_history)
+        fig, positions = plot_stage_positions_on_image(image_fname, key2, df_history)
         cols[0].write(positions[key2])
 
         cols[1].pyplot(fig)
@@ -531,7 +531,7 @@ with tab_lamella:
     # loop through exp.position, return lamella that matches lamella
     st.subheader("Lamella Protocol")
     for lam in exp.positions:
-        if lam._petname == lamella:
+        if lam.petname == lamella:
             cols = st.columns(2)
             k = cols[0].selectbox(label="Protocol Stage", options=lam.protocol.keys())
             cols[1].write(lam.protocol[k])

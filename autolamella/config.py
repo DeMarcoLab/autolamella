@@ -12,19 +12,14 @@ os.makedirs(LOG_PATH, exist_ok=True)
 
 EXPERIMENT_NAME = "AutoLamella"
 
-HFW_THRESHOLD = 0.005 # 0.5% of the image height
-
-AUTOLAMELLA_METHODS = ["autolamella-on-grid", "autolamella-waffle", "autolamella-serial-liftout"]#, "Autoliftout-Default", "Autoliftout-Serial-Liftout"]
-__AUTOLIFTOUT_METHODS__ = ["autolamella-liftout", "autolamella-serial-liftout"]
+AUTOLAMELLA_METHODS = ["autolamella-on-grid", "autolamella-waffle", "autolamella-serial-liftout"]
 LIFTOUT_JOIN_METHODS = ["None", "Weld"]
 LIFTOUT_LANDING_JOIN_METHODS = ["Weld"]
 
 # machine learning
-from fibsem.config import __DEFAULT_CHECKPOINT__
+from fibsem.config import DEFAULT_CHECKPOINT
 
 ####### FEATURE FLAGS
-_MINIMAP_VISUALISATION = False
-_AUTO_SYNC_MINIMAP = True
 _REGISTER_METADATA = True
 
 USE_BEAM_SHIFT_ALIGNMENT_V2 = False

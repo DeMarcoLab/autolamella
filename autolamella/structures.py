@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
@@ -8,21 +9,33 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Dict, List
 
-import fibsem.utils as utils
 import pandas as pd
 import petname
 import yaml
-from fibsem.milling import FibsemMillingStage
+from fibsem.milling import (
+    FibsemMillingStage,
+    get_milling_stages,
+    get_protocol_from_stages,
+)
 from fibsem.structures import (
     FibsemImage,
     FibsemRectangle,
     MicroscopeState,
     ReferenceImages,
 )
+from fibsem.utils import configure_logging
 
 from autolamella import config as cfg
-from autolamella.protocol.validation import MILL_POLISHING_KEY, MILL_ROUGH_KEY, TRENCH_KEY, UNDERCUT_KEY, SETUP_LAMELLA_KEY, LIFTOUT_KEY, LANDING_KEY
-from fibsem.milling import get_milling_stages, get_protocol_from_stages
+from autolamella.protocol.validation import (
+    LANDING_KEY,
+    LIFTOUT_KEY,
+    MILL_POLISHING_KEY,
+    MILL_ROUGH_KEY,
+    SETUP_LAMELLA_KEY,
+    TRENCH_KEY,
+    UNDERCUT_KEY,
+)
+
 
 class AutoLamellaStage(Enum):
     # Created = auto()
@@ -57,7 +70,7 @@ class LamellaState:
             "start_timestamp": self.start_timestamp,
             "end_timestamp": self.end_timestamp,
         }
-    
+
     @classmethod
     def from_dict(cls, data):
         state = MicroscopeState.from_dict(data["microscope_state"])
@@ -70,28 +83,23 @@ class LamellaState:
 
 @dataclass
 class Lamella:
-    state: LamellaState = LamellaState()
-    path: Path = Path()
-    fiducial_area: FibsemRectangle = FibsemRectangle()
-    _number: int = 0
-    history: List[LamellaState] = None
-    _petname: str = None
-    protocol: dict = None    
-    _is_failure: bool = False
+    path: Path
+    state: LamellaState
+    number: int
+    petname: str
+    protocol: dict
+    is_failure: bool = False
     failure_note: str = ""
     failure_timestamp: float = None
-    lamella_state: MicroscopeState = MicroscopeState()
-    landing_state: MicroscopeState = MicroscopeState()
+    alignment_area: FibsemRectangle = FibsemRectangle()
     landing_selected: bool = False
-    _id: str = None
+    landing_state: MicroscopeState = MicroscopeState() # TODO: remove
+    history: List[LamellaState] = None
     milling_workflows: Dict[str, List[FibsemMillingStage]] = None
     states: Dict[AutoLamellaStage, LamellaState] = None
+    _id: str = str(uuid.uuid4())
 
     def __post_init__(self):
-        if self._petname is None:
-            self._petname = f"{self._number:02d}-{petname.generate(2)}"
-        if self._petname not in self.path:
-            self.path = os.path.join(self.path, self._petname)
         os.makedirs(self.path, exist_ok=True)
         if self.protocol is None:
             self.protocol = {}
@@ -101,6 +109,8 @@ class Lamella:
             self.milling_workflows = {}
         if self.states is None:
             self.states = {}
+        if self._id is None:
+            self._id = str(uuid.uuid4())
 
     @property
     def finished(self) -> bool:
@@ -112,37 +122,24 @@ class Lamella:
 
     @property
     def name(self) -> str:
-        return self._petname
+        return self.petname
     
     @property
     def status(self) -> str:
         return self.state.stage.name
     
-    @property
-    def is_failure(self) -> bool:
-        return self._is_failure
-
-    @is_failure.setter
-    def is_failure(self, value: bool) -> None:
-        self._is_failure = value
-        if value:
-            self.failure_timestamp = datetime.timestamp(datetime.now())
-
     def to_dict(self):
-        if self.history is None:
-            self.history = []
         return {
-            "petname": self._petname,
+            "petname": self.petname,
             "state": self.state.to_dict() if self.state is not None else None,
-            "path": str(self.path) if self.path is not None else None,
-            "fiducial_area": self.fiducial_area.to_dict() if self.fiducial_area is not None else None,
+            "path": str(self.path),
+            "alignment_area": self.alignment_area.to_dict(),
             "protocol": self.protocol,
-            "_number": self._number,
+            "number": self.number,
             "history": [state.to_dict() for state in self.history] if self.history is not False else [],
-            "_is_failure": self._is_failure,
+            "is_failure": self.is_failure,
             "failure_note": self.failure_note,
             "failure_timestamp": self.failure_timestamp,
-            "lamella_state": self.lamella_state.to_dict(),
             "landing_state": self.landing_state.to_dict(),
             "landing_selected": self.landing_selected,
             "id": str(self._id),
@@ -150,31 +147,33 @@ class Lamella:
 
     @property
     def info(self):
-        return f"Lamella {self._petname} [{self.state.stage.name}]"
+        return f"Lamella {self.petname} [{self.state.stage.name}]"
 
     @classmethod
     def from_dict(cls, data):
-        state = LamellaState().from_dict(data["state"])
-        if data.get("fiducial_area", None) is None:
-            fiducial_area = None
+        state = LamellaState.from_dict(data["state"])
+
+        # backwards compatibility
+        alignment_area_ddict = data.get("fiducial_area", data.get("alingment_area", None))
+        if alignment_area_ddict is not None:
+            alignment_area = FibsemRectangle.from_dict(alignment_area_ddict)
         else:
-            fiducial_area = FibsemRectangle.from_dict(data["fiducial_area"])
+            alignment_area = FibsemRectangle() # use default
                
         return cls(
-            _petname=data["petname"],
-            _id=data.get("id", None),
+            petname=data["petname"],
             state=state,
             path=data["path"],
-            fiducial_area=fiducial_area,
+            alignment_area=alignment_area,
             protocol=data.get("protocol", {}),
-            _number=data.get("_number", data.get("number", 0)),
+            number=data.get("number", data.get("number", 0)),
             history=[LamellaState().from_dict(state) for state in data["history"]],
-            _is_failure=data.get("_is_failure", data.get("is_failure", False)),
+            is_failure=data.get("is_failure", data.get("is_failure", False)),
             failure_note=data.get("failure_note", ""),
             failure_timestamp=data.get("failure_timestamp", None),
-            lamella_state = MicroscopeState.from_dict(data.get("lamella_state", MicroscopeState().to_dict())), # tmp solution
             landing_state = MicroscopeState.from_dict(data.get("landing_state", MicroscopeState().to_dict())), # tmp solution
             landing_selected = bool(data.get("landing_selected", False)),
+            _id=data.get("id", None),
         )
 
     def load_reference_image(self, fname) -> FibsemImage:
@@ -201,23 +200,62 @@ class Lamella:
         )
 
         return reference_images
+
+def create_new_lamella(experiment_path: str, number: int, state: LamellaState, protocol: Dict) -> Lamella:
+    """Wrapper function to create a new lamella and configure paths."""
+
+    # create the petname and path
+    name = f"{number:02d}-{petname.generate(2)}"
+    path = os.path.join(experiment_path, name)
     
+    # create the lamella
+    lamella = Lamella(
+        petname=name,
+        path=path,
+        number=number,
+        state=state,
+        protocol=deepcopy(protocol), # TODO: replace with milling_workflows
+    )
+
+    # create the lamella directory
+    os.makedirs(lamella.path, exist_ok=True)
+
+    logging.info(f"Created new lamella {lamella.name} at {lamella.path}")
+
+    return lamella
+
+def create_new_experiment(path: Path, name: str, program: str = "AutoLamella", method: str = "autolamella-on-grid") -> 'Experiment':
+    """Wrapper function to create an experiment and configure logging."""
+
+    # create the experiment
+    experiment = Experiment(path=path, name=name, program=program, method=method)
+
+    # configure experiment logging
+    os.makedirs(experiment.path, exist_ok=True)
+    configure_logging(path=experiment.path, log_filename="logfile")
+
+    # save the experiment
+    experiment.save()
+
+    logging.info(f"Created new experiment {experiment.name} at {experiment.path}")
+
+    return experiment
+
 class Experiment: 
-    def __init__(self, path: Path = None, name: str = cfg.EXPERIMENT_NAME, program: str = "AutoLamella", method: str = "autolamella-on-grid") -> None:
-
-
+    def __init__(self, path: Path, 
+                 name: str = cfg.EXPERIMENT_NAME, 
+                 program: str = "AutoLamella",
+                 method: str = "autolamella-on-grid") -> None:
+        """Create a new experiment."""
         self.name: str = name
         self._id = str(uuid.uuid4())
-        self.path: Path = utils.make_logging_directory(path=path, name=name)
-        self.log_path: Path = utils.configure_logging(
-            path=self.path, log_filename="logfile"
-        )
-        self._created_at: float = datetime.timestamp(datetime.now())
+        self.path: Path = os.path.join(path, name)
+        self.created_at: float = datetime.timestamp(datetime.now())
 
         self.positions: List[Lamella] = []
 
-        self.program = program
-        self.method = method
+        self.program: str = program
+        self.method: str = method
 
     def to_dict(self) -> dict:
 
@@ -225,14 +263,31 @@ class Experiment:
             "name": self.name,
             "_id": self._id,
             "path": self.path,
-            "log_path": self.log_path,
             "positions": [lamella.to_dict() for lamella in self.positions],
-            "created_at": self._created_at,
+            "created_at": self.created_at,
             "program": self.program,
             "method": self.method,
         }
 
         return state_dict
+    
+    @classmethod
+    def from_dict(cls, ddict: dict) -> 'Experiment':
+
+        path = os.path.dirname(ddict["path"])
+        name = ddict["name"]
+        experiment = Experiment(path=path, name=name)
+        experiment.created_at = ddict.get("created_at", None)
+        experiment._id = ddict.get("_id", "NULL")
+        experiment.program = ddict.get("program", cfg.EXPERIMENT_NAME)
+        experiment.method = ddict.get("method", "autoLamella-on-grid")
+
+        # load lamella from dict
+        for lamella_dict in ddict["positions"]:
+            lamella = Lamella.from_dict(data=lamella_dict)
+            experiment.positions.append(lamella)
+
+        return experiment
 
     def save(self) -> None:
         """Save the sample data to yaml file"""
@@ -257,12 +312,12 @@ class Experiment:
             ldict = {
                 "experiment_name": self.name,
                 "experiment_path": self.path,
-                "experiment_created_at": self._created_at,
+                "experiment_created_at": self.created_at,
                 "experiment_id": self._id,
                 "program": self.program,
                 "method": self.method, 
-                "number": lamella._number,
-                "petname": lamella._petname,  # what?
+                "number": lamella.number,
+                "petname": lamella.petname,  # what?
                 "path": lamella.path,
                 "lamella.x": lamella.state.microscope_state.stage_position.x,
                 "lamella.y": lamella.state.microscope_state.stage_position.y,
@@ -271,7 +326,7 @@ class Experiment:
                 "lamella.t": lamella.state.microscope_state.stage_position.t,
                 "last_timestamp": lamella.state.microscope_state.timestamp, # dont know if this is the correct timestamp to use here
                 "current_stage": lamella.state.stage.name,
-                "failure": lamella._is_failure,
+                "failure": lamella.is_failure,
                 "failure_note": lamella.failure_note,
                 "failure_timestamp": lamella.failure_timestamp,
             }
@@ -300,7 +355,7 @@ class Experiment:
         edict = {
             "name": self.name,
             "path": self.path,
-            "date": self._created_at,
+            "date": self.created_at,
             "experiment_id": self._id,
             "program": self.program,
             "method": self.method, 
@@ -318,7 +373,7 @@ class Experiment:
         hist: LamellaState
         for lam in self.positions:
 
-            petname = lam._petname
+            petname = lam.petname
 
             for hist in lam.history:
                 start, end = hist.start_timestamp, hist.end_timestamp
@@ -349,20 +404,9 @@ class Experiment:
         else:
             raise FileNotFoundError(f"No file with name {path} found.")
 
-        # create sample
-        path = os.path.dirname(ddict["path"])
-        name = ddict["name"]
-        experiment = Experiment(path=path, name=name)
-        experiment._created_at = ddict.get("created_at", None)
-        experiment._id = ddict.get("_id", "NULL")
-        experiment.program = ddict.get("program", "AutoLamella")
-        experiment.method = ddict.get("method", "autoLamella-on-grid")
+        # create experiment from dict
+        experiment = Experiment.from_dict(ddict)
         experiment.path = os.path.dirname(fname) # TODO: make sure the paths are correctly re-assigned when loaded on a different machine
-
-        # load lamella from dict
-        for lamella_dict in ddict["positions"]:
-            lamella = Lamella.from_dict(data=lamella_dict)
-            experiment.positions.append(lamella)
 
         return experiment
     
@@ -410,7 +454,7 @@ class Experiment:
         df.sort_values(by=["MillingStage"], inplace=True)
 
         for lamella in self.positions:
-            petname = lamella._petname
+            petname = lamella.petname
             print("-"*50, petname, "-"*50)
 
             df_petname = df[df["Lamella"]==petname].copy(deep=True)
@@ -447,7 +491,7 @@ class Experiment:
     def at_failure(self) -> List[Lamella]:
         """Return a list of lamellas that have failed"""
 
-        return [lamella for lamella in self.positions if lamella._is_failure]
+        return [lamella for lamella in self.positions if lamella.is_failure]
 
 
 ########## PROTOCOL V2 ##########

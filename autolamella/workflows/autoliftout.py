@@ -136,7 +136,7 @@ def liftout_lamella(
             "weld", settings.protocol, det.features[0].feature_m
         )
         stages = update_milling_ui(microscope, stages, parent_ui, 
-            msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
+            msg=f"Press Run Milling to mill the weld for {lamella.petname}. Press Continue when done.", 
             validate=validate)
         
         lamella.protocol["join"] = deepcopy(get_protocol_from_stages(stages))
@@ -546,7 +546,7 @@ def mill_lamella_edge(
 
     stages = get_milling_stages("sever", settings.protocol["milling"], point=point)
     stages = update_milling_ui(microscope, stages, parent_ui, 
-        msg=f"Press Run Milling to mill the sever for {lamella._petname}. Press Continue when done.", 
+        msg=f"Press Run Milling to mill the sever for {lamella.petname}. Press Continue when done.", 
         validate=validate)
 
     lamella.protocol[f"{lamella.state.stage.name}_sever"] = deepcopy(get_protocol_from_stages(stages[0]))
@@ -637,7 +637,7 @@ def land_lamella_on_post(
 
     stages = get_milling_stages("weld", settings.protocol["milling"], point)
     stages = update_milling_ui(microscope, stages, parent_ui, 
-        msg=f"Press Run Milling to mill the weld for {lamella._petname}. Press Continue when done.", 
+        msg=f"Press Run Milling to mill the weld for {lamella.petname}. Press Continue when done.", 
         validate=validate)
     
     lamella.protocol["weld"] = deepcopy(get_protocol_from_stages(stages[0]))
@@ -803,7 +803,7 @@ def reset_needle(
 
     stages = get_milling_stages("sharpen", settings.protocol)
     stages = update_milling_ui(microscope, stages, parent_ui, 
-        msg=f"Press Run Milling to mill the sharpen for {lamella._petname}. Press Continue when done.", 
+        msg=f"Press Run Milling to mill the sharpen for {lamella.petname}. Press Continue when done.", 
         validate=validate)
 
     lamella.protocol["reset"] = deepcopy(get_protocol_from_stages(stages[0]))
@@ -889,7 +889,7 @@ def run_autoliftout_workflow(
         ]:
             lamella: Lamella
             for lamella in experiment.positions:
-                if lamella._is_failure:
+                if lamella.is_failure:
                     continue  # skip failures
 
                 while lamella.state.stage.value < terminal_stage.value:
@@ -919,7 +919,7 @@ def run_autoliftout_workflow(
     # standard workflow
     lamella: Lamella
     for lamella in experiment.positions:
-        if lamella._is_failure:
+        if lamella.is_failure:
             continue  # skip failures
 
         while lamella.state.stage.value < AutoLamellaStage.LandLamella.value:
@@ -927,7 +927,7 @@ def run_autoliftout_workflow(
             next_stage = AutoLamellaStage(lamella.state.stage.value + 1)
             if CONFIRM_WORKFLOW_ADVANCE:
                 msg = (
-                    f"""Continue Lamella {(lamella._petname)} from {next_stage.name}?"""
+                    f"""Continue Lamella {(lamella.petname)} from {next_stage.name}?"""
                 )
                 response = ask_user(parent_ui, msg=msg, pos="Continue", neg="Skip")
 
@@ -978,28 +978,28 @@ def run_thinning_workflow(
         AutoLamellaStage.MillPolishingCut,
     ]:
         for lamella in experiment.positions:
-            if lamella._is_failure:
+            if lamella.is_failure:
                 continue
 
             if lamella.state.stage.value == next_stage.value - 1:
 
-                _restore_state = next_stage != AutoLamellaStage.ReadyLamella
-                _save_state = next_stage != AutoLamellaStage.ReadyLamella
+                restore_state = next_stage != AutoLamellaStage.ReadyLamella
+                save_state = next_stage != AutoLamellaStage.ReadyLamella
 
                 lamella = start_of_stage_update(
                     microscope, lamella, next_stage=next_stage, parent_ui=parent_ui, 
-                    _restore_state=_restore_state
+                    restore_state=restore_state
                 )
                 WORKFLOW_STAGES[next_stage](microscope, settings, lamella,parent_ui)
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, 
-                                                 _save_state=_save_state)
+                                                 save_state=save_state)
                 update_experiment_ui(parent_ui, experiment)
 
     # finish the experiment
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaStage.MillPolishingCut:
-            lamella = start_of_stage_update(microscope, lamella, next_stage=AutoLamellaStage.Finished, parent_ui=parent_ui, _restore_state=False)
-            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
+            lamella = start_of_stage_update(microscope, lamella, next_stage=AutoLamellaStage.Finished, parent_ui=parent_ui, restore_state=False)
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, save_state=False)
             update_experiment_ui(parent_ui, experiment)
 
 
@@ -1031,7 +1031,7 @@ def select_initial_lamella_positions(
 
     # create lamella
     lamella_no = max(len(experiment.positions) + 1, 1)
-    lamella = Lamella(path=experiment.path, _number=lamella_no)
+    lamella = Lamella(path=experiment.path, number=lamella_no)
     log_status_message(lamella, "STARTED")
 
     # reference images
@@ -1043,7 +1043,7 @@ def select_initial_lamella_positions(
     log_status_message(lamella, "SELECT_LAMELLA_POSITION")
     stages = get_milling_stages("trench", settings.protocol["milling"])
     stages = update_milling_ui(microscope, stages, parent_ui,
-        msg=f"Select a position and milling pattern for {lamella._petname}. Press Continue when done.",
+        msg=f"Select a position and milling pattern for {lamella.petname}. Press Continue when done.",
         validate=True,
         milling_enabled=False
     )
@@ -1053,12 +1053,11 @@ def select_initial_lamella_positions(
     lamella.protocol["trench"]["point"] = stages[0].pattern.point.to_dict()
     
     # need to set the imaging settings too?
-    lamella.lamella_state = microscope.get_microscope_state()
     
     # save microscope state   
 
     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
-    lamella.state.microscope_state = lamella.lamella_state
+    lamella.state.microscope_state = microscope.get_microscope_state()
 
     log_status_message(lamella, "LAMELLA_REFERENCE_IMAGES")
 
@@ -1114,7 +1113,7 @@ def select_landing_sample_positions(
     parent_ui: AutoLiftoutUIv2,
 ) -> Lamella:
     """Select the landing coordinates for a lamella."""
-    logging.info(f"Selecting Landing Position: {lamella._petname}")
+    logging.info(f"Selecting Landing Position: {lamella.petname}")
 
     # update image path
     settings.image.path = lamella.path
@@ -1126,7 +1125,7 @@ def select_landing_sample_positions(
     # # select landing coordinates
     # ask_user(
     #     parent_ui,
-    #     msg=f"Select the landing coordinate for {lamella._petname}.",
+    #     msg=f"Select the landing coordinate for {lamella.petname}.",
     #     pos="Continue",
     # )  # enable movement, imaging
     # lamella.landing_state = microscope.get_microscope_state()
@@ -1144,7 +1143,7 @@ def select_landing_sample_positions(
     # TODO: change to prepare-landing protocol
     stages = get_milling_stages("flatten", settings.protocol["milling"])
     stages = update_milling_ui(microscope, stages, parent_ui, 
-        msg=f"Select the landing position and prepare (mill) the area for {lamella._petname}. Press Continue when done.", 
+        msg=f"Select the landing position and prepare (mill) the area for {lamella.petname}. Press Continue when done.", 
         validate=True)
     
     lamella.protocol["flatten"] = deepcopy(get_protocol_from_stages(stages))
@@ -1221,11 +1220,11 @@ def finish_setup_autoliftout(
 
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaStage.SetupTrench:
-            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, save_state=False)
 
             # administrative details        
-            lamella = start_of_stage_update(microscope, lamella, next_stage=AutoLamellaStage.ReadyTrench, parent_ui=parent_ui, _restore_state=False)
-            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, _save_state=False)
+            lamella = start_of_stage_update(microscope, lamella, next_stage=AutoLamellaStage.ReadyTrench, parent_ui=parent_ui, restore_state=False)
+            experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, save_state=False)
 
         
 
