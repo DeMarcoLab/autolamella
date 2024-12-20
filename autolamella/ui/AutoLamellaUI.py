@@ -220,7 +220,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # lamella controls
         self.pushButton_add_lamella.clicked.connect(
-            lambda: self.add_new_lamella(pos=None)
+            lambda: self.add_new_lamella(stage_position=None)
         )
         self.pushButton_remove_lamella.clicked.connect(self.remove_lamella_ui)
         self.pushButton_go_to_lamella.clicked.connect(self.move_to_lamella_position)
