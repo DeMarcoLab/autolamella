@@ -1781,9 +1781,6 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.microscope.turn_on(BeamType.ELECTRON)
         if not self.microscope.get("on", BeamType.ION):
             self.microscope.turn_on(BeamType.ION)
-        
-        print(f"SEM ARE ON: {self.microscope.get('on', BeamType.ELECTRON)}")
-        print(f"FIB ARE ON: {self.microscope.get('on', BeamType.ION)}")
 
         logging.info(f"Started {workflow.title()} Workflow...")
         # TODO: everything above here should happen outside the thread

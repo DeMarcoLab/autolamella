@@ -62,7 +62,7 @@ ATOL_STAGE_TILT = 0.017 # 1 degrees
 
 # CORE WORKFLOW STEPS
 def log_status_message(lamella: Lamella, step: str):
-    logging.debug({"msg": "status", "petname": lamella.petname, "stage": lamella.status, "step": step})
+    logging.debug({"msg": "status", "petname": lamella.name, "stage": lamella.status, "step": step})
 
 def log_status_message_raw(stage: str, step: str, petname: str = "null"):
     logging.debug({"msg": "status", "petname": petname, stage: stage, "step": step })   
@@ -92,8 +92,19 @@ def mill_trench(
     update_status_ui(parent_ui, f"{lamella.info} Moving to Trench Position...")
     microscope.move_flat_to_beam(BeamType.ION)
     
-    # TODO: align to reference image?
-    # QUERY: how to assure we have a reference image if using minimap
+    # align to reference image
+    # TODO: support saving a reference image when selecting the trench from minimap
+    reference_image_path = os.path.join(lamella.path, "ref_ReadyTrench.tif")
+    align_trench_reference = settings.protocol["options"].get("align_trench_reference", False)
+    if os.path.exists(reference_image_path) and align_trench_reference:
+        log_status_message(lamella, "ALIGN_TRENCH_REFERENCE")
+        update_status_ui(parent_ui, f"{lamella.info} Aligning Trench Reference...")
+        ref_image = FibsemImage.load(reference_image_path)
+        alignment.multi_step_alignment_v3(microscope=microscope, 
+                                        ref_image=ref_image, 
+                                        beam_type=BeamType.ION, 
+                                        alignment_current=None,
+                                        steps=1, system="stage")
 
     log_status_message(lamella, "MILL_TRENCH")
 
@@ -110,7 +121,7 @@ def mill_trench(
     
     # define trench milling stage
     stages = update_milling_ui(microscope, stages, parent_ui,
-        msg=f"Press Run Milling to mill the trenches for {lamella.petname}. Press Continue when done.",
+        msg=f"Press Run Milling to mill the trenches for {lamella.name}. Press Continue when done.",
         validate=validate,
     )
     
@@ -132,7 +143,6 @@ def mill_trench(
         filename=f"ref_{lamella.status}_final",
     )
     set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
-
 
     return lamella
 
@@ -225,7 +235,7 @@ def mill_undercut(
         # mill undercut 1
         log_status_message(lamella, f"MILL_UNDERCUT_{nid}")
         stages = update_milling_ui(microscope, [undercut_stage], parent_ui,
-            msg=f"Press Run Milling to mill the Undercut {nid} for {lamella.petname}. Press Continue when done.",
+            msg=f"Press Run Milling to mill the Undercut {nid} for {lamella.name}. Press Continue when done.",
             validate=validate,
         )
         
@@ -333,7 +343,7 @@ def mill_lamella(
                                         alignment_current=alignment_current,
                                         steps=ALIGNMENT_ATTEMPTS)
     else:
-        logging.warning(f"Using alignment method v1 for {lamella.petname}... This method will be depreciated in the next version..")
+        logging.warning(f"Using alignment method v1 for {lamella.name}... This method will be depreciated in the next version..")
         # V1
         tmp = deepcopy(settings.image)
         settings.image = ImageSettings.fromFibsemImage(ref_image)
@@ -372,7 +382,7 @@ def mill_lamella(
                     
         if features_stages:
             features_stages = update_milling_ui(microscope, features_stages, parent_ui,
-                msg=f"Press Run Milling to mill the features for {lamella.petname}. Press Continue when done.",
+                msg=f"Press Run Milling to mill the features for {lamella.name}. Press Continue when done.",
                 validate=validate,
             )
 
@@ -389,7 +399,7 @@ def mill_lamella(
     log_status_message(lamella, "MILL_LAMELLA")
 
     stages = update_milling_ui(microscope, stages, parent_ui,
-        msg=f"Press Run Milling to mill the Trenches for {lamella.petname}. Press Continue when done.",
+        msg=f"Press Run Milling to mill the Trenches for {lamella.name}. Press Continue when done.",
         validate=validate,
     )
 
@@ -560,7 +570,7 @@ def setup_lamella(
         # mill the fiducial
         fiducial_stage = get_milling_stages(FIDUCIAL_KEY, lamella.protocol)
         stages = update_milling_ui(microscope, fiducial_stage, parent_ui, 
-            msg=f"Press Run Milling to mill the fiducial for {lamella.petname}. Press Continue when done.", 
+            msg=f"Press Run Milling to mill the fiducial for {lamella.name}. Press Continue when done.", 
             validate=validate)
         lamella.protocol[FIDUCIAL_KEY] = deepcopy(get_protocol_from_stages(stages))
         lamella.alignment_area, _  = calculate_fiducial_area_v2(ib_image, 
