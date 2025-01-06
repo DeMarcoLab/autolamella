@@ -9,7 +9,7 @@ import autolamella
 from autolamella.tools.data import calculate_statistics_dataframe
 from fibsem.structures import FibsemImage
 from autolamella.structures import Experiment
-from fibsem.imaging import _tile
+from fibsem.imaging import tiled
 
 import autolamella.config as cfg
 
@@ -41,7 +41,7 @@ page_title.header(f"Experiment: {EXPERIMENT_NAME} Analytics")
 (df_experiment, df_history, 
 _, 
     df_steps, df_stage, 
-    df_det, df_click) = calculate_statistics_dataframe(EXPERIMENT_PATH, encoding=encoding)
+    df_det, df_click, df_milling) = calculate_statistics_dataframe(EXPERIMENT_PATH, encoding=encoding)
 
 # experiment metrics
 cols = st.columns(4)
@@ -487,7 +487,7 @@ with tab_workflow:
 
                         # go to next lamella if added 
 
-            fig = _tile.plot_stage_positions_on_image(image, positions[key2], show=True)
+            fig = tiled.plot_stage_positions_on_image(image, positions[key2], show=True)
 
             return fig, positions
 
@@ -527,7 +527,20 @@ with tab_lamella:
     fig_steps = px.bar(df_steps[df_steps["lamella"] == lamella].sort_values(by="timestamp"), x="stage", y="duration", color="step", hover_data=df_steps.columns)
     cols[1].plotly_chart(fig_steps, use_container_width=True)
 
-
+    # milling operations
+    if not df_milling.empty:
+        st.subheader("Milling Operations")
+        cols = st.columns(2)
+        # only show columns  lamella, stage, step, name, duration, milling_current
+        df_mill_filt = df_milling[df_milling["lamella"] == lamella]
+        df_mill_filt = df_mill_filt[["lamella", "stage", "step", "name", "duration", "milling_current"]]
+        df_mill_filt["milling_current"] *= 1e9 # to nA
+        cols[0].dataframe(df_mill_filt, use_container_width=True)
+        # show piechart of milling
+        fig_mill = px.pie(df_mill_filt, names="name", values="duration", color="stage")
+        cols[1].plotly_chart(fig_mill, use_container_width=True)
+        # TODO: display milling patterns on image?
+    
     # loop through exp.position, return lamella that matches lamella
     st.subheader("Lamella Protocol")
     for lam in exp.positions:
