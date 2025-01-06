@@ -92,6 +92,9 @@ def mill_trench(
     update_status_ui(parent_ui, f"{lamella.info} Moving to Trench Position...")
     microscope.move_flat_to_beam(BeamType.ION)
     
+    # TODO: align to reference image?
+    # QUERY: how to assure we have a reference image if using minimap
+
     log_status_message(lamella, "MILL_TRENCH")
 
     # get trench milling stages

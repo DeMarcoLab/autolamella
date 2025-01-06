@@ -411,6 +411,7 @@ class Experiment:
         return experiment
     
     def _create_protocol_dataframe(self) -> pd.DataFrame:
+        # NOTE: this is based on the previous protocol structure... need to update
         plist = []
         exp_name = self.name
         for lamella in self.positions:
@@ -517,6 +518,15 @@ class AutoLamellaOnGridMethod:
     ]
 
 @dataclass
+class AutoLamellaTrenchMilling:
+    name = "AutoLamella-Trench"
+    workflow = [
+        AutoLamellaStage.SetupTrench,
+        AutoLamellaStage.ReadyTrench,
+        AutoLamellaStage.MillTrench,
+    ]
+
+@dataclass
 class AutoLamellaWaffleMethod:
     name = "AutoLamella-Waffle"
     workflow = [
@@ -554,6 +564,7 @@ class AutoLamellaProtocolOptions:
     milling_tilt_angle: float
     undercut_tilt_angle: float
     checkpoint: str
+    turn_beams_off: bool = False
 
     def to_dict(self):
         return {
@@ -566,6 +577,7 @@ class AutoLamellaProtocolOptions:
             "milling_tilt_angle": self.milling_tilt_angle,
             "undercut_tilt_angle": self.undercut_tilt_angle,
             "checkpoint": self.checkpoint,
+            "turn_beams_off": self.turn_beams_off,
         }
 
     @classmethod
@@ -579,7 +591,8 @@ class AutoLamellaProtocolOptions:
             alignment_at_milling_current=ddict.get("alignment_at_milling_current", False),
             milling_tilt_angle=ddict.get("milling_tilt_angle", ddict.get("lamella_tilt_angle", 18)),
             undercut_tilt_angle=ddict.get("undercut_tilt_angle", -5),
-            checkpoint=ddict.get("checkpoint", "autolamella-mega-20240107.pt")
+            checkpoint=ddict.get("checkpoint", "autolamella-mega-20240107.pt"),
+            turn_beams_off=ddict.get("turn_beams_off", False),
         )
 
 def get_autolamella_method(name: str) -> AutoLamellaMethod:
@@ -588,6 +601,9 @@ def get_autolamella_method(name: str) -> AutoLamellaMethod:
     
     if name in ["AutoLamella-Waffle", "autolamella-waffle", "waffle"]:
         return AutoLamellaWaffleMethod()
+
+    if name in ["AutoLamella-Trench", "autolamella-trench", "trench"]:
+        return AutoLamellaTrenchMilling()
 
     # TODO: add more methods here
 
@@ -602,7 +618,7 @@ class AutoLamellaProtocol(FibsemProtocol):
     supervision: Dict[AutoLamellaStage, bool]
     configuration: dict                             # microscope configuration
     options: AutoLamellaProtocolOptions             # options for the protocol
-    milling: Dict[str, List[FibsemMillingStage]]    # milling stages
+    milling: Dict[str, List[FibsemMillingStage]]    # milling workflows
 
     def to_dict(self):
         return {

@@ -1671,6 +1671,12 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.image_widget.lineEdit_image_label.setText("default-image")
         self.update_ui()
 
+        # optionally turn off the beams when finished
+        turn_off_beams = self.settings.protocol["options"].get("turn_off_beams", False)
+        if turn_off_beams:
+            self.microscope.turn_off(BeamType.ELECTRON)
+            self.microscope.turn_off(BeamType.ION)
+
         # set electron image as active layer
         self.image_widget.restore_active_layer_for_movement()
 
@@ -1769,6 +1775,15 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_stop_workflow.setVisible(True)
         self.set_instructions_msg(f"Running {workflow.title()} workflow...")
         method = settings.protocol["options"].get("method", None)
+
+        # turn on the beams, if not already on
+        if not self.microscope.get("on", BeamType.ELECTRON):
+            self.microscope.turn_on(BeamType.ELECTRON)
+        if not self.microscope.get("on", BeamType.ION):
+            self.microscope.turn_on(BeamType.ION)
+        
+        print(f"SEM ARE ON: {self.microscope.get('on', BeamType.ELECTRON)}")
+        print(f"FIB ARE ON: {self.microscope.get('on', BeamType.ION)}")
 
         logging.info(f"Started {workflow.title()} Workflow...")
         # TODO: everything above here should happen outside the thread
