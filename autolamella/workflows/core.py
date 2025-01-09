@@ -27,22 +27,25 @@ from fibsem.structures import (
     Point,
     calculate_fiducial_area_v2,
 )
-
+from autolamella.config import USE_BEAM_SHIFT_ALIGNMENT_V2
 from autolamella.protocol.validation import (
     DEFAULT_ALIGNMENT_AREA,
     DEFAULT_FIDUCIAL_PROTOCOL,
+    FIDUCIAL_KEY,
     MICROEXPANSION_KEY,
     MILL_POLISHING_KEY,
     MILL_ROUGH_KEY,
     NOTCH_KEY,
+    SETUP_LAMELLA_KEY,
     TRENCH_KEY,
-    FIDUCIAL_KEY,
-    UNDERCUT_KEY
+    UNDERCUT_KEY,
 )
 from autolamella.structures import (
     AutoLamellaStage,
+    AutoLamellaMethod,
     Experiment,
     Lamella,
+    get_autolamella_method,
 )
 from autolamella.ui import AutoLamellaUI
 from autolamella.workflows import actions
@@ -51,11 +54,20 @@ from autolamella.workflows.ui import (
     set_images_ui,
     update_alignment_area_ui,
     update_detection_ui,
+    update_experiment_ui,
     update_milling_ui,
     update_status_ui,
 )
 
 # TODO: complete the rest of the patterns
+
+supervise_map = {
+    AutoLamellaStage.MillRoughCut.name: MILL_ROUGH_KEY,
+    AutoLamellaStage.MillPolishingCut.name: MILL_POLISHING_KEY,
+    AutoLamellaStage.MillTrench.name: TRENCH_KEY,
+    AutoLamellaStage.MillUndercut.name: UNDERCUT_KEY,
+    AutoLamellaStage.SetupLamella.name: SETUP_LAMELLA_KEY,
+}
 
 # constants
 ATOL_STAGE_TILT = 0.017 # 1 degrees
@@ -85,7 +97,10 @@ def mill_trench(
     parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
 
-    validate = settings.protocol["options"]["supervise"].get("trench", True)
+    protocol = settings.protocol
+    protocol_options = protocol["options"]
+
+    validate = protocol_options["supervise"].get("trench", True)
     settings.image.path = lamella.path
 
     log_status_message(lamella, "MOVE_TO_TRENCH")
@@ -95,7 +110,7 @@ def mill_trench(
     # align to reference image
     # TODO: support saving a reference image when selecting the trench from minimap
     reference_image_path = os.path.join(lamella.path, "ref_ReadyTrench.tif")
-    align_trench_reference = settings.protocol["options"].get("align_trench_reference", False)
+    align_trench_reference = protocol_options.get("align_trench_reference", False)
     if os.path.exists(reference_image_path) and align_trench_reference:
         log_status_message(lamella, "ALIGN_TRENCH_REFERENCE")
         update_status_ui(parent_ui, f"{lamella.info} Aligning Trench Reference...")
@@ -153,12 +168,15 @@ def mill_undercut(
     lamella: Lamella,
     parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
-    validate = settings.protocol["options"]["supervise"].get("undercut", True)
+    
+    protocol = settings.protocol
+    protocol_options = protocol["options"]
+    validate = protocol_options["supervise"].get("undercut", True)
     settings.image.path = lamella.path
 
     # optional undercut
-    _undercut_required = settings.protocol["options"].get("undercut_required", True)
-    if _undercut_required is False:
+    is_undercut_required = protocol_options.get("undercut_required", True)
+    if not is_undercut_required:
         logging.info("Skipping undercut")
         return lamella
 
@@ -168,18 +186,18 @@ def mill_undercut(
     microscope.move_flat_to_beam(BeamType.ELECTRON, _safe=True)
     
     # OFFSET FOR COMPUCENTRIC ROTATION
-    X_OFFSET = settings.protocol["options"].get("compucentric_x_offset", 0)
-    Y_OFFSET = settings.protocol["options"].get("compucentric_y_offset", 0)
+    X_OFFSET = protocol_options.get("compucentric_x_offset", 0)
+    Y_OFFSET = protocol_options.get("compucentric_y_offset", 0)
     microscope.stable_move(dx=X_OFFSET, dy=Y_OFFSET, beam_type=BeamType.ELECTRON)
     
     # align feature coincident
-    method = settings.protocol["options"].get("method", "autolamella-waffle")
+    method = protocol_options.get("method", "autolamella-waffle")
+    method = get_autolamella_method(method)
     
-    if method == "autolamella-serial-liftout":
+    feature = LamellaCentre()
+    if method is AutoLamellaMethod.SERIAL_LIFTOUT:
         feature = VolumeBlockCentre()
-    else: # autolamella-waffle, autolamella-liftout
-        feature = LamellaCentre()
-
+        
     lamella = align_feature_coincident(microscope=microscope,
                                        settings=settings,
                                        lamella=lamella,
@@ -190,7 +208,7 @@ def mill_undercut(
     # mill under cut
     undercut_stages = get_milling_stages(UNDERCUT_KEY, lamella.protocol)
     post_milled_undercut_stages = []
-    UNDERCUT_ANGLE_DEG = settings.protocol["options"].get("undercut_tilt_angle", -5)
+    UNDERCUT_ANGLE_DEG = protocol_options.get("undercut_tilt_angle", -5)
     
     hfw = undercut_stages[0].milling.hfw
 
@@ -222,7 +240,7 @@ def mill_undercut(
         # if i > 0: # reduce the undercut height by half each time
         #     lamella.protocol["undercut"]["height"] /= 2
 
-        if method == "autolamella-liftout":
+        if method == AutoLamellaMethod.LIFTOUT:
             offset = undercut_stage.pattern.trench_width / 2 + 1e-6
         else:         
             offset = undercut_stage.pattern.height / 2
@@ -255,7 +273,7 @@ def mill_undercut(
     set_images_ui(parent_ui, eb_image, ib_image)
 
     # optional return flat to electron beam (autoliftout)
-    if settings.protocol["options"].get("undercut_return_to_electron", False):
+    if protocol_options.get("undercut_return_to_electron", False):
         microscope.move_flat_to_beam(BeamType.ELECTRON, _safe=True)
 
     log_status_message(lamella, "ALIGN_FINAL")
@@ -292,23 +310,22 @@ def mill_lamella(
     lamella: Lamella,
     parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
-    settings.image.path = lamella.path
-    method = settings.protocol["options"].get("method", "autolamella-waffle")
-
-
-    supervise_map = {
-        AutoLamellaStage.MillRoughCut.name: MILL_ROUGH_KEY,
-        AutoLamellaStage.MillPolishingCut.name: MILL_POLISHING_KEY,
-    }
-    validate = settings.protocol["options"]["supervise"].get(supervise_map[lamella.status], True)
     
-    _align_at_milling_current = bool(settings.protocol["options"].get("alignment_at_milling_current", True))
-    _take_reference_images = bool(
+    protocol = settings.protocol
+    protocol_options = protocol["options"]
+    settings.image.path = lamella.path
+    method = protocol_options.get("method", "autolamella-waffle")
+    method = get_autolamella_method(method)
+
+    validate = protocol_options["supervise"].get(supervise_map[lamella.status], True)
+    
+    align_at_milling_current = bool(protocol_options.get("alignment_at_milling_current", True))
+    take_reference_images = bool(
         lamella.state.stage is AutoLamellaStage.MillRoughCut 
-        or settings.protocol["options"].get("take_final_reference_images", True))
-    _take_high_quality_ref =  bool(
+        or protocol_options.get("take_final_reference_images", True))
+    acquire_high_quality_image =  bool(
         lamella.state.stage is AutoLamellaStage.MillPolishingCut 
-        and settings.protocol["options"].get("high_quality_image", {}).get("enabled", False)
+        and protocol_options.get("high_quality_image", {}).get("enabled", False)
         )
 
     # milling stages
@@ -328,20 +345,20 @@ def mill_lamella(
     settings.image.hfw = stages[0].milling.hfw
     settings.image.beam_type = BeamType.ION
     ref_image = FibsemImage.load(os.path.join(lamella.path, "ref_alignment_ib.tif"))
-    ALIGNMENT_ATTEMPTS = int(settings.protocol["options"].get("alignment_attempts", 1))
+    alignment_attempts = int(protocol_options.get("alignment_attempts", 1))
 
     # beam alignment
-    alignment_current = stages[0].milling.milling_current if _align_at_milling_current else None
+    alignment_current = stages[0].milling.milling_current if align_at_milling_current else None
     
     ### REPLACE WITH V2
-    from autolamella.config import USE_BEAM_SHIFT_ALIGNMENT_V2
+
     if USE_BEAM_SHIFT_ALIGNMENT_V2:
         # V2
         alignment.multi_step_alignment_v2(microscope=microscope, 
                                         ref_image=ref_image, 
                                         beam_type=BeamType.ION, 
                                         alignment_current=alignment_current,
-                                        steps=ALIGNMENT_ATTEMPTS)
+                                        steps=alignment_attempts)
     else:
         logging.warning(f"Using alignment method v1 for {lamella.name}... This method will be depreciated in the next version..")
         # V1
@@ -354,8 +371,8 @@ def mill_lamella(
             ref_image=ref_image, 
             reduced_area=lamella.alignment_area, 
             alignment_current=alignment_current, 
-            steps=ALIGNMENT_ATTEMPTS)
-        
+            steps=alignment_attempts)
+
         settings.image = tmp
         settings.image.reduced_area = None
     #### 
@@ -366,18 +383,17 @@ def mill_lamella(
     eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
     set_images_ui(parent_ui, eb_image, ib_image)
 
-
     # define feature
-    MILL_FEATURES = bool(method in ["autolamella-on-grid", "autolamella-waffle"])
+    MILL_FEATURES = bool(method in [AutoLamellaMethod.ON_GRID, AutoLamellaMethod.WAFFLE])
     features_stages = []
-    if MILL_FEATURES and lamella.status == AutoLamellaStage.MillRoughCut.name:
+    if MILL_FEATURES and lamella.workflow is AutoLamellaStage.MillRoughCut:
         log_status_message(lamella, "MILL_FEATURE")
 
         # check if using notch or microexpansion
-        if use_notch := bool(settings.protocol["options"].get("use_notch", False)):
+        if use_notch := bool(protocol_options.get("use_notch", False)):
             features_stages.extend(get_milling_stages(NOTCH_KEY, lamella.protocol))                                                  
 
-        if use_microexpansion := bool(settings.protocol["options"].get("use_microexpansion", False)):
+        if use_microexpansion := bool(protocol_options.get("use_microexpansion", False)):
             features_stages.extend(get_milling_stages(MICROEXPANSION_KEY, lamella.protocol)) 
                     
         if features_stages:
@@ -406,7 +422,7 @@ def mill_lamella(
     # log the protocol
     lamella.protocol[milling_stage_name] = get_protocol_from_stages(stages[:n_lamella])
 
-    if _take_reference_images:
+    if take_reference_images:
         # take reference images
         log_status_message(lamella, "REFERENCE_IMAGES")
         update_status_ui(parent_ui, f"{lamella.info} Acquiring Reference Images...")
@@ -418,7 +434,7 @@ def mill_lamella(
         )
         set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
-    if _take_high_quality_ref:
+    if acquire_high_quality_image:
         log_status_message(lamella, "HIGH_QUALITY_REFERENCE_IMAGES")
         update_status_ui(parent_ui, f"{lamella.info} Acquiring High Quality Reference Images...")
 
@@ -427,7 +443,7 @@ def mill_lamella(
             "hfw": fcfg.REFERENCE_HFW_SUPER,
             "frame_integration": 2,
         }
-        hq_settings = settings.protocol["options"].get("high_quality_image", ddict)
+        hq_settings = protocol_options.get("high_quality_image", ddict)
         # take high quality reference images
         settings.image.save = True
         settings.image.filename = f"ref_{lamella.status}_final_ultra"
@@ -441,7 +457,6 @@ def mill_lamella(
         settings.image.frame_integration = 1 # restore
         settings.image.resolution = fcfg.REFERENCE_RES_MEDIUM
 
-
     return lamella
 
 
@@ -452,9 +467,14 @@ def setup_lamella(
     parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
 
-    validate = settings.protocol["options"]["supervise"].get("setup_lamella", True)
+    protocol = settings.protocol
+    protocol_options = protocol["options"]
+
+    validate = protocol_options["supervise"].get("setup_lamella", True)
     settings.image.path = lamella.path
-    method = settings.protocol["options"].get("method", "autolamella-waffle")
+
+    method = protocol_options.get("method", "autolamella-waffle")
+    method = get_autolamella_method(method)
 
     if FIDUCIAL_KEY not in lamella.protocol:
         lamella.protocol[FIDUCIAL_KEY] = DEFAULT_FIDUCIAL_PROTOCOL
@@ -462,11 +482,11 @@ def setup_lamella(
     log_status_message(lamella, "ALIGN_LAMELLA")
     update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
     
-    milling_angle = settings.protocol["options"].get("lamella_tilt_angle", 18)
+    milling_angle = protocol_options.get("lamella_tilt_angle", 18)
     stage_position = microscope.get_stage_position()
     is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t, atol=ATOL_STAGE_TILT)
 
-    if not is_close and validate and method == "autolamella-on-grid":
+    if not is_close and validate and method is AutoLamellaMethod.ON_GRID:
         current_t = np.rad2deg(stage_position.t)
         ret = ask_user(parent_ui=parent_ui,
                     msg=f"Tilt to specified milling angle ({milling_angle:.2f} deg)? Current tilt is {current_t:.2f} deg.",
@@ -474,17 +494,17 @@ def setup_lamella(
         if ret:
             actions.move_to_lamella_angle(microscope, settings.protocol)
             
-    if method != "autolamella-on-grid":
+    if method != AutoLamellaMethod.ON_GRID:
         actions.move_to_lamella_angle(microscope, settings.protocol)
 
-    if method == "autolamella-liftout":
+    if method is AutoLamellaMethod.LIFTOUT:
 
         # OFFSET FOR COMPUCENTRIC ROTATION
-        X_OFFSET = settings.protocol["options"].get("compucentric_x_offset", 0)
-        Y_OFFSET = settings.protocol["options"].get("compucentric_y_offset", 0)
+        X_OFFSET = protocol_options.get("compucentric_x_offset", 0)
+        Y_OFFSET = protocol_options.get("compucentric_y_offset", 0)
         microscope.stable_move(dx=X_OFFSET, dy=Y_OFFSET, beam_type=BeamType.ELECTRON)
 
-    if method != "autolamella-on-grid":
+    if method != AutoLamellaMethod.ON_GRID:
         lamella = align_feature_coincident(microscope, settings, lamella, parent_ui, validate)
 
     log_status_message(lamella, "SETUP_PATTERNS")
@@ -505,16 +525,16 @@ def setup_lamella(
     set_images_ui(parent_ui, eb_image, ib_image)
 
     # feature 
-    if MILL_FEATURES := method in ["autolamella-on-grid", "autolamella-waffle" ]:
+    if MILL_FEATURES := method in [AutoLamellaMethod.ON_GRID, AutoLamellaMethod.WAFFLE]:
 
-        if use_notch := bool(settings.protocol["options"].get("use_notch", False)):
+        if use_notch := bool(protocol_options.get("use_notch", False)):
             stages.extend(get_milling_stages(NOTCH_KEY, protocol))
 
-        if use_microexpansion := bool(settings.protocol["options"].get("use_microexpansion", False)):
+        if use_microexpansion := bool(protocol_options.get("use_microexpansion", False)):
             stages.extend(get_milling_stages(MICROEXPANSION_KEY, protocol))
 
     # fiducial
-    if use_fiducial:= settings.protocol["options"].get("use_fiducial", True):
+    if use_fiducial:= protocol_options.get("use_fiducial", True):
         fiducial_stage = get_milling_stages(FIDUCIAL_KEY, protocol)
 
         stages += fiducial_stage # TODO: remove dependency on this
@@ -579,11 +599,11 @@ def setup_lamella(
         alignment_hfw = stages[0].milling.hfw
     else:
         # non-fiducial based alignment
-        alignment_area_dict = settings.protocol["options"].get("alignment_area", DEFAULT_ALIGNMENT_AREA)
+        alignment_area_dict = protocol_options.get("alignment_area", DEFAULT_ALIGNMENT_AREA)
         lamella.alignment_area = FibsemRectangle.from_dict(alignment_area_dict)
         alignment_hfw = stages[0].milling.hfw
 
-    logging.info(f"ALIGNMENT AREA WORKFLOW: {lamella.alignment_area}")
+    logging.debug(f"alignment_area: {lamella.alignment_area}")
     lamella.alignment_area = update_alignment_area_ui(alignment_area=lamella.alignment_area, 
                                               parent_ui=parent_ui, 
                                               msg="Edit Alignment Area. Press Continue when done.", 
@@ -600,7 +620,6 @@ def setup_lamella(
     settings.image.hfw =  alignment_hfw
     settings.image.filename = "ref_alignment"
     settings.image.autocontrast = False # disable autocontrast for alignment
-    logging.info(f"REDUCED_AREA: {settings.image.reduced_area}")
     ib_image = acquire.new_image(microscope, settings.image)
     settings.image.reduced_area = None
     settings.image.autocontrast = True
@@ -631,12 +650,14 @@ def end_of_stage_update(
 
     # write history
     lamella.history.append(deepcopy(lamella.state))
+    lamella.states[lamella.workflow] = deepcopy(lamella.state)
 
     # update and save experiment
     experiment.save()
 
     log_status_message(lamella, "FINISHED")
     update_status_ui(parent_ui, f"{lamella.info} Finished")
+    update_experiment_ui(parent_ui, experiment)
 
     return experiment
 

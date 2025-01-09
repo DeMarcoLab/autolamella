@@ -37,10 +37,7 @@ def run_trench_milling(
             )
 
             lamella = mill_trench(microscope, settings, lamella, parent_ui)
-
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
-
-            update_experiment_ui(parent_ui, experiment)
     
     log_status_message(lamella, "NULL_END") # for logging purposes
 
@@ -64,12 +61,10 @@ def run_undercut_milling(
             )
             lamella = mill_undercut(microscope, settings, lamella, parent_ui)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
-            update_experiment_ui(parent_ui, experiment)
 
             # ready lamella for next stage
             lamella = start_of_stage_update(microscope, lamella, AutoLamellaStage.SetupLamella, parent_ui=parent_ui,restore_state=False,)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, save_state=False)
-            update_experiment_ui(parent_ui, experiment)
     
     log_status_message(lamella, "NULL_END") # for logging purposes
 
@@ -94,8 +89,6 @@ def run_setup_lamella(
             lamella = setup_lamella(microscope, settings, lamella, parent_ui)
 
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
-
-            update_experiment_ui(parent_ui, experiment)
     
     log_status_message(lamella, "NULL_END") # for logging purposes
 
@@ -122,18 +115,14 @@ def run_lamella_milling(
         for lamella in experiment.positions:
             if lamella.state.stage == AutoLamellaStage(stage.value - 1) and not lamella.is_failure:
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
-                lamella = WORKFLOW_STAGES[lamella.state.stage](microscope, settings, lamella, parent_ui)
+                lamella = WORKFLOW_STAGES[lamella.workflow](microscope, settings, lamella, parent_ui)
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
-
-                update_experiment_ui(parent_ui, experiment)
-
 
     # finish
     for lamella in experiment.positions:
         if lamella.state.stage == AutoLamellaStage.MillPolishingCut and not lamella.is_failure:
             lamella = start_of_stage_update(microscope, lamella, AutoLamellaStage.Finished, parent_ui, restore_state=False)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, save_state=False)
-            update_experiment_ui(parent_ui, experiment)
 
     log_status_message(lamella, "NULL_END") # for logging purposes
 

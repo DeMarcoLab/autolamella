@@ -18,7 +18,7 @@ from fibsem.structures import (
 )
 
 from autolamella.ui import AutoLamellaUI
-
+from autolamella.structures import Experiment
 
 # CORE UI FUNCTIONS -> PROBS SEPARATE FILE
 def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by user.") -> bool:
@@ -42,7 +42,7 @@ def update_milling_ui(microscope: FibsemMicroscope,
             milling.mill_stages(microscope=microscope, stages=stages)
         return stages
     
-    _update_mill_stages_ui(parent_ui, stages=stages)
+    update_milling_stages_ui(parent_ui, stages=stages)
 
     pos, neg = "Run Milling", "Continue"
 
@@ -74,7 +74,7 @@ def update_milling_ui(microscope: FibsemMicroscope,
 
     stages = deepcopy(parent_ui.milling_widget.get_milling_stages())
 
-    _update_mill_stages_ui(parent_ui, stages="clear")
+    update_milling_stages_ui(parent_ui, stages="clear")
 
 
     # if validate:
@@ -93,13 +93,13 @@ def update_milling_ui(microscope: FibsemMicroscope,
     #         parent_ui, f"Milling Complete: {len(stages)} stages completed."
     #     )
 
-    # _update_mill_stages_ui(parent_ui, stages="clear")
+    # update_milling_stages_ui(parent_ui, stages="clear")
 
     return stages
 
 
 # TODO: think this can be consolidated into mill arg for ask_user?
-def _update_mill_stages_ui(
+def update_milling_stages_ui(
     parent_ui: AutoLamellaUI, stages: List[FibsemMillingStage] = None
 ):
     _check_for_abort(parent_ui)
@@ -274,7 +274,7 @@ def update_alignment_area_ui(alignment_area: FibsemRectangle, parent_ui: AutoLam
 
     return alignment_area
 
-def update_experiment_ui(parent_ui: AutoLamellaUI, experiment):
+def update_experiment_ui(parent_ui: AutoLamellaUI, experiment: Experiment) -> None:
     
     # headless mode
     if parent_ui is None:

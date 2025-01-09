@@ -1,6 +1,6 @@
+import logging
 import os
 import uuid
-import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
@@ -38,7 +38,7 @@ from autolamella.protocol.validation import (
 
 
 class AutoLamellaStage(Enum):
-    # Created = auto()
+    Created = auto()
     SetupTrench = auto()
     ReadyTrench = auto()
     MillTrench = auto()
@@ -51,7 +51,7 @@ class AutoLamellaStage(Enum):
     MillPolishingCut = auto()
     Finished = auto()
     PreSetupLamella = auto()
-# TODO: investigate removing PreSetupLamella
+# TODO: investigate removing PreSetupLamella, ReadyTrench, ReadyLamella
 
     def __str__(self) -> str:
         return self.name
@@ -128,6 +128,10 @@ class Lamella:
     def status(self) -> str:
         return self.state.stage.name
     
+    @property
+    def workflow(self) -> AutoLamellaStage:
+        return self.state.stage
+    
     def to_dict(self):
         return {
             "petname": self.petname,
@@ -143,6 +147,7 @@ class Lamella:
             "landing_state": self.landing_state.to_dict(),
             "landing_selected": self.landing_selected,
             "id": str(self._id),
+            "states": {k.name: v.to_dict() for k, v in self.states.items()},
         }
 
     @property
@@ -159,7 +164,12 @@ class Lamella:
             alignment_area = FibsemRectangle.from_dict(alignment_area_ddict)
         else:
             alignment_area = FibsemRectangle() # use default
-               
+        
+        # load states:
+        states = data.get("states", {})
+        if states:
+            states = {AutoLamellaStage[k]: LamellaState.from_dict(v) for k, v in states.items()}
+
         return cls(
             petname=data["petname"],
             state=state,
@@ -174,6 +184,7 @@ class Lamella:
             landing_state = MicroscopeState.from_dict(data.get("landing_state", MicroscopeState().to_dict())), # tmp solution
             landing_selected = bool(data.get("landing_selected", False)),
             _id=data.get("id", None),
+            states=states,
         )
 
     def load_reference_image(self, fname) -> FibsemImage:
@@ -502,46 +513,89 @@ class FibsemProtocol(ABC):
     pass
 
 @dataclass
-class AutoLamellaMethod(ABC):
-    name: str
-    workflow: List[AutoLamellaStage]
+class MethodConfig:
+   name: str
+   workflow: List[AutoLamellaStage]
 
-@dataclass
-class AutoLamellaOnGridMethod:
-    name = "AutoLamella-OnGrid"
-    workflow = [
-        AutoLamellaStage.SetupLamella,
-        AutoLamellaStage.ReadyLamella,
-        AutoLamellaStage.MillRoughCut,
-        AutoLamellaStage.MillPolishingCut,
-        AutoLamellaStage.Finished,
-    ]
+class AutoLamellaMethod(Enum):
+   ON_GRID = MethodConfig(
+       name="AutoLamella-OnGrid",
+       workflow=[
+           AutoLamellaStage.SetupLamella,
+           AutoLamellaStage.ReadyLamella, 
+           AutoLamellaStage.MillRoughCut,
+           AutoLamellaStage.MillPolishingCut,
+           AutoLamellaStage.Finished,
+       ]
+   )
 
-@dataclass
-class AutoLamellaTrenchMilling:
-    name = "AutoLamella-Trench"
-    workflow = [
-        AutoLamellaStage.SetupTrench,
-        AutoLamellaStage.ReadyTrench,
-        AutoLamellaStage.MillTrench,
-    ]
+   TRENCH = MethodConfig(
+       name="AutoLamella-Trench",
+       workflow=[
+           AutoLamellaStage.SetupTrench,
+           AutoLamellaStage.ReadyTrench,
+           AutoLamellaStage.MillTrench,
+       ]
+   )
 
-@dataclass
-class AutoLamellaWaffleMethod:
-    name = "AutoLamella-Waffle"
-    workflow = [
-        AutoLamellaStage.SetupTrench,
-        AutoLamellaStage.ReadyTrench,
-        AutoLamellaStage.MillTrench,
-        AutoLamellaStage.MillUndercut,
-        AutoLamellaStage.SetupLamella,
-        AutoLamellaStage.ReadyLamella,
-        AutoLamellaStage.MillRoughCut,
-        AutoLamellaStage.MillPolishingCut,
-        AutoLamellaStage.Finished,
-    ]
+   WAFFLE = MethodConfig(
+       name="AutoLamella-Waffle",
+       workflow=[
+           AutoLamellaStage.SetupTrench,
+           AutoLamellaStage.ReadyTrench,
+           AutoLamellaStage.MillTrench,
+           AutoLamellaStage.MillUndercut,
+           AutoLamellaStage.SetupLamella,
+           AutoLamellaStage.ReadyLamella,
+           AutoLamellaStage.MillRoughCut,
+           AutoLamellaStage.MillPolishingCut,
+           AutoLamellaStage.Finished,
+       ]
+   )
 
-DEFAULT_AUTOLAMELLA_METHOD = AutoLamellaOnGridMethod.name
+   LIFTOUT = MethodConfig(
+       name="AutoLamella-Liftout",
+       workflow=[
+           AutoLamellaStage.SetupTrench,
+           AutoLamellaStage.ReadyTrench,
+           AutoLamellaStage.MillTrench,
+           AutoLamellaStage.MillUndercut,
+           AutoLamellaStage.LiftoutLamella,
+           AutoLamellaStage.LandLamella,
+           AutoLamellaStage.SetupLamella,
+           AutoLamellaStage.ReadyLamella,
+           AutoLamellaStage.MillRoughCut,
+           AutoLamellaStage.MillPolishingCut,
+           AutoLamellaStage.Finished,
+       ]
+   )
+
+   SERIAL_LIFTOUT = MethodConfig(
+       name="AutoLamella-Serial-Liftout",
+       workflow=[
+           AutoLamellaStage.SetupTrench,
+           AutoLamellaStage.ReadyTrench,
+           AutoLamellaStage.MillTrench,
+           AutoLamellaStage.MillUndercut,
+           AutoLamellaStage.LiftoutLamella,
+           AutoLamellaStage.LandLamella,
+           AutoLamellaStage.SetupLamella,
+           AutoLamellaStage.ReadyLamella,
+           AutoLamellaStage.MillRoughCut,
+           AutoLamellaStage.MillPolishingCut,
+           AutoLamellaStage.Finished,
+       ]
+   )
+
+   @property
+   def name(self) -> str:
+       return self.value.name
+
+   @property
+   def workflow(self) -> List[AutoLamellaStage]:
+       return self.value.workflow
+
+DEFAULT_AUTOLAMELLA_METHOD = AutoLamellaMethod.ON_GRID.name
 
 WORKFLOW_STAGE_TO_PROTOCOL_KEY = {
     AutoLamellaStage.MillTrench: TRENCH_KEY,
@@ -596,16 +650,27 @@ class AutoLamellaProtocolOptions:
         )
 
 def get_autolamella_method(name: str) -> AutoLamellaMethod:
-    if name in ["AutoLamella-OnGrid", "autolamella-on-grid", "on-grid"]:
-        return AutoLamellaOnGridMethod()
+    method_aliases = {
+        AutoLamellaMethod.ON_GRID: ["autolamella-on-grid", "on-grid", "AutoLamella-OnGrid"],
+        AutoLamellaMethod.WAFFLE: ["autolamella-waffle", "waffle", "AutoLamella-Waffle"],
+        AutoLamellaMethod.TRENCH: ["autolamella-trench", "trench", "AutoLamella-Trench"],
+        AutoLamellaMethod.LIFTOUT: ["autolamella-liftout", "liftout", "AutoLamella-Liftout"],
+        AutoLamellaMethod.SERIAL_LIFTOUT: ["autolamella-serial-liftout", "serial-liftout", "AutoLamella-Serial-Liftout"],
+    }
     
-    if name in ["AutoLamella-Waffle", "autolamella-waffle", "waffle"]:
-        return AutoLamellaWaffleMethod()
-
-    if name in ["AutoLamella-Trench", "autolamella-trench", "trench"]:
-        return AutoLamellaTrenchMilling()
-
-    # TODO: add more methods here
+    # Create a flattened mapping of all aliases to their methods
+    name_mapping = {
+        alias.lower(): method 
+        for method, aliases in method_aliases.items() 
+        for alias in aliases
+    }
+    
+    normalized_name = name.lower()
+    if normalized_name not in name_mapping:
+        valid_names = sorted(set(alias for aliases in method_aliases.values() for alias in aliases))
+        raise ValueError(f"Unknown method: {name}. Valid methods are: {valid_names}")
+    
+    return name_mapping[normalized_name]
 
 def get_supervision(stage: AutoLamellaStage, protocol: dict) -> bool:
     key = WORKFLOW_STAGE_TO_PROTOCOL_KEY.get(stage, None)
@@ -631,7 +696,7 @@ class AutoLamellaProtocol(FibsemProtocol):
         }
 
     @classmethod
-    def from_dict(cls, ddict):
+    def from_dict(cls, ddict: dict) -> 'AutoLamellaProtocol':
 
         method = get_autolamella_method(ddict.get("method", DEFAULT_AUTOLAMELLA_METHOD))
 
