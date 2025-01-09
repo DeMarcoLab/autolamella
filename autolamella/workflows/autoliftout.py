@@ -858,9 +858,9 @@ WORKFLOW_STAGES = {
     AutoLamellaStage.LiftoutLamella: liftout_lamella,
     AutoLamellaStage.LandLamella: land_lamella,
     AutoLamellaStage.SetupLamella: setup_lamella,
-    AutoLamellaStage.ReadyLamella: pass_through_stage,
-    AutoLamellaStage.MillRoughCut: mill_lamella,
-    AutoLamellaStage.MillPolishingCut: mill_lamella,
+    # AutoLamellaStage.ReadyLamella: pass_through_stage,
+    AutoLamellaStage.MillRough: mill_lamella,
+    AutoLamellaStage.MillPolishing: mill_lamella,
 }
 
 def run_autoliftout_workflow(
@@ -969,13 +969,13 @@ def run_thinning_workflow(
     parent_ui: AutoLiftoutUIv2,
 ) -> Experiment:
 
-    update_status_ui(parent_ui, "Starting MillRoughCut Workflow...")
+    update_status_ui(parent_ui, "Starting MillRough Workflow...")
     lamella: Lamella
     for next_stage in [
         AutoLamellaStage.SetupLamella,
-        AutoLamellaStage.ReadyLamella,
-        AutoLamellaStage.MillRoughCut,
-        AutoLamellaStage.MillPolishingCut,
+        # AutoLamellaStage.ReadyLamella,
+        AutoLamellaStage.MillRough,
+        AutoLamellaStage.MillPolishing,
     ]:
         for lamella in experiment.positions:
             if lamella.is_failure:
@@ -983,8 +983,8 @@ def run_thinning_workflow(
 
             if lamella.state.stage.value == next_stage.value - 1:
 
-                restore_state = next_stage != AutoLamellaStage.ReadyLamella
-                save_state = next_stage != AutoLamellaStage.ReadyLamella
+                restore_state = True # next_stage != AutoLamellaStage.ReadyLamella
+                save_state = True # next_stage != AutoLamellaStage.ReadyLamella
 
                 lamella = start_of_stage_update(
                     microscope, lamella, next_stage=next_stage, parent_ui=parent_ui, 
@@ -997,7 +997,7 @@ def run_thinning_workflow(
 
     # finish the experiment
     for lamella in experiment.positions:
-        if lamella.state.stage == AutoLamellaStage.MillPolishingCut:
+        if lamella.state.stage == AutoLamellaStage.MillPolishing:
             lamella = start_of_stage_update(microscope, lamella, next_stage=AutoLamellaStage.Finished, parent_ui=parent_ui, restore_state=False)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui, save_state=False)
             update_experiment_ui(parent_ui, experiment)

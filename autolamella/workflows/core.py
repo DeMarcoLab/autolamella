@@ -27,6 +27,8 @@ from fibsem.structures import (
     Point,
     calculate_fiducial_area_v2,
 )
+from autolamella.structures import AutoLamellaProtocol
+
 from autolamella.config import USE_BEAM_SHIFT_ALIGNMENT_V2
 from autolamella.protocol.validation import (
     DEFAULT_ALIGNMENT_AREA,
@@ -62,8 +64,8 @@ from autolamella.workflows.ui import (
 # TODO: complete the rest of the patterns
 
 supervise_map = {
-    AutoLamellaStage.MillRoughCut.name: MILL_ROUGH_KEY,
-    AutoLamellaStage.MillPolishingCut.name: MILL_POLISHING_KEY,
+    AutoLamellaStage.MillRough.name: MILL_ROUGH_KEY,
+    AutoLamellaStage.MillPolishing.name: MILL_POLISHING_KEY,
     AutoLamellaStage.MillTrench.name: TRENCH_KEY,
     AutoLamellaStage.MillUndercut.name: UNDERCUT_KEY,
     AutoLamellaStage.SetupLamella.name: SETUP_LAMELLA_KEY,
@@ -109,7 +111,7 @@ def mill_trench(
     
     # align to reference image
     # TODO: support saving a reference image when selecting the trench from minimap
-    reference_image_path = os.path.join(lamella.path, "ref_ReadyTrench.tif")
+    reference_image_path = os.path.join(lamella.path, "ref_PositionReady.tif")
     align_trench_reference = protocol_options.get("align_trench_reference", False)
     if os.path.exists(reference_image_path) and align_trench_reference:
         log_status_message(lamella, "ALIGN_TRENCH_REFERENCE")
@@ -312,6 +314,10 @@ def mill_lamella(
 ) -> Lamella:
     
     protocol = settings.protocol
+
+
+
+
     protocol_options = protocol["options"]
     settings.image.path = lamella.path
     method = protocol_options.get("method", "autolamella-waffle")
@@ -321,10 +327,10 @@ def mill_lamella(
     
     align_at_milling_current = bool(protocol_options.get("alignment_at_milling_current", True))
     take_reference_images = bool(
-        lamella.state.stage is AutoLamellaStage.MillRoughCut 
+        lamella.state.stage is AutoLamellaStage.MillRough 
         or protocol_options.get("take_final_reference_images", True))
     acquire_high_quality_image =  bool(
-        lamella.state.stage is AutoLamellaStage.MillPolishingCut 
+        lamella.state.stage is AutoLamellaStage.MillPolishing 
         and protocol_options.get("high_quality_image", {}).get("enabled", False)
         )
 
@@ -386,7 +392,7 @@ def mill_lamella(
     # define feature
     MILL_FEATURES = bool(method in [AutoLamellaMethod.ON_GRID, AutoLamellaMethod.WAFFLE])
     features_stages = []
-    if MILL_FEATURES and lamella.workflow is AutoLamellaStage.MillRoughCut:
+    if MILL_FEATURES and lamella.workflow is AutoLamellaStage.MillRough:
         log_status_message(lamella, "MILL_FEATURE")
 
         # check if using notch or microexpansion
@@ -467,14 +473,17 @@ def setup_lamella(
     parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
 
-    protocol = settings.protocol
-    protocol_options = protocol["options"]
+    from pprint import pprint
+    pprint(settings.protocol)
 
-    validate = protocol_options["supervise"].get("setup_lamella", True)
+    protocol = AutoLamellaProtocol.from_dict(settings.protocol)
+    method = protocol.method
+
+    validate = protocol.supervision[lamella.workflow]
     settings.image.path = lamella.path
 
-    method = protocol_options.get("method", "autolamella-waffle")
-    method = get_autolamella_method(method)
+    # method = protocol_options.get("method", "autolamella-waffle")
+    # method = get_autolamella_method(method)
 
     if FIDUCIAL_KEY not in lamella.protocol:
         lamella.protocol[FIDUCIAL_KEY] = DEFAULT_FIDUCIAL_PROTOCOL
@@ -482,7 +491,7 @@ def setup_lamella(
     log_status_message(lamella, "ALIGN_LAMELLA")
     update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
     
-    milling_angle = protocol_options.get("lamella_tilt_angle", 18)
+    milling_angle = protocol.options.milling_tilt_angle
     stage_position = microscope.get_stage_position()
     is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t, atol=ATOL_STAGE_TILT)
 
@@ -500,8 +509,8 @@ def setup_lamella(
     if method is AutoLamellaMethod.LIFTOUT:
 
         # OFFSET FOR COMPUCENTRIC ROTATION
-        X_OFFSET = protocol_options.get("compucentric_x_offset", 0)
-        Y_OFFSET = protocol_options.get("compucentric_y_offset", 0)
+        X_OFFSET = 0 # protocol_options.get("compucentric_x_offset", 0)
+        Y_OFFSET = 0 # protocol_options.get("compucentric_y_offset", 0)
         microscope.stable_move(dx=X_OFFSET, dy=Y_OFFSET, beam_type=BeamType.ELECTRON)
 
     if method != AutoLamellaMethod.ON_GRID:
@@ -509,9 +518,8 @@ def setup_lamella(
 
     log_status_message(lamella, "SETUP_PATTERNS")
 
-    protocol = lamella.protocol
-    rough_mill_stages = get_milling_stages(MILL_ROUGH_KEY, protocol)
-    polishing_mill_stages = get_milling_stages(MILL_POLISHING_KEY, protocol) # TODO: store this on the lamella object, rather than re-calling from protocol?
+    rough_mill_stages = get_milling_stages(MILL_ROUGH_KEY, lamella.protocol)
+    polishing_mill_stages = get_milling_stages(MILL_POLISHING_KEY, lamella.protocol) # TODO: store this on the lamella object, rather than re-calling from protocol?
     lamella_stages = rough_mill_stages + polishing_mill_stages
     stages = deepcopy(lamella_stages)
     n_lamella = len(stages)
@@ -525,17 +533,17 @@ def setup_lamella(
     set_images_ui(parent_ui, eb_image, ib_image)
 
     # feature 
-    if MILL_FEATURES := method in [AutoLamellaMethod.ON_GRID, AutoLamellaMethod.WAFFLE]:
+    if use_stress_relief := method in [AutoLamellaMethod.ON_GRID, AutoLamellaMethod.WAFFLE]:
 
-        if use_notch := bool(protocol_options.get("use_notch", False)):
-            stages.extend(get_milling_stages(NOTCH_KEY, protocol))
+        if use_notch:= protocol.options.use_notch:
+            stages.extend(get_milling_stages(NOTCH_KEY, lamella.protocol))
 
-        if use_microexpansion := bool(protocol_options.get("use_microexpansion", False)):
-            stages.extend(get_milling_stages(MICROEXPANSION_KEY, protocol))
+        if use_microexpansion := protocol.options.use_microexpansion:
+            stages.extend(get_milling_stages(MICROEXPANSION_KEY, lamella.protocol))
 
     # fiducial
-    if use_fiducial:= protocol_options.get("use_fiducial", True):
-        fiducial_stage = get_milling_stages(FIDUCIAL_KEY, protocol)
+    if use_fiducial:= protocol.options.use_fiducial:
+        fiducial_stage = get_milling_stages(FIDUCIAL_KEY, lamella.protocol)
 
         stages += fiducial_stage # TODO: remove dependency on this
     
@@ -565,7 +573,7 @@ def setup_lamella(
     # MILL_POLISHING
 
     # TODO: instead of having these as separate parts of the milling config, just include them in the mill_rough part?
-    if MILL_FEATURES:
+    if use_stress_relief:
         if use_notch:
             idx = n_lamella
             lamella.protocol[NOTCH_KEY] = deepcopy(get_protocol_from_stages(stages[idx]))
@@ -599,8 +607,7 @@ def setup_lamella(
         alignment_hfw = stages[0].milling.hfw
     else:
         # non-fiducial based alignment
-        alignment_area_dict = protocol_options.get("alignment_area", DEFAULT_ALIGNMENT_AREA)
-        lamella.alignment_area = FibsemRectangle.from_dict(alignment_area_dict)
+        lamella.alignment_area = FibsemRectangle.from_dict(DEFAULT_ALIGNMENT_AREA)
         alignment_hfw = stages[0].milling.hfw
 
     logging.debug(f"alignment_area: {lamella.alignment_area}")
@@ -639,7 +646,12 @@ def setup_lamella(
 
 
 def end_of_stage_update(
-    microscope: FibsemMicroscope, experiment: Experiment, lamella: Lamella, parent_ui: AutoLamellaUI, save_state: bool = True,
+    microscope: FibsemMicroscope, 
+    experiment: Experiment, 
+    lamella: Lamella, 
+    parent_ui: AutoLamellaUI, 
+    save_state: bool = True, 
+    update_ui: bool = True,
 ) -> Experiment:
     """Save the current microscope state configuration to disk, and log that the stage has been completed."""
 
@@ -657,7 +669,8 @@ def end_of_stage_update(
 
     log_status_message(lamella, "FINISHED")
     update_status_ui(parent_ui, f"{lamella.info} Finished")
-    update_experiment_ui(parent_ui, experiment)
+    if update_ui:
+        update_experiment_ui(parent_ui, experiment)
 
     return experiment
 

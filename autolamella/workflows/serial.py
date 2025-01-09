@@ -660,8 +660,8 @@ SERIAL_WORKFLOW_STAGES = {
     AutoLamellaStage.LiftoutLamella: liftout_lamella,
     AutoLamellaStage.LandLamella: land_lamella,
     AutoLamellaStage.SetupLamella: setup_lamella,
-    AutoLamellaStage.MillRoughCut: mill_lamella,
-    AutoLamellaStage.MillPolishingCut: mill_lamella,
+    AutoLamellaStage.MillRough: mill_lamella,
+    AutoLamellaStage.MillPolishing: mill_lamella,
 }
 
 def run_serial_liftout_workflow(

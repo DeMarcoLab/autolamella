@@ -109,7 +109,7 @@ def add_features_to_experiment(experiment: Experiment, features: List[CryoFeatur
                                         path=experiment.path, 
                                         num=len(experiment.positions) + 1, 
                                         reference_image_path=reference_image_path,
-                                        workflow_stage=AutoLamellaStage.ReadyLamella)
+                                        workflow_stage=AutoLamellaStage.SetupLamella)
         
         experiment.positions.append(deepcopy(lamella))
         experiment.save()

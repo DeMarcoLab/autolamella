@@ -38,9 +38,9 @@ for i in range(3):
 # pprint(pos.states)
 
 START_FROM_MAP: Dict[AutoLamellaStage, AutoLamellaStage] = {
-    AutoLamellaStage.SetupLamella: AutoLamellaStage.SetupLamella,
-    AutoLamellaStage.MillRoughCut: AutoLamellaStage.ReadyLamella,
-    AutoLamellaStage.MillPolishingCut: AutoLamellaStage.MillRoughCut,
+    AutoLamellaStage.SetupLamella: AutoLamellaStage.Created,
+    AutoLamellaStage.MillRough: AutoLamellaStage.SetupLamella,
+    AutoLamellaStage.MillPolishing: AutoLamellaStage.MillRough,
     AutoLamellaStage.MillTrench: AutoLamellaStage.ReadyTrench,
     AutoLamellaStage.MillUndercut: AutoLamellaStage.MillTrench,
     AutoLamellaStage.Finished: AutoLamellaStage.Finished,
@@ -49,11 +49,11 @@ START_STATES = [k for k in START_FROM_MAP.keys()]
 
 # invert the START_FROM_MAP
 NEXT_WORKFLOW_STAGE: Dict[AutoLamellaStage, AutoLamellaStage] = {
-    AutoLamellaStage.PreSetupLamella: AutoLamellaStage.SetupLamella,
-    AutoLamellaStage.SetupLamella: AutoLamellaStage.MillRoughCut,
-    AutoLamellaStage.ReadyLamella: AutoLamellaStage.MillRoughCut,
-    AutoLamellaStage.MillRoughCut: AutoLamellaStage.MillPolishingCut,
-    AutoLamellaStage.MillPolishingCut: AutoLamellaStage.Finished,
+    AutoLamellaStage.Created: AutoLamellaStage.SetupLamella,
+    AutoLamellaStage.SetupLamella: AutoLamellaStage.MillRough,
+    # AutoLamellaStage.ReadyLamella: AutoLamellaStage.MillRough,
+    AutoLamellaStage.MillRough: AutoLamellaStage.MillPolishing,
+    AutoLamellaStage.MillPolishing: AutoLamellaStage.Finished,
     AutoLamellaStage.ReadyTrench: AutoLamellaStage.MillUndercut,
     AutoLamellaStage.MillTrench: AutoLamellaStage.MillUndercut,
     AutoLamellaStage.Finished: AutoLamellaStage.Finished,

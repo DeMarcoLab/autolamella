@@ -66,7 +66,7 @@ if "Landing" in df_history["stage"].unique():
     n_landing = len(df_history[df_history["stage"] == "Landing"]["petname"].unique())
     cols[1].metric(label="Landing", value=n_landing)
 
-n_polish = len(df_history[df_history["stage"] == "MillPolishingCut"]["petname"].unique())
+n_polish = len(df_history[df_history["stage"] == "MillPolishing"]["petname"].unique())
 
 cols[0].metric(label="Trenches", value=n_trenches)
 cols[2].metric(label="Polish", value=n_polish)

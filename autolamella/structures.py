@@ -39,18 +39,16 @@ from autolamella.protocol.validation import (
 
 class AutoLamellaStage(Enum):
     Created = auto()
-    SetupTrench = auto()
-    ReadyTrench = auto()
+    PositionReady = auto()
     MillTrench = auto()
     MillUndercut = auto()
     LiftoutLamella = auto()
     LandLamella = auto()
     SetupLamella = auto()
-    ReadyLamella = auto()
-    MillRoughCut = auto()
-    MillPolishingCut = auto()
+    MillRough = auto()
+    MillPolishing = auto()
     Finished = auto()
-    PreSetupLamella = auto()
+
 # TODO: investigate removing PreSetupLamella, ReadyTrench, ReadyLamella
 
     def __str__(self) -> str:
@@ -59,7 +57,7 @@ class AutoLamellaStage(Enum):
 @dataclass
 class LamellaState:
     microscope_state: MicroscopeState = MicroscopeState()
-    stage: AutoLamellaStage = AutoLamellaStage.SetupTrench
+    stage: AutoLamellaStage = AutoLamellaStage.Created
     start_timestamp: float = datetime.timestamp(datetime.now())
     end_timestamp: float = None
 
@@ -461,7 +459,7 @@ class Experiment:
     def _convert_dataframe_to_protocol(self, df: pd.DataFrame) -> None:
         """Convert a dataframe to a protocol."""
 
-        PROTOCOL_KEYS = ["trench", "MillUndercut", "fiducial", "notch", "MillRoughCut", "MillRegularCut", "MillPolishingCut", "microexpansion"]
+        PROTOCOL_KEYS = ["trench", "MillUndercut", "fiducial", "notch", "MillRough", "MillRegularCut", "MillPolishing", "microexpansion"]
 
         df.sort_values(by=["MillingStage"], inplace=True)
 
@@ -522,18 +520,14 @@ class AutoLamellaMethod(Enum):
        name="AutoLamella-OnGrid",
        workflow=[
            AutoLamellaStage.SetupLamella,
-           AutoLamellaStage.ReadyLamella, 
-           AutoLamellaStage.MillRoughCut,
-           AutoLamellaStage.MillPolishingCut,
-           AutoLamellaStage.Finished,
+           AutoLamellaStage.MillRough,
+           AutoLamellaStage.MillPolishing,
        ]
    )
 
    TRENCH = MethodConfig(
        name="AutoLamella-Trench",
        workflow=[
-           AutoLamellaStage.SetupTrench,
-           AutoLamellaStage.ReadyTrench,
            AutoLamellaStage.MillTrench,
        ]
    )
@@ -541,49 +535,38 @@ class AutoLamellaMethod(Enum):
    WAFFLE = MethodConfig(
        name="AutoLamella-Waffle",
        workflow=[
-           AutoLamellaStage.SetupTrench,
-           AutoLamellaStage.ReadyTrench,
+
            AutoLamellaStage.MillTrench,
            AutoLamellaStage.MillUndercut,
            AutoLamellaStage.SetupLamella,
-           AutoLamellaStage.ReadyLamella,
-           AutoLamellaStage.MillRoughCut,
-           AutoLamellaStage.MillPolishingCut,
-           AutoLamellaStage.Finished,
+           AutoLamellaStage.MillRough,
+           AutoLamellaStage.MillPolishing,
        ]
    )
 
    LIFTOUT = MethodConfig(
        name="AutoLamella-Liftout",
        workflow=[
-           AutoLamellaStage.SetupTrench,
-           AutoLamellaStage.ReadyTrench,
            AutoLamellaStage.MillTrench,
            AutoLamellaStage.MillUndercut,
            AutoLamellaStage.LiftoutLamella,
            AutoLamellaStage.LandLamella,
            AutoLamellaStage.SetupLamella,
-           AutoLamellaStage.ReadyLamella,
-           AutoLamellaStage.MillRoughCut,
-           AutoLamellaStage.MillPolishingCut,
-           AutoLamellaStage.Finished,
+           AutoLamellaStage.MillRough,
+           AutoLamellaStage.MillPolishing,
        ]
    )
 
    SERIAL_LIFTOUT = MethodConfig(
        name="AutoLamella-Serial-Liftout",
        workflow=[
-           AutoLamellaStage.SetupTrench,
-           AutoLamellaStage.ReadyTrench,
            AutoLamellaStage.MillTrench,
            AutoLamellaStage.MillUndercut,
            AutoLamellaStage.LiftoutLamella,
            AutoLamellaStage.LandLamella,
            AutoLamellaStage.SetupLamella,
-           AutoLamellaStage.ReadyLamella,
-           AutoLamellaStage.MillRoughCut,
-           AutoLamellaStage.MillPolishingCut,
-           AutoLamellaStage.Finished,
+           AutoLamellaStage.MillRough,
+           AutoLamellaStage.MillPolishing,
        ]
    )
 
@@ -603,8 +586,8 @@ WORKFLOW_STAGE_TO_PROTOCOL_KEY = {
     AutoLamellaStage.SetupLamella: SETUP_LAMELLA_KEY,
     AutoLamellaStage.LiftoutLamella: LIFTOUT_KEY,
     AutoLamellaStage.LandLamella: LANDING_KEY,
-    AutoLamellaStage.MillRoughCut: MILL_ROUGH_KEY,
-    AutoLamellaStage.MillPolishingCut: MILL_POLISHING_KEY,
+    AutoLamellaStage.MillRough: MILL_ROUGH_KEY,
+    AutoLamellaStage.MillPolishing: MILL_POLISHING_KEY,
 }
 
 @dataclass
@@ -698,7 +681,14 @@ class AutoLamellaProtocol(FibsemProtocol):
     @classmethod
     def from_dict(cls, ddict: dict) -> 'AutoLamellaProtocol':
 
-        method = get_autolamella_method(ddict.get("method", DEFAULT_AUTOLAMELLA_METHOD))
+        # backwards compatibility
+        if "name" not in ddict:
+            ddict["name"] = ddict.get("options", {}).get("name", "Default-AutoLamella-Protocol")
+        if "method" not in ddict:
+            ddict["method"] = ddict.get("options", {}).get("method", DEFAULT_AUTOLAMELLA_METHOD)
+
+        # get the method
+        method = get_autolamella_method(ddict["method"])
 
         # load the supervision tasks
         supervision_tasks = {k: get_supervision(k, ddict["options"]) for k in WORKFLOW_STAGE_TO_PROTOCOL_KEY.keys()}
@@ -713,4 +703,16 @@ class AutoLamellaProtocol(FibsemProtocol):
             options=AutoLamellaProtocolOptions.from_dict(ddict["options"]),
             milling={k: get_milling_stages(k, ddict["milling"]) for k in ddict["milling"]}
         )
-    # TODO: tests before integration
+    
+    def save(self, path: Path) -> None:
+        """Save the protocol to disk."""
+        with open(path, "w") as f:
+            yaml.safe_dump(self.to_dict(), f, indent=4)
+    
+    @staticmethod
+    def load(path: Path) -> 'AutoLamellaProtocol':
+        """Load the protocol from disk."""
+        with open(path, "r") as f:
+            ddict = yaml.safe_load(f)
+        
+        return AutoLamellaProtocol.from_dict(ddict)

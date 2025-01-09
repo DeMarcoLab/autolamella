@@ -122,28 +122,38 @@ DEFAULT_PROTOCOL = {
         ]
     },
     MICROEXPANSION_KEY: {
-        "width": 0.5e-6,
-        "height": 18.e-6,
-        "depth": 1.0e-6,
-        "distance": 10.e-6,  # distance between microexpansion and lamella centre
-        "milling_current": 2.e-9,
-        "hfw": 80e-6,
-        "application_file": "Si",
-        "type": "MicroExpansion"
+        "name": "Microexpansion 01",
+        "milling": {
+            "milling_current": 2.e-9,
+            "hfw": 80e-6,
+            "application_file": "Si",
+        },
+        "pattern": {
+            "name": "MicroExpansion",
+            "width": 0.5e-6,
+            "height": 18.e-6,
+            "depth": 1.0e-6,
+            "distance": 10.e-6,  # distance between microexpansion and lamella centre
+        },
     },
     NOTCH_KEY: {
-        "application_file": "Si",
-        "depth": 2.5e-06,
-        "distance": 2.0e-06,
-        "flip": 0,
-        "hfw": 80e-6,
-        "hheight": 2.0e-07,
-        "hwidth": 4.0e-06,
-        "milling_current": 2.0e-09,
-        "preset": "30 keV; 2.5 nA",
-        "vheight": 2.0e-06,
-        "vwidth": 2.0e-07,
-        "type": "WaffleNotch"
+        "milling": {
+            "application_file": "Si",
+            "hfw": 80e-6,
+            "milling_current": 2.0e-09,
+            "preset": "30 keV; 2.5 nA",
+        },
+        "pattern": {
+            "depth": 2.5e-06,
+            "distance": 2.0e-06,
+            "flip": 0,
+            "hheight": 2.0e-07,
+            "hwidth": 4.0e-06,
+            "vheight": 2.0e-06,
+            "vwidth": 2.0e-07,
+            "name": "WaffleNotch",
+        },
+        "name": "Notch 01", 
     },
     FIDUCIAL_KEY: DEFAULT_FIDUCIAL_PROTOCOL,
 }
@@ -167,7 +177,7 @@ def validate_protocol(protocol: dict):
         if key not in protocol["milling"]:
             # add default values if missing
             logging.info(f"Adding default milling stage for {key}")
-            protocol["milling"][key] = DEFAULT_PROTOCOL[key]
+            protocol["milling"][key] = [DEFAULT_PROTOCOL[key]]
     
     # TODO: validate that the protocol is correct, and has all the required keys for each milling stage
 
