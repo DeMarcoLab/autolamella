@@ -163,17 +163,18 @@ def move_needle_to_prepare_position(
 
 
 def move_to_lamella_angle(
-    microscope: FibsemMicroscope, protocol: dict
+    microscope: FibsemMicroscope, rotation: float, tilt: float
 ) -> FibsemStagePosition:
-    """Rotate and tilt the stage to the lamella milling angle, assumes from the landing position"""
-
+    """Rotate and tilt the stage to the lamella milling angle, assumes from the landing position: 
+    Args:
+        microscope (FibsemMicroscope): autoscript microscope instance
+        rotation (float): rotation angle in radians
+        tilt (float): tilt angle in radians
+    """
     # lamella milling angles
-    lamella_rotation_angle = np.deg2rad(microscope.system.stage.rotation_reference)
-    lamella_tilt_angle = np.deg2rad(protocol["options"].get("lamella_tilt_angle", 18))
-
     stage_position = FibsemStagePosition(
-        r=lamella_rotation_angle,
-        t=lamella_tilt_angle,
+        r=rotation,
+        t=tilt,
         )
     microscope.safe_absolute_stage_movement(stage_position)
 

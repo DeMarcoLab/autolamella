@@ -6,9 +6,7 @@ from copy import deepcopy
 from pprint import pprint
 from typing import Dict, Tuple
 
-import numpy as np
-from napari.qt.threading import thread_worker
-from PyQt5.QtCore import pyqtSignal
+
 from PyQt5.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -18,9 +16,8 @@ from PyQt5.QtWidgets import (
     QLabel,
 )
 
-from autolamella.structures import AutoLamellaStage, Experiment, Lamella, AutoLamellaOnGridMethod, AutoLamellaProtocol
+from autolamella.structures import AutoLamellaStage, Experiment, Lamella, AutoLamellaMethod, AutoLamellaProtocol
 from autolamella.ui.qt import AutoLamellaWorkflowDialog as AutoLamellaWorkflowDialogUI
-from autolamella.workflows.core import supervise_map
 
 PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-01-09-12-34/experiment.yaml"
 
@@ -147,8 +144,8 @@ class AutoLamellaWorkflowDialog(QDialog, AutoLamellaWorkflowDialogUI.Ui_Dialog):
         print(f"Stages to complete: {stages_to_complete}")
 
         # supervision
-        for stage, (enable, supervised) in wf.items():
-            print(supervise_map[stage.name], supervised)
+        for wf, (enable, supervised) in wf.items():
+            print(wf, supervised)
 
         self.accept()
 

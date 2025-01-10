@@ -125,7 +125,7 @@ def update_detection_ui(
     feat_str = ", ".join([f.name for f in features])
     update_status_ui(parent_ui, f"{msg}: Detecting Features ({feat_str})...")
 
-    checkpoint = settings.protocol["options"].get("checkpoint", cfg.DEFAULT_CHECKPOINT)
+    checkpoint = settings.protocol.options.checkpoint
     det = detection.take_image_and_detect_features(
         microscope=microscope,
         image_settings=settings.image,

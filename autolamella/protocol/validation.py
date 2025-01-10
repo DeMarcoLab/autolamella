@@ -1,38 +1,21 @@
 import logging
-from typing import List
 from copy import deepcopy
+from typing import List
 
-MILL_ROUGH_KEY = "mill_rough"
-MILL_POLISHING_KEY = "mill_polishing"
-MICROEXPANSION_KEY = "microexpansion"
-FIDUCIAL_KEY = "fiducial"
-NOTCH_KEY = "notch"
-TRENCH_KEY = "trench"
-UNDERCUT_KEY = "undercut"
-SETUP_LAMELLA_KEY = "setup_lamella"
-LIFTOUT_KEY = "liftout"
-LANDING_KEY = "landing"
-RESET_KEY = "reset"
-
-# milling
-MILLING_KEYS = [
-    "dwell_time",
-    "hfw",
-    "milling_current",
-    "milling_voltage",
-    "patterning_mode",
-    "preset",
-    "rate",
-    "spacing",
-    "spot_size",
-    "application_file",
-    "milling_channel",
-]
-
-# strategy
-STRATEGY_KEYS = [
-    "strategy"
-]
+from autolamella.protocol.constants import (
+    FIDUCIAL_KEY,
+    MICROEXPANSION_KEY,
+    MILL_POLISHING_KEY,
+    MILL_ROUGH_KEY,
+    MILLING_KEYS,
+    NOTCH_KEY,
+    STRATEGY_KEYS,
+    LANDING_KEY,
+    LIFTOUT_KEY,
+    SETUP_LAMELLA_KEY,
+    TRENCH_KEY,
+    UNDERCUT_KEY,
+)
 
 # required milling keys
 REQUIRED_MILLING_KEYS = [MILL_ROUGH_KEY, MILL_POLISHING_KEY, 
@@ -51,7 +34,43 @@ DEFAULT_FIDUCIAL_PROTOCOL = {
     "type": "Fiducial",
     }
 
+DEFAULT_MICROEXPANSION_PROTOCOL = {
+        "name": "Microexpansion 01",
+        "milling": {
+            "milling_current": 2.e-9,
+            "hfw": 80e-6,
+            "application_file": "Si",
+        },
+        "pattern": {
+            "name": "MicroExpansion",
+            "width": 0.5e-6,
+            "height": 18.e-6,
+            "depth": 1.0e-6,
+            "distance": 10.e-6,  # distance between microexpansion and lamella centre
+        },
+    },
 
+DEFAULT_NOTCH_PROTOCOL = {
+        "milling": {
+            "application_file": "Si",
+            "hfw": 80e-6,
+            "milling_current": 2.0e-09,
+            "preset": "30 keV; 2.5 nA",
+        },
+        "pattern": {
+            "depth": 2.5e-06,
+            "distance": 2.0e-06,
+            "flip": 0,
+            "hheight": 2.0e-07,
+            "hwidth": 4.0e-06,
+            "vheight": 2.0e-06,
+            "vwidth": 2.0e-07,
+            "name": "WaffleNotch",
+        },
+        "name": "Notch 01", 
+    }
+
+# TODO: update these default protocols to match the new protocol format
 DEFAULT_PROTOCOL = {
     MILL_ROUGH_KEY: {
         "stages": [
@@ -121,40 +140,8 @@ DEFAULT_PROTOCOL = {
             }
         ]
     },
-    MICROEXPANSION_KEY: {
-        "name": "Microexpansion 01",
-        "milling": {
-            "milling_current": 2.e-9,
-            "hfw": 80e-6,
-            "application_file": "Si",
-        },
-        "pattern": {
-            "name": "MicroExpansion",
-            "width": 0.5e-6,
-            "height": 18.e-6,
-            "depth": 1.0e-6,
-            "distance": 10.e-6,  # distance between microexpansion and lamella centre
-        },
-    },
-    NOTCH_KEY: {
-        "milling": {
-            "application_file": "Si",
-            "hfw": 80e-6,
-            "milling_current": 2.0e-09,
-            "preset": "30 keV; 2.5 nA",
-        },
-        "pattern": {
-            "depth": 2.5e-06,
-            "distance": 2.0e-06,
-            "flip": 0,
-            "hheight": 2.0e-07,
-            "hwidth": 4.0e-06,
-            "vheight": 2.0e-06,
-            "vwidth": 2.0e-07,
-            "name": "WaffleNotch",
-        },
-        "name": "Notch 01", 
-    },
+    MICROEXPANSION_KEY: DEFAULT_MICROEXPANSION_PROTOCOL,
+    NOTCH_KEY: DEFAULT_NOTCH_PROTOCOL,
     FIDUCIAL_KEY: DEFAULT_FIDUCIAL_PROTOCOL,
 }
 

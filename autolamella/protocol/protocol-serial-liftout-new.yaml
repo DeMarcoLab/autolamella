@@ -347,11 +347,9 @@ milling:
         strategy: {}
 options:
     alignment_at_milling_current: false
-    batch_mode: true
     checkpoint: autolamella-serial-liftout-20240107.pt
     compucentric_x_offset: 0.0
     compucentric_y_offset: 0.0
-    confirm_next_stage: true
     high_quality_image:
         dwell_time: 2.0e-06
         enabled: false

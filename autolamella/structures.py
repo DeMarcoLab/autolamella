@@ -516,67 +516,83 @@ class MethodConfig:
    workflow: List[AutoLamellaStage]
 
 class AutoLamellaMethod(Enum):
-   ON_GRID = MethodConfig(
-       name="AutoLamella-OnGrid",
-       workflow=[
-           AutoLamellaStage.SetupLamella,
-           AutoLamellaStage.MillRough,
-           AutoLamellaStage.MillPolishing,
-       ]
-   )
+    ON_GRID = MethodConfig(
+        name="AutoLamella-OnGrid",
+        workflow=[
+            AutoLamellaStage.SetupLamella,
+            AutoLamellaStage.MillRough,
+            AutoLamellaStage.MillPolishing,
+        ]
+    )
 
-   TRENCH = MethodConfig(
-       name="AutoLamella-Trench",
-       workflow=[
-           AutoLamellaStage.MillTrench,
-       ]
-   )
+    TRENCH = MethodConfig(
+        name="AutoLamella-Trench",
+        workflow=[
+            AutoLamellaStage.MillTrench,
+        ]
+    )
 
-   WAFFLE = MethodConfig(
-       name="AutoLamella-Waffle",
-       workflow=[
+    WAFFLE = MethodConfig(
+        name="AutoLamella-Waffle",
+        workflow=[
+            AutoLamellaStage.MillTrench,
+            AutoLamellaStage.MillUndercut,
+            AutoLamellaStage.SetupLamella,
+            AutoLamellaStage.MillRough,
+            AutoLamellaStage.MillPolishing,
+        ]
+    )
 
-           AutoLamellaStage.MillTrench,
-           AutoLamellaStage.MillUndercut,
-           AutoLamellaStage.SetupLamella,
-           AutoLamellaStage.MillRough,
-           AutoLamellaStage.MillPolishing,
-       ]
-   )
+    LIFTOUT = MethodConfig(
+        name="AutoLamella-Liftout",
+        workflow=[
+            AutoLamellaStage.MillTrench,
+            AutoLamellaStage.MillUndercut,
+            AutoLamellaStage.LiftoutLamella,
+            AutoLamellaStage.LandLamella,
+            AutoLamellaStage.SetupLamella,
+            AutoLamellaStage.MillRough,
+            AutoLamellaStage.MillPolishing,
+        ]
+    )
 
-   LIFTOUT = MethodConfig(
-       name="AutoLamella-Liftout",
-       workflow=[
-           AutoLamellaStage.MillTrench,
-           AutoLamellaStage.MillUndercut,
-           AutoLamellaStage.LiftoutLamella,
-           AutoLamellaStage.LandLamella,
-           AutoLamellaStage.SetupLamella,
-           AutoLamellaStage.MillRough,
-           AutoLamellaStage.MillPolishing,
-       ]
-   )
+    SERIAL_LIFTOUT = MethodConfig(
+        name="AutoLamella-Serial-Liftout",
+        workflow=[
+            AutoLamellaStage.MillTrench,
+            AutoLamellaStage.MillUndercut,
+            AutoLamellaStage.LiftoutLamella,
+            AutoLamellaStage.LandLamella,
+            AutoLamellaStage.SetupLamella,
+            AutoLamellaStage.MillRough,
+            AutoLamellaStage.MillPolishing,
+        ]
+    )
 
-   SERIAL_LIFTOUT = MethodConfig(
-       name="AutoLamella-Serial-Liftout",
-       workflow=[
-           AutoLamellaStage.MillTrench,
-           AutoLamellaStage.MillUndercut,
-           AutoLamellaStage.LiftoutLamella,
-           AutoLamellaStage.LandLamella,
-           AutoLamellaStage.SetupLamella,
-           AutoLamellaStage.MillRough,
-           AutoLamellaStage.MillPolishing,
-       ]
-   )
-
-   @property
-   def name(self) -> str:
+    @property
+    def name(self) -> str:
        return self.value.name
 
-   @property
-   def workflow(self) -> List[AutoLamellaStage]:
+    @property
+    def workflow(self) -> List[AutoLamellaStage]:
        return self.value.workflow
+   
+    @property
+    def is_on_grid(self) -> bool:
+        return self in [AutoLamellaMethod.ON_GRID, 
+                        AutoLamellaMethod.WAFFLE]
+   
+    @property
+    def is_trench(self) -> bool:
+        return self in [AutoLamellaMethod.TRENCH, 
+                        AutoLamellaMethod.WAFFLE, 
+                        AutoLamellaMethod.LIFTOUT, 
+                        AutoLamellaMethod.SERIAL_LIFTOUT]
+   
+    @property
+    def is_liftout(self) -> bool:
+        return self in [AutoLamellaMethod.LIFTOUT, 
+                        AutoLamellaMethod.SERIAL_LIFTOUT]
 
 DEFAULT_AUTOLAMELLA_METHOD = AutoLamellaMethod.ON_GRID.name
 
@@ -624,7 +640,7 @@ class AutoLamellaProtocolOptions:
             use_notch=ddict.get("use_notch", False),
             use_microexpansion=ddict.get("use_microexpansion", True),
             take_final_reference_images=ddict["take_final_reference_images"],
-            alignment_attempts=ddict.get("alignment_attempts", 3),
+            alignment_attempts=int(ddict.get("alignment_attempts", 3)),
             alignment_at_milling_current=ddict.get("alignment_at_milling_current", False),
             milling_tilt_angle=ddict.get("milling_tilt_angle", ddict.get("lamella_tilt_angle", 18)),
             undercut_tilt_angle=ddict.get("undercut_tilt_angle", -5),
@@ -667,6 +683,7 @@ class AutoLamellaProtocol(FibsemProtocol):
     configuration: dict                             # microscope configuration
     options: AutoLamellaProtocolOptions             # options for the protocol
     milling: Dict[str, List[FibsemMillingStage]]    # milling workflows
+    tmp: dict # TODO: remove tmp use something real
 
     def to_dict(self):
         return {
@@ -676,6 +693,7 @@ class AutoLamellaProtocol(FibsemProtocol):
             "configuration": self.configuration,
             "options": self.options.to_dict(),
             "milling": {k: get_protocol_from_stages(v) for k, v in self.milling.items()},
+            "tmp": self.tmp,
         }
 
     @classmethod
@@ -687,21 +705,31 @@ class AutoLamellaProtocol(FibsemProtocol):
         if "method" not in ddict:
             ddict["method"] = ddict.get("options", {}).get("method", DEFAULT_AUTOLAMELLA_METHOD)
 
+        if "tmp" not in ddict:
+            ddict["tmp"] = ddict.get("options", {})
+
         # get the method
         method = get_autolamella_method(ddict["method"])
 
+
         # load the supervision tasks
-        supervision_tasks = {k: get_supervision(k, ddict["options"]) for k in WORKFLOW_STAGE_TO_PROTOCOL_KEY.keys()}
+        if "supervision" in ddict:
+            supervision_tasks = {AutoLamellaStage[k]: v for k, v in ddict["supervision"].items()}
+        else:
+            # backwards compatibility
+            supervision_tasks = {k: get_supervision(k, ddict["options"]) for k in WORKFLOW_STAGE_TO_PROTOCOL_KEY.keys()}    
+        
         # filter out tasks that arent part of the method
         supervision_tasks = {k: v for k, v in supervision_tasks.items() if k in method.workflow}
-        
+
         return cls(
             name=ddict["name"],
             method=method,
             supervision=supervision_tasks,
             configuration=ddict.get("configuration", {}),
             options=AutoLamellaProtocolOptions.from_dict(ddict["options"]),
-            milling={k: get_milling_stages(k, ddict["milling"]) for k in ddict["milling"]}
+            milling={k: get_milling_stages(k, ddict["milling"]) for k in ddict["milling"]},
+            tmp=ddict["tmp"],
         )
     
     def save(self, path: Path) -> None:

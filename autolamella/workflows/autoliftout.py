@@ -870,7 +870,6 @@ def run_autoliftout_workflow(
     parent_ui: AutoLiftoutUIv2,
 ) -> Experiment:
 
-    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_next_stage"])
 
     update_status_ui(parent_ui, "Starting AutoLiftout Workflow...")
     logging.info(
@@ -925,7 +924,7 @@ def run_autoliftout_workflow(
         while lamella.state.stage.value < AutoLamellaStage.LandLamella.value:
 
             next_stage = AutoLamellaStage(lamella.state.stage.value + 1)
-            if CONFIRM_WORKFLOW_ADVANCE:
+            if True:
                 msg = (
                     f"""Continue Lamella {(lamella.petname)} from {next_stage.name}?"""
                 )

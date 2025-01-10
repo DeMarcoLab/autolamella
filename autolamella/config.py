@@ -12,7 +12,6 @@ os.makedirs(LOG_PATH, exist_ok=True)
 
 EXPERIMENT_NAME = "AutoLamella"
 
-AUTOLAMELLA_METHODS = ["autolamella-on-grid", "autolamella-trench", "autolamella-waffle", "autolamella-serial-liftout"]
 LIFTOUT_JOIN_METHODS = ["None", "Weld"]
 LIFTOUT_LANDING_JOIN_METHODS = ["Weld"]
 

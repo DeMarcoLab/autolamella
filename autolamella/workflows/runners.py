@@ -143,7 +143,7 @@ def run_autolamella(
     if AutoLamellaStage.SetupLamella in stages_to_complete:
         experiment = run_setup_lamella(microscope, settings, experiment, parent_ui)
 
-        validate = settings.protocol["options"]["supervise"].get("setup_lamella", True)
+        validate = settings.protocol.supervision[AutoLamellaStage.SetupLamella]
         if validate:
             ret = ask_user(parent_ui=parent_ui, msg="Start AutoLamella Milling?", pos="Continue", neg="Exit")
             if ret is False:
@@ -169,7 +169,7 @@ def run_autolamella_waffle(
     experiment = run_trench_milling(microscope, settings, experiment, parent_ui)
 
     ret = ask_user_continue_workflow(parent_ui, msg="Continue to Mill Undercut?", 
-        validate=settings.protocol["options"]["supervise"].get("undercut", True))
+        validate=settings.protocol.supervision[AutoLamellaStage.MillUndercut])
     if ret is False:
         return experiment
 
@@ -177,7 +177,7 @@ def run_autolamella_waffle(
     experiment = run_undercut_milling(microscope, settings, experiment, parent_ui)
 
     ret = ask_user_continue_workflow(parent_ui, msg="Continue to Setup Lamella?", 
-        validate=settings.protocol["options"]["supervise"].get("setup_lamella", True))
+        validate=settings.protocol.supervision[AutoLamellaStage.SetupLamella])
     if ret is False:
         return experiment
 

@@ -671,8 +671,6 @@ def run_serial_liftout_workflow(
     parent_ui: AutoLiftoutUIv2,
 ) -> Experiment:
     """Run the serial AutoLiftout workflow for a given experiment. """
-    BATCH_MODE = bool(settings.protocol["options"]["batch_mode"])
-    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_next_stage"])
 
     update_status_ui(parent_ui, "Starting AutoLiftout Workflow...")
     logging.info(
@@ -691,7 +689,7 @@ def run_serial_liftout_workflow(
 
         while lamella.state.stage.value < AutoLamellaStage.LiftoutLamella.value:
             next_stage = AutoLamellaStage(lamella.state.stage.value + 1)
-            if CONFIRM_WORKFLOW_ADVANCE:
+            if True:
                 msg = (
                     f"""Continue Lamella {(lamella.petname)} from {next_stage.name}?"""
                 )
@@ -735,8 +733,6 @@ def run_serial_liftout_landing(
     parent_ui: AutoLiftoutUIv2,
 ) -> Experiment:
     """Run the serial AutoLiftout workflow for landing a given experiment. """
-    BATCH_MODE = bool(settings.protocol["options"]["batch_mode"])
-    CONFIRM_WORKFLOW_ADVANCE = bool(settings.protocol["options"]["confirm_next_stage"])
 
     update_status_ui(parent_ui, "Starting Serial Liftout (Landing) Workflow...")
     logging.info(
