@@ -8,6 +8,7 @@ from autolamella.structures import (
     AutoLamellaMethod,
     AutoLamellaStage,
     Experiment,
+    AutoLamellaProtocol,
 )
 from autolamella.ui import AutoLamellaUI
 from autolamella.workflows.core import (
@@ -32,7 +33,7 @@ LAMELLA_MILLING_WORKFLOW = [AutoLamellaStage.MillRough, AutoLamellaStage.MillPol
 
 def run_trench_milling(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    protocol: AutoLamellaProtocol,
     experiment: Experiment,
     parent_ui: AutoLamellaUI=None,
     stages_to_complete: List[AutoLamellaStage] = AutoLamellaMethod.TRENCH.workflow
@@ -48,17 +49,16 @@ def run_trench_milling(
                 parent_ui=parent_ui
             )
 
-            lamella = mill_trench(microscope, settings, lamella, parent_ui)
+            lamella = mill_trench(microscope, protocol, lamella, parent_ui)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
     
     log_status_message(lamella, "NULL_END") # for logging purposes
 
     return experiment
 
-
 def run_undercut_milling(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    protocol: AutoLamellaProtocol,
     experiment: Experiment,
     parent_ui: AutoLamellaUI = None,
 ) -> Experiment:
@@ -71,7 +71,7 @@ def run_undercut_milling(
                 AutoLamellaStage.MillUndercut,
                 parent_ui=parent_ui
             )
-            lamella = mill_undercut(microscope, settings, lamella, parent_ui)
+            lamella = mill_undercut(microscope, protocol, lamella, parent_ui)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
         log_status_message(lamella, "NULL_END") # for logging purposes
@@ -80,7 +80,7 @@ def run_undercut_milling(
 
 def run_setup_lamella(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    protocol: AutoLamellaProtocol,
     experiment: Experiment,
     parent_ui: AutoLamellaUI = None,
 ) -> Experiment:
@@ -94,7 +94,7 @@ def run_setup_lamella(
                 parent_ui=parent_ui
             )
 
-            lamella = setup_lamella(microscope, settings, lamella, parent_ui)
+            lamella = setup_lamella(microscope, protocol, lamella, parent_ui)
 
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
     
@@ -105,7 +105,7 @@ def run_setup_lamella(
 # autolamella
 def run_lamella_milling(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    protocol: AutoLamellaProtocol,
     experiment: Experiment,
     parent_ui: AutoLamellaUI = None,
     stages_to_complete: List[AutoLamellaStage] = LAMELLA_MILLING_WORKFLOW
@@ -118,7 +118,7 @@ def run_lamella_milling(
         for lamella in experiment.positions:
             if lamella.workflow is AutoLamellaStage(stage.value - 1) and not lamella.is_failure:
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
-                lamella = WORKFLOW_STAGES[lamella.workflow](microscope, settings, lamella, parent_ui)
+                lamella = WORKFLOW_STAGES[lamella.workflow](microscope, protocol, lamella, parent_ui)
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
 
     # finish # TODO: separate this into a separate function
@@ -131,9 +131,9 @@ def run_lamella_milling(
 
     return experiment
 
-def run_autolamella(    
+def run_autolamella(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    protocol: AutoLamellaProtocol,
     experiment: Experiment,
     parent_ui: AutoLamellaUI = None,
     stages_to_complete: List[AutoLamellaStage] = AutoLamellaMethod.ON_GRID.workflow
@@ -141,48 +141,63 @@ def run_autolamella(
     
     # run setup
     if AutoLamellaStage.SetupLamella in stages_to_complete:
-        experiment = run_setup_lamella(microscope, settings, experiment, parent_ui)
+        experiment = run_setup_lamella(microscope, protocol, experiment, parent_ui)
 
-        validate = settings.protocol.supervision[AutoLamellaStage.SetupLamella]
-        if validate:
+        if protocol.supervision[AutoLamellaStage.SetupLamella]:
             ret = ask_user(parent_ui=parent_ui, msg="Start AutoLamella Milling?", pos="Continue", neg="Exit")
             if ret is False:
                 return experiment
 
     # run lamella milling
-    experiment = run_lamella_milling(microscope, settings, experiment, parent_ui, stages_to_complete)
+    experiment = run_lamella_milling(microscope, protocol, experiment, parent_ui, stages_to_complete)
 
     return experiment
 
 def run_autolamella_waffle(    
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    protocol: AutoLamellaProtocol,
     experiment: Experiment,
     parent_ui: AutoLamellaUI = None,
     stages_to_complete: List[AutoLamellaStage] = AutoLamellaMethod.WAFFLE.workflow
 ) -> Experiment:
     """Run the waffle method workflow."""
-    # TODO: add more validation, so we only ask the user to complete a stage 
+    # TODO: add more validation, so we only ask the user to complete a stage
     # if a lamella is ready that stage
 
     # run trench milling
-    experiment = run_trench_milling(microscope, settings, experiment, parent_ui)
+    if AutoLamellaStage.MillTrench in stages_to_complete and experiment.at_stage(AutoLamellaStage.PositionReady):
+        experiment = run_trench_milling(microscope, protocol, experiment, parent_ui)
 
-    ret = ask_user_continue_workflow(parent_ui, msg="Continue to Mill Undercut?", 
-        validate=settings.protocol.supervision[AutoLamellaStage.MillUndercut])
-    if ret is False:
-        return experiment
+    if AutoLamellaStage.MillUndercut in stages_to_complete and experiment.at_stage(AutoLamellaStage.MillTrench):
+        ret = ask_user_continue_workflow(
+            parent_ui=parent_ui,
+            msg="Continue to Mill Undercut?",
+            validate=protocol.supervision[AutoLamellaStage.MillUndercut],
+        )
+        if ret is False:
+            return experiment
 
-    # run undercut milling
-    experiment = run_undercut_milling(microscope, settings, experiment, parent_ui)
+        # run undercut milling
+        experiment = run_undercut_milling(microscope=microscope, 
+                                          protocol=protocol, 
+                                          experiment=experiment, 
+                                          parent_ui=parent_ui)
 
-    ret = ask_user_continue_workflow(parent_ui, msg="Continue to Setup Lamella?", 
-        validate=settings.protocol.supervision[AutoLamellaStage.SetupLamella])
-    if ret is False:
-        return experiment
+    if AutoLamellaStage.SetupLamella in stages_to_complete and experiment.at_stage(AutoLamellaStage.MillUndercut):
+        ret = ask_user_continue_workflow(
+            parent_ui=parent_ui,
+            msg="Continue to Setup Lamella?",
+            validate=protocol.supervision[AutoLamellaStage.SetupLamella],
+        )
+        if ret is False:
+            return experiment
 
     # run autolamella
-    experiment = run_autolamella(microscope, settings, experiment, parent_ui)
+    experiment = run_autolamella(microscope=microscope, 
+                                 protocol=protocol, 
+                                 experiment=experiment, 
+                                 parent_ui=parent_ui, 
+                                 stages_to_complete=stages_to_complete)
 
     return experiment
 

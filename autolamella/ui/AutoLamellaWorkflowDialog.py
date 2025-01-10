@@ -1,11 +1,9 @@
 
-
-import random
+import logging
 import sys
 from copy import deepcopy
 from pprint import pprint
-from typing import Dict, Tuple
-
+from typing import Dict, List, Tuple
 
 from PyQt5.QtWidgets import (
     QApplication,
@@ -14,70 +12,147 @@ from PyQt5.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QLabel,
+    QGridLayout,
 )
-
-from autolamella.structures import AutoLamellaStage, Experiment, Lamella, AutoLamellaMethod, AutoLamellaProtocol
+from autolamella.structures import (
+    AutoLamellaMethod,
+    AutoLamellaProtocol,
+    AutoLamellaStage,
+    Experiment,
+    Lamella,
+)
 from autolamella.ui.qt import AutoLamellaWorkflowDialog as AutoLamellaWorkflowDialogUI
 
-PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-01-09-12-34/experiment.yaml"
+EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-01-10-14-24/experiment.yaml"
+PROTOCOL_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-01-10-14-24/protocol.yaml"
+exp = Experiment.load(EXP_PATH)
+protocol = AutoLamellaProtocol.load(PROTOCOL_PATH)
 
-exp = Experiment.load(PATH)
-pos = exp.positions[0]
+def display_selected_lamella_info(grid_layout: QGridLayout, pos: Lamella, method: AutoLamellaMethod) -> None:
+    """Display the history of a selected lamella."""
+    
+    # clear the existing layout
+    for i in reversed(range(grid_layout.count())):
+        for i in reversed(range(grid_layout.count())):
+            grid_layout.itemAt(i).widget().setParent(None)
 
-for i in range(3):
-    exp.positions.append(deepcopy(pos))
-    exp.positions[-1].petname = f"Position {i+1}"
+    # filter out the states that are not in the method (setups, finishes, etc.)
+    workflow_states = sorted(pos.states.keys(), key=lambda x: x.value)
+    workflow_states = [wf for wf in workflow_states if wf in method.workflow]
 
-    # randomly select a state from states, and assign it to state
-    current_stage = random.choice(list(pos.states.keys()))
-    exp.positions[-1].state = deepcopy(pos.states[current_stage])
+    # if there are no states, return
+    if len(workflow_states) == 0:
+        return
 
-# pprint(pos.states)
+    # add headers
+    hworkflow = QLabel("Workflow")
+    hcompleted = QLabel("Completed At")
+    hduration = QLabel("Duration")
+    hworkflow.setStyleSheet("font-weight: bold")
+    hcompleted.setStyleSheet("font-weight: bold")
+    hduration.setStyleSheet("font-weight: bold")
+    grid_layout.addWidget(hworkflow, 0, 0)
+    grid_layout.addWidget(hcompleted, 0, 1)
+    grid_layout.addWidget(hduration, 0, 2)
 
-START_FROM_MAP: Dict[AutoLamellaStage, AutoLamellaStage] = {
-    AutoLamellaStage.SetupLamella: AutoLamellaStage.Created,
-    AutoLamellaStage.MillRough: AutoLamellaStage.SetupLamella,
-    AutoLamellaStage.MillPolishing: AutoLamellaStage.MillRough,
-    AutoLamellaStage.MillTrench: AutoLamellaStage.ReadyTrench,
-    AutoLamellaStage.MillUndercut: AutoLamellaStage.MillTrench,
-    AutoLamellaStage.Finished: AutoLamellaStage.Finished,
-}
-START_STATES = [k for k in START_FROM_MAP.keys()]
+    for i, wf in enumerate(workflow_states, 1):
+        state = pos.states[wf]
+        grid_layout.addWidget(QLabel(wf.name), i, 0)
+        grid_layout.addWidget(QLabel(state.completed_at), i, 1)
+        grid_layout.addWidget(QLabel(state.duration_str), i, 2)
+    return 
 
-# invert the START_FROM_MAP
-NEXT_WORKFLOW_STAGE: Dict[AutoLamellaStage, AutoLamellaStage] = {
-    AutoLamellaStage.Created: AutoLamellaStage.SetupLamella,
-    AutoLamellaStage.SetupLamella: AutoLamellaStage.MillRough,
-    # AutoLamellaStage.ReadyLamella: AutoLamellaStage.MillRough,
-    AutoLamellaStage.MillRough: AutoLamellaStage.MillPolishing,
-    AutoLamellaStage.MillPolishing: AutoLamellaStage.Finished,
-    AutoLamellaStage.ReadyTrench: AutoLamellaStage.MillUndercut,
-    AutoLamellaStage.MillTrench: AutoLamellaStage.MillUndercut,
-    AutoLamellaStage.Finished: AutoLamellaStage.Finished,
-} 
+def display_lamella_info(grid_layout: QGridLayout, 
+                         positions: List[Lamella], 
+                         method: AutoLamellaMethod) -> None:
+    """Create a grid layout of lamella information."""
+    
+    # clear the existing layout
+    for i in reversed(range(grid_layout.count())):
+        for i in reversed(range(grid_layout.count())):
+            grid_layout.itemAt(i).widget().setParent(None)
 
-print(START_STATES)
+    # add headers
+    name_header = QLabel("Name")
+    name_header.setStyleSheet("font-weight: bold")
+    status_header = QLabel("Status")
+    status_header.setStyleSheet("font-weight: bold")
+    last_header = QLabel("Last Completed")
+    last_header.setStyleSheet("font-weight: bold")
+    next_header = QLabel("Starting From")
+    next_header.setStyleSheet("font-weight: bold")
+    grid_layout.addWidget(name_header, 0, 0)
+    grid_layout.addWidget(status_header, 0, 1)
+    grid_layout.addWidget(last_header, 0, 2)
+    grid_layout.addWidget(next_header, 0, 3)
 
-def get_start_state(self, start_from: AutoLamellaStage) -> AutoLamellaStage:
-    return START_FROM_MAP.get(start_from, None)
+    pos: Lamella
+    for i, pos in enumerate(positions, 1):
 
-Lamella.get_start_state = get_start_state
+        is_finished = pos.workflow is AutoLamellaStage.Finished
+        is_creation = pos.workflow is AutoLamellaStage.Created
+        is_failure = pos.is_failure
+        
+        # get the name of the lamella
+        name_label = QLabel(f"Lamella {pos.name}")
+
+        # get the status of the lamella
+        status_label = QLabel()
+        status_msg = "Active"
+        status_label.setStyleSheet("color: green")
+        if is_finished:
+            status_msg = "Finished"
+            status_label.setStyleSheet("color: cyan")
+        if is_failure:
+            if len(pos.failure_note) > 5:
+                note = f"{pos.failure_note[:3]}..."
+            else:
+                note = pos.failure_note
+            status_msg = f"Defect ({note})"
+            status_label.setStyleSheet("color: red")
+            status_label.setToolTip(pos.failure_note)
+        status_label.setText(status_msg)
+
+        # get the last completed workflow stage
+        last_label = QLabel(pos.last_completed)
+
+        # get the next workflow stage
+        next_workflow = method.get_next(pos.workflow)
+        next_label = QLabel()
+        if not is_creation and not is_finished and not is_failure:
+            next_label.setText(next_workflow.name)
+        
+        # control_widget = QComboBox()
+        # control_widget.addItems([s.name for s in START_STATES])
+        # print(f"Next stage: {NEXT_WORKFLOW_STAGE[pos.stage].name}")
+        # control_widget.setCurrentText(NEXT_WORKFLOW_STAGE[pos.workflow].name)
+
+        grid_layout.addWidget(name_label, i, 0)
+        grid_layout.addWidget(status_label, i, 1)
+        grid_layout.addWidget(last_label, i, 2)
+        grid_layout.addWidget(next_label, i, 3)
+        # self.gridLayout_lamella.addWidget(control_widget, i, 2)
 
 class AutoLamellaWorkflowDialog(QDialog, AutoLamellaWorkflowDialogUI.Ui_Dialog):
 
-    def __init__(self, experiment: Experiment, protocol: AutoLamellaProtocol, parent=None):
+    def __init__(self, 
+                 experiment: Experiment, 
+                 protocol: AutoLamellaProtocol, parent=None):
         super().__init__(parent=parent)
         if parent is not None:
             self.setStyleSheet(parent.styleSheet())
         self.setupUi(self)
+        self.setWindowTitle("AutoLamella Workflow")
         self.parent = parent
 
+        self.experiment = experiment
+        self.protocol = protocol
+        self.method = self.protocol.method
 
+        self.workflow_widgets: Dict[AutoLamellaStage, Tuple[QCheckBox, QCheckBox]] = {}
 
-        # print("ON GRID WORKFLOW: ", AutoLamellaOnGridMethod.workflow)
-        self.method = AutoLamellaOnGridMethod
-
-        self.experiment = exp
+        self.stages_to_complete: List[AutoLamellaStage] = None
+        self.supervision: Dict[AutoLamellaStage, bool] = None
 
         self.setup_connections()
 
@@ -91,37 +166,20 @@ class AutoLamellaWorkflowDialog(QDialog, AutoLamellaWorkflowDialogUI.Ui_Dialog):
         self.buttonBox.accepted.connect(self.on_start)
         self.buttonBox.rejected.connect(self.on_exit)
 
-        # self.groupBox_lamella.setVisible(False)
+        # display lamella information
+        display_lamella_info(grid_layout=self.gridLayout_lamella, 
+                             positions=self.experiment.positions, 
+                             method=self.method)
 
-        pos: Lamella       
-        self.gridLayout_lamella.addWidget(QLabel("Name"), 0, 0)
-        self.gridLayout_lamella.addWidget(QLabel("Last Completed"), 0, 1)
-        # self.gridLayout_lamella.addWidget(QLabel("Start From"), 0, 2)
-
-        for i, pos in enumerate(self.experiment.positions, 1):
-            name_label = QLabel(pos.name)
-            status_label = QLabel(pos.status)
-            control_widget = QComboBox()
-            control_widget.addItems([s.name for s in START_STATES])
-            # print(f"Next stage: {NEXT_WORKFLOW_STAGE[pos.stage].name}")
-            control_widget.setCurrentText(NEXT_WORKFLOW_STAGE[pos.workflow].name)
-
-            self.gridLayout_lamella.addWidget(name_label, i, 0)
-            self.gridLayout_lamella.addWidget(status_label, i, 1)
-            # self.gridLayout_lamella.addWidget(control_widget, i, 2)
-
-        self.workflow_widgets: Dict[AutoLamellaStage, Tuple[QCheckBox, QCheckBox]] = {}
-
-        METHOD_WORKFLOW = [s for s in START_STATES if s in self.method.workflow]
-
-        for i, state in enumerate(METHOD_WORKFLOW):
+        # display workflow settings
+        for i, state in enumerate(self.method.workflow):
             label = QLabel(state.name)
             enable_checkbox = QCheckBox()
             enable_checkbox.setChecked(True)
             enable_checkbox.setText("Enable")
 
             supervised_checkbox = QCheckBox()
-            supervised_checkbox.setChecked(True)
+            supervised_checkbox.setChecked(self.protocol.supervision[state])
             supervised_checkbox.setText("Supervised")
 
             self.gridLayout_workflow.addWidget(label, i, 0)
@@ -130,22 +188,15 @@ class AutoLamellaWorkflowDialog(QDialog, AutoLamellaWorkflowDialogUI.Ui_Dialog):
 
             self.workflow_widgets[state] = (enable_checkbox, supervised_checkbox)
 
-
     def get_workflow_settings(self) -> Dict[AutoLamellaStage, Tuple[bool, bool]]:
         return {state: (enable.isChecked(), supervised.isChecked()) for state, (enable, supervised) in self.workflow_widgets.items()}
 
     def on_start(self):
-        print("Start")
-
+        logging.info("Starting AutoLamella Workflow")
+        
         wf = self.get_workflow_settings()
-
-        # v = complete stage, supervise stage
-        stages_to_complete = [k for k, v in wf.items() if v[0]]
-        print(f"Stages to complete: {stages_to_complete}")
-
-        # supervision
-        for wf, (enable, supervised) in wf.items():
-            print(wf, supervised)
+        self.stages_to_complete = [k for k, v in wf.items() if v[0]]
+        self.supervision: Dict[AutoLamellaStage, bool] = {k: v[1] for k, v in wf.items()}
 
         self.accept()
 
@@ -154,11 +205,43 @@ class AutoLamellaWorkflowDialog(QDialog, AutoLamellaWorkflowDialogUI.Ui_Dialog):
         self.reject()
 
 
+def open_workflow_dialog(
+    experiment: Experiment, 
+    protocol: AutoLamellaProtocol, 
+    parent=None,
+) -> Tuple[bool, List[AutoLamellaStage], Dict[AutoLamellaStage, bool]]:
+    """Open the AutoLamella Workflow Dialog. 
+    Allows the user to select the workflow stages and supervision settings.
+    Args:
+        experiment: Experiment
+        protocol: AutoLamellaProtocol
+    Returns:
+        accepted: Start the workflow
+        stages_to_complete: List of stages to complete
+        supervision: Supervision settings for each stage
+    """
+    dialog = AutoLamellaWorkflowDialog(experiment=experiment, 
+                                       protocol=protocol, 
+                                       parent=parent)
+    ret = dialog.exec_()
+
+    stages_to_complete = dialog.stages_to_complete
+    supervision = dialog.supervision
+    accepted = bool(ret == QDialog.Accepted)
+
+    return accepted, stages_to_complete, supervision
+
+
 def main():
     app = QApplication(sys.argv)
-    dialog = AutoLamellaWorkflowDialog(experiment=exp, protocol=None)
-    _ = dialog.exec_()
 
+    accepted, stc, supervision = open_workflow_dialog(
+        experiment=exp, protocol=protocol
+    )
+    
+    print(f"Accepted: {accepted}")
+    print(f"Stages to complete: {stc}")
+    print(f"Supervision: {supervision}")
 
 if __name__ == "__main__":
     main()

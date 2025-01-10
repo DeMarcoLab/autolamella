@@ -3,7 +3,6 @@ import time
 from copy import deepcopy
 from typing import List
 
-from fibsem import config as cfg
 from fibsem import milling
 from fibsem.detection import detection
 from fibsem.detection import utils as det_utils
@@ -14,9 +13,8 @@ from fibsem.structures import (
     FibsemImage,
     FibsemRectangle,
     FibsemStagePosition,
-    MicroscopeSettings,
+    ImageSettings,
 )
-
 from autolamella.ui import AutoLamellaUI
 from autolamella.structures import Experiment
 
@@ -25,7 +23,7 @@ def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by u
     # headless mode
     if parent_ui is None:
         return False
-    
+
     if parent_ui.STOP_WORKFLOW:
         raise InterruptedError(msg)
 
@@ -117,7 +115,8 @@ def update_milling_stages_ui(
 
 def update_detection_ui(
     microscope: FibsemMicroscope, 
-    settings: MicroscopeSettings, # TODO: deprecate
+    image_settings: ImageSettings, # TODO: deprecate
+    checkpoint: str,
     features: List[Feature], 
     parent_ui: AutoLamellaUI, validate: bool, 
     msg: str = "Lamella", position: FibsemStagePosition = None,
@@ -125,10 +124,9 @@ def update_detection_ui(
     feat_str = ", ".join([f.name for f in features])
     update_status_ui(parent_ui, f"{msg}: Detecting Features ({feat_str})...")
 
-    checkpoint = settings.protocol.options.checkpoint
     det = detection.take_image_and_detect_features(
         microscope=microscope,
-        image_settings=settings.image,
+        image_settings=image_settings,
         features=features,
         point=position,
         checkpoint=checkpoint,

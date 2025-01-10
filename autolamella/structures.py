@@ -12,6 +12,7 @@ from typing import Dict, List
 import pandas as pd
 import petname
 import yaml
+from fibsem.utils import format_duration
 from fibsem.milling import (
     FibsemMillingStage,
     get_milling_stages,
@@ -22,6 +23,7 @@ from fibsem.structures import (
     FibsemRectangle,
     MicroscopeState,
     ReferenceImages,
+    MicroscopeSettings,
 )
 from fibsem.utils import configure_logging
 
@@ -49,8 +51,6 @@ class AutoLamellaStage(Enum):
     MillPolishing = auto()
     Finished = auto()
 
-# TODO: investigate removing PreSetupLamella, ReadyTrench, ReadyLamella
-
     def __str__(self) -> str:
         return self.name
 
@@ -60,6 +60,30 @@ class LamellaState:
     stage: AutoLamellaStage = AutoLamellaStage.Created
     start_timestamp: float = datetime.timestamp(datetime.now())
     end_timestamp: float = None
+
+    @property
+    def completed(self) -> str:
+        return f"{self.stage.name} ({self.completed_at})"
+
+    @property
+    def completed_at(self) -> str:
+        if self.end_timestamp is None:
+            return "in progress"
+        return datetime.fromtimestamp(self.end_timestamp).strftime('%I:%M%p')
+    
+    @property
+    def started_at(self) -> str:
+        return datetime.fromtimestamp(self.start_timestamp).strftime('%I:%M%p')
+
+    @property
+    def duration(self) -> float:
+        if self.end_timestamp is None:
+            return 0
+        return self.end_timestamp - self.start_timestamp
+
+    @property
+    def duration_str(self) -> str:
+        return format_duration(self.duration)
 
     def to_dict(self):
         return {
@@ -122,6 +146,10 @@ class Lamella:
     def name(self) -> str:
         return self.petname
     
+    @name.setter
+    def name(self, value: str):
+        self.petname = value
+
     @property
     def status(self) -> str:
         return self.state.stage.name
@@ -129,6 +157,14 @@ class Lamella:
     @property
     def workflow(self) -> AutoLamellaStage:
         return self.state.stage
+
+    @property
+    def last_completed(self) -> str:
+        return self.state.completed
+
+    @property
+    def is_active(self) -> bool:
+        return not self.finished and not self.is_failure
     
     def to_dict(self):
         return {
@@ -150,7 +186,7 @@ class Lamella:
 
     @property
     def info(self):
-        return f"Lamella {self.petname} [{self.state.stage.name}]"
+        return f"Lamella {self.petname} [{self.status}]"
 
     @classmethod
     def from_dict(cls, data):
@@ -495,12 +531,10 @@ class Experiment:
 
     def at_stage(self, stage: AutoLamellaStage) -> List[Lamella]:
         """Return a list of lamellas at a specific stage"""
+        return [p for p in self.positions if (p.workflow is stage and p.is_active)]
 
-        return [lamella for lamella in self.positions if lamella.state.stage == stage]
-        
     def at_failure(self) -> List[Lamella]:
         """Return a list of lamellas that have failed"""
-
         return [lamella for lamella in self.positions if lamella.is_failure]
 
 
@@ -593,6 +627,35 @@ class AutoLamellaMethod(Enum):
     def is_liftout(self) -> bool:
         return self in [AutoLamellaMethod.LIFTOUT, 
                         AutoLamellaMethod.SERIAL_LIFTOUT]
+    
+    def get_next(self, current_stage: AutoLamellaStage) -> AutoLamellaStage:
+        if current_stage is AutoLamellaStage.Finished:
+            return AutoLamellaStage.Finished
+        if current_stage in [AutoLamellaStage.Created, AutoLamellaStage.PositionReady]:
+            return self.workflow[0]
+        
+        idx = self.workflow.index(current_stage)
+
+        # clip idx to 0
+        if idx < len(self.workflow)-1:
+            return self.workflow[idx+1]
+        else:
+            return None
+
+    def get_previous(self, current_stage: AutoLamellaStage) -> AutoLamellaStage:
+        if current_stage is AutoLamellaStage.Finished:
+            return self.workflow[-1]
+
+        if current_stage in [AutoLamellaStage.Created, AutoLamellaStage.PositionReady]:
+            return AutoLamellaStage.Created
+
+        idx = self.workflow.index(current_stage)
+            
+        # clip idx to 0
+        if idx < len(self.workflow)-1:
+            return self.workflow[idx-1]
+        else:
+            return None
 
 DEFAULT_AUTOLAMELLA_METHOD = AutoLamellaMethod.ON_GRID.name
 
@@ -680,7 +743,7 @@ class AutoLamellaProtocol(FibsemProtocol):
     name: str
     method: AutoLamellaMethod
     supervision: Dict[AutoLamellaStage, bool]
-    configuration: dict                             # microscope configuration
+    configuration: MicroscopeSettings               # microscope configuration
     options: AutoLamellaProtocolOptions             # options for the protocol
     milling: Dict[str, List[FibsemMillingStage]]    # milling workflows
     tmp: dict # TODO: remove tmp use something real
@@ -690,7 +753,7 @@ class AutoLamellaProtocol(FibsemProtocol):
             "name": self.name,
             "method": self.method.name,
             "supervision": {k.name: v for k, v in self.supervision.items()},
-            "configuration": self.configuration,
+            "configuration": self.configuration.to_dict(),
             "options": self.options.to_dict(),
             "milling": {k: get_protocol_from_stages(v) for k, v in self.milling.items()},
             "tmp": self.tmp,

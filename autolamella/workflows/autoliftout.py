@@ -46,7 +46,7 @@ from fibsem import config as fcfg
 from autolamella.workflows.core import (log_status_message, log_status_message_raw,
                                         start_of_stage_update, end_of_stage_update, 
                                         mill_trench, mill_undercut, mill_lamella, 
-                                        setup_lamella, pass_through_stage)
+                                        setup_lamella)
 from autolamella.workflows.ui import (update_milling_ui, update_status_ui, 
                                       set_images_ui, ask_user, update_detection_ui, 
                                       update_experiment_ui)
@@ -70,7 +70,7 @@ def liftout_lamella(
     log_status_message(lamella, "ALIGN_REF_UNDERCUT")
 
     # detect
-    log_status_message(lamella, f"ALIGN_TRENCH")
+    log_status_message(lamella, "ALIGN_TRENCH")
     settings.image.beam_type = BeamType.ELECTRON
     settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
     settings.image.filename = f"ref_{lamella.state.stage.name}_trench_align_ml"
@@ -79,6 +79,7 @@ def liftout_lamella(
     set_images_ui(parent_ui, eb_image, ib_image)
 
     features = [LamellaCentre()] 
+    # TODO: FAIL HERE
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
     microscope.stable_move(
@@ -858,7 +859,6 @@ WORKFLOW_STAGES = {
     AutoLamellaStage.LiftoutLamella: liftout_lamella,
     AutoLamellaStage.LandLamella: land_lamella,
     AutoLamellaStage.SetupLamella: setup_lamella,
-    # AutoLamellaStage.ReadyLamella: pass_through_stage,
     AutoLamellaStage.MillRough: mill_lamella,
     AutoLamellaStage.MillPolishing: mill_lamella,
 }

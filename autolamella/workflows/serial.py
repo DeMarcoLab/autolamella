@@ -80,8 +80,9 @@ def liftout_lamella(
 
     # align feature so beams are coincident
     lamella = align_feature_coincident(microscope=microscope, 
-                             settings=settings, 
-                              lamella=lamella, 
+                             image_settings=settings.image, 
+                              lamella=lamella,
+                              checkpoint= settings.protocol.options.checkpoint,
                               parent_ui=parent_ui, 
                               validate=validate, 
                               hfw=fcfg.REFERENCE_HFW_MEDIUM,
@@ -111,6 +112,7 @@ def liftout_lamella(
     scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ELECTRON)
     features = [CopperAdapterTopEdge(), VolumeBlockBottomEdge()] if np.isclose(scan_rotation, 0) else [CopperAdapterBottomEdge(), VolumeBlockTopEdge()]
     
+    # TODO: FAIL HERE
     det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
 
     # TODO: do we offset this? Align the top edges -> move down by half the blcok? or just align the centre of the block
