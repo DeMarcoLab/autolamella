@@ -192,7 +192,7 @@ def _convert_trench_protocol(pattern_config: dict) -> dict:
 
     return pattern_config
 
-def convert_protocol_to_stage_config(pprotocol: dict, pkey: str) -> dict:
+def convert_protocol_to_stage_config(pprotocol: dict, pkey: str, point: dict = None) -> dict:
 
     # get all the milling keys
     milling_config = {k: pprotocol[k] for k in MILLING_KEYS if k in pprotocol}
@@ -215,6 +215,9 @@ def convert_protocol_to_stage_config(pprotocol: dict, pkey: str) -> dict:
     # the keys for these protocol are different, so we need to convert them
     if name in ["Trench", "Horseshoe"]:
         pattern_config = _convert_trench_protocol(pattern_config)
+    
+    if point is not None:
+        pattern_config["point"] = point
 
     STAGE_CONFIG = {}
     STAGE_CONFIG["name"] = pprotocol.get("name", name)
@@ -232,15 +235,18 @@ def convert_old_milling_protocol_to_new_protocol(milling_protocol: dict) -> dict
     NEW_PROTOCOL = {}
     for k, v in milling_protocol.items():
         configs: List[dict] = []
+        point = None
+        if "point" in v:
+            point = v["point"]
 
         if "stages" in v:
             # LIST[DICT]
             for stage in v["stages"]:
-                config = convert_protocol_to_stage_config(stage, k)
+                config = convert_protocol_to_stage_config(stage, k, point)
                 configs.append(deepcopy(config))
         else:
             # DICT
-            config = convert_protocol_to_stage_config(v, k)
+            config = convert_protocol_to_stage_config(v, k, point)
             configs.append(deepcopy(config))
 
         NEW_PROTOCOL[k] = deepcopy(configs)

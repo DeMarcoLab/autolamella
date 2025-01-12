@@ -320,7 +320,7 @@ class Experiment:
         self.positions: List[Lamella] = []
 
         self.program: str = program
-        self.method: str = method
+        self.method: AutoLamellaMethod = get_autolamella_method(method)
 
     def to_dict(self) -> dict:
 
@@ -331,7 +331,7 @@ class Experiment:
             "positions": [lamella.to_dict() for lamella in self.positions],
             "created_at": self.created_at,
             "program": self.program,
-            "method": self.method,
+            "method": self.method.name,
         }
 
         return state_dict
@@ -345,7 +345,7 @@ class Experiment:
         experiment.created_at = ddict.get("created_at", None)
         experiment._id = ddict.get("_id", "NULL")
         experiment.program = ddict.get("program", cfg.EXPERIMENT_NAME)
-        experiment.method = ddict.get("method", "autoLamella-on-grid")
+        experiment.method = get_autolamella_method(ddict.get("method", "autoLamella-on-grid"))
 
         # load lamella from dict
         for lamella_dict in ddict["positions"]:
@@ -380,7 +380,7 @@ class Experiment:
                 "experiment_created_at": self.created_at,
                 "experiment_id": self._id,
                 "program": self.program,
-                "method": self.method, 
+                "method": self.method.name, 
                 "number": lamella.number,
                 "petname": lamella.petname,  # what?
                 "path": lamella.path,
@@ -396,7 +396,7 @@ class Experiment:
                 "failure_timestamp": lamella.failure_timestamp,
             }
 
-            if "autoliftout" in self.method:
+            if self.method.is_liftout:
                 ldict.update({
                     "landing.x": lamella.landing_state.stage_position.x,
                     "landing.y": lamella.landing_state.stage_position.y,
@@ -423,7 +423,7 @@ class Experiment:
             "date": self.created_at,
             "experiment_id": self._id,
             "program": self.program,
-            "method": self.method, 
+            "method": self.method.name, 
             "num_lamella": len(self.positions),
         }
 
@@ -557,6 +557,43 @@ class Experiment:
         """Return a list of lamellas that have failed"""
         return [lamella for lamella in self.positions if lamella.is_failure]
 
+    def to_summary_dataframe(self) -> pd.DataFrame:
+        """Convert the experiment to a summary dataframe"""
+        dat = []
+        for p in self.positions:
+            
+            is_finished = p.finished
+            is_failure = p.is_failure
+
+            status_msg = "Active"
+            if is_finished:
+                status_msg = "Finished"
+            if is_failure:
+                if len(p.failure_note) > 5:
+                    note = f"{p.failure_note[:3]}..."
+                else:
+                    note = p.failure_note
+                status_msg = f"Defect ({note})"
+
+            # get the last completed workflow stage
+            last_label = p.last_completed
+            if is_finished:
+                # special case for finished lamella
+                prev = self.method.get_previous(p.workflow)
+                state = p.states[prev]
+                last_label = state.completed
+
+            d = {
+                "Name": p.name,
+                "Status": status_msg,
+                "Last Completed": last_label,
+            }
+
+            dat.append(deepcopy(d))
+
+        df = pd.DataFrame(dat)
+
+        return df
 
 ########## PROTOCOL V2 ##########
 
