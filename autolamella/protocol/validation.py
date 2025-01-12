@@ -203,9 +203,10 @@ def convert_protocol_to_stage_config(pprotocol: dict, pkey: str) -> dict:
     # some old protocols don't have type and we need to look it up from the protocol key... best effort only
     if name is None:
         from fibsem.milling.patterning.patterns2 import PROTOCOL_MILL_MAP
-        name = PROTOCOL_MILL_MAP.get(pkey, None) # support legacy mapping
-        if name is None:
+        pattern = PROTOCOL_MILL_MAP.get(pkey, None) # support legacy mapping
+        if pattern is None:
             raise ValueError("Protocol must have a 'type' key for the pattern name")
+        name = pattern.name
 
     # get all the keys that arent in STRATEGY_KEYS or MILLING_KEYS
     pattern_config = {k: v for k, v in pprotocol.items() if k not in STRATEGY_KEYS + MILLING_KEYS + ["name", "type"]}
@@ -242,14 +243,15 @@ def convert_old_milling_protocol_to_new_protocol(milling_protocol: dict) -> dict
             config = convert_protocol_to_stage_config(v, k)
             configs.append(deepcopy(config))
 
-        NEW_PROTOCOL[k] = configs
+        NEW_PROTOCOL[k] = deepcopy(configs)
 
     return deepcopy(NEW_PROTOCOL)
 
-def validate_and_convert_protocol(path: str):
-    from fibsem import utils
-    protocol = utils.load_protocol(path)
-    protocol = validate_protocol(protocol)
+from typing import Dict
+def validate_and_convert_protocol(ddict: Dict) -> Dict:
+    # from fibsem import utils
+    # protocol = utils.load_protocol(path)
+    protocol = validate_protocol(ddict)
     protocol["milling"] = convert_old_milling_protocol_to_new_protocol(protocol["milling"])
 
     return protocol

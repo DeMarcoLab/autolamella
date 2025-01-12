@@ -1111,8 +1111,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             return
 
         # validate the protocol and up-convert it
-        pdict = validate_protocol(utils.load_protocol(protocol_path=PROTOCOL_PATH))
-        self.protocol = AutoLamellaProtocol.from_dict(pdict)
+        self.protocol = AutoLamellaProtocol.load(PROTOCOL_PATH)
         self.protocol.configuration = deepcopy(self.settings)
 
         # TODO:

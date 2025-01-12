@@ -20,6 +20,7 @@ from autolamella.structures import (
     AutoLamellaStage,
     Experiment,
     Lamella,
+    get_completed_stages,
 )
 from autolamella.ui.qt import AutoLamellaWorkflowDialog as AutoLamellaWorkflowDialogUI
 
@@ -37,8 +38,8 @@ def display_selected_lamella_info(grid_layout: QGridLayout, pos: Lamella, method
             grid_layout.itemAt(i).widget().setParent(None)
 
     # filter out the states that are not in the method (setups, finishes, etc.)
-    workflow_states = sorted(pos.states.keys(), key=lambda x: x.value)
-    workflow_states = [wf for wf in workflow_states if wf in method.workflow]
+
+    workflow_states = get_completed_stages(pos, method)
 
     # if there are no states, return
     if len(workflow_states) == 0:
@@ -115,6 +116,11 @@ def display_lamella_info(grid_layout: QGridLayout,
 
         # get the last completed workflow stage
         last_label = QLabel(pos.last_completed)
+        if is_finished:
+            # special case for finished lamella
+            prev = method.get_previous(pos.workflow)
+            state = pos.states[prev]
+            last_label.setText(state.completed)
 
         # get the next workflow stage
         next_workflow = method.get_next(pos.workflow)

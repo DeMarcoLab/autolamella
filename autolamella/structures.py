@@ -96,9 +96,21 @@ class LamellaState:
     @classmethod
     def from_dict(cls, data):
         state = MicroscopeState.from_dict(data["microscope_state"])
+        
+        # backwards compatibility
+        stage_name = data["stage"]
+        stage_name= stage_name.replace("Cut", "") # MillRoughCut -> MillRough, MillPolishingCut -> MillPolishing
+        if stage_name == "PreSetupLamella":
+            stage_name = "Created"
+        if stage_name == "ReadyTrench":
+            stage_name = "PositionReady"
+        if stage_name == "ReadyLamella":
+            stage_name = "SetupLamella"
+        workflow_stage = AutoLamellaStage[stage_name]
+
         return cls(
             microscope_state=state,
-            stage=AutoLamellaStage[data["stage"]],
+            stage=workflow_stage,
             start_timestamp=data["start_timestamp"],
             end_timestamp=data["end_timestamp"]
         )
@@ -122,7 +134,10 @@ class Lamella:
     _id: str = str(uuid.uuid4())
 
     def __post_init__(self):
-        os.makedirs(self.path, exist_ok=True)
+        # only make the dir, if the base path is actually set, 
+        # prevents creating path on other computer..
+        if os.path.exists(os.path.dirname(self.path)):
+            os.makedirs(self.path, exist_ok=True)
         if self.protocol is None:
             self.protocol = {}
         if self.history is None:
@@ -174,7 +189,7 @@ class Lamella:
             "alignment_area": self.alignment_area.to_dict(),
             "protocol": self.protocol,
             "number": self.number,
-            "history": [state.to_dict() for state in self.history] if self.history is not False else [],
+            "history": [state.to_dict() for state in self.history],
             "is_failure": self.is_failure,
             "failure_note": self.failure_note,
             "failure_timestamp": self.failure_timestamp,
@@ -199,10 +214,15 @@ class Lamella:
         else:
             alignment_area = FibsemRectangle() # use default
         
+        history=[LamellaState().from_dict(state) for state in data["history"]]
+
         # load states:
         states = data.get("states", {})
         if states:
             states = {AutoLamellaStage[k]: LamellaState.from_dict(v) for k, v in states.items()}
+        else:
+            # load from history
+            states = {state.stage: state for state in history}
 
         return cls(
             petname=data["petname"],
@@ -211,7 +231,7 @@ class Lamella:
             alignment_area=alignment_area,
             protocol=data.get("protocol", {}),
             number=data.get("number", data.get("number", 0)),
-            history=[LamellaState().from_dict(state) for state in data["history"]],
+            history=history,
             is_failure=data.get("is_failure", data.get("is_failure", False)),
             failure_note=data.get("failure_note", ""),
             failure_timestamp=data.get("failure_timestamp", None),
@@ -711,6 +731,14 @@ class AutoLamellaProtocolOptions:
             turn_beams_off=ddict.get("turn_beams_off", False),
         )
 
+def get_completed_stages(pos: Lamella, method: AutoLamellaMethod) -> List[AutoLamellaStage]:
+    """Get a list of completed worflow stages in a method for a given position"""
+    # filter out the states that are not in the method (setups, finishes, etc.)
+    workflow_states = sorted(pos.states.keys(), key=lambda x: x.value)
+    completed_states = [wf for wf in workflow_states if wf in method.workflow]
+
+    return completed_states
+
 def get_autolamella_method(name: str) -> AutoLamellaMethod:
     method_aliases = {
         AutoLamellaMethod.ON_GRID: ["autolamella-on-grid", "on-grid", "AutoLamella-OnGrid"],
@@ -805,5 +833,12 @@ class AutoLamellaProtocol(FibsemProtocol):
         """Load the protocol from disk."""
         with open(path, "r") as f:
             ddict = yaml.safe_load(f)
+
+        tmp_ddict = deepcopy(ddict)
+        try:
+            from autolamella.protocol.validation import validate_and_convert_protocol
+            ddict = validate_and_convert_protocol(ddict)
+        except:
+            ddict = tmp_ddict
         
         return AutoLamellaProtocol.from_dict(ddict)
