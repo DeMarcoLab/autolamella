@@ -17,6 +17,7 @@ from fibsem.milling import (
     FibsemMillingStage,
     get_milling_stages,
     get_protocol_from_stages,
+    estimate_total_milling_time,
 )
 from fibsem.structures import (
     FibsemImage,
@@ -143,7 +144,7 @@ class Lamella:
         if self.history is None:
             self.history = []
         if self.milling_workflows is None:
-            self.milling_workflows = {}
+            self.milling_workflows = {k: get_milling_stages(k, self.protocol) for k in self.protocol}
         if self.states is None:
             self.states = {}
         if self._id is None:
@@ -609,6 +610,20 @@ class Experiment:
         df = pd.DataFrame(dat)
 
         return df
+    
+    def estimate_remaining_time(self) -> float:
+        """Estimate the remaining time for all lamellas in the experiment"""
+        total_remaining_time: float = 0
+        for p in self.positions:
+            
+            # skip failed lamellas
+            if p.is_failure:
+                continue
+            
+            # remaining time for individual lamella
+            remaining_time = estimate_remaining_time(p, method=self.method)           
+            total_remaining_time += remaining_time
+        return total_remaining_time
 
 ########## PROTOCOL V2 ##########
 
@@ -790,6 +805,37 @@ def get_completed_stages(pos: Lamella, method: AutoLamellaMethod) -> List[AutoLa
     completed_states = [wf for wf in workflow_states if wf in method.workflow]
 
     return completed_states
+
+def get_remaining_stages(pos: Lamella, method: AutoLamellaMethod) -> List[AutoLamellaStage]:
+    """Get a list of remaining worflow stages in a method for a given position"""
+    completed_states = get_completed_stages(pos, method)
+    remaining_states = [wf for wf in method.workflow if wf not in completed_states]
+
+    return remaining_states
+
+def estimate_remaining_time(p:Lamella, method: AutoLamellaMethod) -> None:
+    """Estimate the remaiing time in the workflows for a given method"""
+    ESTIMATED_SETUP_TIME = 5*60
+    OVERHEAD_TIME = 2*60
+
+    remaining_stages = get_remaining_stages(p, method=method)
+
+    remaining_time: float = 0
+    for rs in remaining_stages:
+        mwf = WORKFLOW_STAGE_TO_PROTOCOL_KEY[rs]
+        if mwf not in p.milling_workflows:
+            logging.debug(f"Estimated time for {rs}: {format_duration(ESTIMATED_SETUP_TIME)}")
+            remaining_time += ESTIMATED_SETUP_TIME
+            continue
+        milling_stages = p.milling_workflows[mwf]
+        est_milling_time = estimate_total_milling_time(milling_stages)
+        logging.debug(f"Estimated time for {rs}: {format_duration(est_milling_time)}")
+        remaining_time += est_milling_time + OVERHEAD_TIME
+
+    logging.debug(f"Total estimated time: {format_duration(remaining_time)}")
+
+    return remaining_time
+
 
 def get_autolamella_method(name: str) -> AutoLamellaMethod:
     method_aliases = {

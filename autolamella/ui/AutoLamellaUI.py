@@ -9,7 +9,7 @@ import os
 from collections import Counter
 from copy import deepcopy
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional
 
 import napari
 import napari.utils.notifications
@@ -51,7 +51,6 @@ from autolamella.protocol.validation import (
     MILL_ROUGH_KEY,
     NOTCH_KEY,
     TRENCH_KEY,
-    validate_protocol,
 )
 from autolamella.structures import (
     AutoLamellaMethod,
@@ -74,12 +73,10 @@ from autolamella.ui.utils import setup_experiment_ui_v2
 
 try:
     from fibsem.segmentation.utils import list_available_checkpoints
+    AUTOLAMELLA_CHECKPOINTS = list_available_checkpoints()
 except ImportError as e:
     logging.debug(f"Could not import list_available_checkpoints from fibsem.segmentation.utils: {e}")
-    def list_available_checkpoints():
-        return []
-
-AUTOLAMELLA_CHECKPOINTS = list_available_checkpoints()
+    AUTOLAMELLA_CHECKPOINTS = []
 
 CONFIGURATION = {
     "TABS_ID": {
@@ -139,7 +136,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.label_title.setText(f"AutoLamella v{autolamella.__version__}")
 
         self.viewer = viewer
-        self.viewer.window.main_menu.setVisible(False)
+        self.viewer.window.main_menu.setVisible(True)
         self.viewer.window.qt_viewer.dockLayerList.setVisible(False)
         self.viewer.window.qt_viewer.dockLayerControls.setVisible(False)
 
@@ -269,16 +266,16 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.pushButton_go_to_lamella.setStyleSheet(stylesheets.BLUE_PUSHBUTTON_STYLE)
 
         # comboboxes
-        self.comboBox_method.addItems([m.name for m in AutoLamellaMethod])
+        self.comboBox_method.addItems([m.name for m in AutoLamellaMethod]) # TODO: restrict available methods
         self.comboBox_method.currentIndexChanged.connect(self.change_protocol_method)
         self.comboBox_ml_checkpoint.addItems(AUTOLAMELLA_CHECKPOINTS)
 
         self.comboBox_options_liftout_joining_method.addItems(cfg.LIFTOUT_JOIN_METHODS)
         self.comboBox_options_landing_joining_method.addItems(cfg.LIFTOUT_LANDING_JOIN_METHODS)
 
-        AVAILABLE_POSITIONS = utils._get_positions()
-        self.comboBox_options_trench_start_position.addItems(AVAILABLE_POSITIONS)
-        self.comboBox_options_landing_start_position.addItems(AVAILABLE_POSITIONS)
+        self.AVAILABLE_POSITIONS = utils._get_positions()
+        self.comboBox_options_trench_start_position.addItems(self.AVAILABLE_POSITIONS)
+        self.comboBox_options_landing_start_position.addItems(self.AVAILABLE_POSITIONS)
 
         # workflow info
         self.set_current_workflow_message(msg=None, show=False)
@@ -288,8 +285,9 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
     def change_protocol_method(self):
         """Change the protocol method and refresh the UI."""
-        method = get_autolamella_method(self.comboBox_method.currentText().lower())
+        method = get_autolamella_method(self.comboBox_method.currentText())
         self.protocol.method = method
+        self.experiment.method = method
         self.update_protocol_ui()
 
     def update_protocol_ui(self):
@@ -298,7 +296,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self.UPDATING_PROTOCOL_UI = True
 
-        # TODO: auto update protocol when editing, don't require button press 
+        # TODO: auto update protocol when editing, don't require button press
 
         protocol: AutoLamellaProtocol = self.protocol
         method = protocol.method
@@ -385,12 +383,11 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 protocol.tmp.get("landing_joining_method", "Weld")
             )
 
-            # TODO: better defaults? 
             self.comboBox_options_trench_start_position.setCurrentText(
-                protocol.tmp.get("trench_start_position") 
+                protocol.tmp.get("trench_start_position", self.AVAILABLE_POSITIONS[0])
             )
             self.comboBox_options_landing_start_position.setCurrentText(
-                protocol.tmp.get("landing_start_position")
+                protocol.tmp.get("landing_start_position", self.AVAILABLE_POSITIONS[0])
             )
 
             # supervision
@@ -419,8 +416,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # supervision
         self.protocol.supervision[AutoLamellaStage.SetupLamella] = self.checkBox_setup.isChecked()
         self.protocol.supervision[AutoLamellaStage.MillRough] = self.checkBox_supervise_mill_rough.isChecked()
-        self.protocol.supervision[AutoLamellaStage.MillPolishing] =self.checkBox_supervise_mill_polishing.isChecked()
-
+        self.protocol.supervision[AutoLamellaStage.MillPolishing] = self.checkBox_supervise_mill_polishing.isChecked()
 
         method = self.protocol.method
 
@@ -510,6 +506,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             if os.path.exists(PROTOCOL_PATH):
                 self.protocol = AutoLamellaProtocol.load(PROTOCOL_PATH)
                 self.protocol.configuration = deepcopy(self.settings)
+                self.experiment.method = self.protocol.method
                 self.is_protocol_loaded = True
                 self.update_protocol_ui()
 
@@ -929,6 +926,9 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # Current Lamella Status
         if has_lamella:
             self.update_lamella_ui()
+            estimated_time = self.experiment.estimate_remaining_time()
+            txt = f"Estimated time remaining: {utils.format_duration(estimated_time)}"
+            self.label_run_autolamella_info.setText(txt)
 
         if not is_microscope_connected:
             self.set_instructions_msg(INSTRUCTIONS["NOT_CONNECTED"])
@@ -1028,7 +1028,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                     )
                     self.pushButton_lamella_landing_selected.setToolTip(
                         "Run Setup Liftout to select a Landing Position"
-                    )                
+                    )
 
         # update the milling widget
         if self.WORKFLOW_IS_RUNNING:
@@ -1044,8 +1044,6 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
             if method.is_trench:
                 stages = get_milling_stages(TRENCH_KEY, lamella.protocol)
-
-            # TODO: convert to using .stages directly on lamella, rather than always reading from protocol
 
             else:
                 mill_rough_stages = get_milling_stages(MILL_ROUGH_KEY, lamella.protocol)
@@ -1150,6 +1148,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # save a copy of the protocol to the experiment.path
         if self.experiment:
             self.protocol.save(os.path.join(self.experiment.path, "protocol.yaml"))
+            self.experiment.method = self.protocol.method
 
         self.update_ui()
 
@@ -1367,6 +1366,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         log_status_message(self.experiment.positions[idx], "STARTED")
         # TODO: use start of stage update to restore the state properly
+        # TODO: save the experiment to disk? not sure if that's correct to do?
 
         self.update_ui()
 
