@@ -189,13 +189,14 @@ def plot_lamella_milling_workflow(p: Lamella) -> plt.Figure:
     milling_workflows = [MILL_ROUGH_KEY, MILL_POLISHING_KEY, MICROEXPANSION_KEY, FIDUCIAL_KEY]
     milling_stages = []
     for mw in milling_workflows:
+        if mw not in p.protocol.keys():
+            continue
         milling_stages.extend(get_milling_stages(key=mw, protocol=p.protocol))
 
     filenames = sorted(glob.glob(os.path.join(p.path, "ref_MillPolishing*_final_high_res_ib.tif*")))
 
     if len(filenames) == 0:
-        print(f"No images found for {p.name}")
-        # continue
+        logging.info(f"No images found for {p.name}")
         return None
 
     # sem_image = FibsemImage.load(filenames[0])
@@ -295,25 +296,10 @@ def plot_lamella_summary(p: Lamella,
 
 def get_lamella_figures(p: Lamella, exp_path: str) -> dict:
 
-    # convert old lamella protocol to new style
-    if "lamella" in p.protocol or "MillRoughCut" in p.protocol:
-        print(f"Converting protocol for {p.name}")
-        nprotocol = convert_old_milling_protocol_to_new_protocol(p.protocol)
-        if "MillRoughCut" in nprotocol:
-            nprotocol[MILL_ROUGH_KEY] = nprotocol.pop("MillRoughCut")
-
-        if "MillPolishingCut" in nprotocol:
-            nprotocol[MILL_POLISHING_KEY] = nprotocol.pop("MillPolishingCut")
-
-        if "lamella" in nprotocol:
-            del nprotocol["lamella"]
-
-        p.protocol = deepcopy(nprotocol)
-
     p.path = os.path.join(exp_path, p.name)
 
     # get plot of milling patterns on final image
-    fig_milling = get_lamella_milling_plots(p)
+    fig_milling = plot_lamella_milling_workflow(p)
 
     filenames = sorted(glob.glob(os.path.join(p.path, "ref_MillPolishing*_final_high_res*.tif*")))
     sem_image = FibsemImage.load(filenames[0])
@@ -487,19 +473,18 @@ def generate_experiment_summary(df: pd.DataFrame) -> go.Figure:
     pass
 
 
-def generate_report_data(filename: str, encoding: str = "cp1252") -> dict:
+def generate_report_data(experiment: Experiment, encoding: str = "cp1252") -> dict:
 
     REPORT_DATA = {}
 
     # Load experiment data
-    exp = Experiment.load(filename)
-    dfs = calculate_statistics_dataframe(exp.path, encoding=encoding)
+    dfs = calculate_statistics_dataframe(experiment.path, encoding=encoding)
     df_experiment, df_history, df_beam_shift, df_steps, df_stage, df_det, df_click, df_milling = dfs
 
     df, fig_duration = generate_duration_data(df_history)
 
-    REPORT_DATA["experiment_name"] = exp.name
-    REPORT_DATA["experiment_summary_dataframe"] = exp.to_summary_dataframe()
+    REPORT_DATA["experiment_name"] = experiment.name
+    REPORT_DATA["experiment_summary_dataframe"] = experiment.to_summary_dataframe()
 
     # timeline
     REPORT_DATA["workflow_timeline_plot"] = generate_workflow_timeline(df_history)
@@ -513,7 +498,7 @@ def generate_report_data(filename: str, encoding: str = "cp1252") -> dict:
 
     # lamella figures
     REPORT_DATA["lamella_data"] = {}
-    for p in exp.positions:
+    for p in experiment.positions:
         # figs = get_lamella_figures(p, exp.path)
         # REPORT_DATA["lamella_data"][p.name] = figs
         REPORT_DATA["lamella_data"][p.name] = "TODO"
@@ -521,11 +506,11 @@ def generate_report_data(filename: str, encoding: str = "cp1252") -> dict:
     return REPORT_DATA
 
 # report generation
-def generate_report(filename: str, 
+def generate_report(experiment: Experiment, 
                     output_filename: str = "autolamella.pdf", 
-                    encoding="utf-8"):
+                    encoding="cp1252"):
 
-    report_data = generate_report_data(filename, encoding=encoding)
+    report_data = generate_report_data(experiment, encoding=encoding)
 
     # Create PDF generator
     pdf = PDFReportGenerator(output_filename=output_filename)
@@ -556,39 +541,44 @@ def generate_report(filename: str,
     # show milling patterns for each lamella
     # show milling data
 
-    exp = Experiment.load(filename)
-    method = AutoLamellaMethod.ON_GRID
+    # method = AutoLamellaMethod.ON_GRID
+    # if "Waffle" in experiment.name:
+        # method = AutoLamellaMethod.WAFFLE
+
     os.makedirs("tmp", exist_ok=True)
-    if "Waffle" in exp.name:
-            method = AutoLamellaMethod.WAFFLE
+    df_history = experiment.history_dataframe()
 
-    df_history = exp.history_dataframe()
-
-    for p in exp.positions:
+    for p in experiment.positions:
         print(f"exporting: {p.name}")
-        p.path = os.path.join(exp.path, p.name)
+        p.path = os.path.join(experiment.path, p.name)
         pdf.add_page_break()
         pdf.add_heading(f"Lamella: {p.name}")
 
         df = df_history[df_history["petname"] == p.name]
         df, fig = generate_duration_data(df)
 
-        # display(df)
         pdf.add_dataframe(df, 'Workflow Duration')
 
-        fig = plot_lamella_summary(p, method=method)
+        # display final images for each workflow stage
+        fig = plot_lamella_summary(p, method=experiment.method)
         if fig is None:
             continue
         # save figure to temp file
         fname = f'tmp/tmp-{p.name}.png'
         fig.savefig(fname, format='png', bbox_inches='tight', dpi=300)
         plt.close()
-
         pdf.story.append(Image(fname, width=6*inch, height=4*inch))
 
-        # pdf.add_mpl_figure(fig)
-        # pdf.add_mpl_figure(figs["milling"])
-        # pdf.add_mpl_figure(figs["images"])
+        # add milling patterns
+        fig = plot_lamella_milling_workflow(p)
+        if fig is None:
+            continue
+        # save figure to temp file
+        fname = f'tmp/tmp-milling-{p.name}.png'
+        fig.savefig(fname, format='png', bbox_inches='tight', dpi=300)
+        plt.close()
+        pdf.story.append(Image(fname, width=6*inch, height=4*inch))
+
 
     # Generate PDF
     pdf.generate()

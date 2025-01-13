@@ -224,12 +224,31 @@ class Lamella:
             # load from history
             states = {state.stage: state for state in history}
 
+
+        # protocol backwards compatibility
+        protocol = data.get("protocol", {})
+
+        # convert old milling protocol to new protocol
+        if "lamella" in protocol or "MillRoughCut" in protocol:
+            from autolamella.protocol.validation import convert_old_milling_protocol_to_new_protocol
+            nprotocol = convert_old_milling_protocol_to_new_protocol(protocol)
+            if "MillRoughCut" in nprotocol:
+                nprotocol[MILL_ROUGH_KEY] = nprotocol.pop("MillRoughCut")
+
+            if "MillPolishingCut" in nprotocol:
+                nprotocol[MILL_POLISHING_KEY] = nprotocol.pop("MillPolishingCut")
+
+            if "lamella" in nprotocol:
+                del nprotocol["lamella"]
+
+            protocol = deepcopy(nprotocol)
+
         return cls(
             petname=data["petname"],
             state=state,
             path=data["path"],
             alignment_area=alignment_area,
-            protocol=data.get("protocol", {}),
+            protocol=protocol,
             number=data.get("number", data.get("number", 0)),
             history=history,
             is_failure=data.get("is_failure", data.get("is_failure", False)),
@@ -475,40 +494,36 @@ class Experiment:
 
         return experiment
     
-    def _create_protocol_dataframe(self) -> pd.DataFrame:
-        # NOTE: this is based on the previous protocol structure... need to update
-        plist = []
-        exp_name = self.name
-        for lamella in self.positions:
-            if lamella.protocol:
-                for k in lamella.protocol:
+    def to_protocol_dataframe(self) -> pd.DataFrame:
+        """Create a dataframe with the protocol of all lamellas."""
 
-
-                    if "stages" not in lamella.protocol[k]:
-                        continue # skip non milling stages
-      
-                    else:
-                        for i, ddict in enumerate(lamella.protocol[k]["stages"]):
-
-                            ddict["MillingStage"] = i
-                            ddict["WorkflowStage"] = k
-                            ddict["Lamella"] = lamella.name
-                            ddict["Experiment"] = exp_name
-                            # TODO: add point information
-
-                            plist.append(deepcopy(ddict))
+        plist: List[Dict] = []
+        for p in self.positions:
+            # convert lamella milling protocols to dataframes
+            for k, v in p.protocol.items():
+                for vi in v:
+                    ddict = {}
+                    ddict["Experiment"] = self.name
+                    ddict["Workflow"] = k
+                    ddict["Lamella"] = p.name
+                    for k2, v2 in vi.items():
+                        if isinstance(v2, dict):
+                            for k3, v3 in v2.items():
+                                ddict[ f"{k2}-{k3}"] = v3
+                        else:
+                            ddict[f"{k2}"] = v2
+                    plist.append(deepcopy(ddict))
 
         df = pd.DataFrame(plist)
-
-        # re-order columns starting with lamella, WorkflowStage, MillingStage
-        cols = list(df.columns)
-        cols.remove("Lamella")
-        cols.remove("WorkflowStage")
-        cols.remove("MillingStage")
-        cols.remove("Experiment")
-        cols = ["Experiment", "Lamella", "WorkflowStage", "MillingStage"] + cols
-        df = df[cols]
-
+        # drop tescan columns  
+        TESCAN_COLUMNS = [
+            "milling-dwell_time",
+            "milling-preset",
+            "milling-rate",
+            "milling-spacing",
+            "milling-spot_size",
+        ]
+        df = df.drop(columns=TESCAN_COLUMNS)
 
         return df
 

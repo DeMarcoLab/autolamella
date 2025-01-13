@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import List
+from typing import List, Dict
 
 from autolamella.protocol.constants import (
     FIDUCIAL_KEY,
@@ -220,7 +220,7 @@ def convert_protocol_to_stage_config(pprotocol: dict, pkey: str, point: dict = N
         pattern_config["point"] = point
 
     STAGE_CONFIG = {}
-    STAGE_CONFIG["name"] = pprotocol.get("name", name)
+    STAGE_CONFIG["name"] = pprotocol.get("name", pkey)
     STAGE_CONFIG["milling"] = milling_config
     STAGE_CONFIG["strategy"] = strategy_config
     STAGE_CONFIG["pattern"] = pattern_config
@@ -253,10 +253,7 @@ def convert_old_milling_protocol_to_new_protocol(milling_protocol: dict) -> dict
 
     return deepcopy(NEW_PROTOCOL)
 
-from typing import Dict
 def validate_and_convert_protocol(ddict: Dict) -> Dict:
-    # from fibsem import utils
-    # protocol = utils.load_protocol(path)
     protocol = validate_protocol(ddict)
     protocol["milling"] = convert_old_milling_protocol_to_new_protocol(protocol["milling"])
 
