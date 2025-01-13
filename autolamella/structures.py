@@ -100,7 +100,7 @@ class LamellaState:
         # backwards compatibility
         stage_name = data["stage"]
         stage_name= stage_name.replace("Cut", "") # MillRoughCut -> MillRough, MillPolishingCut -> MillPolishing
-        if stage_name == "PreSetupLamella":
+        if stage_name in ["PreSetupLamella", "SetupTrench"]:
             stage_name = "Created"
         if stage_name == "ReadyTrench":
             stage_name = "PositionReady"
@@ -778,7 +778,7 @@ def get_completed_stages(pos: Lamella, method: AutoLamellaMethod) -> List[AutoLa
 
 def get_autolamella_method(name: str) -> AutoLamellaMethod:
     method_aliases = {
-        AutoLamellaMethod.ON_GRID: ["autolamella-on-grid", "on-grid", "AutoLamella-OnGrid"],
+        AutoLamellaMethod.ON_GRID: ["autolamella-on-grid", "on-grid", "AutoLamella-OnGrid", "AutoLiftout"],
         AutoLamellaMethod.WAFFLE: ["autolamella-waffle", "waffle", "AutoLamella-Waffle"],
         AutoLamellaMethod.TRENCH: ["autolamella-trench", "trench", "AutoLamella-Trench"],
         AutoLamellaMethod.LIFTOUT: ["autolamella-liftout", "liftout", "AutoLamella-Liftout"],
