@@ -672,6 +672,7 @@
     <addaction name="actionCryo_Deposition"/>
     <addaction name="separator"/>
     <addaction name="actionOpen_Minimap"/>
+    <addaction name="actionGenerate_Report"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -711,7 +712,7 @@
   </action>
   <action name="actionOpen_Minimap">
    <property name="text">
-    <string>Open Minimap Tool</string>
+    <string>Open Minimap</string>
    </property>
   </action>
   <action name="actionSave_Protocol">
@@ -747,6 +748,11 @@
   <action name="actionInformation">
    <property name="text">
     <string>Information</string>
+   </property>
+  </action>
+  <action name="actionGenerate_Report">
+   <property name="text">
+    <string>Generate Report</string>
    </property>
   </action>
  </widget>

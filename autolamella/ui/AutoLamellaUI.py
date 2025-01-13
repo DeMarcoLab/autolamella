@@ -39,8 +39,6 @@ from napari.qt.threading import thread_worker
 from PyQt5.QtCore import pyqtSignal
 from qtpy import QtWidgets
 
-from autolamella.structures import get_autolamella_method
-
 if DETECTION_AVAILABLE: # ml dependencies are option, so we need to check if they are available
     from fibsem.ui.FibsemEmbeddedDetectionWidget import FibsemEmbeddedDetectionUI
 
@@ -63,6 +61,7 @@ from autolamella.structures import (
     Lamella,
     LamellaState,
     create_new_lamella,
+    get_autolamella_method
 )
 from autolamella.ui import AutoLamellaMainUI
 from autolamella.ui.AutoLamellaWorkflowDialog import (
@@ -70,6 +69,7 @@ from autolamella.ui.AutoLamellaWorkflowDialog import (
     display_selected_lamella_info,
     open_workflow_dialog,
 )
+from autolamella.tools.reporting import generate_report
 from autolamella.ui.utils import setup_experiment_ui_v2
 
 try:
@@ -245,6 +245,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionCryo_Deposition.setEnabled(False) # TMP: disable until tested
         self.actionCryo_Deposition.setToolTip("Cryo Deposition is currently disabled via the UI.")
         self.actionOpen_Minimap.triggered.connect(self.open_minimap_widget)
+        self.actionGenerate_Report.triggered.connect(self.action_generate_report)
         # help menu
         self.actionInformation.triggered.connect(
             lambda: fui.open_information_dialog(self.microscope, self)
@@ -603,6 +604,27 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 self.det_widget.deleteLater()
 
             self.IS_MICROSCOPE_UI_LOADED = False
+
+
+#### REPORT GENERATION
+    def action_generate_report(self) -> None:
+
+        # get user to select the output filename
+        filename = fui.open_save_file_dialog(
+            msg="Save Report",
+            path=os.path.join(self.experiment.path, f"{self.experiment.name}.pdf"),
+            _filter="*.pdf",
+            parent=self,
+        )
+        if filename is None:
+            return
+
+        # TODO: thread this
+
+        # generate the report
+        generate_report(experiment=self.experiment, output_filename=filename, encoding="utf-8")
+
+        return
 
 #### MINIMAP
 
