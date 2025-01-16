@@ -98,7 +98,7 @@ def liftout_lamella(
     # align vertical
     microscope.vertical_move(
         dx=det.features[0].feature_m.x,
-        dy=-det.features[0].feature_m.y,
+        dy=det.features[0].feature_m.y,
     )
 
     # lamella should now be centred in ion beam

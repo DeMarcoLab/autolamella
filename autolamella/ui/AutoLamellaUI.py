@@ -68,7 +68,14 @@ from autolamella.ui.AutoLamellaWorkflowDialog import (
     display_selected_lamella_info,
     open_workflow_dialog,
 )
-from autolamella.tools.reporting import generate_report
+
+REPORTING_AVAILABLE: bool = False
+try:
+    from autolamella.tools.reporting import generate_report
+    REPORTING_AVAILABLE = True
+except ImportError as e:
+    logging.debug(f"Could not import generate_report from autolamella.tools.reporting: {e}")
+
 from autolamella.ui.utils import setup_experiment_ui_v2
 
 try:
@@ -323,15 +330,16 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # supervision
         supervision = protocol.supervision
-        self.checkBox_setup.setChecked(supervision[AutoLamellaStage.SetupLamella])
-        self.checkBox_supervise_mill_rough.setChecked(supervision[AutoLamellaStage.MillRough])
-        self.checkBox_supervise_mill_polishing.setChecked(supervision[AutoLamellaStage.MillPolishing])
+        if method is not AutoLamellaMethod.TRENCH: ## TODO: SIMPLIFY
+            self.checkBox_setup.setChecked(supervision[AutoLamellaStage.SetupLamella])
+            self.checkBox_supervise_mill_rough.setChecked(supervision[AutoLamellaStage.MillRough])
+            self.checkBox_supervise_mill_polishing.setChecked(supervision[AutoLamellaStage.MillPolishing])
 
         # TRENCH METHOD ONLY (waffle, serial-liftout)
         if method.is_trench:
             # supervision
-            self.checkBox_trench.setChecked(supervision[AutoLamellaStage.MillTrench])
-            self.checkBox_undercut.setChecked(supervision[AutoLamellaStage.MillUndercut])
+            self.checkBox_trench.setChecked(supervision.get(AutoLamellaStage.MillTrench, False))
+            self.checkBox_undercut.setChecked(supervision.get(AutoLamellaStage.MillUndercut, False))
 
             # machine learning
             self.comboBox_ml_checkpoint.setCurrentText(protocol.options.checkpoint)
@@ -619,7 +627,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # TODO: thread this
 
         # generate the report
-        generate_report(experiment=self.experiment, output_filename=filename, encoding="utf-8")
+        generate_report(experiment=self.experiment, output_filename=filename, encoding="cp1252")
 
         return
 
@@ -766,6 +774,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Minimap_Image.setVisible(is_protocol_loaded)
         self.actionLoad_Positions.setVisible(is_protocol_loaded)
         # help menu
+        self.actionGenerate_Report.setVisible(is_experiment_ready and REPORTING_AVAILABLE)
 
         # labels
         if is_experiment_loaded:

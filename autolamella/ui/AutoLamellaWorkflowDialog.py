@@ -24,10 +24,10 @@ from autolamella.structures import (
 )
 from autolamella.ui.qt import AutoLamellaWorkflowDialog as AutoLamellaWorkflowDialogUI
 
-EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-01-10-14-24/experiment.yaml"
-PROTOCOL_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-01-10-14-24/protocol.yaml"
-exp = Experiment.load(EXP_PATH)
-protocol = AutoLamellaProtocol.load(PROTOCOL_PATH)
+# EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-01-10-14-24/experiment.yaml"
+# PROTOCOL_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-01-10-14-24/protocol.yaml"
+# exp = Experiment.load(EXP_PATH)
+# protocol = AutoLamellaProtocol.load(PROTOCOL_PATH)
 
 def display_selected_lamella_info(grid_layout: QGridLayout, pos: Lamella, method: AutoLamellaMethod) -> None:
     """Display the history of a selected lamella."""
@@ -90,7 +90,8 @@ def display_lamella_info(grid_layout: QGridLayout,
     pos: Lamella
     for i, pos in enumerate(positions, 1):
 
-        is_finished = pos.workflow is AutoLamellaStage.Finished
+        next_workflow = method.get_next(pos.workflow)
+        is_finished = pos.workflow is AutoLamellaStage.Finished or next_workflow is None
         is_creation = pos.workflow is AutoLamellaStage.Created
         is_failure = pos.is_failure
         
@@ -104,6 +105,9 @@ def display_lamella_info(grid_layout: QGridLayout,
         if is_finished:
             status_msg = "Finished"
             status_label.setStyleSheet("color: cyan")
+        if is_creation:
+            status_msg = "Created"
+            status_label.setStyleSheet("color: orange")
         if is_failure:
             if len(pos.failure_note) > 5:
                 note = f"{pos.failure_note[:3]}..."
@@ -123,7 +127,6 @@ def display_lamella_info(grid_layout: QGridLayout,
             last_label.setText(state.completed)
 
         # get the next workflow stage
-        next_workflow = method.get_next(pos.workflow)
         next_label = QLabel()
         if not is_creation and not is_finished and not is_failure:
             next_label.setText(next_workflow.name)

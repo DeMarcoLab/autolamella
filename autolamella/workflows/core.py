@@ -290,7 +290,7 @@ def mill_undercut(
     # align vertical
     microscope.vertical_move(
         dx=det.features[0].feature_m.x,
-        dy=-det.features[0].feature_m.y,
+        dy=det.features[0].feature_m.y,
     )
 
     # take reference images
@@ -753,7 +753,7 @@ def align_feature_coincident(
     # align vertical
     microscope.vertical_move(
         dx=det.features[0].feature_m.x,
-        dy=-det.features[0].feature_m.y,
+        dy=det.features[0].feature_m.y,
     )
 
     # reference images
