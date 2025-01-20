@@ -737,12 +737,29 @@ class AutoLamellaMethod(Enum):
             return AutoLamellaStage.Created
 
         idx = self.workflow.index(current_stage)
-            
+        if idx == 0:
+            return AutoLamellaStage.PositionReady
+
         # clip idx to 0
-        if idx < len(self.workflow)-1:
+        if idx <= len(self.workflow)-1:
             return self.workflow[idx-1]
         else:
             return None
+
+def is_ready_for(lamella: Lamella, method: AutoLamellaMethod, workflow: AutoLamellaStage) -> bool:
+    """Is the lamella ready for the workflow step based on the 
+    previous step being completed and not failed"""
+    if lamella.is_failure:
+        return False
+
+    # get previous
+    previous = method.get_previous(workflow)
+    # check if previous is completed (at any point)
+    if previous is not None:
+        if previous in lamella.states:
+            return True
+
+    return False
 
 DEFAULT_AUTOLAMELLA_METHOD = AutoLamellaMethod.ON_GRID.name
 
