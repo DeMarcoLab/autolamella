@@ -68,6 +68,7 @@ from autolamella.ui.AutoLamellaWorkflowDialog import (
     display_selected_lamella_info,
     open_workflow_dialog,
 )
+from autolamella.ui.tooltips import TOOLTIPS
 
 REPORTING_AVAILABLE: bool = False
 try:
@@ -288,10 +289,34 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.set_current_workflow_message(msg=None, show=False)
 
         # tooltips # TODO: migrate to config/yaml
-        self.checkBox_turn_beams_off.setToolTip("Turn the beams off when the workflow is complete.")
+        self._add_tooltips()
 
         # refresh ui
         self.update_ui()
+
+    def _add_tooltips(self) -> None:
+
+        # protocol tooltips
+        self.checkBox_align_at_milling_current.setToolTip(TOOLTIPS["protocol"]["alignment_at_milling_current"])
+        self.checkBox_align_use_fiducial.setToolTip(TOOLTIPS["protocol"]["use_fiducial"])
+        self.checkBox_take_final_reference_images.setToolTip(TOOLTIPS["protocol"]["take_final_reference_images"])
+        # self.checkBox_take_final_high_quality_reference.setToolTip(TOOLTIPS["protocol"]["take_final_high_quality_reference"])
+        self.checkBox_turn_beams_off.setToolTip(TOOLTIPS["protocol"]["turn_beams_off"])
+        self.checkBox_use_microexpansion.setToolTip(TOOLTIPS["protocol"]["use_microexpansion"])
+        self.checkBox_use_notch.setToolTip(TOOLTIPS["protocol"]["use_notch"])
+        self.beamshift_attempts.setToolTip(TOOLTIPS["protocol"]["alignment_attempts"])
+        self.doubleSpinBox_lamella_tilt_angle.setToolTip(TOOLTIPS["protocol"]["milling_angle"])
+        self.doubleSpinBox_undercut_tilt.setToolTip(TOOLTIPS["protocol"]["undercut_tilt_angle"])
+        self.comboBox_ml_checkpoint.setToolTip(TOOLTIPS["protocol"]["checkpoint"])
+
+        # supervision
+        self.checkBox_setup.setToolTip(TOOLTIPS["protocol"]["supervision"])
+        self.checkBox_supervise_mill_rough.setToolTip(TOOLTIPS["protocol"]["supervision"])
+        self.checkBox_supervise_mill_polishing.setToolTip(TOOLTIPS["protocol"]["supervision"])
+        self.checkBox_trench.setToolTip(TOOLTIPS["protocol"]["supervision"])
+        self.checkBox_undercut.setToolTip(TOOLTIPS["protocol"]["supervision"])
+        self.checkBox_supervise_liftout.setToolTip(TOOLTIPS["protocol"]["supervision"])
+        self.checkBox_supervise_landing.setToolTip(TOOLTIPS["protocol"]["supervision"])
 
     def change_protocol_method(self):
         """Change the protocol method and refresh the UI."""
