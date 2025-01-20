@@ -88,7 +88,88 @@
         <string>Experiment</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="10" column="0" colspan="2">
+        <item row="12" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_serial_liftout_landing">
+          <property name="text">
+           <string>Run Landing Workflow</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="label_experiment_name">
+          <property name="text">
+           <string>Experiment:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="36" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_stop_workflow">
+          <property name="text">
+           <string>Stop Workflow</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0" colspan="2">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="13" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_run_setup_autolamella">
+          <property name="text">
+           <string>Run AutoLamella</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0" colspan="2">
+         <widget class="QGroupBox" name="groupBox_setup">
+          <property name="title">
+           <string>Setup</string>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_5">
+           <item row="0" column="0">
+            <widget class="QPushButton" name="pushButton_add_lamella">
+             <property name="text">
+              <string>Add Lamella</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QPushButton" name="pushButton_remove_lamella">
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
+             <property name="text">
+              <string>Remove Lamella</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item row="8" column="0" colspan="2">
+         <widget class="QPushButton" name="pushButton_setup_autoliftout">
+          <property name="text">
+           <string>Run Setup Liftout</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0" colspan="2">
+         <widget class="QLabel" name="label_protocol_name">
+          <property name="text">
+           <string>Protocol:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_autoliftout">
           <property name="text">
            <string>Run Liftout Workflow</string>
@@ -164,21 +245,7 @@
           </layout>
          </widget>
         </item>
-        <item row="0" column="0" colspan="2">
-         <widget class="QLabel" name="label_experiment_name">
-          <property name="text">
-           <string>Experiment:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="12" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_setup_autolamella">
-          <property name="text">
-           <string>Run AutoLamella</string>
-          </property>
-         </widget>
-        </item>
-        <item row="8" column="0" colspan="2">
+        <item row="9" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_waffle_trench">
           <property name="text">
            <string>Run Trench Milling</string>
@@ -191,95 +258,65 @@
           </property>
          </widget>
         </item>
-        <item row="9" column="0" colspan="2">
+        <item row="10" column="0" colspan="2">
          <widget class="QPushButton" name="pushButton_run_waffle_undercut">
           <property name="text">
            <string>Run Undercut Milling</string>
           </property>
          </widget>
         </item>
-        <item row="7" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_setup_autoliftout">
-          <property name="text">
-           <string>Run Setup Liftout</string>
-          </property>
-         </widget>
-        </item>
-        <item row="35" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_stop_workflow">
-          <property name="text">
-           <string>Stop Workflow</string>
-          </property>
-         </widget>
-        </item>
-        <item row="11" column="0" colspan="2">
-         <widget class="QPushButton" name="pushButton_run_serial_liftout_landing">
-          <property name="text">
-           <string>Run Landing Workflow</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0" colspan="2">
-         <widget class="QGroupBox" name="groupBox_setup">
-          <property name="title">
-           <string>Setup</string>
-          </property>
-          <layout class="QGridLayout" name="gridLayout_5">
-           <item row="0" column="0">
-            <widget class="QPushButton" name="pushButton_add_lamella">
-             <property name="text">
-              <string>Add Lamella</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QPushButton" name="pushButton_remove_lamella">
-             <property name="styleSheet">
-              <string notr="true"/>
-             </property>
-             <property name="text">
-              <string>Remove Lamella</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item row="13" column="0">
+        <item row="14" column="0">
          <widget class="QLabel" name="label_run_autolamella_info">
           <property name="text">
            <string>Run AutoLamella will run all workflows stages.</string>
           </property>
          </widget>
         </item>
-        <item row="1" column="0" colspan="2">
-         <widget class="QLabel" name="label_protocol_name">
-          <property name="text">
-           <string>Protocol:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0" colspan="2">
-         <spacer name="verticalSpacer">
-          <property name="orientation">
-           <enum>Qt::Vertical</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>40</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
         <item row="5" column="0" colspan="2">
          <widget class="QGroupBox" name="groupBox_lamella">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="title">
            <string>Lamella</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_6">
            <item row="0" column="0">
-            <layout class="QGridLayout" name="gridLayout_lamella_info"/>
+            <widget class="QScrollArea" name="scrollArea_lamella_info">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="horizontalScrollBarPolicy">
+              <enum>Qt::ScrollBarAlwaysOff</enum>
+             </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QAbstractScrollArea::AdjustToContents</enum>
+             </property>
+             <property name="widgetResizable">
+              <bool>true</bool>
+             </property>
+             <widget class="QWidget" name="scrollAreaWidgetContents_2">
+              <property name="geometry">
+               <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>722</width>
+                <height>68</height>
+               </rect>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_8">
+               <item row="0" column="0">
+                <layout class="QGridLayout" name="gridLayout_lamella_info"/>
+               </item>
+              </layout>
+             </widget>
+            </widget>
            </item>
           </layout>
          </widget>
@@ -315,7 +352,7 @@
              <x>0</x>
              <y>0</y>
              <width>732</width>
-             <height>649</height>
+             <height>678</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
@@ -620,6 +657,13 @@
              <widget class="QCheckBox" name="checkBox_setup">
               <property name="text">
                <string>Setup Stage</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QCheckBox" name="checkBox_turn_beams_off">
+              <property name="text">
+               <string>Turn off beams when finished</string>
               </property>
              </widget>
             </item>

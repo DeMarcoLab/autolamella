@@ -142,6 +142,7 @@ def display_lamella_info(grid_layout: QGridLayout,
         grid_layout.addWidget(next_label, i, 3)
         # self.gridLayout_lamella.addWidget(control_widget, i, 2)
 
+    
 class AutoLamellaWorkflowDialog(QDialog, AutoLamellaWorkflowDialogUI.Ui_Dialog):
 
     def __init__(self, 
@@ -254,3 +255,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ReviewWidget
+# Select Lamella ComboBox
+# Display Figure

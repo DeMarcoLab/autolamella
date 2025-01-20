@@ -143,7 +143,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.label_title.setText(f"AutoLamella v{autolamella.__version__}")
 
         self.viewer = viewer
-        self.viewer.window.main_menu.setVisible(True)
+        # self.viewer.window.main_menu.setVisible(True)
         self.viewer.window.qt_viewer.dockLayerList.setVisible(False)
         self.viewer.window.qt_viewer.dockLayerControls.setVisible(False)
 
@@ -287,6 +287,9 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # workflow info
         self.set_current_workflow_message(msg=None, show=False)
 
+        # tooltips # TODO: migrate to config/yaml
+        self.checkBox_turn_beams_off.setToolTip("Turn the beams off when the workflow is complete.")
+
         # refresh ui
         self.update_ui()
 
@@ -313,6 +316,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.comboBox_method.setCurrentText(method.name)
 
         # options
+        self.checkBox_turn_beams_off.setChecked(protocol.options.turn_beams_off)
         self.checkBox_align_use_fiducial.setChecked(protocol.options.use_fiducial)
 
         self.beamshift_attempts.setValue(protocol.options.alignment_attempts)
@@ -411,6 +415,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.protocol.method = get_autolamella_method(self.comboBox_method.currentText().lower())
 
         # options
+        self.protocol.options.turn_beams_off = self.checkBox_turn_beams_off.isChecked()
         self.protocol.options.use_fiducial = (self.checkBox_align_use_fiducial.isChecked())
         self.protocol.options.alignment_attempts = int(self.beamshift_attempts.value())
         self.protocol.options.alignment_at_milling_current = self.checkBox_align_at_milling_current.isChecked()
@@ -627,7 +632,9 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # TODO: thread this
 
         # generate the report
-        generate_report(experiment=self.experiment, output_filename=filename, encoding="cp1252")
+        generate_report(experiment=self.experiment, 
+                        output_filename=filename, 
+                        encoding="cp1252")
 
         return
 
@@ -724,10 +731,11 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             return
         
         # get the updated positions
-        positions = [
-            lamella.state.microscope_state.stage_position
-            for lamella in self.experiment.positions
-        ]
+        positions = []
+        for i, p in enumerate(self.experiment.positions):
+            position = deepcopy(p.state.microscope_state.stage_position)
+            position.name = p.name
+            positions.append(position)
 
         self.sync_positions_to_minimap_signal.emit(positions)
 
@@ -768,7 +776,6 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Protocol.setVisible(is_experiment_loaded)
         self.actionSave_Protocol.setVisible(is_protocol_loaded)
         # tool menu
-        self.menuTools.setVisible(is_protocol_loaded)
         self.actionCryo_Deposition.setVisible(is_protocol_loaded)
         self.actionOpen_Minimap.setVisible(is_protocol_loaded)
         self.actionLoad_Minimap_Image.setVisible(is_protocol_loaded)
@@ -786,6 +793,9 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 display_lamella_info(grid_layout=self.gridLayout_lamella_info, 
                                      positions=self.experiment.positions, 
                                      method=self.protocol.method)
+                # set minimum hiehgt
+                self.groupBox_lamella.setMinimumHeight(min(150, 
+                                                           100 + 10*len(self.experiment.positions)))
 
         if is_protocol_loaded:
             method = self.protocol.method
@@ -1563,7 +1573,6 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         logging.info(f"Accepted: {accepted}")
         logging.info(f"STC: {stc}")
         logging.info(f"Supervision: {supervision}")
-        print("----")
 
         self.protocol.supervision = supervision
         self.update_protocol_ui()
