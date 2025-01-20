@@ -476,13 +476,12 @@ def setup_lamella(
 
     log_status_message(lamella, "ALIGN_LAMELLA")
     update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
-    
+
     milling_angle = protocol.options.milling_tilt_angle
     stage_position = microscope.get_stage_position()
     is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t, atol=ATOL_STAGE_TILT)
 
-    # TODO: migrate to milling angle, rather than stage tilt
-    # TODO: make this automatic?
+    # TODO: migrate to milling angle, rather than stage tilt, make it automatic
     # is_close = actions.is_close_to_milling_angle(microscope=microscope, 
     #                                              milling_angle=np.deg2rad(milling_angle),
     #                                              atol=ATOL_STAGE_TILT * 2)

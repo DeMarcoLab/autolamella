@@ -149,6 +149,9 @@ class Lamella:
             self.states = {}
         if self._id is None:
             self._id = str(uuid.uuid4())
+        # TODO: add multiple positions for milling, landing, etc. 
+        # rather than explicit states
+        # self.positions: Dict[str, MicroscopeState] = {}
 
     @property
     def finished(self) -> bool:
@@ -285,6 +288,12 @@ class Lamella:
         )
 
         return reference_images
+
+    def restore_previous_state(self, method: 'AutoLamellaMethod', stage: AutoLamellaStage):
+        """Restore the previous state of the lamella based on the current workflow stage"""
+        prev = method.get_previous(stage)
+        if prev in self.states:
+            self.state = self.states[prev]
 
 def create_new_lamella(experiment_path: str, number: int, state: LamellaState, protocol: Dict) -> Lamella:
     """Wrapper function to create a new lamella and configure paths."""
@@ -751,6 +760,10 @@ def is_ready_for(lamella: Lamella, method: AutoLamellaMethod, workflow: AutoLame
     previous step being completed and not failed"""
     if lamella.is_failure:
         return False
+    
+    if workflow not in method.workflow:
+        logging.debug(f"Workflow {workflow} not in method {method.name}")
+        return False
 
     # get previous
     previous = method.get_previous(workflow)
@@ -953,7 +966,8 @@ class AutoLamellaProtocol(FibsemProtocol):
         try:
             from autolamella.protocol.validation import validate_and_convert_protocol
             ddict = validate_and_convert_protocol(ddict)
-        except:
+        except Exception as e:
+            logging.debug(f"Error converting protocol: {e}")
             ddict = tmp_ddict
         
         return AutoLamellaProtocol.from_dict(ddict)

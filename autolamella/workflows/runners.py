@@ -9,6 +9,7 @@ from autolamella.structures import (
     AutoLamellaStage,
     Experiment,
     AutoLamellaProtocol,
+    is_ready_for,
 )
 from autolamella.ui import AutoLamellaUI
 from autolamella.workflows.core import (
@@ -41,6 +42,9 @@ def run_trench_milling(
     for lamella in experiment.positions:
 
         if lamella.workflow is AutoLamellaStage.PositionReady and not lamella.is_failure:
+        # if is_ready_for(lamella, protocol.method, AutoLamellaStage.MillTrench):
+        # TODO: if we integrate this, we need to be more careful about which state we restore from,
+        # e.g. if we are in mill undercut, we need to go back to the PositionReady state.. not just current, needs more work
                         
             lamella = start_of_stage_update(
                 microscope,
