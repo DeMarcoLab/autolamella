@@ -23,7 +23,6 @@ from fibsem.structures import (
     FibsemRectangle,
     FibsemStagePosition,
     ImageSettings,
-    MicroscopeSettings,
     Point,
     calculate_fiducial_area_v2,
 )
@@ -482,6 +481,12 @@ def setup_lamella(
     stage_position = microscope.get_stage_position()
     is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t, atol=ATOL_STAGE_TILT)
 
+    # TODO: migrate to milling angle, rather than stage tilt
+    # TODO: make this automatic?
+    # is_close = actions.is_close_to_milling_angle(microscope=microscope, 
+    #                                              milling_angle=np.deg2rad(milling_angle),
+    #                                              atol=ATOL_STAGE_TILT * 2)
+
     if not is_close and validate and method is AutoLamellaMethod.ON_GRID:
         current_t = np.rad2deg(stage_position.t)
         ret = ask_user(parent_ui=parent_ui,
@@ -490,12 +495,16 @@ def setup_lamella(
         if ret:
             actions.move_to_lamella_angle(microscope, 
                                           rotation=np.deg2rad(microscope.system.stage.rotation_reference),
-                                          tilt=np.deg2rad(protocol.options.milling_tilt_angle))
-    # TODO: migrate to milling angle, rather than stage tilt
+                                          tilt=np.deg2rad(milling_angle))
+                # actions.move_to_milling_angle(microscope=microscope,
+    #                               milling_angle=np.deg2rad(milling_angle))
+
     if method != AutoLamellaMethod.ON_GRID:
-        actions.move_to_lamella_angle(microscope, 
+        actions.move_to_lamella_angle(microscope,
                                 rotation=np.deg2rad(microscope.system.stage.rotation_reference),
-                                tilt=np.deg2rad(protocol.options.milling_tilt_angle))
+                                tilt=np.deg2rad(milling_angle))
+            # actions.move_to_milling_angle(microscope=microscope,
+    #                               milling_angle=np.deg2rad(milling_angle))
 
     if method is AutoLamellaMethod.LIFTOUT:
 
