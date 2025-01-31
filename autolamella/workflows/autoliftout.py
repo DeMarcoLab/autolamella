@@ -39,7 +39,7 @@ from fibsem.structures import (
 
 from autolamella.workflows import actions
 from autolamella.structures import AutoLamellaStage, Experiment, Lamella
-from autolamella.ui.AutoLiftoutUIv2 import AutoLiftoutUIv2
+from autolamella.ui import AutoLamellaUI
 from fibsem import config as fcfg
 
 
@@ -58,7 +58,7 @@ def liftout_lamella(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     lamella: Lamella,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
 ) -> Lamella:
     # bookkeeping
     validate = bool(settings.protocol["options"]["supervise"]["liftout"])
@@ -323,7 +323,7 @@ def land_needle_on_milled_lamella(
     return lamella
 
 def _liftout_contact_detection(microscope: FibsemMicroscope, settings: MicroscopeSettings, 
-                                lamella: Lamella, parent_ui: AutoLiftoutUIv2, validate: bool = True) -> Lamella:
+                                lamella: Lamella, parent_ui: AutoLamellaUI, validate: bool = True) -> Lamella:
     
 
     # measure brightness
@@ -394,7 +394,7 @@ def land_lamella(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     lamella: Lamella,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
 ) -> Lamella:
     # bookkeeping
     validate = bool(settings.protocol["options"]["supervise"]["landing"])
@@ -520,7 +520,7 @@ def land_lamella(
 def mill_lamella_edge(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
     lamella: Lamella = None,
     validate: bool = True,
     x_shift: float = 0,
@@ -566,7 +566,7 @@ def mill_lamella_edge(
 def land_lamella_on_post(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
     lamella: Lamella,
     validate: bool = True,
 ):
@@ -704,7 +704,7 @@ def land_lamella_on_post(
 
 
 def landing_entry_procedure(
-    microscope: FibsemMicroscope, settings: MicroscopeSettings, lamella: Lamella, validate: bool = True,parent_ui=AutoLiftoutUIv2
+    microscope: FibsemMicroscope, settings: MicroscopeSettings, lamella: Lamella, validate: bool = True,parent_ui=AutoLamellaUI
 ):
     # entry procedure, align vertically to post
     actions.move_needle_to_landing_position(microscope)
@@ -745,7 +745,7 @@ def reset_needle(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     lamella: Lamella,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
 ) -> Lamella:
     # bookkeeping
     validate = bool(settings.protocol["options"]["supervise"]["reset"])
@@ -841,7 +841,7 @@ def run_setup_autoliftout(
     microscope: FibsemMicroscope,	
     settings: MicroscopeSettings,	
     experiment: Experiment,	
-    parent_ui: AutoLiftoutUIv2,	
+    parent_ui: AutoLamellaUI,	
 ) -> Experiment:
     
     log_status_message_raw(f"{AutoLamellaStage.SetupTrench.name}", "STARTED")
@@ -853,7 +853,7 @@ def run_setup_autoliftout(
 
 # autoliftout_workflow
 WORKFLOW_STAGES = {
-    AutoLamellaStage.SetupTrench: run_setup_autoliftout, # TODO: split this further
+    # AutoLamellaStage.SetupTrench: run_setup_autoliftout, # TODO: split this further
     AutoLamellaStage.MillTrench: mill_trench,
     AutoLamellaStage.MillUndercut: mill_undercut,
     AutoLamellaStage.LiftoutLamella: liftout_lamella,
@@ -867,7 +867,7 @@ def run_autoliftout_workflow(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     experiment: Experiment,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
 ) -> Experiment:
 
 
@@ -965,7 +965,7 @@ def run_thinning_workflow(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     experiment: Experiment,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
 ) -> Experiment:
 
     update_status_ui(parent_ui, "Starting MillRough Workflow...")
@@ -1005,7 +1005,7 @@ def run_thinning_workflow(
     return experiment
 
 def get_current_lamella(
-    experiment: Experiment, parent_ui: AutoLiftoutUIv2
+    experiment: Experiment, parent_ui: AutoLamellaUI
 ) -> bool:
     select_another_lamella = (
         ask_user(
@@ -1024,7 +1024,7 @@ def select_initial_lamella_positions(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     experiment: Experiment,
-    parent_ui: AutoLiftoutUIv2 = None,
+    parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
     """Select the initial experiment positions for liftout"""
 
@@ -1078,7 +1078,7 @@ def select_landing_positions(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     experiment: Experiment,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
 ):
     """Select landing positions for autoliftout"""
 
@@ -1109,7 +1109,7 @@ def select_landing_sample_positions(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     lamella: Lamella,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
 ) -> Lamella:
     """Select the landing coordinates for a lamella."""
     logging.info(f"Selecting Landing Position: {lamella.petname}")
@@ -1167,7 +1167,7 @@ def select_lamella_positions(
     microscope: FibsemMicroscope,
     settings: MicroscopeSettings,
     experiment: Experiment,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
 ):
 
     # reference images
@@ -1211,7 +1211,7 @@ def select_lamella_positions(
 def finish_setup_autoliftout(
     microscope: FibsemMicroscope,
     experiment: Experiment,
-    parent_ui: AutoLiftoutUIv2,
+    parent_ui: AutoLamellaUI,
 ):
     """Finish the setup stage for autolifout/autolamella"""
 
@@ -1250,7 +1250,7 @@ def validate_needle_insertion(
 # 
         
 def prepare_manipulator_surface(microscope: FibsemMicroscope, settings: MicroscopeSettings, 
-                                parent_ui: AutoLiftoutUIv2, validate: bool = True,):
+                                parent_ui: AutoLamellaUI, validate: bool = True,):
 
     workflow_stage = "PrepareManipulator"
     scan_rotation = microscope.get("scan_rotation", BeamType.ION)
@@ -1319,7 +1319,7 @@ def prepare_manipulator_surface(microscope: FibsemMicroscope, settings: Microsco
 
 def _prepare_manipulator_autoliftout(microscope: FibsemMicroscope, 
                                      settings: MicroscopeSettings, 
-                                     parent_ui: AutoLiftoutUIv2, 
+                                     parent_ui: AutoLamellaUI, 
                                      experiment: Experiment):
 
     # bookkeeping
@@ -1350,7 +1350,7 @@ def _prepare_manipulator_autoliftout(microscope: FibsemMicroscope,
     return
 
 
-def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: MicroscopeSettings, parent_ui: AutoLiftoutUIv2, experiment: Experiment = None):
+def _prepare_manipulator_serial_liftout(microscope: FibsemMicroscope, settings: MicroscopeSettings, parent_ui: AutoLamellaUI, experiment: Experiment = None):
 
 
     # bookkeeping

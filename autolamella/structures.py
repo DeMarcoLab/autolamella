@@ -503,6 +503,9 @@ class Experiment:
         experiment = Experiment.from_dict(ddict)
         experiment.path = os.path.dirname(fname) # TODO: make sure the paths are correctly re-assigned when loaded on a different machine
 
+        # configure experiment logging
+        configure_logging(path=experiment.path, log_filename="logfile")
+
         return experiment
     
     def to_protocol_dataframe(self) -> pd.DataFrame:

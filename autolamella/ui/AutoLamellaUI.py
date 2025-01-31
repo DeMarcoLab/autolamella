@@ -1813,7 +1813,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
                 self.experiment = serial_workflow.run_serial_liftout_workflow(
                     microscope=microscope,
-                    settings=settings,
+                    protocol=protocol,
                     experiment=experiment,
                     parent_ui=self,
                 )
