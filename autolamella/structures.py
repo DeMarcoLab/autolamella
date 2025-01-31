@@ -49,6 +49,7 @@ class AutoLamellaStage(Enum):
     LandLamella = auto()
     SetupLamella = auto()
     MillRough = auto()
+    SetupPolishing = auto()
     MillPolishing = auto()
     Finished = auto()
 
@@ -651,6 +652,7 @@ class AutoLamellaMethod(Enum):
         workflow=[
             AutoLamellaStage.SetupLamella,
             AutoLamellaStage.MillRough,
+            AutoLamellaStage.SetupPolishing,
             AutoLamellaStage.MillPolishing,
         ]
     )
@@ -669,6 +671,7 @@ class AutoLamellaMethod(Enum):
             AutoLamellaStage.MillUndercut,
             AutoLamellaStage.SetupLamella,
             AutoLamellaStage.MillRough,
+            AutoLamellaStage.SetupPolishing,
             AutoLamellaStage.MillPolishing,
         ]
     )
@@ -682,6 +685,7 @@ class AutoLamellaMethod(Enum):
             AutoLamellaStage.LandLamella,
             AutoLamellaStage.SetupLamella,
             AutoLamellaStage.MillRough,
+            AutoLamellaStage.SetupPolishing,
             AutoLamellaStage.MillPolishing,
         ]
     )
@@ -695,6 +699,7 @@ class AutoLamellaMethod(Enum):
             AutoLamellaStage.LandLamella,
             AutoLamellaStage.SetupLamella,
             AutoLamellaStage.MillRough,
+            AutoLamellaStage.SetupPolishing,
             AutoLamellaStage.MillPolishing,
         ]
     )
@@ -783,6 +788,7 @@ WORKFLOW_STAGE_TO_PROTOCOL_KEY = {
     AutoLamellaStage.LiftoutLamella: LIFTOUT_KEY,
     AutoLamellaStage.LandLamella: LANDING_KEY,
     AutoLamellaStage.MillRough: MILL_ROUGH_KEY,
+    AutoLamellaStage.SetupPolishing: SETUP_LAMELLA_KEY,
     AutoLamellaStage.MillPolishing: MILL_POLISHING_KEY,
 }
 
@@ -882,7 +888,7 @@ def get_autolamella_method(name: str) -> AutoLamellaMethod:
         for method, aliases in method_aliases.items() 
         for alias in aliases
     }
-    
+
     normalized_name = name.lower()
     if normalized_name not in name_mapping:
         valid_names = sorted(set(alias for aliases in method_aliases.values() for alias in aliases))

@@ -20,6 +20,8 @@ from autolamella.workflows.core import (
     mill_undercut,
     setup_lamella,
     start_of_stage_update,
+    pass_through_stage,
+    setup_polishing,
 )
 from autolamella.workflows.ui import ask_user, ask_user_continue_workflow
 
@@ -28,9 +30,12 @@ WORKFLOW_STAGES = {
     AutoLamellaStage.MillUndercut: mill_undercut,
     AutoLamellaStage.SetupLamella: setup_lamella,
     AutoLamellaStage.MillRough: mill_lamella,
+    AutoLamellaStage.SetupPolishing: setup_polishing,
     AutoLamellaStage.MillPolishing: mill_lamella,
 }
-LAMELLA_MILLING_WORKFLOW = [AutoLamellaStage.MillRough, AutoLamellaStage.MillPolishing]
+LAMELLA_MILLING_WORKFLOW = [AutoLamellaStage.MillRough,
+                            AutoLamellaStage.SetupPolishing,
+                            AutoLamellaStage.MillPolishing]
 
 def run_trench_milling(
     microscope: FibsemMicroscope,
@@ -55,7 +60,7 @@ def run_trench_milling(
 
             lamella = mill_trench(microscope, protocol, lamella, parent_ui)
             experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)
-    
+
     log_status_message(lamella, "NULL_END") # for logging purposes
 
     return experiment

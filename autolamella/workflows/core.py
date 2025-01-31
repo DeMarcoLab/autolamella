@@ -657,6 +657,63 @@ def setup_lamella(
 
     return lamella
 
+def setup_polishing(
+    microscope: FibsemMicroscope,
+    protocol: AutoLamellaProtocol,
+    lamella: Lamella,
+    parent_ui: AutoLamellaUI = None,
+) -> Lamella:
+
+    method = protocol.method
+    validate = protocol.supervision[lamella.workflow]
+    image_settings: ImageSettings = protocol.configuration.image
+    image_settings.path = lamella.path
+
+    log_status_message(lamella, "ALIGN_LAMELLA")
+    update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
+
+    # beam shift alignment
+    ref_image = FibsemImage.load(os.path.join(lamella.path, "ref_alignment_ib.tif"))
+    alignment_attempts = protocol.options.alignment_attempts
+    alignment.multi_step_alignment_v2(microscope=microscope, 
+                                    ref_image=ref_image,
+                                    beam_type=BeamType.ION,
+                                    steps=alignment_attempts)
+
+    # TODO:
+    # support front-face-polishing
+    # support 3d correlation
+
+    log_status_message(lamella, "SETUP_PATTERNS")
+    
+    # get milling stages
+    milling_stages = get_milling_stages(MILL_POLISHING_KEY, lamella.protocol)
+
+    image_settings.hfw = milling_stages[0].milling.hfw
+    image_settings.filename = f"ref_{lamella.status}_start"
+    image_settings.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
+    set_images_ui(parent_ui, eb_image, ib_image)
+
+    if validate:
+        milling_stages = update_milling_ui(microscope, milling_stages, parent_ui, 
+            msg=f"Confirm the positions for the {lamella.name} milling. Press Continue to Confirm.",
+            validate=validate, # always validate non on-grid for now
+            milling_enabled=False)
+
+    # polishing
+    lamella.protocol[MILL_POLISHING_KEY] = deepcopy(get_protocol_from_stages(milling_stages))
+
+    # take reference images
+    reference_images = acquire.take_set_of_reference_images(
+        microscope,
+        image_settings,
+        hfws=[fcfg.REFERENCE_HFW_HIGH, fcfg.REFERENCE_HFW_SUPER],
+        filename=f"ref_{lamella.status}_final",
+    )
+    set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
+
+    return lamella
 
 def end_of_stage_update(
     microscope: FibsemMicroscope, 
