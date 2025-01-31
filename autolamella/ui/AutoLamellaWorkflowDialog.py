@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QGridLayout,
 )
+from fibsem.utils import format_duration
 from autolamella.structures import (
     AutoLamellaMethod,
     AutoLamellaProtocol,
@@ -24,10 +25,6 @@ from autolamella.structures import (
 )
 from autolamella.ui.qt import AutoLamellaWorkflowDialog as AutoLamellaWorkflowDialogUI
 
-# EXP_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-01-10-14-24/experiment.yaml"
-# PROTOCOL_PATH = "/home/patrick/github/autolamella/autolamella/log/AutoLamella-2025-01-10-14-24/protocol.yaml"
-# exp = Experiment.load(EXP_PATH)
-# protocol = AutoLamellaProtocol.load(PROTOCOL_PATH)
 
 def display_selected_lamella_info(grid_layout: QGridLayout, pos: Lamella, method: AutoLamellaMethod) -> None:
     """Display the history of a selected lamella."""
@@ -165,6 +162,7 @@ class AutoLamellaWorkflowDialog(QDialog, AutoLamellaWorkflowDialogUI.Ui_Dialog):
         self.supervision: Dict[AutoLamellaStage, bool] = None
 
         self.setup_connections()
+        self._update_estimated_duration()
 
     def setup_connections(self):
 
@@ -200,6 +198,12 @@ class AutoLamellaWorkflowDialog(QDialog, AutoLamellaWorkflowDialogUI.Ui_Dialog):
 
     def get_workflow_settings(self) -> Dict[AutoLamellaStage, Tuple[bool, bool]]:
         return {state: (enable.isChecked(), supervised.isChecked()) for state, (enable, supervised) in self.workflow_widgets.items()}
+
+    def _update_estimated_duration(self):
+        """Update the estimated duration of the workflow."""
+        estimated_time = self.experiment.estimate_remaining_time()
+        txt = f"Estimated time remaining: {format_duration(estimated_time)}"
+        self.label_information.setText(txt)
 
     def on_start(self):
         logging.info("Starting AutoLamella Workflow")

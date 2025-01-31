@@ -104,7 +104,7 @@ options:
         - 2048
     lamella_tilt_angle: 18.0
     method: autolamella-on-grid
-    name: autolamella-base-scan-rotation-0deg
+    name: autolamella-on-grid-baseline
     supervise:
         mill_polishing: true
         mill_rough: true
