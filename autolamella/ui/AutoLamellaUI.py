@@ -659,8 +659,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # generate the report
         generate_report(experiment=self.experiment, 
                         output_filename=filename, 
-                        encoding="cp1252")
-
+                        encoding="cp1252" if os.name == "nt" else "utf-8")
         return
 
 #### MINIMAP
