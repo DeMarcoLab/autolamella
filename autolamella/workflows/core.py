@@ -16,7 +16,7 @@ from fibsem.detection.detection import (
     VolumeBlockCentre,
 )
 from fibsem.microscope import FibsemMicroscope
-from fibsem.milling import get_milling_stages, get_protocol_from_stages
+from fibsem.milling import get_milling_stages, get_protocol_from_stages, FibsemMillingStage
 from fibsem.structures import (
     BeamType,
     FibsemImage,
@@ -331,7 +331,8 @@ def mill_lamella(
 
     # milling stages
     milling_stage_name = WORKFLOW_STAGE_TO_PROTOCOL_KEY[lamella.workflow]
-    stages = get_milling_stages(key=milling_stage_name, protocol=lamella.protocol)
+    stages: List[FibsemMillingStage] = get_milling_stages(key=milling_stage_name,
+                                                          protocol=lamella.protocol)
 
     if not isinstance(stages, list):
         stages = [stages]
@@ -396,6 +397,11 @@ def mill_lamella(
             features_stages.extend(get_milling_stages(MICROEXPANSION_KEY, lamella.protocol)) 
                     
         if features_stages:
+
+            # assign alignment area for all stages
+            for fstage in features_stages:
+                fstage.alignment.rect = lamella.alignment_area
+
             features_stages = update_milling_ui(microscope, features_stages, parent_ui,
                 msg=f"Press Run Milling to mill the features for {lamella.name}. Press Continue when done.",
                 validate=validate,
@@ -409,6 +415,9 @@ def mill_lamella(
             idx = use_notch
             lamella.protocol[NOTCH_KEY] = get_protocol_from_stages(features_stages[idx])
 
+    # assign alignment area for all stages
+    for stage in stages:
+        stage.alignment.rect = lamella.alignment_area
 
     # mill lamella trenches
     log_status_message(lamella, "MILL_LAMELLA")
