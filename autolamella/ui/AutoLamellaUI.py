@@ -654,10 +654,22 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if filename is None:
             return
 
-        # TODO: thread this
+        # threaded report generation
+        self.report_worker = self.report_gen_worker(deepcopy(self.experiment), filename)
+        self.report_worker.finished.connect(self._report_gen_finished)
+        self.report_worker.errored.connect(self._report_gen_error)
+        self.report_worker.start() # TODO: display a progress bar / indicator?
 
+    def _report_gen_error(self):
+        napari.utils.notifications.show_error("Report generation failed.")
+
+    def _report_gen_finished(self):
+        napari.utils.notifications.show_info("Report generated successfully.")
+
+    @thread_worker
+    def report_gen_worker(self, experiment: Experiment, filename: str) -> None:
         # generate the report
-        generate_report(experiment=self.experiment, 
+        generate_report(experiment=experiment,
                         output_filename=filename, 
                         encoding="cp1252" if os.name == "nt" else "utf-8")
         return
