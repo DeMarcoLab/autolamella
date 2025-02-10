@@ -45,6 +45,7 @@ from fibsem.structures import (
     FibsemStagePosition,
     MicroscopeSettings,
     MicroscopeState,
+    ImageSettings,
     Point,
 )
 
@@ -54,6 +55,7 @@ from autolamella.structures import (
     Experiment,
     Lamella,
     LamellaState,
+    create_new_lamella,
 )
 
 from autolamella.ui import AutoLamellaUI
@@ -259,13 +261,12 @@ def liftout_lamella(
         set_images_ui(parent_ui, None, det.fibsem_image)
 
         stages = protocol.milling["liftout-sever"]
-        for stage in stages:
-            stage.pattern.point = point
+        stages[0].pattern.point = point
         stages = update_milling_ui(microscope, stages, parent_ui, 
             msg=f"Press Run Milling to sever for {lamella.petname}. Press Continue when done.", 
             validate=validate)
         
-        lamella.protocol["liftout-sever"] = deepcopy(get_protocol_from_stages(stages[0]))
+        lamella.protocol["liftout-sever"] = deepcopy(get_protocol_from_stages(stages))
 
         # reference images
         image_settings.hfw = fcfg.REFERENCE_HFW_MEDIUM
@@ -286,7 +287,10 @@ def liftout_lamella(
 
         # TODO: implemented automated detection for separation of volume from trench
         if validate:
-            response = ask_user(parent_ui, msg=f"Press Continue to confirm to separation of volume for {lamella.petname}.", pos="Continue", neg="Repeat")
+            response = ask_user(parent_ui, 
+                                msg=f"Press Continue to confirm to separation of volume for {lamella.petname}.", 
+                                pos="Continue", 
+                                neg="Repeat")
 
         if response:
             logging.info(f"Volume Severed for {lamella.petname}, response: {response}")
@@ -329,29 +333,31 @@ def liftout_lamella(
 
 def land_lamella(
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    protocol: AutoLamellaProtocol,
     lamella: Lamella,
     parent_ui: AutoLamellaUI,
 ) -> Lamella:
 
     # bookkeeping
-    validate = bool(settings.protocol["options"]["supervise"]["landing"])
-    settings.image.path = lamella.path
+    validate = protocol.supervision[lamella.workflow]
+    image_settings: ImageSettings = protocol.configuration.image
+    image_settings.path = lamella.path
 
     # # MOVE TO LANDING POSITION
     log_status_message(lamella, "MOVE_TO_LANDING_POSITION")
     update_status_ui(parent_ui, f"{lamella.info} Moving to Landing Position...")
 
     # reference images
-    settings.image.save = True
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.filename = f"ref_{lamella.state.stage.name}_start"
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    image_settings.save = True
+    image_settings.hfw = fcfg.REFERENCE_HFW_MEDIUM
+    image_settings.filename = f"ref_{lamella.state.stage.name}_start"
+    eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
     set_images_ui(parent_ui, eb_image, ib_image)
 
-
     if validate:
-        response = ask_user(parent_ui, msg=f"Press Continue to confirm to landing position for {lamella.petname}.", pos="Continue")
+        response = ask_user(parent_ui, 
+                            msg=f"Press Continue to confirm to landing position for {lamella.petname}.", 
+                            pos="Continue")
 
     # INSER MANIPUALTOR TO PARK
     log_status_message(lamella, "INSERT_MANIPULATOR")
@@ -361,38 +367,43 @@ def land_lamella(
     actions.move_needle_to_park_position(microscope)
 
     # reference images
-    settings.image.save = True
-    settings.image.hfw = fcfg.REFERENCE_HFW_LOW
-    settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_inserted"
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    image_settings.save = True
+    image_settings.hfw = fcfg.REFERENCE_HFW_LOW
+    image_settings.filename = f"ref_{lamella.state.stage.name}_manipulator_inserted"
+    eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
     set_images_ui(parent_ui, eb_image, ib_image)
 
 
     # align in electron beam
-    log_status_message(lamella, f"NEEDLE_EB_DETECTION_INITIAL")
+    log_status_message(lamella, "NEEDLE_EB_DETECTION_INITIAL")
     update_status_ui(parent_ui, f"{lamella.info} Moving Volume to Landing Grid...")
 
-    settings.image.beam_type = BeamType.ELECTRON
-    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+    image_settings.beam_type = BeamType.ELECTRON
+    image_settings.hfw = fcfg.REFERENCE_HFW_HIGH
 
     # detect volume top right corner, landing grid right edge 
     scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ELECTRON)
     features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
-    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    det = update_detection_ui(microscope=microscope, 
+                              image_settings=image_settings, 
+                              checkpoint=protocol.options.checkpoint, 
+                              features=features, parent_ui=parent_ui, 
+                              validate=validate, msg=lamella.info)
     set_images_ui(parent_ui, det.fibsem_image, None)
 
     detection.move_based_on_detection(
-        microscope, settings, det, 
-        beam_type=settings.image.beam_type, 
-        _move_system="manipulator"
+        microscope=microscope, det=det, 
+        beam_type=image_settings.beam_type, 
+        move_x=True,
+         _move_system="manipulator"
     )
 
     if validate:
         # reference images
-        settings.image.save = True
-        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
-        settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_validation_electron"
-        eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+        image_settings.save = True
+        image_settings.hfw = fcfg.REFERENCE_HFW_HIGH
+        image_settings.filename = f"ref_{lamella.state.stage.name}_manipulator_validation_electron"
+        eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
         set_images_ui(parent_ui, eb_image, ib_image)
 
         response = ask_user(parent_ui, msg=f"No more movements in Electron, Press Continue to confirm to manipulator position for {lamella.petname}.", pos="Continue")
@@ -408,13 +419,17 @@ def land_lamella(
 
         log_status_message(lamella, f"NEEDLE_IB_DETECTION_{i:02d}")
 
-        settings.image.beam_type = BeamType.ION
-        settings.image.hfw = hfw
+        image_settings.beam_type = BeamType.ION
+        image_settings.hfw = hfw
 
         # DETECT COPPER ADAPTER, LAMELLA TOP
         scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
         features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
-        det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+        det = update_detection_ui(microscope=microscope, 
+                                image_settings=image_settings, 
+                                checkpoint=protocol.options.checkpoint, 
+                                features=features, parent_ui=parent_ui, 
+                                validate=validate, msg=lamella.info)
         set_images_ui(parent_ui, None, det.fibsem_image)
 
         # offset above the grid
@@ -422,28 +437,32 @@ def land_lamella(
 
         # MOVE TO LANDING POST
         detection.move_based_on_detection(
-            microscope, settings, det, beam_type=settings.image.beam_type, move_x=True, 
+            microscope=microscope, det=det, 
+            beam_type=image_settings.beam_type, 
+            move_x=True,
             _move_system="manipulator"
         )
-
         log_status_message(lamella, "NEEDLE_IB_DETECTION")
 
 
-    settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
+    image_settings.beam_type = BeamType.ION
+    image_settings.hfw = fcfg.REFERENCE_HFW_SUPER
 
     # # DETECT COPPER ADAPTER, LAMELLA TOP
     # scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
     # features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridCentre()]  # TODO: SCAN_ROTATION FOR LANDING_POST
-    # det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    #     det = update_detection_ui(microscope=microscope, 
+    #                             image_settings=image_settings, 
+    #                             checkpoint=protocol.options.checkpoint, 
+    #                             features=features, parent_ui=parent_ui, 
+    #                             validate=validate, msg=lamella.info)    
     # set_images_ui(parent_ui, None, det.fibsem_image)
     
     # # MOVE TO LANDING GRID
     # detection.move_based_on_detection(
-    #     microscope, settings, det, 
-    #     beam_type=settings.image.beam_type, 
+    #     microscope=microscope, det=det, 
+    #     beam_type=image_settings.beam_type, 
     #     move_x=True,
-    #     move_y=False,
     #     _move_system="manipulator"
     # )
 
@@ -464,7 +483,11 @@ def land_lamella(
     else:      
         features = [VolumeBlockBottomLeftCorner(), VolumeBlockBottomRightCorner(), LandingGridLeftEdge(), LandingGridRightEdge()]
 
-    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    det = update_detection_ui(microscope=microscope, 
+                            image_settings=image_settings, 
+                            checkpoint=protocol.options.checkpoint, 
+                            features=features, parent_ui=parent_ui, 
+                            validate=validate, msg=lamella.info)    
     set_images_ui(parent_ui, None, det.fibsem_image)
 
     # get individual features
@@ -494,10 +517,10 @@ def land_lamella(
     ########### THIN VOLUME BLOCK
 
     # reference images
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
-    settings.image.save = True
-    settings.image.filename = f"ref_{lamella.state.stage.name}_match_volume_and_grid_width_pre"
-    acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
+    image_settings.hfw = fcfg.REFERENCE_HFW_SUPER
+    image_settings.save = True
+    image_settings.filename = f"ref_{lamella.state.stage.name}_match_volume_and_grid_width_pre"
+    acquire.take_reference_images(microscope=microscope, image_settings=image_settings)
     set_images_ui(parent_ui, eb_image, ib_image)
 
     # draw milling pattern to remove excess material
@@ -507,60 +530,69 @@ def land_lamella(
     
     logging.info(f"Milling Point: {pt}")
 
-    mill_protocol = deepcopy(settings.protocol["milling"])
-    mill_protocol["landing-thin"]["width"] = diff
-
-    # mill welds
-    stages = get_milling_stages("landing-thin", mill_protocol, pt)
+    # mill thin
+    stages = protocol.milling["landing-thin"]
+    stages[0].pattern.width = diff
+    stages[0].pattern.point = pt
     stages = update_milling_ui(microscope, stages, parent_ui, 
         msg=f"Press Run Milling to mill the thinning pattern for {lamella.petname}. Press Continue when done.", 
         validate=validate)
 
-    lamella.protocol["landing-thin"] = deepcopy(get_protocol_from_stages(stages[0]))
+    lamella.protocol["landing-thin"] = deepcopy(get_protocol_from_stages(stages))
 
     # reference images
-    settings.image.hfw = fcfg.REFERENCE_HFW_SUPER
-    settings.image.save = True
-    settings.image.filename = f"ref_{lamella.state.stage.name}_match_volume_and_grid_width_post"
-    acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
+    image_settings.hfw = fcfg.REFERENCE_HFW_SUPER
+    image_settings.save = True
+    image_settings.filename = f"ref_{lamella.state.stage.name}_match_volume_and_grid_width_post"
+    acquire.take_reference_images(microscope=microscope, image_settings=image_settings)
     set_images_ui(parent_ui, eb_image, ib_image)
 
 
     ########### FINAL MOVEMENT
 
     # align in ion beam
-    log_status_message(lamella, f"NEEDLE_IB_DETECTION_FINAL")
+    log_status_message(lamella, "NEEDLE_IB_DETECTION_FINAL")
     update_status_ui(parent_ui, f"{lamella.info} Moving Volume to Landing Grid...")
 
-    settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+    image_settings.beam_type = BeamType.ION
+    image_settings.hfw = fcfg.REFERENCE_HFW_HIGH
 
     # DETECT COPPER ADAPTER, LAMELLA TOP
     scan_rotation = microscope.get("scan_rotation", beam_type=BeamType.ION)
     features = [VolumeBlockTopLeftCorner() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge(), LandingGridLeftEdge()]  # TODO: SCAN_ROTATION FOR LANDING_POST
-    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    det = update_detection_ui(microscope=microscope, 
+                            image_settings=image_settings, 
+                            checkpoint=protocol.options.checkpoint, 
+                            features=features, parent_ui=parent_ui, 
+                            validate=validate, msg=lamella.info)    
     set_images_ui(parent_ui, None, det.fibsem_image)
     
     # MOVE TO LANDING GRID
     detection.move_based_on_detection(
-        microscope, settings, det, 
-        beam_type=settings.image.beam_type, 
-        move_x=False,
+        microscope=microscope, det=det, 
+        beam_type=image_settings.beam_type, 
+        move_x=True,
         _move_system="manipulator"
     )
 
     if validate:
-        response = ask_user(parent_ui, msg=f"No more movements, move manually if required, Press Continue to continue to landing welds for {lamella.petname}.", pos="Continue")
+        response = ask_user(parent_ui, 
+                            msg=f"No more movements, move manually if required, Press Continue to continue to landing welds for {lamella.petname}.", 
+                            pos="Continue")
 
 
     # WELD BOTH SIDES
     log_status_message(lamella, "WELD_LAMELLA_TO_POST")
 
-    settings.image.beam_type = BeamType.ION
-    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+    image_settings.beam_type = BeamType.ION
+    image_settings.hfw = fcfg.REFERENCE_HFW_HIGH
 
     features = [VolumeBlockTopLeftCorner(), VolumeBlockTopRightCorner()] if np.isclose(scan_rotation, 0) else [VolumeBlockBottomLeftCorner(), VolumeBlockBottomRightCorner()]
-    det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+    det = update_detection_ui(microscope=microscope, 
+                            image_settings=image_settings, 
+                            checkpoint=protocol.options.checkpoint, 
+                            features=features, parent_ui=parent_ui, 
+                            validate=validate, msg=lamella.info)       
     set_images_ui(parent_ui, None, det.fibsem_image)
 
     # get the points
@@ -573,19 +605,20 @@ def land_lamella(
     right_corner.y +=  v_offset
 
     # mill welds
-    stages = get_milling_stages("landing-weld", settings.protocol["milling"], [left_corner, right_corner])
+    stages = protocol.milling["landing-weld"]
+    stages[0].pattern.point = left_corner
+    stages[1].pattern.point = right_corner 
     stages = update_milling_ui(microscope, stages, parent_ui, 
         msg=f"Press Run Milling to mill the weld for {lamella.petname}. Press Continue when done.", 
         validate=validate)
     
-    lamella.protocol["landing-weld"] = deepcopy(get_protocol_from_stages(stages[0]))
-    lamella.protocol["landing-weld"]["point"] = stages[0].pattern.point.to_dict()
+    lamella.protocol["landing-weld"] = deepcopy(get_protocol_from_stages(stages))
 
     # reference images
-    settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
-    settings.image.save = True
-    settings.image.filename = f"ref_{lamella.state.stage.name}_weld_volume_to_post"
-    acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
+    image_settings.hfw = fcfg.REFERENCE_HFW_HIGH
+    image_settings.save = True
+    image_settings.filename = f"ref_{lamella.state.stage.name}_weld_volume_to_post"
+    acquire.take_reference_images(microscope=microscope, image_settings=image_settings)
     set_images_ui(parent_ui, eb_image, ib_image)
 
     ########################
@@ -596,7 +629,12 @@ def land_lamella(
     ######################### 
 
     # SEVER
-    lamella = sever_lamella_block(microscope, settings, lamella, parent_ui, validate)
+    lamella = sever_lamella_block(microscope=microscope, 
+                                  protocol=protocol, 
+                                  image_settings=image_settings, 
+                                  lamella=lamella, 
+                                  parent_ui=parent_ui, 
+                                  validate=validate)
 
     # RETRACT MANIPULATOR
     log_status_message(lamella, "RETRACT_MANIPULATOR")
@@ -606,8 +644,8 @@ def land_lamella(
     for i in range(10):
         microscope.move_manipulator_corrected(dx=0, dy=1e-6, beam_type=BeamType.ION)
         if i % 5 == 0:
-            settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_slow{i:02d}"
-            eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+            image_settings.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_slow{i:02d}"
+            eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
             set_images_ui(parent_ui, eb_image, ib_image)
         time.sleep(1)
     
@@ -621,17 +659,17 @@ def land_lamella(
     log_status_message(lamella, "REFERENCE_IMAGES")
     reference_images = acquire.take_set_of_reference_images(
         microscope=microscope,
-        image_settings=settings.image,
+        image_settings=image_settings,
         hfws=[fcfg.REFERENCE_HFW_MEDIUM, fcfg.REFERENCE_HFW_HIGH],
         filename=f"ref_{lamella.state.stage.name}_final",
     )
     set_images_ui(parent_ui, reference_images.high_res_eb, reference_images.high_res_ib)
 
-
     return lamella
 
 def sever_lamella_block(microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    protocol: AutoLamellaProtocol,
+    image_settings: ImageSettings,
     lamella: Lamella,
     parent_ui: AutoLamellaUI,
     validate: bool = True) -> Lamella:
@@ -646,49 +684,56 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         log_status_message(lamella, f"SEVER_LAMELLA_BLOCK_{i:02d}")
         update_status_ui(parent_ui, f"{lamella.info} Severing Lamella Block...")
 
-        settings.image.beam_type = BeamType.ION
-        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+        image_settings.beam_type = BeamType.ION
+        image_settings.hfw = fcfg.REFERENCE_HFW_HIGH
 
         features = [VolumeBlockTopEdge() if np.isclose(scan_rotation, 0) else VolumeBlockBottomEdge()]  
-        det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
+        det = update_detection_ui(microscope=microscope, 
+                                image_settings=image_settings, 
+                                checkpoint=protocol.options.checkpoint, 
+                                features=features, parent_ui=parent_ui, 
+                                validate=validate, msg=lamella.info) 
         set_images_ui(parent_ui, None, det.fibsem_image)
                 
         point = det.features[0].feature_m
 
-        stages = get_milling_stages("landing-sever", settings.protocol["milling"], point)
+        stages = protocol.milling["landing-sever"]
+        stages[0].pattern.point = point
         stages = update_milling_ui(microscope, stages, parent_ui, 
             msg=f"Press Run Milling to sever for {lamella.petname}. Press Continue when done.", 
             validate=validate)
-        
-        lamella.protocol["landing-sever"] = deepcopy(get_protocol_from_stages(stages[0]))
-        lamella.protocol["landing-sever"]["point"] = stages[0].pattern.point.to_dict()
 
+        lamella.protocol["landing-sever"] = deepcopy(get_protocol_from_stages(stages))
+        
         # reference images
-        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
-        settings.image.save = True
-        settings.image.filename = f"ref_{lamella.state.stage.name}_sever_volume_block_{i:02d}"
-        eb_image, ib_image = acquire.take_reference_images(microscope=microscope, image_settings=settings.image)
+        image_settings.hfw = fcfg.REFERENCE_HFW_HIGH
+        image_settings.save = True
+        image_settings.filename = f"ref_{lamella.state.stage.name}_sever_volume_block_{i:02d}"
+        eb_image, ib_image = acquire.take_reference_images(microscope=microscope, image_settings=image_settings)
         set_images_ui(parent_ui, eb_image, ib_image)
 
         # move up slowly at first
         for j in range(3):
             microscope.move_manipulator_corrected(dx=0, dy=50e-9, beam_type=BeamType.ION)
-            settings.image.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_check{j:02d}"
-            acquire.take_reference_images(microscope, settings.image)
+            image_settings.filename = f"ref_{lamella.state.stage.name}_manipulator_removal_check{j:02d}"
+            acquire.take_reference_images(microscope, image_settings)
             time.sleep(1)
 
         # confirm that the lamella is free     
         log_status_message(lamella, f"CONFIRM_LAMELLA_SEVER_{i:02d}")
         update_status_ui(parent_ui, f"{lamella.info} Confirming Lamella has been Severed...")
 
-        settings.image.beam_type = BeamType.ION
-        settings.image.hfw = fcfg.REFERENCE_HFW_HIGH
+        image_settings.beam_type = BeamType.ION
+        image_settings.hfw = fcfg.REFERENCE_HFW_HIGH
 
         features = [VolumeBlockTopEdge(), LamellaBottomEdge()] if np.isclose(scan_rotation, 0) else [VolumeBlockBottomEdge(), LamellaTopEdge()]  
-        det = update_detection_ui(microscope, settings, features, parent_ui, validate, msg=lamella.info)
-
+        det = update_detection_ui(microscope=microscope, 
+                                image_settings=image_settings, 
+                                checkpoint=protocol.options.checkpoint, 
+                                features=features, parent_ui=parent_ui, 
+                                validate=validate, msg=lamella.info) 
         # if the distance is less than the threshold, then the lamella is not severed
-        threshold = settings.protocol["options"].get("landing-sever-threshold", 0.5e-6)
+        threshold = protocol.tmp.get("landing-sever-threshold", 0.5e-6)
         if abs(det.distance.y) < threshold:
             logging.info(f"Lamella Not Severed: {det.distance.y} < {threshold}")
             logging.debug({"msg": "check_volume_sever",  "detected_features": det.to_dict(), "threshold": threshold})   
@@ -696,15 +741,15 @@ def sever_lamella_block(microscope: FibsemMicroscope,
         
         # check with the user
         if validate:
-            response = ask_user(parent_ui, msg=f"Confirm Lamella has been severed for {lamella.petname}. Distance measured was {det.distance.y*1e6} um. (Threshold = {threshold*1e6}) um", 
+            response = ask_user(parent_ui, 
+                                msg=f"Confirm Lamella has been severed for {lamella.petname}. "
+                                 f"Distance measured was {det.distance.y*1e6:.2f} um. (Threshold = {threshold*1e6:.2f}) um", 
                                 pos="Confirm", neg="Retry")
             confirm_severed = response
 
         i += 1
 
     return lamella
-
-
 
 
 # serial workflow functions
@@ -785,7 +830,7 @@ def run_serial_liftout_workflow(
 
 def run_serial_liftout_landing(    
     microscope: FibsemMicroscope,
-    settings: MicroscopeSettings,
+    protocol: AutoLamellaProtocol,
     experiment: Experiment,
     parent_ui: AutoLamellaUI,
 ) -> Experiment:
@@ -797,27 +842,28 @@ def run_serial_liftout_landing(
     )
 
     lamella = experiment.positions[0]
-    settings.image.save = False
-    settings.image.path = lamella.path
-    settings.image.filename = f"{fibsem_utils.current_timestamp()}"
+    image_settings = protocol.configuration.image
+    image_settings.save = False
+    image_settings.path = lamella.path
+    image_settings.filename = f"{fibsem_utils.current_timestamp()}"
 
     # move to landing position
     log_status_message(lamella, "MOVING_TO_LANDING_POSITION")
     update_status_ui(parent_ui, "Moving to Landing Position...")   
-    microscope.set_microscope_state(lamella.landing_state)
+    # microscope.set_microscope_state(lamella.landing_state)
 
     # take images, 
     log_status_message(lamella, "REFERENCE_IMAGES")
-    settings.image.hfw = fcfg.REFERENCE_HFW_MEDIUM
-    settings.image.filename = f"ref_{lamella.state.stage.name}_start"
-    settings.image.save = True
-    eb_image, ib_image = acquire.take_reference_images(microscope, settings.image)
+    image_settings.hfw = fcfg.REFERENCE_HFW_MEDIUM
+    image_settings.filename = f"ref_{lamella.state.stage.name}_start"
+    image_settings.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
     set_images_ui(parent_ui, eb_image, ib_image)
 
     # calculate landing positions
     log_status_message(lamella, "CALCULATE_LANDING_POSITIONS")
-    update_status_ui(parent_ui, "Generating Landing Positions...")   
-    positions = _calculate_landing_positions(microscope, settings)
+    update_status_ui(parent_ui, "Generating Landing Positions...")
+    # positions = calculate_landing_positions(microscope=microscope, protocol=protocol)
 
     # see where we are in the workflow
     _counter = Counter([p.state.stage.name for p in experiment.positions])
@@ -826,14 +872,20 @@ def run_serial_liftout_landing(
     finished_idx = _counter[AutoLamellaStage.Finished.name]
 
     # start of workflow
-    response = ask_user(parent_ui, msg=f"Land Another Lamella? ({land_idx} Lamella Landed, {finished_idx} Lamella Finished)", pos="Continue", neg="Finish")
+    response = ask_user(parent_ui, 
+                        msg=f"Land Another Lamella? ({land_idx} Lamella Landed, {finished_idx} Lamella Finished)", 
+                        pos="Continue", neg="Finish")
 
     while response:
 
+        # TODO: this whole procedure needs to be rethought
         # create another lamella
-        experiment.positions.append(deepcopy(_create_lamella(microscope, experiment, positions)))
+        lamella = deepcopy(create_lamella_at_landing(microscope=microscope, 
+                                                    experiment=experiment, 
+                                                    protocol=protocol, 
+                                                    positions=[FibsemStagePosition(0, 0, 0, 0, 0) for _ in range(10)]))
+        experiment.positions.append(lamella)
         experiment.save()
-        lamella = experiment.positions[-1]
 
         # advance workflow
         lamella = start_of_stage_update(microscope, lamella, 
@@ -842,7 +894,7 @@ def run_serial_liftout_landing(
         # run the next workflow stage
         lamella = SERIAL_WORKFLOW_STAGES[AutoLamellaStage.LandLamella](
             microscope=microscope,
-            settings=settings,
+            protocol=protocol,
             lamella=lamella,
             parent_ui=parent_ui,
         )
@@ -861,9 +913,11 @@ def run_serial_liftout_landing(
 
     return experiment
 
-
-
-def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positions: List[FibsemStagePosition]) -> Lamella:
+def create_lamella_at_landing(microscope: FibsemMicroscope, 
+                   experiment: Experiment, 
+                   protocol: AutoLamellaProtocol,
+                   positions: List[FibsemStagePosition], 
+                   ) -> Lamella:
 
     # create a new lamella for landing
     _counter = Counter([p.state.stage.name for p in experiment.positions])
@@ -872,14 +926,23 @@ def _create_lamella(microscope: FibsemMicroscope, experiment: Experiment, positi
     print("COUNTER: ", _counter, land_idx)
 
     num = max(len(experiment.positions) + 1, 1)
-    lamella = Lamella(path=experiment.path, number=num)
+
+    mprotocol = protocol.milling # TODO: migrate to milling_workflow
+    tmp_protocol = deepcopy({k: get_protocol_from_stages(v) for k, v in mprotocol.items()})
+    state = LamellaState(stage=AutoLamellaStage.LiftoutLamella, 
+                         microscope_state=microscope.get_microscope_state())
+    state.microscope_state.stage_position = deepcopy(positions[land_idx])
+    lamella = create_new_lamella(experiment_path=experiment.path, 
+                                    number=num, 
+                                    state=state, 
+                                    protocol=tmp_protocol)
     log_status_message(lamella, "CREATION")
 
     # set state
-    lamella.state.stage = AutoLamellaStage.LiftoutLamella
-    lamella.state.microscope_state = microscope.get_microscope_state()
-    lamella.state.microscope_state.stage_position = deepcopy(positions[land_idx])
-    lamella.landing_state = deepcopy(lamella.state.microscope_state)
+    # lamella.state.stage = AutoLamellaStage.LiftoutLamella
+    # lamella.state.microscope_state = microscope.get_microscope_state()
+    # lamella.state.microscope_state.stage_position = deepcopy(positions[land_idx])
+    # lamella.landing_state = deepcopy(lamella.state.microscope_state)
     lamella.landing_selected = True
 
     print("LANDING POSITION")
@@ -932,18 +995,20 @@ def _prepare_manipulator(
 
     return
 
-def _calculate_landing_positions(microscope, settings) -> List[FibsemStagePosition]:
+def calculate_landing_positions(microscope: FibsemMicroscope, 
+                                protocol: AutoLamellaProtocol) -> List[FibsemStagePosition]:
     """Calculate the landing positions for a given experiment."""
     # make user set the initial position for the landing grid
     # create a grid of positions, based on the grid sizes x, y
     # loop through each position until block is consumed
 
+    # TODO: this should be done at the flat to sem orientation, calculate the grid -> in minimap show positions
 
     # base state = top left corner
     base_state = microscope.get_microscope_state()
 
     # get the landing grid protocol
-    landing_grid_protocol = settings.protocol["options"]["landing_grid"]
+    landing_grid_protocol = protocol.tmp["landing_grid"]
     grid_square = Point(landing_grid_protocol['x'], landing_grid_protocol['y'])
     n_rows, n_cols = landing_grid_protocol['rows'], landing_grid_protocol['cols']
 

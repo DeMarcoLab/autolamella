@@ -1801,12 +1801,12 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                                                 stages_to_complete=stc)
     
             if method is AutoLamellaMethod.SERIAL_LIFTOUT:
-                autoliftout.run_thinning_workflow(
-                    microscope=microscope,
-                    settings=settings,
-                    experiment=experiment,
-                    parent_ui=self,
-                )
+                from autolamella.workflows.runners import run_autolamella
+                run_autolamella(microscope=microscope, 
+                                protocol=protocol, 
+                                experiment=experiment, 
+                                parent_ui=self, 
+                                stages_to_complete=stc) #TODO: consolidate
 
         # liftout workflows
         if workflow == "setup-liftout":
@@ -1839,7 +1839,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
             self.experiment = serial_workflow.run_serial_liftout_landing(
                 microscope=microscope,
-                settings=settings,
+                protocol=protocol,
                 experiment=experiment,
                 parent_ui=self,
             )
