@@ -23,10 +23,10 @@ protocol = {
 
 from fibsem.microscope import FibsemMicroscope
 from fibsem.structures import MicroscopeSettings, BeamType
-from fibsem import utils, acquire, milling, alignment, patterning
+from fibsem import utils, acquire, milling, alignment
 from fibsem.structures import ImageSettings, BeamType
 from fibsem.ui.utils import _draw_milling_stages_on_image
-
+from fibsem.milling import get_milling_stages
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -53,7 +53,7 @@ def adaptive_mill_polishing(microscope: FibsemMicroscope, settings: MicroscopeSe
     """
     logging.info({"msg": "adaptive_mill_polishing", "protocol": protocol})
 
-    stages = patterning.get_milling_stages("polish", protocol["milling"])
+    stages = get_milling_stages("polish", protocol["milling"])
     point = stages[0].pattern.point
 
     # beam settings
@@ -83,7 +83,7 @@ def adaptive_mill_polishing(microscope: FibsemMicroscope, settings: MicroscopeSe
     n_step = 0
     while True:
 
-        stages = patterning.get_milling_stages("polish", protocol["milling"], point=point)
+        stages = get_milling_stages("polish", protocol["milling"], point=point)
 
         from pprint import pprint
         pprint(stages[0].pattern)

@@ -58,6 +58,7 @@ def calculate_statistics_dataframe(path: Path, encoding: str = "cp1252"):
     stage_data = []
     det_data = []
     click_data = []
+    milling_data = []
 
     print("-" * 80)
     print(f"Parsing {fname}")
@@ -194,6 +195,22 @@ def calculate_statistics_dataframe(path: Path, encoding: str = "cp1252"):
 
                     click_data.append(deepcopy(clickd))
 
+                if "mill_stages" in func:
+                    msgd = parse_msg(msg)
+
+                    milld = {}
+                    milld["timestamp"] = tsd
+                    milld["lamella"] = current_lamella
+                    milld["stage"] = current_stage
+                    milld["step"] = current_step
+                    milld["name"] = msgd["stage"]["name"]
+                    milld["start_time"] = msgd["start_time"]
+                    milld["end_time"] = msgd["end_time"]
+                    milld["duration"] = msgd["end_time"] - msgd["start_time"]
+                    milld["milling_current"] = msgd["stage"]["milling"]["milling_current"]
+                    # TODO: what other attrs are useful?
+                    milling_data.append(deepcopy(milld))
+
             except Exception as e:
                 # print(e, " | ", line)
                 pass
@@ -207,6 +224,7 @@ def calculate_statistics_dataframe(path: Path, encoding: str = "cp1252"):
     df_det = pd.DataFrame(det_data)
     df_beam_shift = pd.DataFrame.from_dict(df_beam_shift) # TODO: remove this, not used
     df_click = pd.DataFrame(click_data)
+    df_milling = pd.DataFrame(milling_data)
     
     df_steps["duration"] = df_steps["timestamp"].diff() # TODO: fix this duration
     df_steps["duration"] = df_steps["duration"].shift(-1)
@@ -220,6 +238,7 @@ def calculate_statistics_dataframe(path: Path, encoding: str = "cp1252"):
     df_stage["exp_name"] = experiment.name
     df_det["exp_name"] = experiment.name
     df_click["exp_name"] = experiment.name
+    df_milling["exp_name"] = experiment.name
 
     # add experiment id to all df
     df_history["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
@@ -228,6 +247,7 @@ def calculate_statistics_dataframe(path: Path, encoding: str = "cp1252"):
     df_stage["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
     df_det["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
     df_click["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
+    df_milling["exp_id"] = experiment._id if experiment._id is not None else "NO_ID"
 
     # write dataframes to csv, overwrite
     filename = os.path.join(path, 'history.csv')
@@ -244,6 +264,7 @@ def calculate_statistics_dataframe(path: Path, encoding: str = "cp1252"):
     df_det.to_csv(filename, mode='w', header=True, index=False)
     filename = os.path.join(path, 'click.csv')
     df_click.to_csv(filename, mode='w', header=True, index=False)
+    filename = os.path.join(path, 'milling.csv')
+    df_milling.to_csv(filename, mode='w', header=True, index=False)
 
-
-    return df_experiment, df_history, df_beam_shift, df_steps, df_stage, df_det, df_click
+    return df_experiment, df_history, df_beam_shift, df_steps, df_stage, df_det, df_click, df_milling

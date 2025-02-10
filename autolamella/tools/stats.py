@@ -9,7 +9,7 @@ import autolamella
 from autolamella.tools.data import calculate_statistics_dataframe
 from fibsem.structures import FibsemImage
 from autolamella.structures import Experiment
-from fibsem.imaging import _tile
+from fibsem.imaging import tiled
 
 import autolamella.config as cfg
 
@@ -41,7 +41,7 @@ page_title.header(f"Experiment: {EXPERIMENT_NAME} Analytics")
 (df_experiment, df_history, 
 _, 
     df_steps, df_stage, 
-    df_det, df_click) = calculate_statistics_dataframe(EXPERIMENT_PATH, encoding=encoding)
+    df_det, df_click, df_milling) = calculate_statistics_dataframe(EXPERIMENT_PATH, encoding=encoding)
 
 # experiment metrics
 cols = st.columns(4)
@@ -66,7 +66,7 @@ if "Landing" in df_history["stage"].unique():
     n_landing = len(df_history[df_history["stage"] == "Landing"]["petname"].unique())
     cols[1].metric(label="Landing", value=n_landing)
 
-n_polish = len(df_history[df_history["stage"] == "MillPolishingCut"]["petname"].unique())
+n_polish = len(df_history[df_history["stage"] == "MillPolishing"]["petname"].unique())
 
 cols[0].metric(label="Trenches", value=n_trenches)
 cols[2].metric(label="Polish", value=n_polish)
@@ -469,7 +469,7 @@ with tab_workflow:
         key2 = cols[0].selectbox(label="Stage Position", options=df_history["stage"].unique())
 
         @st.cache_data
-        def _plot_positions(image_fname, key2, df_history):
+        def plot_stage_positions_on_image(image_fname, key2, df_history):
             image = FibsemImage.load(image_fname)
 
             # loop through stages and create empty list
@@ -481,17 +481,17 @@ with tab_workflow:
                 for state in lamella.history:
                     if state.stage.name in positions.keys():
                         _names = [pos.name for pos in positions[state.stage.name]]
-                        if lamella._petname not in _names:
+                        if lamella.petname not in _names:
                             positions[state.stage.name].append(state.microscope_state.stage_position)
-                            positions[state.stage.name][-1].name = f"{lamella._petname}"
+                            positions[state.stage.name][-1].name = f"{lamella.petname}"
 
                         # go to next lamella if added 
 
-            fig = _tile._plot_positions(image, positions[key2], show=True)
+            fig = tiled.plot_stage_positions_on_image(image, positions[key2], show=True)
 
             return fig, positions
 
-        fig, positions = _plot_positions(image_fname, key2, df_history)
+        fig, positions = plot_stage_positions_on_image(image_fname, key2, df_history)
         cols[0].write(positions[key2])
 
         cols[1].pyplot(fig)
@@ -527,11 +527,24 @@ with tab_lamella:
     fig_steps = px.bar(df_steps[df_steps["lamella"] == lamella].sort_values(by="timestamp"), x="stage", y="duration", color="step", hover_data=df_steps.columns)
     cols[1].plotly_chart(fig_steps, use_container_width=True)
 
-
+    # milling operations
+    if not df_milling.empty:
+        st.subheader("Milling Operations")
+        cols = st.columns(2)
+        # only show columns  lamella, stage, step, name, duration, milling_current
+        df_mill_filt = df_milling[df_milling["lamella"] == lamella]
+        df_mill_filt = df_mill_filt[["lamella", "stage", "step", "name", "duration", "milling_current"]]
+        df_mill_filt["milling_current"] *= 1e9 # to nA
+        cols[0].dataframe(df_mill_filt, use_container_width=True)
+        # show piechart of milling
+        fig_mill = px.pie(df_mill_filt, names="name", values="duration", color="stage")
+        cols[1].plotly_chart(fig_mill, use_container_width=True)
+        # TODO: display milling patterns on image?
+    
     # loop through exp.position, return lamella that matches lamella
     st.subheader("Lamella Protocol")
     for lam in exp.positions:
-        if lam._petname == lamella:
+        if lam.petname == lamella:
             cols = st.columns(2)
             k = cols[0].selectbox(label="Protocol Stage", options=lam.protocol.keys())
             cols[1].write(lam.protocol[k])

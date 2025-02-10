@@ -3,6 +3,7 @@ options:
     name: autolamella-liftout-base-protocol
     method: autolamella-liftout
     checkpoint: autolamella-mega-20240107.pt
+    batch_mode: true
     trench_start_position: autoliftout-pre-tilt-35-deg-grid-01-lamella
     liftout_joining_method: None
     liftout_contact_detection: True
