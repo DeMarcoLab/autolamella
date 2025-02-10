@@ -18,9 +18,7 @@ milling:
 options:
     alignment_at_milling_current: false
     alignment_attempts: 3.0
-    checkpoint: autolamella-waffle-20240107.pt
-    compucentric_x_offset: 0.0
-    compucentric_y_offset: 0.0
+    checkpoint: null
     high_quality_image:
         dwell_time: 2.0e-06
         enabled: false
