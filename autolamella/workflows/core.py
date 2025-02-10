@@ -17,6 +17,7 @@ from fibsem.detection.detection import (
 )
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import get_milling_stages, get_protocol_from_stages, FibsemMillingStage
+from fibsem.milling.patterning.patterns2 import FiducialPattern
 from fibsem.structures import (
     BeamType,
     FibsemImage,
@@ -58,6 +59,7 @@ from autolamella.workflows.ui import (
     update_experiment_ui,
     update_milling_ui,
     update_status_ui,
+    ask_user_to_correlate,
 )
 
 from autolamella.structures import WORKFLOW_STAGE_TO_PROTOCOL_KEY
@@ -560,6 +562,10 @@ def setup_lamella(
 
         stages += fiducial_stage # TODO: remove dependency on this
     
+    # correlation time
+    if validate:
+        stages = correlation_workflow(lamella, stages, validate, parent_ui)
+
     if validate:
         stages = update_milling_ui(microscope, stages, parent_ui, 
             msg=f"Confirm the positions for the {lamella.name} milling. Press Continue to Confirm.",
@@ -694,6 +700,12 @@ def setup_polishing(
     image_settings.save = True
     eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
     set_images_ui(parent_ui, eb_image, ib_image)
+
+    # correlation time
+    if validate:
+        milling_stages = correlation_workflow(lamella=lamella, 
+                                              stages=milling_stages, 
+                                              validate=validate, parent_ui=parent_ui)
 
     if validate:
         milling_stages = update_milling_ui(microscope, milling_stages, parent_ui, 
@@ -838,3 +850,30 @@ def align_feature_coincident(
     set_images_ui(parent_ui, eb_image, ib_image)
 
     return lamella
+
+def correlation_workflow(lamella: Lamella, stages: List[FibsemMillingStage], 
+                         validate: bool, parent_ui: AutoLamellaUI) -> List[FibsemMillingStage]:
+    """Run 3DCT based correlation workflow, and adjust the position of milling patterns based on the correlation result."""
+    # QUERY: allow the user to re-imaging before correlation?
+    
+    log_status_message(lamella, "START_CORRELATION")
+    cor_ret = ask_user_to_correlate(parent_ui=parent_ui, validate=validate)
+    try:
+        dat = cor_ret["output"]["poi"][0]["px_um"]
+        point = Point(x=dat[0]*1e-6, y=dat[1]*1e-6)  # TODO: convert this output to metres
+        # print("POINT WAS: ", point)
+        # point = (10e-6, -5e-6)
+    except Exception as e:
+        logging.error(f"Correlation failed: {e}")
+        point = None
+
+    if point is not None:
+        logging.info(f"Correlated point: {point}, updating all stages...")
+        for stage in stages:
+            if isinstance(stage.pattern, FiducialPattern):
+                continue # skip fiducial
+            stage.pattern.point = Point(x=point[0], y=point[1])
+
+    log_status_message(lamella, "END_CORRELATION")
+    
+    return stages

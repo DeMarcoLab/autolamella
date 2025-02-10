@@ -351,7 +351,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>732</width>
+             <width>510</width>
              <height>678</height>
             </rect>
            </property>
@@ -717,6 +717,7 @@
     <addaction name="separator"/>
     <addaction name="actionOpen_Minimap"/>
     <addaction name="actionGenerate_Report"/>
+    <addaction name="actionOpen_3D_Correlation"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -797,6 +798,11 @@
   <action name="actionGenerate_Report">
    <property name="text">
     <string>Generate Report</string>
+   </property>
+  </action>
+  <action name="actionOpen_3D_Correlation">
+   <property name="text">
+    <string>Open 3D Correlation</string>
    </property>
   </action>
  </widget>
