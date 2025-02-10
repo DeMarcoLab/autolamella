@@ -879,8 +879,13 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             has_landed = workflow_state_counter[AutoLamellaStage.LandLamella.name] > 0
             ready_for_setup_lamella = workflow_state_counter[AutoLamellaStage.PositionReady.name] > 0
             ready_for_rough = (workflow_state_counter[AutoLamellaStage.SetupLamella.name] > 0)
-            ready_for_polish = workflow_state_counter[AutoLamellaStage.MillRough.name] > 0
-            ready_for_autolamella = ready_for_rough or ready_for_polish or has_landed or undercut_finished
+            ready_for_setup_polishing = workflow_state_counter[AutoLamellaStage.MillRough.name] > 0
+            ready_for_polish = workflow_state_counter[AutoLamellaStage.SetupPolishing.name] > 0
+            ready_for_autolamella = (ready_for_rough or 
+                                        ready_for_setup_polishing or
+                                        ready_for_polish or
+                                        has_landed or
+                                        undercut_finished)
 
             # flags to show buttons
             show_undercut = is_trench_method and method != "autolamella-trench"
