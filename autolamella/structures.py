@@ -358,7 +358,7 @@ class Experiment:
             "name": self.name,
             "_id": self._id,
             "path": self.path,
-            "positions": [lamella.to_dict() for lamella in self.positions],
+            "positions": [deepcopy(lamella.to_dict()) for lamella in self.positions],
             "created_at": self.created_at,
             "program": self.program,
             "method": self.method.name,

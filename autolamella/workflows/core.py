@@ -738,8 +738,8 @@ def end_of_stage_update(
     experiment.save()
 
     log_status_message(lamella, "FINISHED")
-    update_status_ui(parent_ui, f"{lamella.info} Finished")
     if update_ui:
+        update_status_ui(parent_ui, f"{lamella.info} Finished")
         update_experiment_ui(parent_ui, experiment)
 
     return experiment
@@ -756,7 +756,7 @@ def start_of_stage_update(
     last_completed_stage = lamella.state.stage
 
     # restore to the last state
-    if last_completed_stage.value == next_stage.value - 1 and restore_state:
+    if restore_state:
         logging.info(
             f"{lamella.name} restarting from end of stage: {last_completed_stage.name}"
         )

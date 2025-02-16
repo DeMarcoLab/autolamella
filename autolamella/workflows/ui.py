@@ -279,5 +279,5 @@ def update_experiment_ui(parent_ui: AutoLamellaUI, experiment: Experiment) -> No
     # headless mode
     if parent_ui is None:
         return
-    
-    parent_ui.update_experiment_signal.emit(experiment)
+
+    parent_ui.update_experiment_signal.emit(deepcopy(experiment))
