@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "autolamella"
-version = "0.4.0a0"
+version = "0.4.0a1"
 
 description = "Automatated ion beam milling for cryo-electron microscopy sample preparation."
 authors = [
