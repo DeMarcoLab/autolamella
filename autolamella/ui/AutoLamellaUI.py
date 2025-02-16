@@ -1400,6 +1400,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 next_stage=AutoLamellaStage.PositionReady,
                 parent_ui=self,
                 restore_state=False,
+                update_ui=False
             )
 
             # end the stage
@@ -1572,6 +1573,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 next_stage=AutoLamellaStage.PositionReady,
                 parent_ui=self,
                 restore_state=False,
+                update_ui=False
             )
 
             # update the protocol / point
@@ -1601,11 +1603,12 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 AutoLamellaStage.Created,
                 parent_ui=self,
                 restore_state=False,
+                update_ui=False
             )
 
             self.milling_widget.CAN_MOVE_PATTERN = True
 
-        lamella.state.microscope_state.stage_position.name = lamella.petname
+        self.experiment.positions[idx].state.microscope_state.stage_position.name = lamella.name
 
         self.sync_experiment_positions_to_minimap()
         self.update_lamella_combobox()
@@ -1683,16 +1686,14 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         """Run the specified workflow."""
         
         accepted, stc, supervision = open_workflow_dialog(
-            experiment=self.experiment,
+            experiment=deepcopy(self.experiment),
             protocol=self.protocol,
             parent=self,
         )
         if not accepted:
             return
 
-        logging.info(f"Accepted: {accepted}")
-        logging.info(f"STC: {stc}")
-        logging.info(f"Supervision: {supervision}")
+        logging.info(f"Accepted: {accepted}, STC: {stc}, Supervision: {supervision}")
 
         self.protocol.supervision = supervision
         self.update_protocol_ui()
@@ -1733,15 +1734,18 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if not self.microscope.get("on", BeamType.ION):
             self.microscope.turn_on(BeamType.ION)
 
-        self.worker = self._threaded_worker(
-            microscope=self.microscope,
-            settings=self.settings,
-            protocol=self.protocol,
-            experiment=self.experiment,
-            method = self.protocol.method,
-            workflow=workflow,
-            stc=stc,
-        )
+        try:
+            self.worker = self._threaded_worker(
+                microscope=self.microscope,
+                settings=self.settings,
+                protocol=self.protocol,
+                experiment=deepcopy(self.experiment),
+                method = self.protocol.method,
+                workflow=workflow,
+                stc=stc,
+            )
+        except Exception as e:
+            logging.error(f"An error occurred while running workflow: {e}")
         self.worker.finished.connect(self._workflow_finished)
         self.worker.errored.connect(self._workflow_aborted)
         self.worker.start()
@@ -1761,6 +1765,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         """Handle the completion of the workflow."""
         logging.info("Workflow finished.")
         self.WORKFLOW_IS_RUNNING = False
+        self.STOP_WORKFLOW = False
         self.milling_widget.milling_position_changed.connect(
             self._update_milling_position
         )
@@ -1890,19 +1895,19 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         if workflow == "autolamella":
             if method in wfl.METHOD_WORKFLOWS_FN:
-                wfl.METHOD_WORKFLOWS_FN[method](microscope=microscope, 
+                self.experiment = wfl.METHOD_WORKFLOWS_FN[method](microscope=microscope, 
                                                 protocol=protocol, 
                                                 experiment=experiment, 
                                                 parent_ui=self, 
                                                 stages_to_complete=stc)
     
             if method is AutoLamellaMethod.SERIAL_LIFTOUT:
-                autoliftout.run_thinning_workflow(
-                    microscope=microscope,
-                    settings=settings,
-                    experiment=experiment,
-                    parent_ui=self,
-                )
+                from autolamella.workflows.runners import run_autolamella
+                run_autolamella(microscope=microscope, 
+                                protocol=protocol, 
+                                experiment=experiment, 
+                                parent_ui=self, 
+                                stages_to_complete=stc) #TODO: consolidate
 
         # liftout workflows
         if workflow == "setup-liftout":
@@ -1935,7 +1940,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
             self.experiment = serial_workflow.run_serial_liftout_landing(
                 microscope=microscope,
-                settings=settings,
+                protocol=protocol,
                 experiment=experiment,
                 parent_ui=self,
             )

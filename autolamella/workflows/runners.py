@@ -95,7 +95,11 @@ def run_setup_lamella(
 ) -> Experiment:
     for lamella in experiment.positions:
 
-        if lamella.workflow in [AutoLamellaStage.PositionReady, AutoLamellaStage.MillUndercut] and not lamella.is_failure:
+        # TODO: migrate to is_ready_for:
+        #  protocol.method.get_next(lamella.workflow) is AutoLamellaStage.SetupLamella
+        if lamella.workflow in [AutoLamellaStage.PositionReady, 
+                                AutoLamellaStage.MillUndercut, 
+                                AutoLamellaStage.LandLamella] and not lamella.is_failure:
             lamella = start_of_stage_update(
                 microscope,
                 lamella,

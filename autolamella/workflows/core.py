@@ -750,8 +750,8 @@ def end_of_stage_update(
     experiment.save()
 
     log_status_message(lamella, "FINISHED")
-    update_status_ui(parent_ui, f"{lamella.info} Finished")
     if update_ui:
+        update_status_ui(parent_ui, f"{lamella.info} Finished")
         update_experiment_ui(parent_ui, experiment)
 
     return experiment
@@ -762,23 +762,26 @@ def start_of_stage_update(
     next_stage: AutoLamellaStage,
     parent_ui: AutoLamellaUI, 
     restore_state: bool = True,
+    update_ui: bool = True,
 ) -> Lamella:
     """Check the last completed stage and reload the microscope state if required. Log that the stage has started."""
     last_completed_stage = lamella.state.stage
 
     # restore to the last state
-    if last_completed_stage.value == next_stage.value - 1 and restore_state:
+    if restore_state:
         logging.info(
             f"{lamella.name} restarting from end of stage: {last_completed_stage.name}"
         )
-        update_status_ui(parent_ui, f"{lamella.info} Restoring Last State...")
+        if update_ui:
+            update_status_ui(parent_ui, f"{lamella.info} Restoring Last State...")
         microscope.set_microscope_state(lamella.state.microscope_state)
 
     # set current state information
     lamella.state.stage = deepcopy(next_stage)
     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
     log_status_message(lamella, "STARTED")
-    update_status_ui(parent_ui, f"{lamella.info} Starting...", workflow_info=f"{lamella.info}")
+    if update_ui:
+        update_status_ui(parent_ui, f"{lamella.info} Starting...", workflow_info=f"{lamella.info}")
 
     return lamella
 
@@ -846,6 +849,57 @@ def align_feature_coincident(
     image_settings.save = True
     image_settings.hfw = hfw
     image_settings.filename = f"ref_{lamella.status}_{feature.name}_align_coincident_final"
+    eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
+    set_images_ui(parent_ui, eb_image, ib_image)
+
+    return lamella
+
+def align_feature_beam_shift(microscope: FibsemMicroscope, 
+                            image_settings: ImageSettings, 
+                            lamella: Lamella, parent_ui: AutoLamellaUI, 
+                            validate: bool, 
+                            beam_type: BeamType = BeamType.ELECTRON,
+                            hfw: float = fcfg.REFERENCE_HFW_MEDIUM,
+                            feature: Feature = LamellaCentre(), 
+                            checkpoint: str = None) -> Lamella:
+    """Align the feature to the centre of the image using the beamshift."""
+
+    # bookkeeping
+    features = [feature]
+
+    # update status
+    log_status_message(lamella, "ALIGN_FEATURE_BEAM_SHIFT")
+    update_status_ui(parent_ui, f"{lamella.info} Aligning Feature with beam shift ({feature.name})...")
+    image_settings.beam_type = beam_type
+    image_settings.hfw = hfw
+    image_settings.filename = f"ref_{lamella.state.stage.name}_{feature.name}_align_beam_shift_ml"
+    image_settings.save = True
+    eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
+    set_images_ui(parent_ui, eb_image, ib_image)
+
+    # detect
+    det = update_detection_ui(microscope=microscope, 
+                              image_settings=image_settings, 
+                              checkpoint=checkpoint, 
+                              features=features, 
+                              parent_ui=parent_ui, 
+                              validate=validate, 
+                              msg=lamella.info, 
+                              position=None, 
+                              )
+
+    # TODO: add movement modes; stable move, vertical move, beam shift
+
+    microscope.beam_shift(
+        dx=-det.features[0].feature_m.x,
+        dy=-det.features[0].feature_m.y,
+        beam_type=image_settings.beam_type
+    )
+
+    # reference images
+    image_settings.save = True
+    image_settings.hfw = hfw
+    image_settings.filename = f"ref_{lamella.state.stage.name}_{feature.name}_align_beam_shift_final"
     eb_image, ib_image = acquire.take_reference_images(microscope, image_settings)
     set_images_ui(parent_ui, eb_image, ib_image)
 

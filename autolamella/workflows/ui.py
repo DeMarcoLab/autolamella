@@ -122,6 +122,8 @@ def update_detection_ui(
     msg: str = "Lamella", position: FibsemStagePosition = None,
 ) -> DetectedFeatures:
     feat_str = ", ".join([f.name for f in features])
+    if len(feat_str) > 15:
+        feat_str = feat_str[:15] + "..."
     update_status_ui(parent_ui, f"{msg}: Detecting Features ({feat_str})...")
 
     det = detection.take_image_and_detect_features(
@@ -279,8 +281,8 @@ def update_experiment_ui(parent_ui: AutoLamellaUI, experiment: Experiment) -> No
     # headless mode
     if parent_ui is None:
         return
-    
-    parent_ui.update_experiment_signal.emit(experiment)
+
+    parent_ui.update_experiment_signal.emit(deepcopy(experiment))
 
 
 def ask_user_to_correlate(parent_ui: AutoLamellaUI, validate: bool = True):
