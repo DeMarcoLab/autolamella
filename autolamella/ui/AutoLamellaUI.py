@@ -1321,6 +1321,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 next_stage=AutoLamellaStage.PositionReady,
                 parent_ui=self,
                 restore_state=False,
+                update_ui=False
             )
 
             # end the stage
@@ -1493,6 +1494,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 next_stage=AutoLamellaStage.PositionReady,
                 parent_ui=self,
                 restore_state=False,
+                update_ui=False
             )
 
             # update the protocol / point
@@ -1522,6 +1524,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 AutoLamellaStage.Created,
                 parent_ui=self,
                 restore_state=False,
+                update_ui=False
             )
 
             self.milling_widget.CAN_MOVE_PATTERN = True
@@ -1682,6 +1685,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         """Handle the completion of the workflow."""
         logging.info("Workflow finished.")
         self.WORKFLOW_IS_RUNNING = False
+        self.STOP_WORKFLOW = False
         self.milling_widget.milling_position_changed.connect(
             self._update_milling_position
         )

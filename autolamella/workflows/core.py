@@ -750,6 +750,7 @@ def start_of_stage_update(
     next_stage: AutoLamellaStage,
     parent_ui: AutoLamellaUI, 
     restore_state: bool = True,
+    update_ui: bool = True,
 ) -> Lamella:
     """Check the last completed stage and reload the microscope state if required. Log that the stage has started."""
     last_completed_stage = lamella.state.stage
@@ -759,14 +760,16 @@ def start_of_stage_update(
         logging.info(
             f"{lamella.name} restarting from end of stage: {last_completed_stage.name}"
         )
-        update_status_ui(parent_ui, f"{lamella.info} Restoring Last State...")
+        if update_ui:
+            update_status_ui(parent_ui, f"{lamella.info} Restoring Last State...")
         microscope.set_microscope_state(lamella.state.microscope_state)
 
     # set current state information
     lamella.state.stage = deepcopy(next_stage)
     lamella.state.start_timestamp = datetime.timestamp(datetime.now())
     log_status_message(lamella, "STARTED")
-    update_status_ui(parent_ui, f"{lamella.info} Starting...", workflow_info=f"{lamella.info}")
+    if update_ui:
+        update_status_ui(parent_ui, f"{lamella.info} Starting...", workflow_info=f"{lamella.info}")
 
     return lamella
 
