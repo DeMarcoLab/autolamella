@@ -301,13 +301,13 @@ def ask_user_to_correlate(parent_ui: AutoLamellaUI, validate: bool = True):
                                 pos="Continue", 
                                 correlate=True)
 
-            cor_ret = None
+            poi = None
             try:
-                cor_ret =  parent_ui.correlation_widget.correlation_results 
+                poi = parent_ui.correlation_widget.poi_coordinate 
             except Exception as e:
                 logging.warning(f"Correlation results not found in UI. {e}")
 
             # close the correlation widget
             parent_ui.correlation_widget_signal.emit({"finished": True})
 
-            return cor_ret
+            return poi

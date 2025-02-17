@@ -796,7 +796,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.sync_positions_to_minimap_signal.emit(positions)
 
 #### CORRELATION WIDGET
-    def open_3d_correlation_widget(self, use_image_path: bool = False):
+    def open_3d_correlation_widget(self):
 
         if not CORRELATION_THREEDCT_AVAILABLE:
             napari.utils.notifications.show_warning(
@@ -834,7 +834,6 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         else:
             napari.utils.notifications.show_warning("No FIBSEM image available...")
             self.correlation_widget.set_project_path(self.experiment.path)
-
 
         # create a button to run correlation
         self.correlation_viewer.window.add_dock_widget(

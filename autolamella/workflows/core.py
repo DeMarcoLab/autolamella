@@ -911,12 +911,9 @@ def correlation_workflow(lamella: Lamella, stages: List[FibsemMillingStage],
     # QUERY: allow the user to re-imaging before correlation?
     
     log_status_message(lamella, "START_CORRELATION")
-    cor_ret = ask_user_to_correlate(parent_ui=parent_ui, validate=validate)
+    poi = ask_user_to_correlate(parent_ui=parent_ui, validate=validate)
     try:
-        dat = cor_ret["output"]["poi"][0]["px_um"]
-        point = Point(x=dat[0]*1e-6, y=dat[1]*1e-6)  # TODO: convert this output to metres
-        # print("POINT WAS: ", point)
-        # point = (10e-6, -5e-6)
+        point = Point(x=poi[0], y=poi[1]) # metres
     except Exception as e:
         logging.error(f"Correlation failed: {e}")
         point = None
