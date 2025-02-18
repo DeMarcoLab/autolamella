@@ -651,7 +651,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             _filter="*.pdf",
             parent=self,
         )
-        if filename is None:
+        if filename == "":
             return
 
         # threaded report generation
