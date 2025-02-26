@@ -352,29 +352,12 @@ def mill_lamella(
     alignment_attempts = protocol.options.alignment_attempts
     alignment_current = stages[0].milling.milling_current if align_at_milling_current else None
 
-    ### REPLACE WITH V2
-    if USE_BEAM_SHIFT_ALIGNMENT_V2:
-        alignment.multi_step_alignment_v2(microscope=microscope, 
-                                        ref_image=ref_image, 
-                                        beam_type=BeamType.ION, 
-                                        alignment_current=alignment_current,
-                                        steps=alignment_attempts)
-    else:
-        logging.warning(f"Using alignment method v1 for {lamella.name}... This method will be depreciated in the next version..")
-        # V1
-        tmp = deepcopy(image_settings)
-        image_settings = ImageSettings.fromFibsemImage(ref_image)
-        image_settings.filename = f"alignment_target_{lamella.status}"
-        image_settings.autocontrast = False
-        alignment._multi_step_alignment(microscope=microscope, 
-            image_settings=image_settings, 
-            ref_image=ref_image, 
-            reduced_area=lamella.alignment_area, 
-            alignment_current=alignment_current, 
-            steps=alignment_attempts)
-
-        image_settings = tmp
-        image_settings.reduced_area = None
+    #
+    alignment.multi_step_alignment_v2(microscope=microscope, 
+                                    ref_image=ref_image, 
+                                    beam_type=BeamType.ION, 
+                                    alignment_current=alignment_current,
+                                    steps=alignment_attempts)
     #### 
 
     # take reference images
