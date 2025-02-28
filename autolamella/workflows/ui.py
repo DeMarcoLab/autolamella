@@ -200,6 +200,7 @@ def ask_user(
     neg: str = None,
     mill: bool = None,
     det: DetectedFeatures = None,
+    correlate: bool = False,
 ) -> bool:
 
     if parent_ui is None:
@@ -212,6 +213,7 @@ def ask_user(
         "neg": neg,
         "det": det,
         "milling_enabled": mill,
+        "correlate": correlate,
     }
     parent_ui.workflow_update_signal.emit(INFO)
 
@@ -281,3 +283,31 @@ def update_experiment_ui(parent_ui: AutoLamellaUI, experiment: Experiment) -> No
         return
 
     parent_ui.update_experiment_signal.emit(deepcopy(experiment))
+
+
+def ask_user_to_correlate(parent_ui: AutoLamellaUI, validate: bool = True):
+
+    # headless mode
+    if parent_ui is None:
+        return 
+
+    msg = "Use Fluorescence Correlation? Press Continue when done."
+    pos, neg = "Correlate", "Skip"
+
+    if validate: # correlation must be validated
+        response = ask_user(parent_ui, msg=msg, pos=pos, neg=neg)
+        if response:
+            response = ask_user(parent_ui, msg="Press Continue when finished correlating.", 
+                                pos="Continue", 
+                                correlate=True)
+
+            poi = None
+            try:
+                poi = parent_ui.correlation_widget.poi_coordinate 
+            except Exception as e:
+                logging.warning(f"Correlation results not found in UI. {e}")
+
+            # close the correlation widget
+            parent_ui.correlation_widget_signal.emit({"finished": True})
+
+            return poi
