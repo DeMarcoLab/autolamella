@@ -820,6 +820,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self.correlation_viewer = napari.Viewer()
         self.correlation_widget = CorrelationUI(self.correlation_viewer)
+        # self.correlation_widget.continue_pressed_signal.connect(self.handle_correlation_continue_signal)
         self.correlation_widget.close_signal.connect(self._close_correlation_widget)
 
         # load fib image, if available
@@ -843,6 +844,10 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             tabify=True
         )
         napari.run(max_loop_level=3)
+
+    def handle_correlation_continue_signal(self, data: dict):
+        """Handle the correlation signal from the correlation widget."""
+        logging.info(f"DATA FROM CORRELATION: {data}")
 
     def _close_correlation_widget(self):
         # note: this signal doesn't seem to be emitted?

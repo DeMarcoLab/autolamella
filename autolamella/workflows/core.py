@@ -546,8 +546,8 @@ def setup_lamella(
         stages += fiducial_stage # TODO: remove dependency on this
     
     # correlation time
-    if validate:
-        stages = correlation_workflow(lamella, stages, validate, parent_ui)
+    # if validate:
+        # stages = correlation_workflow(lamella, stages, validate, parent_ui)
 
     if validate:
         stages = update_milling_ui(microscope, stages, parent_ui, 
@@ -685,10 +685,10 @@ def setup_polishing(
     set_images_ui(parent_ui, eb_image, ib_image)
 
     # correlation time
-    if validate:
-        milling_stages = correlation_workflow(lamella=lamella, 
-                                              stages=milling_stages, 
-                                              validate=validate, parent_ui=parent_ui)
+    # if validate:
+    #     milling_stages = correlation_workflow(lamella=lamella, 
+    #                                           stages=milling_stages, 
+    #                                           validate=validate, parent_ui=parent_ui)
 
     if validate:
         milling_stages = update_milling_ui(microscope, milling_stages, parent_ui, 
