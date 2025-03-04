@@ -1,5 +1,6 @@
 import glob
 import io
+import logging
 import os
 from copy import deepcopy
 from datetime import datetime
@@ -11,6 +12,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from fibsem.imaging.tiled import plot_stage_positions_on_image
 from fibsem.milling import get_milling_stages
 from fibsem.milling.patterning.plotting import draw_milling_patterns
 from fibsem.structures import FibsemImage
@@ -28,7 +30,7 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
-import logging
+
 from autolamella.protocol.validation import (
     FIDUCIAL_KEY,
     MICROEXPANSION_KEY,
@@ -582,3 +584,50 @@ def generate_report(experiment: Experiment,
 
     # Generate PDF
     pdf.generate()
+
+def generate_final_overview_image(exp: Experiment, 
+                                  image: FibsemImage, 
+                                  state: AutoLamellaStage = AutoLamellaStage.PositionReady) -> plt.Figure:
+    """Generate an overview image with all the final lamellae positions.
+    Args:
+        exp (Experiment): The experiment to plot.
+        image (FibsemImage): The overview image.
+        state (AutoLamellaStage): The state to plot.
+    Returns:
+        plt.Figure: The figure with the overview image and the positions."""
+
+    sem_positions = []
+    for p in exp.positions:
+        pstate = p.states.get(state, None)
+        if pstate is None:
+            continue
+        pos = pstate.microscope_state.stage_position
+        pos.name = p.name
+        sem_positions.append(pos)
+
+    fig = plot_stage_positions_on_image(image, sem_positions, show=False)
+
+    # plot details
+    fig.suptitle(f"Experiment: {exp.name}")
+    fig.tight_layout()
+
+    return fig
+
+def save_final_overview_image(exp: Experiment, 
+                        image: FibsemImage, 
+                        output_path: str) -> None:
+    """Save the final overview image with all the final lamellae positions.
+    Args: 
+        exp (Experiment): The experiment to plot.
+        image (FibsemImage): The overview image.
+        output_path (str): The path to save the image to.
+    Returns:
+        None
+    """
+
+    fig = generate_final_overview_image(exp, image)
+
+    # save the figure with dpi=300
+    fig.savefig(output_path, dpi=300)
+
+    return fig
