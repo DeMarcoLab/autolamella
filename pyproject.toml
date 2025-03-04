@@ -21,7 +21,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "fibsem>=0.4.0a0",
+    "fibsem>=0.4.0a1",
 ]
 
 [project.urls]
