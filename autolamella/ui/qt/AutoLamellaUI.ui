@@ -717,6 +717,7 @@
     <addaction name="separator"/>
     <addaction name="actionOpen_Minimap"/>
     <addaction name="actionGenerate_Report"/>
+    <addaction name="actionGenerate_Overview_Plot"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -797,6 +798,11 @@
   <action name="actionGenerate_Report">
    <property name="text">
     <string>Generate Report</string>
+   </property>
+  </action>
+  <action name="actionGenerate_Overview_Plot">
+   <property name="text">
+    <string>Generate Overview Plot</string>
    </property>
   </action>
  </widget>

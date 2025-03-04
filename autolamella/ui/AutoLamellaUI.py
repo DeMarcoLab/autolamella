@@ -18,6 +18,7 @@ from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import get_milling_stages, get_protocol_from_stages
 from fibsem.structures import (
     BeamType,
+    FibsemImage,
     FibsemRectangle,
     FibsemStagePosition,
     MicroscopeSettings,
@@ -60,7 +61,7 @@ from autolamella.structures import (
     Lamella,
     LamellaState,
     create_new_lamella,
-    get_autolamella_method
+    get_autolamella_method,
 )
 from autolamella.ui import AutoLamellaMainUI
 from autolamella.ui.AutoLamellaWorkflowDialog import (
@@ -72,7 +73,7 @@ from autolamella.ui.tooltips import TOOLTIPS
 
 REPORTING_AVAILABLE: bool = False
 try:
-    from autolamella.tools.reporting import generate_report
+    from autolamella.tools.reporting import generate_report, save_final_overview_image
     REPORTING_AVAILABLE = True
 except ImportError as e:
     logging.debug(f"Could not import generate_report from autolamella.tools.reporting: {e}")
@@ -251,6 +252,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionCryo_Deposition.setToolTip("Cryo Deposition is currently disabled via the UI.")
         self.actionOpen_Minimap.triggered.connect(self.open_minimap_widget)
         self.actionGenerate_Report.triggered.connect(self.action_generate_report)
+        self.actionGenerate_Overview_Plot.triggered.connect(self.action_generate_overview_plot)
         # help menu
         self.actionInformation.triggered.connect(
             lambda: fui.open_information_dialog(self.microscope, self)
@@ -674,6 +676,50 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                         encoding="cp1252" if os.name == "nt" else "utf-8")
         return
 
+    def action_generate_overview_plot(self) -> None:
+
+        # get overview image
+        image_filename = fui.open_existing_file_dialog(
+            msg="Select Overview Image",
+            path=self.experiment.path,
+            _filter='Image Files (*.tif *.tiff)',
+            parent=self,
+        )
+
+        if image_filename == "":
+            return
+        image = FibsemImage.load(image_filename)
+        
+        # get user to select the output filename
+        filename = fui.open_save_file_dialog(
+            msg="Save Report",
+            path=os.path.join(self.experiment.path, "final-overview-image.png"),
+            _filter="*.png",
+            parent=self,
+        )
+        if filename == "":
+            return
+
+        # threaded overview generation
+        self.overview_worker = self.overview_gen_worker(deepcopy(self.experiment), image, filename)
+        self.overview_worker.finished.connect(self._overview_gen_finished)
+        self.overview_worker.errored.connect(self._overview_gen_error)
+        self.overview_worker.start()
+
+    def _overview_gen_error(self):
+        napari.utils.notifications.show_error("Overview generation failed.")
+
+    def _overview_gen_finished(self):
+        napari.utils.notifications.show_info("Overview generated successfully.")
+
+    @thread_worker
+    def overview_gen_worker(self, experiment: Experiment, image: FibsemImage, filename: str) -> None:
+
+        # generate the overview plot
+        save_final_overview_image(exp=experiment, 
+                                  image=image, 
+                                  output_path=filename)
+
 #### MINIMAP
 
     def open_minimap_widget(self):
@@ -818,6 +864,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Positions.setVisible(is_protocol_loaded)
         # help menu
         self.actionGenerate_Report.setVisible(is_experiment_ready and REPORTING_AVAILABLE)
+        self.actionGenerate_Overview_Plot.setVisible(is_experiment_ready and REPORTING_AVAILABLE)
 
         # labels
         if is_experiment_loaded:
