@@ -247,9 +247,11 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
         self.actionSave_Protocol.triggered.connect(self.export_protocol_ui)
         # tool menu
-        self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
-        self.actionCryo_Deposition.setEnabled(False) # TMP: disable until tested
-        self.actionCryo_Deposition.setToolTip("Cryo Deposition is currently disabled via the UI.")
+        # self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
+        # self.actionCryo_Deposition.setEnabled(False) # TMP: disable until tested
+        # self.actionCryo_Deposition.setToolTip("Cryo Deposition is currently disabled via the UI.")
+        self.actionCryo_Deposition.setText(f"Spot Burn")
+        self.actionCryo_Deposition.triggered.connect(self.run_spot_burns)
         self.actionOpen_Minimap.triggered.connect(self.open_minimap_widget)
         self.actionGenerate_Report.triggered.connect(self.action_generate_report)
         self.actionGenerate_Overview_Plot.triggered.connect(self.action_generate_overview_plot)
@@ -295,6 +297,25 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         # refresh ui
         self.update_ui()
+
+    def run_spot_burns(self):
+        print("hello")
+
+        from fibsem.imaging.spot import let_it_burn
+
+        pt_layer = self.viewer.layers["Points"]
+
+        if pt_layer is None:
+            return
+        
+        layer_translated = pt_layer.data - self.image_widget.ib_layer.translate
+        coordinates = [Point(x=pt[1], y=pt[0]) for pt in layer_translated]
+
+        print(coordinates)
+
+        # coords = [Point(100, 100), Point(200, 200), Point(300, 300)]
+
+        let_it_burn(self.microscope, coordinates=coordinates, exposure_time=0.5, milling_current=60e-12)
 
     def _add_tooltips(self) -> None:
 
@@ -858,7 +879,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Protocol.setVisible(is_experiment_loaded)
         self.actionSave_Protocol.setVisible(is_protocol_loaded)
         # tool menu
-        self.actionCryo_Deposition.setVisible(is_protocol_loaded)
+        self.actionCryo_Deposition.setVisible(True)
         self.actionOpen_Minimap.setVisible(is_protocol_loaded)
         self.actionLoad_Minimap_Image.setVisible(is_protocol_loaded)
         self.actionLoad_Positions.setVisible(is_protocol_loaded)
