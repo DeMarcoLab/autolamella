@@ -299,9 +299,47 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.update_ui()
 
     def run_spot_burns(self):
-        print("hello")
 
         from fibsem.imaging.spot import let_it_burn
+
+        # create a dialog box with two double spin boxes with labels: Exposure time and Milling current
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle("Spot Burn Parameters")
+        dialog.setGeometry(100, 100, 300, 200)
+
+        layout = QtWidgets.QVBoxLayout(dialog)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
+        layout.addWidget(QtWidgets.QLabel("Spot Burn Parameters"))
+        layout.addWidget(QtWidgets.QLabel("Exposure Time (ms)"))
+        exposure_time_input = QtWidgets.QDoubleSpinBox(dialog)
+        exposure_time_input.setRange(0, 10000)
+        exposure_time_input.setValue(10)
+        exposure_time_input.setSuffix(" s")
+
+        layout.addWidget(exposure_time_input)
+        layout.addWidget(QtWidgets.QLabel("Milling Current (pA)"))
+        milling_current_input = QtWidgets.QDoubleSpinBox(dialog)
+        milling_current_input.setRange(0, 500)
+        milling_current_input.setValue(60)
+        milling_current_input.setSuffix(" pA")
+        layout.addWidget(milling_current_input)
+
+        # add standard buttons
+        button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel, dialog)
+        button_box.setCenterButtons(True)
+        button_box.setContentsMargins(0, 0, 0, 0)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+
+        # get the points layer
+
+        ret = dialog.exec_()
+        if ret == QtWidgets.QDialog.Accepted:
+            exposure_time = exposure_time_input.value()
+            milling_current = milling_current_input.value() * 1e-12
+            logging.info(f"Spot burn parameters: {exposure_time} ms, {milling_current} pA")
 
         pt_layer = self.viewer.layers["Points"]
 
@@ -311,11 +349,17 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         layer_translated = pt_layer.data - self.image_widget.ib_layer.translate
         coordinates = [Point(x=pt[1], y=pt[0]) for pt in layer_translated]
 
-        print(coordinates)
+        image_shape = self.image_widget.ib_layer.data.shape
 
-        # coords = [Point(100, 100), Point(200, 200), Point(300, 300)]
+        # convert to relative image coordinates (0-1)
+        coords = [
+            Point(x=pt.x / image_shape[1], y=pt.y / image_shape[0]) for pt in coordinates
+        ]
 
-        let_it_burn(self.microscope, coordinates=coordinates, exposure_time=0.5, milling_current=60e-12)
+        # TODO: thread this
+        # TODO: create the points layer, set add mode
+
+        let_it_burn(self.microscope, coordinates=coords, exposure_time=exposure_time, milling_current=milling_current)
 
     def _add_tooltips(self) -> None:
 
