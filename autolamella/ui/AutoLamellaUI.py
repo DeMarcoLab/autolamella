@@ -147,8 +147,8 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         self.viewer = viewer
         # self.viewer.window.main_menu.setVisible(True)
-        self.viewer.window.qt_viewer.dockLayerList.setVisible(False)
-        self.viewer.window.qt_viewer.dockLayerControls.setVisible(False)
+        # self.viewer.window.qt_viewer.dockLayerList.setVisible(False)
+        # self.viewer.window.qt_viewer.dockLayerControls.setVisible(False)
 
         # @self.viewer.bind_key("Ctrl+M") # TODO: this has weird behaviour for the menu visible / hover
         # def _show_main_menu(viewer: napari.Viewer):
