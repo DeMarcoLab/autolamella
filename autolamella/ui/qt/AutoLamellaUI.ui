@@ -306,8 +306,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>722</width>
-                <height>68</height>
+                <width>724</width>
+                <height>57</height>
                </rect>
               </property>
               <layout class="QGridLayout" name="gridLayout_8">
@@ -351,8 +351,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>732</width>
-             <height>678</height>
+             <width>378</width>
+             <height>560</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
@@ -714,6 +714,7 @@
      <string>Tools</string>
     </property>
     <addaction name="actionCryo_Deposition"/>
+    <addaction name="actionSpot_Burn"/>
     <addaction name="separator"/>
     <addaction name="actionOpen_Minimap"/>
     <addaction name="actionGenerate_Report"/>
@@ -803,6 +804,11 @@
   <action name="actionGenerate_Overview_Plot">
    <property name="text">
     <string>Generate Overview Plot</string>
+   </property>
+  </action>
+  <action name="actionSpot_Burn">
+   <property name="text">
+    <string>Spot Burn</string>
    </property>
   </action>
  </widget>
