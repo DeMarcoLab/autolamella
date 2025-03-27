@@ -17,7 +17,7 @@ from autolamella.workflows.core import log_status_message
 
 add_odemis_path()
 
-from odemis.acq.feature import CryoFeature
+from odemis.acq.feature import CryoFeature, read_features
 from odemis.acq.move import FM_IMAGING, MILLING, SEM_IMAGING
 from odemis.acq.milling.tasks import MillingTaskSettings  # noqa: E402
 
@@ -114,6 +114,21 @@ def add_features_to_experiment(experiment: Experiment, features: List[CryoFeatur
         experiment.positions.append(deepcopy(lamella))
         experiment.save()
     return experiment
+
+def _add_features_from_odemis(path: str) -> List[FibsemStagePosition]:
+
+    features = read_features(path)
+
+    stage_positions = []
+    for feature in features:
+        feature_position = feature.posture_positions.get(MILLING, None)
+        if feature_position is None:
+            continue
+
+        pos = FibsemStagePosition.from_odemis_dict(feature_position)
+        pos.name = feature.name.value
+        stage_positions.append(pos)
+    return stage_positions
 
 # convert odemis milling task to autolamella protocol
 ODEMIS_TO_AUTOLAMELLA = {

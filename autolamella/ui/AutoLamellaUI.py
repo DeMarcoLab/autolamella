@@ -248,9 +248,12 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
         self.actionSave_Protocol.triggered.connect(self.export_protocol_ui)
         # tool menu
-        self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
-        self.actionCryo_Deposition.setEnabled(False) # TMP: disable until tested
-        self.actionCryo_Deposition.setToolTip("Cryo Deposition is currently disabled via the UI.")
+        # self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
+        # self.actionCryo_Deposition.setEnabled(False) # TMP: disable until tested
+        # self.actionCryo_Deposition.setToolTip("Cryo Deposition is currently disabled via the UI.")
+        self.actionCryo_Deposition.triggered.connect(self._add_lamella_from_odemis)
+        self.actionCryo_Deposition.setEnabled(True)
+        self.actionCryo_Deposition.setText("Add Lamella from Odemis")  
         self.actionSpot_Burn.triggered.connect(self.run_spot_burns)
         self.actionOpen_Minimap.triggered.connect(self.open_minimap_widget)
         self.actionGenerate_Report.triggered.connect(self.action_generate_report)
@@ -1403,6 +1406,22 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         logging.info(f"Moving to position of {lamella.name}.")
         self.movement_widget.move_to_position(stage_position)
+
+    def _add_lamella_from_odemis(self):
+
+        filename = fui.path = fui.open_existing_directory_dialog(
+            msg="Select Odemis Project Directory",
+            path=self.experiment.path,
+            parent=self,
+        )
+        if filename == "":
+            return
+
+        from autolamella.compat.odemis import _add_features_from_odemis
+        stage_positions = _add_features_from_odemis(filename)
+
+        for pos in stage_positions:
+            self.add_new_lamella(pos)
 
     def add_new_lamella(self, stage_position: Optional[FibsemStagePosition] = None) -> Lamella:
         """Add a lamella to the experiment.
