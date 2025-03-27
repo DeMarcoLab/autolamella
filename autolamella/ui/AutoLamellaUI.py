@@ -301,6 +301,12 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # refresh ui
         self.update_ui()
 
+    def run_spot_burns_workflow(self):
+
+        from autolamella.workflows.core import run_spot_burn_workflow
+
+        run_spot_burn_workflow(microscope=self.microscope, experiment=self.experiment, parent_ui=self)
+
     def run_spot_burns(self):
         """Run the spot burning tool"""
         dialog = QtWidgets.QDialog(self)
