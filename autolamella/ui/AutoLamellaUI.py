@@ -703,10 +703,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             # add the detection widget if ml dependencies are available
             self.det_widget = None
             if DETECTION_AVAILABLE:
-                self.det_widget = FibsemEmbeddedDetectionUI(
-                    viewer=self.viewer,
-                    model=None,
-                )
+                self.det_widget = FibsemEmbeddedDetectionUI(parent=self)
                 self.tabWidget.insertTab(
                     CONFIGURATION["TABS"]["Detection"], self.det_widget, "Detection"
                 )
