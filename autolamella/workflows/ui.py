@@ -55,11 +55,11 @@ def update_milling_ui(microscope: FibsemMicroscope,
 
     while response and milling_enabled:
         update_status_ui(parent_ui, f"Milling {len(stages)} stages...")
-        parent_ui.MILLING_IS_RUNNING = True
+        parent_ui.is_milling = True
         parent_ui.run_milling_signal.emit() # TODO: have the signal change the state, rather than here
 
         logging.info("WAITING FOR MILLING TO FINISH... ")
-        while parent_ui.MILLING_IS_RUNNING or parent_ui.image_widget.ACQUIRING_IMAGES:
+        while parent_ui.is_milling or parent_ui.image_widget.is_acquiring:
             time.sleep(1)
 
         update_status_ui(
@@ -80,11 +80,11 @@ def update_milling_ui(microscope: FibsemMicroscope,
     #     stages = deepcopy(parent_ui.milling_widget.get_milling_stages())
     # else:
     #     update_status_ui(parent_ui, f"Milling {len(stages)} stages...") # TODO: better feedback here, change to milling tab for progress bar
-    #     parent_ui.MILLING_IS_RUNNING = True
+    #     parent_ui.is_milling = True
     #     parent_ui.run_milling_signal.emit()
         
     #     logging.info(f"WAITING FOR MILLING TO FINISH... ")
-    #     while parent_ui.MILLING_IS_RUNNING or parent_ui.image_widget.ACQUIRING_IMAGES:
+    #     while parent_ui.is_milling or parent_ui.image_widget.is_acquiring:
     #         time.sleep(1)
         
     #     update_status_ui(

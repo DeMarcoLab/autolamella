@@ -98,10 +98,10 @@ def display_lamella_info(grid_layout: QGridLayout,
         # get the status of the lamella
         status_label = QLabel()
         status_msg = "Active"
-        status_label.setStyleSheet("color: green")
+        status_label.setStyleSheet("color: cyan")
         if is_finished:
             status_msg = "Finished"
-            status_label.setStyleSheet("color: cyan")
+            status_label.setStyleSheet("color: limegreen")
         if is_creation:
             status_msg = "Created"
             status_label.setStyleSheet("color: orange")

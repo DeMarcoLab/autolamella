@@ -182,7 +182,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.WAITING_FOR_USER_INTERACTION: bool = False
         self.USER_RESPONSE: bool = False
         self.WAITING_FOR_UI_UPDATE: bool = False
-        self.MILLING_IS_RUNNING: bool = False
+        self.is_milling: bool = False
         self.WORKFLOW_IS_RUNNING: bool = False
         self.STOP_WORKFLOW: bool = False
 
@@ -864,6 +864,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.remove_position_from_minimap
         )
         napari.run(max_loop_level=2)
+        self.viewer_minimap.window.activate()
 
     def add_position_from_minimap(self, position: FibsemStagePosition):
         """Add the position to the experiment when added in the minimap."""
@@ -1738,7 +1739,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.experiment.positions[idx].protocol[FIDUCIAL_KEY] = get_protocol_from_stages(stages[-1])
 
     def run_milling(self):
-        self.MILLING_IS_RUNNING = True
+        self.is_milling = True
         self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Milling"])
         self.milling_widget.run_milling()
 
@@ -1746,7 +1747,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
         is_finished = ddict.get("finished", False)
         if is_finished:
-            self.MILLING_IS_RUNNING = False
+            self.is_milling = False
 
     def handle_acquisition_update(self, ddict: dict) -> None:
         if ddict.get("finished", False):
