@@ -863,7 +863,9 @@ def run_serial_liftout_landing(
     # calculate landing positions
     log_status_message(lamella, "CALCULATE_LANDING_POSITIONS")
     update_status_ui(parent_ui, "Generating Landing Positions...")
-    # positions = calculate_landing_positions(microscope=microscope, protocol=protocol)
+    logging.warning("The landing procedure is currently disabled...")
+    return experiment
+    positions = calculate_landing_positions(microscope=microscope, protocol=protocol)
 
     # see where we are in the workflow
     _counter = Counter([p.state.stage.name for p in experiment.positions])
@@ -883,7 +885,7 @@ def run_serial_liftout_landing(
         lamella = deepcopy(create_lamella_at_landing(microscope=microscope, 
                                                     experiment=experiment, 
                                                     protocol=protocol, 
-                                                    positions=[FibsemStagePosition(0, 0, 0, 0, 0) for _ in range(10)]))
+                                                    positions=positions)) # TODO: FIX_IMMEDIATE
         experiment.positions.append(lamella)
         experiment.save()
 
@@ -1016,15 +1018,15 @@ def calculate_landing_positions(microscope: FibsemMicroscope,
 
     for i in range(n_rows):
         for j in range(n_cols):
-            _new_position = microscope.project_stable_move( 
+            new_position = microscope.project_stable_move( 
                 dx=grid_square.x*j, 
                 dy=-grid_square.y*i, 
                 beam_type=BeamType.ION, 
                 base_position=base_state.stage_position)            
             
             # position name is number of position in the grid
-            _new_position.name = f"Landing Position {i*n_cols + j:02d}"
+            new_position.name = f"Landing Position {i*n_cols + j:02d}"
             
-            positions.append(_new_position)
+            positions.append(new_position)
 
     return positions
