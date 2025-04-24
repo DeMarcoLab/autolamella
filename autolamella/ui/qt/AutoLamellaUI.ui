@@ -306,8 +306,8 @@
                <rect>
                 <x>0</x>
                 <y>0</y>
-                <width>724</width>
-                <height>57</height>
+                <width>722</width>
+                <height>68</height>
                </rect>
               </property>
               <layout class="QGridLayout" name="gridLayout_8">
@@ -351,8 +351,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>378</width>
-             <height>560</height>
+             <width>510</width>
+             <height>678</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
@@ -713,12 +713,20 @@
     <property name="title">
      <string>Tools</string>
     </property>
+    <widget class="QMenu" name="menuDevelopment">
+     <property name="title">
+      <string>Development</string>
+     </property>
+     <addaction name="actionAdd_Lamella_from_Odemis"/>
+     <addaction name="actionSpot_Burn"/>
+    </widget>
     <addaction name="actionCryo_Deposition"/>
-    <addaction name="actionSpot_Burn"/>
     <addaction name="separator"/>
     <addaction name="actionOpen_Minimap"/>
     <addaction name="actionGenerate_Report"/>
     <addaction name="actionGenerate_Overview_Plot"/>
+    <addaction name="separator"/>
+    <addaction name="menuDevelopment"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -809,6 +817,11 @@
   <action name="actionSpot_Burn">
    <property name="text">
     <string>Spot Burn</string>
+   </property>
+  </action>
+  <action name="actionAdd_Lamella_from_Odemis">
+   <property name="text">
+    <string>Add Lamella from Odemis</string>
    </property>
   </action>
  </widget>

@@ -71,6 +71,7 @@ from autolamella.ui.AutoLamellaWorkflowDialog import (
     open_workflow_dialog,
 )
 from autolamella.ui.tooltips import TOOLTIPS
+from autolamella.ui.utils import setup_experiment_ui_v2
 
 REPORTING_AVAILABLE: bool = False
 try:
@@ -78,8 +79,6 @@ try:
     REPORTING_AVAILABLE = True
 except ImportError as e:
     logging.debug(f"Could not import generate_report from autolamella.tools.reporting: {e}")
-
-from autolamella.ui.utils import setup_experiment_ui_v2
 
 try:
     from fibsem.segmentation.utils import list_available_checkpoints
@@ -144,15 +143,9 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.setupUi(self)
 
         self.label_title.setText(f"AutoLamella v{autolamella.__version__}")
-
         self.viewer = viewer
-        # self.viewer.window.main_menu.setVisible(True)
-        # self.viewer.window.qt_viewer.dockLayerList.setVisible(False)
-        # self.viewer.window.qt_viewer.dockLayerControls.setVisible(False)
+        self.viewer.title = f"AutoLamella v{autolamella.__version__}"
 
-        # @self.viewer.bind_key("Ctrl+M") # TODO: this has weird behaviour for the menu visible / hover
-        # def _show_main_menu(viewer: napari.Viewer):
-        #     viewer.window.main_menu.setVisible(True)
 
         self.IS_MICROSCOPE_UI_LOADED: bool = False
         self.is_protocol_loaded: bool = False
@@ -248,16 +241,19 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
         self.actionSave_Protocol.triggered.connect(self.export_protocol_ui)
         # tool menu
-        # self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
-        # self.actionCryo_Deposition.setEnabled(False) # TMP: disable until tested
-        # self.actionCryo_Deposition.setToolTip("Cryo Deposition is currently disabled via the UI.")
-        self.actionCryo_Deposition.triggered.connect(self._add_lamella_from_odemis)
-        self.actionCryo_Deposition.setEnabled(True)
-        self.actionCryo_Deposition.setText("Add Lamella from Odemis")  
+        self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
+        self.actionCryo_Deposition.setEnabled(False) # TMP: disable until tested
+        self.actionCryo_Deposition.setToolTip("Cryo Deposition is currently disabled via the UI.")
+        self.actionAdd_Lamella_from_Odemis.triggered.connect(self._add_lamella_from_odemis)
         self.actionSpot_Burn.triggered.connect(self.run_spot_burns)
         self.actionOpen_Minimap.triggered.connect(self.open_minimap_widget)
         self.actionGenerate_Report.triggered.connect(self.action_generate_report)
         self.actionGenerate_Overview_Plot.triggered.connect(self.action_generate_overview_plot)
+        
+        # development
+        self.menuDevelopment.setVisible(False)
+        self.actionAdd_Lamella_from_Odemis.setVisible(False)    # TMP: disable until tested
+        self.actionSpot_Burn.setVisible(False)                  # TMP: disable until tested
         # help menu
         self.actionInformation.triggered.connect(
             lambda: fui.open_information_dialog(self.microscope, self)
