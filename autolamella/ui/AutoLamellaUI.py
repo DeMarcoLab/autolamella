@@ -157,12 +157,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.settings: MicroscopeSettings = None
         self.protocol: AutoLamellaProtocol = None
 
-        self.system_widget: FibsemSystemSetupWidget = FibsemSystemSetupWidget(
-            microscope=self.microscope,
-            settings=self.settings,
-            viewer=self.viewer,
-            parent=self,
-        )
+        self.system_widget = FibsemSystemSetupWidget(parent=self)
         self.tabWidget.insertTab(
             CONFIGURATION["TABS"]["Connection"], self.system_widget, "Connection"
         )
