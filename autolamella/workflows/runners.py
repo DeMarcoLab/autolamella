@@ -129,7 +129,15 @@ def run_lamella_milling(
             logging.info(f"Skipping stage {stage} as it is not in stages_to_complete {stages_to_complete}")
             continue
         for lamella in experiment.positions:
-            if lamella.workflow is AutoLamellaStage(stage.value - 1) and not lamella.is_failure:
+
+            # special case for handling setup polishing as optional
+            if stage in [AutoLamellaStage.MillRough, AutoLamellaStage.SetupPolishing]:
+                is_previous_completed = lamella.workflow is AutoLamellaStage(stage.value - 1)
+            if stage is AutoLamellaStage.MillPolishing:
+                is_previous_completed = lamella.workflow in [AutoLamellaStage.MillRough, AutoLamellaStage.SetupPolishing]
+            is_ready = is_previous_completed and not lamella.is_failure
+
+            if is_ready:
                 lamella = start_of_stage_update(microscope, lamella, stage, parent_ui)
                 lamella = WORKFLOW_STAGES[lamella.workflow](microscope, protocol, lamella, parent_ui)
                 experiment = end_of_stage_update(microscope, experiment, lamella, parent_ui)

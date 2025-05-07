@@ -120,8 +120,9 @@ def display_lamella_info(grid_layout: QGridLayout,
         if is_finished:
             # special case for finished lamella
             prev = method.get_previous(pos.workflow)
-            state = pos.states[prev]
-            last_label.setText(state.completed)
+            state = pos.states.get(prev, None)
+            if state is not None:
+                last_label.setText(state.completed)
 
         # get the next workflow stage
         next_label = QLabel()
