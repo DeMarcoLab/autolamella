@@ -6,6 +6,7 @@ except Exception:
     pass
 import logging
 import os
+import threading
 from collections import Counter
 from copy import deepcopy
 from datetime import datetime
@@ -141,6 +142,8 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         super().__init__()
 
         self.setupUi(self)
+
+        self._protocol_lock = threading.RLock()
 
         self.label_title.setText(f"AutoLamella v{autolamella.__version__}")
         self.viewer = viewer
@@ -420,183 +423,193 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.UPDATING_PROTOCOL_UI = True
 
         # TODO: auto update protocol when editing, don't require button press
+        with self._protocol_lock:
 
-        protocol: AutoLamellaProtocol = self.protocol
-        method = protocol.method
+            protocol: AutoLamellaProtocol = self.protocol
+            method = protocol.method
 
-        # protocol name and method
-        self.lineEdit_name.setText(protocol.name)
-        self.comboBox_method.setCurrentText(method.name)
+            # protocol name and method
+            self.lineEdit_name.setText(protocol.name)
+            self.comboBox_method.setCurrentText(method.name)
 
-        # options
-        self.checkBox_turn_beams_off.setChecked(protocol.options.turn_beams_off)
-        self.checkBox_align_use_fiducial.setChecked(protocol.options.use_fiducial)
+            # options
+            self.checkBox_turn_beams_off.setChecked(protocol.options.turn_beams_off)
+            self.checkBox_align_use_fiducial.setChecked(protocol.options.use_fiducial)
 
-        self.beamshift_attempts.setValue(protocol.options.alignment_attempts)
-        self.checkBox_align_at_milling_current.setChecked(protocol.options.alignment_at_milling_current)
+            self.beamshift_attempts.setValue(protocol.options.alignment_attempts)
+            self.checkBox_align_at_milling_current.setChecked(protocol.options.alignment_at_milling_current)
 
-        self.checkBox_take_final_reference_images.setChecked(protocol.options.take_final_reference_images)
-        self.checkBox_take_final_high_quality_reference.setChecked(
-            protocol.tmp.get("high_quality_image", {}).get("enabled", False)
-        )
-
-        # lamella
-        self.doubleSpinBox_lamella_tilt_angle.setValue(protocol.options.milling_tilt_angle)
-        self.checkBox_use_microexpansion.setChecked(protocol.options.use_microexpansion)
-        self.checkBox_use_notch.setChecked(protocol.options.use_notch)
-
-        # supervision
-        supervision = protocol.supervision
-        if method is not AutoLamellaMethod.TRENCH: ## TODO: SIMPLIFY
-            self.checkBox_setup.setChecked(supervision[AutoLamellaStage.SetupLamella])
-            self.checkBox_supervise_mill_rough.setChecked(supervision[AutoLamellaStage.MillRough])
-            self.checkBox_supervise_mill_polishing.setChecked(supervision[AutoLamellaStage.MillPolishing])
-
-        # TRENCH METHOD ONLY (waffle, serial-liftout)
-        if method.is_trench:
-            # supervision
-            self.checkBox_trench.setChecked(supervision.get(AutoLamellaStage.MillTrench, False))
-            self.checkBox_undercut.setChecked(supervision.get(AutoLamellaStage.MillUndercut, False))
-
-            # machine learning
-            self.comboBox_ml_checkpoint.setCurrentText(protocol.options.checkpoint)
-
-            # undercut
-            self.doubleSpinBox_undercut_tilt.setValue(protocol.options.undercut_tilt_angle)
-
-        self.checkBox_trench.setVisible(method.is_trench)
-        self.checkBox_undercut.setVisible(method.is_trench)
-
-        self.label_ml_header.setVisible(method.is_trench)
-        self.label_ml_checkpoint.setVisible(method.is_trench)
-        self.comboBox_ml_checkpoint.setVisible(method.is_trench)
-
-        self.doubleSpinBox_undercut_tilt.setVisible(method.is_trench)
-        self.label_protocol_undercut_tilt_angle.setVisible(method.is_trench)
-
-        # autoliftout components
-        is_liftout_method = method.is_liftout
-        is_classic_liftout_method = method == AutoLamellaMethod.LIFTOUT
-        self.label_options_trench_start_position.setVisible(is_liftout_method)
-        self.label_options_liftout_joining_method.setVisible(
-            is_liftout_method and is_classic_liftout_method
-        )
-        self.label_options_landing_start_position.setVisible(is_liftout_method)
-        self.label_options_landing_joining_method.setVisible(
-            is_liftout_method and is_classic_liftout_method
-        )
-        self.comboBox_options_trench_start_position.setVisible(is_liftout_method)
-        self.comboBox_options_liftout_joining_method.setVisible(
-            is_liftout_method and is_classic_liftout_method
-        )
-        self.comboBox_options_landing_start_position.setVisible(is_liftout_method)
-        self.comboBox_options_landing_joining_method.setVisible(
-            is_liftout_method and is_classic_liftout_method
-        )
-        self.checkBox_supervise_liftout.setVisible(is_liftout_method)
-        self.checkBox_supervise_landing.setVisible(is_liftout_method)
-
-        # disable some options for serial liftout
-        self.checkBox_use_microexpansion.setVisible(not is_liftout_method)
-        self.checkBox_use_notch.setVisible(not is_liftout_method)
-
-        if is_liftout_method:
-            self.comboBox_options_liftout_joining_method.setCurrentText(
-                protocol.tmp.get("liftout_joining_method", "None")
-            )
-            self.comboBox_options_landing_joining_method.setCurrentText(
-                protocol.tmp.get("landing_joining_method", "Weld")
+            self.checkBox_take_final_reference_images.setChecked(protocol.options.take_final_reference_images)
+            self.checkBox_take_final_high_quality_reference.setChecked(
+                protocol.tmp.get("high_quality_image", {}).get("enabled", False)
             )
 
-            self.comboBox_options_trench_start_position.setCurrentText(
-                protocol.tmp.get("trench_start_position", self.AVAILABLE_POSITIONS[0])
-            )
-            self.comboBox_options_landing_start_position.setCurrentText(
-                protocol.tmp.get("landing_start_position", self.AVAILABLE_POSITIONS[0])
-            )
+            # lamella
+            self.doubleSpinBox_lamella_tilt_angle.setValue(protocol.options.milling_tilt_angle)
+            self.checkBox_use_microexpansion.setChecked(protocol.options.use_microexpansion)
+            self.checkBox_use_notch.setChecked(protocol.options.use_notch)
 
             # supervision
-            self.checkBox_supervise_liftout.setChecked(supervision[AutoLamellaStage.LiftoutLamella])
-            self.checkBox_supervise_landing.setChecked(supervision[AutoLamellaStage.LandLamella])
+            supervision = protocol.supervision
+            if method is not AutoLamellaMethod.TRENCH: ## TODO: SIMPLIFY
+                self.checkBox_setup.setChecked(supervision[AutoLamellaStage.SetupLamella])
+                self.checkBox_supervise_mill_rough.setChecked(supervision[AutoLamellaStage.MillRough])
+                self.checkBox_supervise_mill_polishing.setChecked(supervision[AutoLamellaStage.MillPolishing])
+
+            # TRENCH METHOD ONLY (waffle, serial-liftout)
+            if method.is_trench:
+                # supervision
+                self.checkBox_trench.setChecked(supervision.get(AutoLamellaStage.MillTrench, False))
+                self.checkBox_undercut.setChecked(supervision.get(AutoLamellaStage.MillUndercut, False))
+
+                # machine learning
+                self.comboBox_ml_checkpoint.setCurrentText(protocol.options.checkpoint)
+
+                # undercut
+                self.doubleSpinBox_undercut_tilt.setValue(protocol.options.undercut_tilt_angle)
+
+            self.checkBox_trench.setVisible(method.is_trench)
+            self.checkBox_undercut.setVisible(method.is_trench)
+
+            self.label_ml_header.setVisible(method.is_trench)
+            self.label_ml_checkpoint.setVisible(method.is_trench)
+            self.comboBox_ml_checkpoint.setVisible(method.is_trench)
+
+            self.doubleSpinBox_undercut_tilt.setVisible(method.is_trench)
+            self.label_protocol_undercut_tilt_angle.setVisible(method.is_trench)
+
+            # autoliftout components
+            is_liftout_method = method.is_liftout
+            is_classic_liftout_method = method == AutoLamellaMethod.LIFTOUT
+            self.label_options_trench_start_position.setVisible(is_liftout_method)
+            self.label_options_liftout_joining_method.setVisible(
+                is_liftout_method and is_classic_liftout_method
+            )
+            self.label_options_landing_start_position.setVisible(is_liftout_method)
+            self.label_options_landing_joining_method.setVisible(
+                is_liftout_method and is_classic_liftout_method
+            )
+            self.comboBox_options_trench_start_position.setVisible(is_liftout_method)
+            self.comboBox_options_liftout_joining_method.setVisible(
+                is_liftout_method and is_classic_liftout_method
+            )
+            self.comboBox_options_landing_start_position.setVisible(is_liftout_method)
+            self.comboBox_options_landing_joining_method.setVisible(
+                is_liftout_method and is_classic_liftout_method
+            )
+            self.checkBox_supervise_liftout.setVisible(is_liftout_method)
+            self.checkBox_supervise_landing.setVisible(is_liftout_method)
+
+            # disable some options for serial liftout
+            self.checkBox_use_microexpansion.setVisible(not is_liftout_method)
+            self.checkBox_use_notch.setVisible(not is_liftout_method)
+
+            if is_liftout_method:
+                self.comboBox_options_liftout_joining_method.setCurrentText(
+                    protocol.tmp.get("liftout_joining_method", "None")
+                )
+                self.comboBox_options_landing_joining_method.setCurrentText(
+                    protocol.tmp.get("landing_joining_method", "Weld")
+                )
+
+                self.comboBox_options_trench_start_position.setCurrentText(
+                    protocol.tmp.get("trench_start_position", self.AVAILABLE_POSITIONS[0])
+                )
+                self.comboBox_options_landing_start_position.setCurrentText(
+                    protocol.tmp.get("landing_start_position", self.AVAILABLE_POSITIONS[0])
+                )
+
+                # supervision
+                self.checkBox_supervise_liftout.setChecked(supervision[AutoLamellaStage.LiftoutLamella])
+                self.checkBox_supervise_landing.setChecked(supervision[AutoLamellaStage.LandLamella])
 
         self.UPDATING_PROTOCOL_UI = False
 
     def export_protocol_ui(self):
         if not self.is_protocol_loaded:
             return
-        self.protocol.name = self.lineEdit_name.text()
-        self.protocol.method = get_autolamella_method(self.comboBox_method.currentText().lower())
+        
+        with self._protocol_lock:
+            self.protocol.name = self.lineEdit_name.text()
+            self.protocol.method = get_autolamella_method(self.comboBox_method.currentText().lower())
 
-        # options
-        self.protocol.options.turn_beams_off = self.checkBox_turn_beams_off.isChecked()
-        self.protocol.options.use_fiducial = (self.checkBox_align_use_fiducial.isChecked())
-        self.protocol.options.alignment_attempts = int(self.beamshift_attempts.value())
-        self.protocol.options.alignment_at_milling_current = self.checkBox_align_at_milling_current.isChecked()
-        self.protocol.options.take_final_reference_images = self.checkBox_take_final_reference_images.isChecked()
-        self.protocol.tmp.get("high_quality_image", {})["enabled"] = self.checkBox_take_final_high_quality_reference.isChecked()
+            # options
+            self.protocol.options.turn_beams_off = self.checkBox_turn_beams_off.isChecked()
+            self.protocol.options.use_fiducial = (self.checkBox_align_use_fiducial.isChecked())
+            self.protocol.options.alignment_attempts = int(self.beamshift_attempts.value())
+            self.protocol.options.alignment_at_milling_current = self.checkBox_align_at_milling_current.isChecked()
+            self.protocol.options.take_final_reference_images = self.checkBox_take_final_reference_images.isChecked()
+            self.protocol.tmp.get("high_quality_image", {})["enabled"] = self.checkBox_take_final_high_quality_reference.isChecked()
 
-        self.protocol.options.milling_tilt_angle = self.doubleSpinBox_lamella_tilt_angle.value()
-        self.protocol.options.use_microexpansion = self.checkBox_use_microexpansion.isChecked()
-        self.protocol.options.use_notch = self.checkBox_use_notch.isChecked()
+            self.protocol.options.milling_tilt_angle = self.doubleSpinBox_lamella_tilt_angle.value()
+            self.protocol.options.use_microexpansion = self.checkBox_use_microexpansion.isChecked()
+            self.protocol.options.use_notch = self.checkBox_use_notch.isChecked()
 
-        # supervision
-        self.protocol.supervision[AutoLamellaStage.SetupLamella] = self.checkBox_setup.isChecked()
-        self.protocol.supervision[AutoLamellaStage.MillRough] = self.checkBox_supervise_mill_rough.isChecked()
-        self.protocol.supervision[AutoLamellaStage.MillPolishing] = self.checkBox_supervise_mill_polishing.isChecked()
-
-        method = self.protocol.method
-
-        if method.is_trench:
             # supervision
-            self.protocol.supervision[AutoLamellaStage.MillTrench] = self.checkBox_trench.isChecked()
-            self.protocol.supervision[AutoLamellaStage.MillUndercut] = self.checkBox_undercut.isChecked()
+            self.protocol.supervision[AutoLamellaStage.SetupLamella] = self.checkBox_setup.isChecked()
+            self.protocol.supervision[AutoLamellaStage.MillRough] = self.checkBox_supervise_mill_rough.isChecked()
+            self.protocol.supervision[AutoLamellaStage.MillPolishing] = self.checkBox_supervise_mill_polishing.isChecked()
 
-            # machine learning
-            self.protocol.options.checkpoint = self.comboBox_ml_checkpoint.currentText()
+            method = self.protocol.method
 
-            # undercut
-            self.protocol.options.undercut_tilt_angle = self.doubleSpinBox_undercut_tilt.value()
+            if method.is_trench:
+                # supervision
+                self.protocol.supervision[AutoLamellaStage.MillTrench] = self.checkBox_trench.isChecked()
+                self.protocol.supervision[AutoLamellaStage.MillUndercut] = self.checkBox_undercut.isChecked()
 
-        if method.is_liftout:
-            # supervision
-            self.protocol.supervision[AutoLamellaStage.LiftoutLamella] = self.checkBox_supervise_liftout.isChecked()
-            self.protocol.supervision[AutoLamellaStage.LandLamella] = self.checkBox_supervise_landing.isChecked()
+                # machine learning
+                self.protocol.options.checkpoint = self.comboBox_ml_checkpoint.currentText()
 
-            # joining methods
-            self.protocol.tmp["liftout_joining_method"] = (
-                self.comboBox_options_liftout_joining_method.currentText()
-            )
-            self.protocol.tmp["landing_joining_method"] = (
-                self.comboBox_options_landing_joining_method.currentText()
-            )
+                # undercut
+                self.protocol.options.undercut_tilt_angle = self.doubleSpinBox_undercut_tilt.value()
 
-            # start positions
-            self.protocol.tmp["trench_start_position"] = (
-                self.comboBox_options_trench_start_position.currentText()
-            )
-            self.protocol.tmp["landing_start_position"] = (
-                self.comboBox_options_landing_start_position.currentText()
-            )
+            if method.is_liftout:
+                # supervision
+                self.protocol.supervision[AutoLamellaStage.LiftoutLamella] = self.checkBox_supervise_liftout.isChecked()
+                self.protocol.supervision[AutoLamellaStage.LandLamella] = self.checkBox_supervise_landing.isChecked()
 
-        if self.sender() == self.actionSave_Protocol:
-            path = fui.open_save_file_dialog(
-                msg="Save protocol",
-                path=cfg.PROTOCOL_PATH,
-                _filter="*yaml",
-                parent=self,
-            )
-            self.protocol.save(path)
+                # joining methods
+                self.protocol.tmp["liftout_joining_method"] = (
+                    self.comboBox_options_liftout_joining_method.currentText()
+                )
+                self.protocol.tmp["landing_joining_method"] = (
+                    self.comboBox_options_landing_joining_method.currentText()
+                )
 
-            logging.info("Protocol saved to file")
-        elif self.sender() == self.pushButton_update_protocol:
-            logging.info("Protocol updated")
+                # start positions
+                self.protocol.tmp["trench_start_position"] = (
+                    self.comboBox_options_trench_start_position.currentText()
+                )
+                self.protocol.tmp["landing_start_position"] = (
+                    self.comboBox_options_landing_start_position.currentText()
+                )
 
-        # auto save copy to experiment folder
-        if self.experiment:
-            self.protocol.save(os.path.join(self.experiment.path, "protocol.yaml"))
+            if self.sender() == self.actionSave_Protocol:
+                path = fui.open_save_file_dialog(
+                    msg="Save protocol",
+                    path=cfg.PROTOCOL_PATH,
+                    _filter="*yaml",
+                    parent=self,
+                )
+                self.protocol.save(path)
+
+                logging.info("Protocol saved to file")
+            elif self.sender() == self.pushButton_update_protocol:
+                logging.info("Protocol updated")
+
+            # auto save copy to experiment folder
+            if self.experiment:
+                self.protocol.save(os.path.join(self.experiment.path, "protocol.yaml"))
 
         napari.utils.notifications.show_info("Protocol updated.")
+        if self.WORKFLOW_IS_RUNNING:
+            return # don't update the ui
         self.update_ui()
+
+    def get_protocol(self) -> AutoLamellaProtocol:
+        """Thread-safe getter for the protocol."""
+        with self._protocol_lock:
+            return self.protocol
 
     def setup_experiment(self):
         new_experiment = bool(self.sender() is self.actionNew_Experiment)

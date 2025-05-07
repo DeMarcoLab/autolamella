@@ -65,6 +65,26 @@ from autolamella.structures import WORKFLOW_STAGE_TO_PROTOCOL_KEY
 # constants
 ATOL_STAGE_TILT = 0.017 # 1 degrees
 
+# feature flags
+FLAG_DYNAMIC_SUPERVISION_UPDATE = False
+
+def get_supervision(lamella: Lamella, protocol: AutoLamellaProtocol, parent_ui: AutoLamellaUI = None) -> bool:
+    """Get the supervision setting for the current workflow stage. 
+    Attempt to get it from the parent_ui if available (thread-safe)"""
+
+    if not FLAG_DYNAMIC_SUPERVISION_UPDATE:
+        return protocol.supervision[lamella.workflow]
+
+    validate = protocol.supervision[lamella.workflow]
+    try:
+        if parent_ui is not None:
+            validate = parent_ui.get_protocol().supervision[lamella.workflow]
+            logging.info(f"Supervision from parent_ui: {validate}")
+    except Exception as e:
+        logging.error(f"Error getting protocol supervision from parent_ui: {e}")
+    
+    return validate
+
 # CORE WORKFLOW STEPS
 def log_status_message(lamella: Lamella, step: str):
     logging.debug({"msg": "status", "petname": lamella.name, "stage": lamella.status, "step": step})
@@ -90,7 +110,7 @@ def mill_trench(
     parent_ui: AutoLamellaUI = None,
 ) -> Lamella:
 
-    validate = protocol.supervision[lamella.workflow]
+    validate = get_supervision(lamella, protocol, parent_ui)
     image_settings = protocol.configuration.image
     image_settings.path = lamella.path
 
@@ -161,7 +181,7 @@ def mill_undercut(
 ) -> Lamella:
 
     method = protocol.method
-    validate = protocol.supervision[lamella.workflow]
+    validate = get_supervision(lamella, protocol, parent_ui)
     image_settings = protocol.configuration.image
     image_settings.path = lamella.path
 
@@ -317,8 +337,9 @@ def mill_lamella(
     image_settings.path = lamella.path
 
     method = protocol.method
-    validate = protocol.supervision[lamella.workflow]
+    validate = get_supervision(lamella, protocol, parent_ui)
 
+    # deprecate these options
     align_at_milling_current = protocol.options.alignment_at_milling_current
     take_reference_images = bool(
         lamella.state.stage is AutoLamellaStage.MillRough 
@@ -396,7 +417,7 @@ def mill_lamella(
 
         if use_microexpansion:
             idx = use_notch
-            lamella.protocol[NOTCH_KEY] = get_protocol_from_stages(features_stages[idx])
+            lamella.protocol[MICROEXPANSION_KEY] = get_protocol_from_stages(features_stages[idx])
 
     # assign alignment area for all stages
     for stage in stages:
@@ -459,7 +480,7 @@ def setup_lamella(
 ) -> Lamella:
 
     method = protocol.method
-    validate = protocol.supervision[lamella.workflow]
+    validate = get_supervision(lamella, protocol, parent_ui)
     image_settings: ImageSettings = protocol.configuration.image
     image_settings.path = lamella.path
 
@@ -648,7 +669,7 @@ def setup_polishing(
 ) -> Lamella:
 
     method = protocol.method
-    validate = protocol.supervision[lamella.workflow]
+    validate = get_supervision(lamella, protocol, parent_ui)
     image_settings: ImageSettings = protocol.configuration.image
     image_settings.path = lamella.path
 
@@ -663,9 +684,6 @@ def setup_polishing(
                                     beam_type=BeamType.ION,
                                     steps=alignment_attempts)
 
-    # TODO:
-    # support front-face-polishing
-    # support 3d correlation
 
     log_status_message(lamella, "SETUP_PATTERNS")
     
