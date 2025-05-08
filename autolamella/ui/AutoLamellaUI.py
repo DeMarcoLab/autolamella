@@ -240,6 +240,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionLoad_Experiment.triggered.connect(self.setup_experiment)
         self.actionLoad_Protocol.triggered.connect(self.load_protocol)
         self.actionSave_Protocol.triggered.connect(self.export_protocol_ui)
+        self.actionUpdateMilling_Protocol.triggered.connect(self.update_experiment_milling_protocol)
         # tool menu
         self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
         self.actionCryo_Deposition.setEnabled(False) # TMP: disable until tested
@@ -588,7 +589,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
 
             if self.sender() == self.actionSave_Protocol:
                 path = fui.open_save_file_dialog(
-                    msg="Save protocol",
+                    msg="Export protocol",
                     path=cfg.PROTOCOL_PATH,
                     _filter="*yaml",
                     parent=self,
@@ -607,6 +608,52 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if self.WORKFLOW_IS_RUNNING:
             return # don't update the ui
         self.update_ui()
+
+    def update_experiment_milling_protocol(self):
+        """Update the milling protocol based on the currently selected lamella."""
+
+        if self.experiment is None:
+            napari.utils.notifications.show_warning("No experiment loaded.")
+            return
+        if self.protocol is None:
+            napari.utils.notifications.show_warning("No protocol loaded.")
+            return
+
+        idx = self.comboBox_current_lamella.currentIndex()
+        if idx == -1:
+            napari.utils.notifications.show_warning("No lamella selected.")
+            return
+        lamella: Lamella = self.experiment.positions[idx]
+
+        # message box confirmation
+        ret = fui.message_box_ui(
+            title="Update Protocol?",
+            text=f"Update base milling protocol using {lamella.name}?",
+            parent=self,
+        )
+        if ret is False:
+            logging.debug("User cancelled protocol update.")
+            return
+
+        # convert protocol to milling workflow (stages)
+        milling_protocol = deepcopy(lamella.protocol)
+        milling_workflow = {k: get_milling_stages(k, milling_protocol) for k in milling_protocol}
+
+        # reset the pattern points to 0,0
+        for k, stages in milling_workflow.items():
+            if k == FIDUCIAL_KEY:
+                continue
+            for stage in stages:
+                stage.pattern.point = Point(x=0, y=0)
+
+        # update the protocol with the new stages
+        with self._protocol_lock:
+            self.protocol.milling = deepcopy(milling_workflow)
+
+        # save protocol to file
+        self.export_protocol_ui()
+
+        napari.utils.notifications.show_info(f"Protocol updated using {lamella.name}.")
 
     def get_protocol(self) -> AutoLamellaProtocol:
         """Thread-safe getter for the protocol."""
@@ -956,6 +1003,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # file menu
         self.actionLoad_Protocol.setVisible(is_experiment_loaded)
         self.actionSave_Protocol.setVisible(is_protocol_loaded)
+        self.actionUpdateMilling_Protocol.setVisible(is_protocol_loaded)
         # tool menu
         self.actionCryo_Deposition.setVisible(True)
         self.actionOpen_Minimap.setVisible(is_protocol_loaded)

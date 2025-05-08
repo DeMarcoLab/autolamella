@@ -351,8 +351,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>510</width>
-             <height>678</height>
+             <width>746</width>
+             <height>632</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout_4">
@@ -696,7 +696,7 @@
      <x>0</x>
      <y>0</y>
      <width>788</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuAutoLamella">
@@ -708,6 +708,7 @@
     <addaction name="separator"/>
     <addaction name="actionLoad_Protocol"/>
     <addaction name="actionSave_Protocol"/>
+    <addaction name="actionUpdateMilling_Protocol"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -771,7 +772,7 @@
   </action>
   <action name="actionSave_Protocol">
    <property name="text">
-    <string>Save Protocol</string>
+    <string>Export Protocol</string>
    </property>
   </action>
   <action name="actionLoad_Minimap_Image">
@@ -822,6 +823,11 @@
   <action name="actionAdd_Lamella_from_Odemis">
    <property name="text">
     <string>Add Lamella from Odemis</string>
+   </property>
+  </action>
+  <action name="actionUpdateMilling_Protocol">
+   <property name="text">
+    <string>Update Milling Protocol</string>
    </property>
   </action>
  </widget>
