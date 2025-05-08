@@ -81,12 +81,14 @@ try:
 except ImportError as e:
     logging.debug(f"Could not import generate_report from autolamella.tools.reporting: {e}")
 
+AUTOLAMELLA_CHECKPOINTS = []
 try:
     from fibsem.segmentation.utils import list_available_checkpoints
     AUTOLAMELLA_CHECKPOINTS = list_available_checkpoints()
 except ImportError as e:
     logging.debug(f"Could not import list_available_checkpoints from fibsem.segmentation.utils: {e}")
-    AUTOLAMELLA_CHECKPOINTS = []
+except Exception as e:
+    logging.warning(f"Could not retreive checkpoints from huggingface: {e}")
 
 CONFIGURATION = {
     "TABS_ID": {
