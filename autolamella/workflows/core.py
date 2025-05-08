@@ -64,6 +64,7 @@ from autolamella.structures import WORKFLOW_STAGE_TO_PROTOCOL_KEY
 
 # constants
 ATOL_STAGE_TILT = 0.017 # 1 degrees
+MAX_ALIGNMENT_ATTEMPTS = 3
 
 # feature flags
 FLAG_DYNAMIC_SUPERVISION_UPDATE = False
@@ -339,7 +340,7 @@ def mill_lamella(
     method = protocol.method
     validate = get_supervision(lamella, protocol, parent_ui)
 
-    # deprecate these options
+    # TODO: deprecate these options in the protocol
     align_at_milling_current = protocol.options.alignment_at_milling_current
     take_reference_images = bool(
         lamella.state.stage is AutoLamellaStage.MillRough 
@@ -348,6 +349,14 @@ def mill_lamella(
     acquire_high_quality_image =  bool(
         lamella.state.stage is AutoLamellaStage.MillPolishing 
         and protocol.tmp.get("high_quality_image", {}).get("enabled", False)
+        )
+
+    if acquire_high_quality_image:
+        logging.warning("DeprecationWarning: acquiring high quality images is now deprecated")
+
+    if align_at_milling_current:
+        logging.warning("""DeprecationWarning: aligning at milling current is now deprecated. 
+            Please use the alignment options in the milling protocol instead."""
         )
 
     # milling stages
@@ -370,15 +379,12 @@ def mill_lamella(
     ref_image = FibsemImage.load(os.path.join(lamella.path, "ref_alignment_ib.tif"))
 
     # beam alignment
-    alignment_attempts = protocol.options.alignment_attempts
-    alignment_current = stages[0].milling.milling_current if align_at_milling_current else None
-
     #
     alignment.multi_step_alignment_v2(microscope=microscope, 
                                     ref_image=ref_image, 
                                     beam_type=BeamType.ION, 
-                                    alignment_current=alignment_current,
-                                    steps=alignment_attempts)
+                                    alignment_current=None,
+                                    steps=MAX_ALIGNMENT_ATTEMPTS)
     #### 
 
     # take reference images
@@ -678,11 +684,10 @@ def setup_polishing(
 
     # beam shift alignment
     ref_image = FibsemImage.load(os.path.join(lamella.path, "ref_alignment_ib.tif"))
-    alignment_attempts = protocol.options.alignment_attempts
     alignment.multi_step_alignment_v2(microscope=microscope, 
                                     ref_image=ref_image,
                                     beam_type=BeamType.ION,
-                                    steps=alignment_attempts)
+                                    steps=MAX_ALIGNMENT_ATTEMPTS)
 
 
     log_status_message(lamella, "SETUP_PATTERNS")
