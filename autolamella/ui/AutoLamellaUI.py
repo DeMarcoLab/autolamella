@@ -83,8 +83,8 @@ except ImportError as e:
 
 AUTOLAMELLA_CHECKPOINTS = []
 try:
-    from fibsem.segmentation.utils import list_available_checkpoints
-    AUTOLAMELLA_CHECKPOINTS = list_available_checkpoints()
+    from fibsem.segmentation.utils import list_available_checkpoints_v2
+    AUTOLAMELLA_CHECKPOINTS = list_available_checkpoints_v2()
 except ImportError as e:
     logging.debug(f"Could not import list_available_checkpoints from fibsem.segmentation.utils: {e}")
 except Exception as e:
