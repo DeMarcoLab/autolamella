@@ -67,14 +67,11 @@ ATOL_STAGE_TILT = 0.017 # 1 degrees
 MAX_ALIGNMENT_ATTEMPTS = 3
 
 # feature flags
-FLAG_DYNAMIC_SUPERVISION_UPDATE = False
+
 
 def get_supervision(lamella: Lamella, protocol: AutoLamellaProtocol, parent_ui: AutoLamellaUI = None) -> bool:
     """Get the supervision setting for the current workflow stage. 
     Attempt to get it from the parent_ui if available (thread-safe)"""
-
-    if not FLAG_DYNAMIC_SUPERVISION_UPDATE:
-        return protocol.supervision[lamella.workflow]
 
     validate = protocol.supervision[lamella.workflow]
     try:
