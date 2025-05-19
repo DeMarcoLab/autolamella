@@ -124,11 +124,11 @@ def mill_trench(
         log_status_message(lamella, "ALIGN_TRENCH_REFERENCE")
         update_status_ui(parent_ui, f"{lamella.info} Aligning Trench Reference...")
         ref_image = FibsemImage.load(reference_image_path)
-        alignment.multi_step_alignment_v3(microscope=microscope, 
+        alignment.multi_step_alignment_v2(microscope=microscope, 
                                         ref_image=ref_image, 
                                         beam_type=BeamType.ION, 
                                         alignment_current=None,
-                                        steps=1, system="stage")
+                                        steps=1, subsystem="stage")
 
     log_status_message(lamella, "MILL_TRENCH")
 
