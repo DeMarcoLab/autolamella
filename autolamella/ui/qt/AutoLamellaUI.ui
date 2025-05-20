@@ -714,20 +714,12 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <widget class="QMenu" name="menuDevelopment">
-     <property name="title">
-      <string>Development</string>
-     </property>
-     <addaction name="actionAdd_Lamella_from_Odemis"/>
-     <addaction name="actionSpot_Burn"/>
-    </widget>
     <addaction name="actionCryo_Deposition"/>
     <addaction name="separator"/>
     <addaction name="actionOpen_Minimap"/>
     <addaction name="actionGenerate_Report"/>
     <addaction name="actionGenerate_Overview_Plot"/>
     <addaction name="separator"/>
-    <addaction name="menuDevelopment"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -735,9 +727,18 @@
     </property>
     <addaction name="actionInformation"/>
    </widget>
+   <widget class="QMenu" name="menuDevelopment">
+    <property name="title">
+     <string>Development</string>
+    </property>
+    <addaction name="actionAdd_Lamella_from_Odemis"/>
+    <addaction name="actionSpot_Burn"/>
+    <addaction name="actionRun_Spot_Burn_Workflow"/>
+   </widget>
    <addaction name="menuAutoLamella"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
+   <addaction name="menuDevelopment"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionNew_Experiment">
@@ -828,6 +829,11 @@
   <action name="actionUpdateMilling_Protocol">
    <property name="text">
     <string>Update Milling Protocol</string>
+   </property>
+  </action>
+  <action name="actionRun_Spot_Burn_Workflow">
+   <property name="text">
+    <string>Run Spot Burn Workflow</string>
    </property>
   </action>
  </widget>

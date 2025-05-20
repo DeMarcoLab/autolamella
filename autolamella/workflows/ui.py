@@ -200,6 +200,7 @@ def ask_user(
     neg: str = None,
     mill: bool = None,
     det: DetectedFeatures = None,
+    spot_burn: bool = None,
 ) -> bool:
 
     if parent_ui is None:
@@ -212,6 +213,7 @@ def ask_user(
         "neg": neg,
         "det": det,
         "milling_enabled": mill,
+        "spot_burn": spot_burn,
     }
     parent_ui.workflow_update_signal.emit(INFO)
 

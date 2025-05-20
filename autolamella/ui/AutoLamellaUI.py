@@ -34,6 +34,7 @@ from fibsem.ui import (
     FibsemMinimapWidget,
     FibsemMovementWidget,
     FibsemSystemSetupWidget,
+    FibsemSpotBurnWidget,
     stylesheets,
 )
 from fibsem.ui import utils as fui
@@ -171,6 +172,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.movement_widget: FibsemMovementWidget = None
         self.milling_widget: FibsemMillingWidget = None
         self.minimap_widget: FibsemMinimapWidget = None
+        self.spot_burn_widget: FibsemSpotBurnWidget = None
 
         self.WAITING_FOR_USER_INTERACTION: bool = False
         self.USER_RESPONSE: bool = False
@@ -245,16 +247,18 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionCryo_Deposition.triggered.connect(self.cryo_deposition)
         self.actionCryo_Deposition.setEnabled(False) # TMP: disable until tested
         self.actionCryo_Deposition.setToolTip("Cryo Deposition is currently disabled via the UI.")
-        self.actionAdd_Lamella_from_Odemis.triggered.connect(self._add_lamella_from_odemis)
-        self.actionSpot_Burn.triggered.connect(self.run_spot_burns)
         self.actionOpen_Minimap.triggered.connect(self.open_minimap_widget)
         self.actionGenerate_Report.triggered.connect(self.action_generate_report)
         self.actionGenerate_Overview_Plot.triggered.connect(self.action_generate_overview_plot)
-        
+
         # development
         self.menuDevelopment.setVisible(False)
         self.actionAdd_Lamella_from_Odemis.setVisible(False)    # TMP: disable until tested
         self.actionSpot_Burn.setVisible(False)                  # TMP: disable until tested
+        self.actionRun_Spot_Burn_Workflow.setVisible(False)     # TMP: disable until tested
+        self.actionAdd_Lamella_from_Odemis.triggered.connect(self._add_lamella_from_odemis)
+        self.actionSpot_Burn.triggered.connect(lambda: self.set_spot_burn_widget_active(True))
+        self.actionRun_Spot_Burn_Workflow.triggered.connect(self.run_spot_burns_workflow)
         # help menu
         self.actionInformation.triggered.connect(
             lambda: fui.open_information_dialog(self.microscope, self)
@@ -298,13 +302,40 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # refresh ui
         self.update_ui()
 
+#### SPOT_BURN
     def run_spot_burns_workflow(self):
+        """Run the spot burn workflow for all positions in the experiment."""
 
-        from autolamella.workflows.core import run_spot_burn_workflow
+        self._spot_worker = self._spot_burn_workflow(self.microscope, self.protocol, self.experiment, self)
+        self._spot_worker.finished.connect(self._spot_burn_workflow_finished)
+        self._spot_worker.errored.connect(self._spot_burn_workflow_errored)
+        self._spot_worker.start()
 
-        run_spot_burn_workflow(microscope=self.microscope, experiment=self.experiment, parent_ui=self)
+    @thread_worker
+    def _spot_burn_workflow(
+        self,
+        microscope: FibsemMicroscope,
+        protocol: AutoLamellaProtocol,
+        experiment: Experiment,
+        parent_ui: "AutoLamellaUI",
+    ):
+        """Thread worker to run the spot burn workflow."""
+        from autolamella.workflows.runners import run_spot_burn_workflow
+        run_spot_burn_workflow(microscope=microscope,
+                               protocol=protocol,
+                               experiment=experiment,
+                               parent_ui=parent_ui)
+
+    def _spot_burn_workflow_finished(self):
+        logging.info("Spot burn workflow finished.")
+        self.set_spot_burn_widget_active(active=False)
+
+    def _spot_burn_workflow_errored(self):
+        logging.error("Spot burn workflow failed.")
+        self.set_spot_burn_widget_active(active=False)
 
     def run_spot_burns(self):
+        # DEPRECATED
         """Run the spot burning tool"""
         dialog = QtWidgets.QDialog(self)
         dialog.setWindowTitle("Spot Burn Parameters")
@@ -347,6 +378,10 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         logging.info(f"Spot burn parameters: {exposure_time} ms, {milling_current} pA")
         
         # get the points layer
+        if "Points" not in self.viewer.layers:
+            napari.utils.notifications.show_warning("No points layer found. Requires 'Points' layer.")
+            return
+
         pt_layer = self.viewer.layers["Points"]
 
         # check if there is a points layer, and that it has points in it
@@ -388,6 +423,20 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
     def _spot_burn_errored(self):
         napari.utils.notifications.show_error("Spot burn failed.")
 
+    def set_spot_burn_widget_active(self, active: bool = True) -> None:
+        """Set the spot burn widget active (sets the tab visible, activate point layer)."""
+        if self.spot_burn_widget is None:
+            return
+
+        idx = self.tabWidget.indexOf(self.spot_burn_widget)
+        self.tabWidget.setTabVisible(idx, active)
+        if active:
+            self.tabWidget.setCurrentIndex(idx)
+            self.spot_burn_widget.set_active()
+        else:
+            self.spot_burn_widget.set_inactive()
+
+##########
     def _add_tooltips(self) -> None:
 
         # protocol tooltips
@@ -761,6 +810,11 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                     CONFIGURATION["TABS"]["Detection"], self.det_widget, "Detection"
                 )
                 self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], False)
+
+            # spot burn widget (optional)
+            self.spot_burn_widget = FibsemSpotBurnWidget(parent=self)
+            self.tabWidget.insertTab(-1, self.spot_burn_widget, "Spot Burn")
+            self.tabWidget.setTabVisible(self.tabWidget.indexOf(self.spot_burn_widget), False)
 
             self.IS_MICROSCOPE_UI_LOADED = True
             self.milling_widget.milling_position_changed.connect(
@@ -1963,8 +2017,13 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if alignment_area == "clear":
             self.image_widget.clear_alignment_area()
         
+        # spot_burn
+        spot_burn = info.get("spot_burn", None)
+        if spot_burn:
+            self.set_spot_burn_widget_active(True)
+        
         # no specific interaction, just update the ui
-        if detections is None and enable_milling is None and alignment_area is None:
+        if detections is None and enable_milling is None and alignment_area is None and spot_burn is None:
             self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Experiment"])
 
         # ui interaction

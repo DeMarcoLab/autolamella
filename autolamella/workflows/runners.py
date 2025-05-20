@@ -227,3 +227,34 @@ METHOD_WORKFLOWS_FN = {
     AutoLamellaMethod.WAFFLE: run_autolamella_waffle,
     AutoLamellaMethod.TRENCH: run_trench_milling,
 }
+
+def run_spot_burn_workflow(microscope: FibsemMicroscope, 
+                           protocol: AutoLamellaProtocol, 
+                           experiment: Experiment, 
+                           parent_ui: AutoLamellaUI):
+    """Run the spot burn workflow for the each position in the experiment."""
+    for position in experiment.positions:
+
+        # TODO: migrate this to a core function
+        # TODO: allow the positive button to run the workflow (similar to milling workflow)
+        logging.info(f"Running spot burn workflow for {position.name}")
+
+        # move to the target position at the FIB orientation
+        stage_position = position.state.microscope_state.stage_position
+        target_position = microscope.get_target_position(stage_position=stage_position,
+                                                         target_orientation="FIB")
+        microscope.safe_absolute_stage_movement(target_position)
+
+        # acquire images, set ui
+        from fibsem import acquire
+        from autolamella.workflows.ui import set_images_ui
+        sem_image, fib_image = acquire.take_reference_images(microscope, protocol.configuration.image)
+        set_images_ui(parent_ui, sem_image, fib_image)
+
+        # ask the user to select the position/parameters for spot burns
+        msg = f"Run the spot burn workflow for {position.name}. Press continue when finished."
+        ret = ask_user(parent_ui, msg=msg, pos="Continue", neg="Exit", spot_burn=True)
+
+        if ret is False:
+            break
+
