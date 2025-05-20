@@ -760,6 +760,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 self.tabWidget.insertTab(
                     CONFIGURATION["TABS"]["Detection"], self.det_widget, "Detection"
                 )
+                self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], False)
 
             self.IS_MICROSCOPE_UI_LOADED = True
             self.milling_widget.milling_position_changed.connect(
@@ -1952,6 +1953,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if self.det_widget is not None and detections is not None:
             self.det_widget.set_detected_features(detections)
             self.tabWidget.setCurrentIndex(CONFIGURATION["TABS"]["Detection"])
+            self.tabWidget.setTabVisible(CONFIGURATION["TABS"]["Detection"], True)
 
         # update the alignment area
         alignment_area = info.get("alignment_area", None)
