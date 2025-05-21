@@ -165,6 +165,12 @@ def set_images_ui(
     
     _check_for_abort(parent_ui)
 
+    # TMP: prevent milling images overwriting existing
+    if eb_image is not None:
+        eb_image.metadata.image_settings.save = False
+    if ib_image is not None:
+        ib_image.metadata.image_settings.save = False
+
     INFO = {
         "msg": "Updating Images",
         "sem_image": eb_image,
