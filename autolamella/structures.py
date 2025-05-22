@@ -25,6 +25,7 @@ from fibsem.structures import (
     MicroscopeState,
     ReferenceImages,
     MicroscopeSettings,
+    FibsemStagePosition,
 )
 from fibsem.utils import configure_logging
 
@@ -194,6 +195,10 @@ class Lamella:
     def is_active(self) -> bool:
         return not self.finished and not self.is_failure
     
+    @property
+    def stage_position(self) -> FibsemStagePosition:
+        return self.state.microscope_state.stage_position
+
     def to_dict(self):
         return {
             "petname": self.petname,
