@@ -10,12 +10,45 @@ import pandas as pd
 from autolamella.structures import Experiment, Lamella, LamellaState
 
 
+class PythonLiteralJSONDecoder(json.JSONDecoder):
+    """
+    Custom JSON decoder that handles Python literals like tuples, None, True, False
+    and other Python-specific syntax when parsing JSON strings.
+    """
+    def decode(self, s, *args, **kwargs):
+        # Replace Python literals with their JSON equivalents
+        replacements = {
+            # Convert Python literals to JSON equivalents
+            "'": '"',       # Single quotes to double quotes
+            "None": "null", # Python None to JSON null
+            "True": "true", # Python True to JSON true
+            "False": "false", # Python False to JSON false
+            # Convert tuple syntax to array syntax
+            "(": "[",
+            ")": "]",
+        }
+        
+        # Apply all replacements
+        for old, new in replacements.items():
+            s = s.replace(old, new)
+            
+        try:
+            return super().decode(s, *args, **kwargs)
+        except json.JSONDecodeError as e:
+            # Helpful error message with context
+            context = s[max(0, e.pos-20):min(len(s), e.pos+20)]
+            raise json.JSONDecodeError(
+                f"{e.msg} | Context: '...{context}...'", 
+                e.doc, 
+                e.pos
+            )
+
 def parse_msg(msg: str):
     """parse message json"""
     # turn this into a loop
     # keywords = []
-
-    return json.loads(msg.replace("'", '"').replace("None", '"None"').replace("True", '"True"').replace("False", '"False"'))
+    # return json.loads(msg, cls=PythonLiteralJSONDecoder)
+    return json.loads(msg.replace("'", '"').replace("None", '"None"').replace("True", '"True"').replace("False", '"False"').replace("(", "[").replace(")", "]"))
 
 def get_timestamp(line: str) -> float:
     """get timestamp from line"""
@@ -208,6 +241,7 @@ def calculate_statistics_dataframe(path: Path, encoding: str = "cp1252"):
                     milld["end_time"] = msgd["end_time"]
                     milld["duration"] = msgd["end_time"] - msgd["start_time"]
                     milld["milling_current"] = msgd["stage"]["milling"]["milling_current"]
+                    milld["depth"] = msgd["stage"]["pattern"].get("depth", 0)
                     # TODO: what other attrs are useful?
                     milling_data.append(deepcopy(milld))
 
