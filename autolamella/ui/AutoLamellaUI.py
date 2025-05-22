@@ -691,9 +691,11 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # reset the pattern points to 0,0
         for k, stages in milling_workflow.items():
             if k == FIDUCIAL_KEY:
+                stages[0].imaging.path = None
                 continue
             for stage in stages:
                 stage.pattern.point = Point(x=0, y=0)
+                stage.imaging.path = None
 
         # update the protocol with the new stages
         with self._protocol_lock:
