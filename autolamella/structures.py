@@ -141,8 +141,14 @@ class Lamella:
         if os.path.exists(os.path.dirname(self.path)):
             os.makedirs(self.path, exist_ok=True)
 
-        protocol = {} if self.protocol is None else self.protocol
-        self.update_protocol(protocol)
+        if self.protocol is None:
+            self.protocol = {}
+
+        # set imaging paths to be the lamella path unless already set
+        for k, v in self.protocol.items(): # Dict[str, List[Dict]]
+            for stage in v:
+                if stage.get("imaging", {}).get("path", None) is None:
+                    stage["imaging"]["path"] = self.path
 
         if self.history is None:
             self.history = []
@@ -297,15 +303,6 @@ class Lamella:
         prev = method.get_previous(stage)
         if prev in self.states:
             self.state = self.states[prev]
-
-    def update_protocol(self, protocol: dict) -> None:
-        # Sets imaging paths to be the lamella path unless already set
-        for step in protocol.values():
-            for stage in step["stages"]:
-                if stage["imaging"].get("path") is None:
-                    stage["imaging"]["path"] = self.path
-
-        self.protocol = protocol
 
 
 def create_new_lamella(experiment_path: str, number: int, state: LamellaState, protocol: Dict) -> Lamella:
