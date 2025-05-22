@@ -140,8 +140,10 @@ class Lamella:
         # prevents creating path on other computer..
         if os.path.exists(os.path.dirname(self.path)):
             os.makedirs(self.path, exist_ok=True)
-        if self.protocol is None:
-            self.protocol = {}
+
+        protocol = {} if self.protocol is None else self.protocol
+        self.update_protocol(protocol)
+
         if self.history is None:
             self.history = []
         if self.milling_workflows is None:
@@ -295,6 +297,16 @@ class Lamella:
         prev = method.get_previous(stage)
         if prev in self.states:
             self.state = self.states[prev]
+
+    def update_protocol(self, protocol: dict) -> None:
+        # Sets imaging paths to be the lamella path unless already set
+        for step in protocol.values():
+            for stage in step["stages"]:
+                if stage["imaging"].get("path") is None:
+                    stage["imaging"]["path"] = self.path
+
+        self.protocol = protocol
+
 
 def create_new_lamella(experiment_path: str, number: int, state: LamellaState, protocol: Dict) -> Lamella:
     """Wrapper function to create a new lamella and configure paths."""
