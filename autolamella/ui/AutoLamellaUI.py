@@ -251,6 +251,13 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.actionGenerate_Report.triggered.connect(self.action_generate_report)
         self.actionGenerate_Overview_Plot.triggered.connect(self.action_generate_overview_plot)
 
+        # add protocol editor
+        self.actionOpenProtocolEditor = QtWidgets.QAction("Open Protocol Editor", self,
+            triggered=self.open_protocol_editor,
+        )
+        self.menuDevelopment.addAction(self.actionOpenProtocolEditor)
+        self.actionOpenProtocolEditor.setVisible(False)  # TMP: disable until tested
+
         # development
         self.menuDevelopment.setVisible(False)
         self.actionAdd_Lamella_from_Odemis.setVisible(False)    # TMP: disable until tested
@@ -922,6 +929,20 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                                   image=image, 
                                   output_path=filename)
 
+
+#### PROTOCOL EDITOR
+    def open_protocol_editor(self):
+        from fibsem.ui.FibsemMillingStageEditorWidget import show_protocol_editor
+
+        self.protocol_viewer = napari.Viewer(title="AutoLamella Protocol Editor")
+        self.protocol_editor_widget = show_protocol_editor(
+            self.protocol_viewer,
+            microscope=self.microscope,
+            experiment=self.experiment,
+            protocol=self.protocol,
+            parent=self,
+        )
+
 #### MINIMAP
 
     def open_minimap_widget(self):
@@ -1301,6 +1322,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 )
                 self.pushButton_save_position.setEnabled(True)
                 self.milling_widget.CAN_MOVE_PATTERN = True
+                self.milling_widget.setEnabled(True)
             elif lamella.workflow is AutoLamellaStage.PositionReady:
                 self.pushButton_save_position.setText("Position Ready")
                 self.pushButton_save_position.setStyleSheet(
@@ -1308,6 +1330,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 )
                 self.pushButton_save_position.setEnabled(True)
                 self.milling_widget.CAN_MOVE_PATTERN = False
+                self.milling_widget.setEnabled(False)
             else:
                 self.pushButton_save_position.setText("")
                 self.pushButton_save_position.setStyleSheet(
@@ -1315,6 +1338,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
                 )
                 self.pushButton_save_position.setEnabled(False)
                 self.milling_widget.CAN_MOVE_PATTERN = True
+                self.milling_widget.setEnabled(True)
 
             # landing grid selected
             self.pushButton_lamella_landing_selected.setVisible(method.is_liftout)
@@ -1344,6 +1368,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # update the milling widget
         if self.WORKFLOW_IS_RUNNING:
             self.milling_widget.CAN_MOVE_PATTERN = True
+            self.milling_widget.setEnabled(True)
 
         # clear milling patterns, and set new ones
         self.milling_widget.clear_all_milling_stages()
@@ -1774,6 +1799,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             )
             self.image_widget.ib_image.save(fname)
             self.milling_widget.CAN_MOVE_PATTERN = False
+            self.milling_widget.setEnabled(False)
 
             self.experiment = end_of_stage_update(
                 microscope=self.microscope,
@@ -1795,6 +1821,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             )
 
             self.milling_widget.CAN_MOVE_PATTERN = True
+            self.milling_widget.setEnabled(True)
 
         self.experiment.positions[idx].state.microscope_state.stage_position.name = lamella.name
 
@@ -1894,6 +1921,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.STOP_WORKFLOW = False
         self.WORKFLOW_IS_RUNNING = True
         self.milling_widget.CAN_MOVE_PATTERN = True
+        self.milling_widget.setEnabled(True)
         self.milling_widget.clear_all_milling_stages()
         self.WAITING_FOR_USER_INTERACTION = False
         remove_all_napari_shapes_layers(
