@@ -18,7 +18,7 @@ milling:
     microexpansion:
     -   milling:
             application_file: Si
-            hfw: 200e-6
+            hfw: 80.0e-6
             milling_current: 2.0e-09
             preset: 30 keV; 2.5 nA
         name: MicroExpansion
