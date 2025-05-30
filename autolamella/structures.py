@@ -3,7 +3,7 @@ import os
 import uuid
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
@@ -59,7 +59,7 @@ class AutoLamellaStage(Enum):
 
 @dataclass
 class LamellaState:
-    microscope_state: MicroscopeState = MicroscopeState()
+    microscope_state: MicroscopeState = field(default_factory=MicroscopeState)
     stage: AutoLamellaStage = AutoLamellaStage.Created
     start_timestamp: float = datetime.timestamp(datetime.now())
     end_timestamp: float = None
@@ -128,9 +128,9 @@ class Lamella:
     is_failure: bool = False
     failure_note: str = ""
     failure_timestamp: float = None
-    alignment_area: FibsemRectangle = FibsemRectangle()
+    alignment_area: FibsemRectangle = field(default_factory=FibsemRectangle)
     landing_selected: bool = False
-    landing_state: MicroscopeState = MicroscopeState() # TODO: remove
+    landing_state: MicroscopeState = field(default_factory=MicroscopeState) # TODO: remove
     history: List[LamellaState] = None
     milling_workflows: Dict[str, List[FibsemMillingStage]] = None
     states: Dict[AutoLamellaStage, LamellaState] = None
@@ -353,7 +353,6 @@ def create_new_experiment(path: Path, name: str, program: str = "AutoLamella", m
 class Experiment: 
     def __init__(self, path: Path, 
                  name: str = cfg.EXPERIMENT_NAME, 
-                 program: str = "AutoLamella",
                  method: str = "autolamella-on-grid") -> None:
         """Create a new experiment."""
         self.name: str = name
@@ -363,7 +362,6 @@ class Experiment:
 
         self.positions: List[Lamella] = []
 
-        self.program: str = program
         self.method: AutoLamellaMethod = get_autolamella_method(method)
 
     def to_dict(self) -> dict:
@@ -374,7 +372,6 @@ class Experiment:
             "path": self.path,
             "positions": [deepcopy(lamella.to_dict()) for lamella in self.positions],
             "created_at": self.created_at,
-            "program": self.program,
             "method": self.method.name,
         }
 
@@ -388,7 +385,6 @@ class Experiment:
         experiment = Experiment(path=path, name=name)
         experiment.created_at = ddict.get("created_at", None)
         experiment._id = ddict.get("_id", "NULL")
-        experiment.program = ddict.get("program", cfg.EXPERIMENT_NAME)
         experiment.method = get_autolamella_method(ddict.get("method", "autoLamella-on-grid"))
 
         # load lamella from dict
@@ -423,7 +419,6 @@ class Experiment:
                 "experiment_path": self.path,
                 "experiment_created_at": self.created_at,
                 "experiment_id": self._id,
-                "program": self.program,
                 "method": self.method.name, 
                 "number": lamella.number,
                 "petname": lamella.petname,  # what?
@@ -466,7 +461,6 @@ class Experiment:
             "path": self.path,
             "date": self.created_at,
             "experiment_id": self._id,
-            "program": self.program,
             "method": self.method.name, 
             "num_lamella": len(self.positions),
         }
