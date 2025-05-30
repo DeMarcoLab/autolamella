@@ -333,11 +333,11 @@ def create_new_lamella(experiment_path: str, number: int, state: LamellaState, p
 
     return lamella
 
-def create_new_experiment(path: Path, name: str, program: str = "AutoLamella", method: str = "autolamella-on-grid") -> 'Experiment':
+def create_new_experiment(path: Path, name: str, method: str = "autolamella-on-grid") -> 'Experiment':
     """Wrapper function to create an experiment and configure logging."""
 
     # create the experiment
-    experiment = Experiment(path=path, name=name, program=program, method=method)
+    experiment = Experiment(path=path, name=name, method=method)
 
     # configure experiment logging
     os.makedirs(experiment.path, exist_ok=True)
