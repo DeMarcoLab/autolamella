@@ -1412,15 +1412,11 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             return
 
         idx = self.comboBox_current_lamella.currentIndex()
-        lamella: Lamella = self.experiment.positions[idx]
-
-        if lamella.workflow not in PREPARTION_WORKFLOW_STAGES:
+        if self.experiment.positions[idx] not in PREPARTION_WORKFLOW_STAGES:
             return
 
-        logging.info(f"Updating Lamella Pattern for {lamella.info}")
-
-        # update the trench point
-        self._update_milling_protocol(idx=idx, method=self.protocol.method, stage=lamella.workflow)
+        # update the milling pattern point
+        self._update_milling_protocol()
 
         self.experiment.save()
 
@@ -1566,40 +1562,8 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         # if created from minimap, automatically mark as ready
         if stage_position is not None:
 
-            # TODO: this is excessive, we need a cleaner way to do this
-
-            from autolamella.workflows.core import (
-                end_of_stage_update,
-                start_of_stage_update,
-            )
-            self.experiment = end_of_stage_update(
-                microscope=self.microscope,
-                experiment=self.experiment,
-                lamella=lamella,
-                parent_ui=self,
-                save_state=False,
-                update_ui=False
-            )
-
-            # start ready stage
-            self.experiment.positions[-1] = start_of_stage_update(
-                microscope=self.microscope,
-                lamella=lamella,
-                next_stage=AutoLamellaStage.PositionReady,
-                parent_ui=self,
-                restore_state=False,
-                update_ui=False
-            )
-
-            # end the stage
-            self.experiment = end_of_stage_update(
-                microscope=self.microscope,
-                experiment=self.experiment,
-                lamella=lamella,
-                parent_ui=self,
-                save_state=False,
-                update_ui=False,
-            )
+            self.experiment.positions[-1].state.stage = AutoLamellaStage.PositionReady
+            self.experiment.positions[-1].state.end_timestamp = datetime.timestamp(datetime.now())
 
         self.experiment.save()
         self.update_lamella_combobox(latest=True)
@@ -1705,15 +1669,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             return
 
         idx = self.comboBox_current_lamella.currentIndex()
-        # TOGGLE BETWEEN READY AND SETUP
-
-        method = self.protocol.method
-
         lamella: Lamella = self.experiment.positions[idx]
-        from autolamella.workflows.core import (
-            end_of_stage_update,
-            start_of_stage_update,
-        )
 
         if lamella.workflow not in PREPARTION_WORKFLOW_STAGES:
             return
@@ -1724,9 +1680,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         current_position = self.microscope.get_stage_position()
 
         if (
-            not lamella.state.microscope_state.stage_position.is_close(
-                current_position, 1e-6
-            )
+            not lamella.stage_position.is_close(current_position, 1e-6)
             and lamella.workflow is AutoLamellaStage.Created
         ):
             ret = fui.message_box_ui(
@@ -1737,63 +1691,28 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             # TODO: handle the case when user exits dialog box
             # TODO: only do this check if position created by minimap?
 
-            if ret is True:
+            if ret:
                 # move to lamella position
-                self.movement_widget.move_to_position(
-                    lamella.state.microscope_state.stage_position
-                )
-
-        # end of stage update
-        self.experiment = end_of_stage_update(
-            microscope=self.microscope,
-            experiment=self.experiment,
-            lamella=lamella,
-            parent_ui=self,
-            save_state=True,
-            update_ui=False
-        )
+                self.movement_widget.move_to_position(lamella.stage_position)
 
         if lamella.workflow is AutoLamellaStage.Created:
-            # start of stage update
-            self.experiment.positions[idx] = start_of_stage_update(
-                microscope=self.microscope,
-                lamella=lamella,
-                next_stage=AutoLamellaStage.PositionReady,
-                parent_ui=self,
-                restore_state=False,
-                update_ui=False
-            )
+            # update milling protocol for lamella
+            self._update_milling_protocol()
 
-            # update the protocol / point
-            self._update_milling_protocol(idx, method, AutoLamellaStage.PositionReady)
-
-            # get current ib image, save as reference
-            fname = os.path.join(
-                self.experiment.positions[idx].path,
-                f"ref_{self.experiment.positions[idx].status}",
-            )
+            # get current fib image, save as reference image
+            fname = os.path.join(lamella.path, f"ref_{lamella.status}")
             self.image_widget.ib_image.save(fname)
             self.milling_widget.CAN_MOVE_PATTERN = False
 
-            self.experiment = end_of_stage_update(
-                microscope=self.microscope,
-                experiment=self.experiment,
-                lamella=lamella,
-                parent_ui=self,
-                save_state=True,
-                update_ui=False
-            )
+            lamella.state.stage = AutoLamellaStage.PositionReady
+            lamella.state.end_timestamp = datetime.timestamp(datetime.now())
+            lamella.state.microscope_state = self.microscope.get_microscope_state()
+
+            from autolamella.workflows.core import log_status_message
+            log_status_message(lamella, "FINISHED")
 
         elif lamella.workflow is AutoLamellaStage.PositionReady:
-            self.experiment.positions[idx] = start_of_stage_update(
-                self.microscope,
-                lamella,
-                AutoLamellaStage.Created,
-                parent_ui=self,
-                restore_state=False,
-                update_ui=False
-            )
-
+            lamella.state.stage = AutoLamellaStage.Created
             self.milling_widget.CAN_MOVE_PATTERN = True
 
         self.experiment.positions[idx].state.microscope_state.stage_position.name = lamella.name
@@ -1803,17 +1722,21 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.update_ui()
         self.experiment.save()
 
-    def _update_milling_protocol(
-        self, idx: int, method: AutoLamellaMethod, stage: AutoLamellaStage
-    ):
-
-        if stage not in PREPARTION_WORKFLOW_STAGES:
+    def _update_milling_protocol(self):
+        """Update the milling protocol for the current lamella."""
+        
+        idx = self.comboBox_current_lamella.currentIndex()
+        if idx == -1:
+            logging.warning("No lamella is selected, cannot update milling protocol.")
+            return
+        
+        if self.experiment.positions[idx].workflow not in PREPARTION_WORKFLOW_STAGES:
             return
         
         stages = deepcopy(self.milling_widget.get_milling_stages())
         
         # TRENCH SETUP
-        if method.is_trench:
+        if self.protocol.method.is_trench:
             self.experiment.positions[idx].protocol[TRENCH_KEY] = get_protocol_from_stages(stages)
             return 
 
@@ -1917,9 +1840,9 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         self.set_instructions_msg(f"Running {workflow.title()} workflow...")
 
         # turn on the beams, if not already on
-        if not self.microscope.get("on", BeamType.ELECTRON):
+        if not self.microscope.is_on(BeamType.ELECTRON):
             self.microscope.turn_on(BeamType.ELECTRON)
-        if not self.microscope.get("on", BeamType.ION):
+        if not self.microscope.is_on(BeamType.ION):
             self.microscope.turn_on(BeamType.ION)
 
         try:
