@@ -818,7 +818,7 @@ class AutoLamellaProtocolOptions:
     take_final_reference_images: bool
     alignment_attempts: int 
     alignment_at_milling_current: bool
-    milling_tilt_angle: float
+    milling_angle: float
     undercut_tilt_angle: float
     checkpoint: str
     turn_beams_off: bool = False
@@ -831,7 +831,7 @@ class AutoLamellaProtocolOptions:
             "take_final_reference_images": self.take_final_reference_images,
             "alignment_attempts": self.alignment_attempts,
             "alignment_at_milling_current": self.alignment_at_milling_current,
-            "milling_tilt_angle": self.milling_tilt_angle,
+            "milling_angle": self.milling_angle,
             "undercut_tilt_angle": self.undercut_tilt_angle,
             "checkpoint": self.checkpoint,
             "turn_beams_off": self.turn_beams_off,
@@ -846,7 +846,9 @@ class AutoLamellaProtocolOptions:
             take_final_reference_images=ddict["take_final_reference_images"],
             alignment_attempts=int(ddict.get("alignment_attempts", 3)),
             alignment_at_milling_current=ddict.get("alignment_at_milling_current", False),
-            milling_tilt_angle=ddict.get("milling_tilt_angle", ddict.get("lamella_tilt_angle", 18)),
+            milling_angle=ddict.get("milling_angle",
+                                    ddict.get("milling_tilt_angle",
+                                              ddict.get("lamella_tilt_angle", 18))),
             undercut_tilt_angle=ddict.get("undercut_tilt_angle", -5),
             checkpoint=ddict.get("checkpoint", "autolamella-mega-20240107.pt"),
             turn_beams_off=ddict.get("turn_beams_off", False),

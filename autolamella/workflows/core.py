@@ -493,7 +493,7 @@ def setup_lamella(
     log_status_message(lamella, "ALIGN_LAMELLA")
     update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
 
-    milling_angle = protocol.options.milling_tilt_angle
+    milling_angle = protocol.options.milling_angle
     stage_position = microscope.get_stage_position()
     is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t, atol=ATOL_STAGE_TILT)
 

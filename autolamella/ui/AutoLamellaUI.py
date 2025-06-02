@@ -511,7 +511,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             )
 
             # lamella
-            self.doubleSpinBox_lamella_tilt_angle.setValue(protocol.options.milling_tilt_angle)
+            self.doubleSpinBox_lamella_tilt_angle.setValue(protocol.options.milling_angle)
             self.checkBox_use_microexpansion.setChecked(protocol.options.use_microexpansion)
             self.checkBox_use_notch.setChecked(protocol.options.use_notch)
 
@@ -607,7 +607,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.protocol.options.take_final_reference_images = self.checkBox_take_final_reference_images.isChecked()
             self.protocol.tmp.get("high_quality_image", {})["enabled"] = self.checkBox_take_final_high_quality_reference.isChecked()
 
-            self.protocol.options.milling_tilt_angle = self.doubleSpinBox_lamella_tilt_angle.value()
+            self.protocol.options.milling_angle = self.doubleSpinBox_lamella_tilt_angle.value()
             self.protocol.options.use_microexpansion = self.checkBox_use_microexpansion.isChecked()
             self.protocol.options.use_notch = self.checkBox_use_notch.isChecked()
 
