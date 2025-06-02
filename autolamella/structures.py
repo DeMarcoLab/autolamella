@@ -361,6 +361,7 @@ class Experiment:
         self.created_at: float = datetime.timestamp(datetime.now())
 
         self.positions: List[Lamella] = []
+        self.landing_positions: List[FibsemStagePosition] = []
 
         self.method: AutoLamellaMethod = get_autolamella_method(method)
 
@@ -371,6 +372,7 @@ class Experiment:
             "_id": self._id,
             "path": self.path,
             "positions": [deepcopy(lamella.to_dict()) for lamella in self.positions],
+            "landing_positions": [pos.to_dict() for pos in self.landing_positions],
             "created_at": self.created_at,
             "method": self.method.name,
         }
@@ -391,6 +393,11 @@ class Experiment:
         for lamella_dict in ddict["positions"]:
             lamella = Lamella.from_dict(data=lamella_dict)
             experiment.positions.append(lamella)
+
+        # load landing positions
+        for landing_dict in ddict.get("landing_positions", []):
+            stage_position = FibsemStagePosition.from_dict(landing_dict)
+            experiment.landing_positions.append(stage_position)
 
         return experiment
 

@@ -66,6 +66,7 @@ from autolamella.workflows.autoliftout import (
     mill_lamella,
     setup_lamella,
     start_of_stage_update,
+    log_status_message_raw,
 )
 from autolamella.workflows.core import (
     align_feature_coincident,
@@ -861,17 +862,34 @@ def run_serial_liftout_landing(
     set_images_ui(parent_ui, eb_image, ib_image)
 
     # calculate landing positions
-    log_status_message(lamella, "CALCULATE_LANDING_POSITIONS")
-    update_status_ui(parent_ui, "Generating Landing Positions...")
-    logging.warning("The landing procedure is currently disabled...")
-    return experiment
-    positions = calculate_landing_positions(microscope=microscope, protocol=protocol)
+    # log_status_message(lamella, "CALCULATE_LANDING_POSITIONS")
+    # update_status_ui(parent_ui, "Generating Landing Positions...")
+    # logging.warning("The landing procedure is currently disabled...")
+    # TODO: get the user to select landing positions:
+    # move to position
+    # prepare landing post/grid
+    # save on experiment.landing_positions
+    # then use these positions to land the lamellae
+    # return experiment
+    # positions = calculate_landing_positions(microscope=microscope, protocol=protocol)
+    positions = experiment.landing_positions # NOTE: we really should pop these off the list once they are used by workflow
+
+    if not positions:
+        logging.warning("No landing positions found, please select landing positions.")
+        return experiment # early exit for now, but should support selecting more positions here...
+        experiment = select_landing_positions(microscope=microscope, 
+                                              protocol=protocol, 
+                                              experiment=experiment, 
+                                              parent_ui=parent_ui)
+        positions = experiment.landing_positions
 
     # see where we are in the workflow
-    _counter = Counter([p.state.stage.name for p in experiment.positions])
-    land_idx = _counter[AutoLamellaStage.LandLamella.name]
+    # _counter = Counter([p.state.stage.name for p in experiment.positions])
+    # land_idx = _counter[AutoLamellaStage.LandLamella.name]
     # count how many at finished
-    finished_idx = _counter[AutoLamellaStage.Finished.name]
+    # finished_idx = _counter[AutoLamellaStage.Finished.name]
+    land_idx =  len(experiment.at_stage(AutoLamellaStage.LandLamella))
+    finished_idx = len(experiment.at_stage(AutoLamellaStage.Finished))
 
     # start of workflow
     response = ask_user(parent_ui, 
@@ -912,6 +930,38 @@ def run_serial_liftout_landing(
         land_idx = _counter[AutoLamellaStage.LandLamella.name]
         response = ask_user(parent_ui, msg=f"Land Another Lamella? ({land_idx} Lamella Landed), {finished_idx} Lamella Finished)", 
             pos="Continue", neg="Finish")
+
+    return experiment
+
+def select_landing_positions(microscope: FibsemMicroscope, 
+                             protocol: AutoLamellaProtocol, 
+                             experiment: Experiment, 
+                             parent_ui: AutoLamellaUI) -> Experiment:
+    """Select landing positions for the serial liftout workflow."""
+
+    log_status_message_raw("Setup", "SELECT_LANDING_POSITIONS")
+    
+    # move to landing grid / position
+
+    while True:
+        response = ask_user(parent_ui,
+                            msg=f"Prepare Landing Position and press Continue ({len(experiment.landing_positions)} selected).",
+                            pos="Continue",
+                            neg="Exit")
+
+        # prepare the landing position, e.g. mill structures, line etc
+
+        if not response:
+            break
+
+        stage_position = microscope.get_stage_position()
+        stage_position.name = f"Landing Position {len(experiment.landing_positions):02d}"
+
+        # add the position to the experiment
+        experiment.landing_positions.append(deepcopy(stage_position))
+        experiment.save()
+
+        update_experiment_ui(parent_ui, experiment)
 
     return experiment
 

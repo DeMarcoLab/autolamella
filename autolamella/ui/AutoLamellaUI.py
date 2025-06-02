@@ -256,7 +256,14 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             triggered=self.open_protocol_editor,
         )
         self.menuDevelopment.addAction(self.actionOpenProtocolEditor)
-        self.actionOpenProtocolEditor.setVisible(False)  # TMP: disable until tested
+
+        self.actionSelectLandingPositions = QtWidgets.QAction("Select Landing Positions", self)
+        self.actionSelectLandingPositions.triggered.connect(
+            lambda: self._run_workflow(workflow="select-landing-positions")
+        )
+        self.menuDevelopment.addAction(self.actionSelectLandingPositions)
+
+        self.actionOpenProtocolEditor.setVisible(True)  # TMP: disable until tested
 
         # development
         self.menuDevelopment.setVisible(False)
@@ -1188,7 +1195,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.pushButton_run_waffle_undercut.setVisible(show_undercut)
             self.pushButton_run_waffle_undercut.setEnabled(enable_undercut)
             # liftout
-            self.pushButton_setup_autoliftout.setVisible(is_liftout_method)
+            self.pushButton_setup_autoliftout.setVisible(False) # disable liftout
             self.pushButton_run_autoliftout.setVisible(is_liftout_method)
             self.pushButton_run_serial_liftout_landing.setVisible(is_serial_liftout_method)
             self.pushButton_run_autoliftout.setEnabled(enable_liftout)
@@ -1345,25 +1352,25 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             if method.is_liftout: 
                 # TODO: refactor how this is handled, only select it during workflow...
                 self.pushButton_lamella_landing_selected.setVisible(True)
-                if lamella.landing_selected:
-                    self.pushButton_lamella_landing_selected.setText(
-                        "Landing Position Selected"
-                    )
-                    self.pushButton_lamella_landing_selected.setStyleSheet(
-                        stylesheets.GREEN_PUSHBUTTON_STYLE
-                    )
+                if method is AutoLamellaMethod.SERIAL_LIFTOUT:
+                    if self.experiment.landing_positions:
+                        n = len(self.experiment.landing_positions)
+                        self.pushButton_lamella_landing_selected.setEnabled(True)
+                        self.pushButton_lamella_landing_selected.setText(f"{n} Landing Positions Selected")
+                        self.pushButton_lamella_landing_selected.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
+                    else:
+                        self.pushButton_lamella_landing_selected.setText("No Landing Positions")
+                        self.pushButton_lamella_landing_selected.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
+                        self.pushButton_lamella_landing_selected.setToolTip("Run Development/Select Landing Positions to select Landing Positions")
+                elif lamella.landing_selected:
+                    self.pushButton_lamella_landing_selected.setText("Landing Position Selected")
+                    self.pushButton_lamella_landing_selected.setStyleSheet(stylesheets.GREEN_PUSHBUTTON_STYLE)
                     self.pushButton_lamella_landing_selected.setEnabled(True)
                 else:
                     self.pushButton_lamella_landing_selected.setEnabled(False)
-                    self.pushButton_lamella_landing_selected.setText(
-                        "No Landing Position"
-                    )
-                    self.pushButton_lamella_landing_selected.setStyleSheet(
-                        stylesheets.ORANGE_PUSHBUTTON_STYLE
-                    )
-                    self.pushButton_lamella_landing_selected.setToolTip(
-                        "Run Setup Liftout to select a Landing Position"
-                    )
+                    self.pushButton_lamella_landing_selected.setText("No Landing Position")
+                    self.pushButton_lamella_landing_selected.setStyleSheet(stylesheets.ORANGE_PUSHBUTTON_STYLE)
+                    self.pushButton_lamella_landing_selected.setToolTip("Run Setup Liftout to select a Landing Position")
 
         # update the milling widget
         if self.WORKFLOW_IS_RUNNING:
@@ -1425,8 +1432,7 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.comboBox_lamella_history.addItems([state.completed for state in lamella.history])
 
         display_selected_lamella_info(grid_layout=self.gridLayout_selected_lamella_history, 
-                                      pos=lamella,
-                                      method=self.protocol.method)
+                                      pos=lamella, method=self.protocol.method)
 
     def _update_milling_position(self):
         # triggered when milling position is moved
@@ -2144,6 +2150,15 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             from autolamella.workflows import serial as serial_workflow
 
             self.experiment = serial_workflow.run_serial_liftout_landing(
+                microscope=microscope,
+                protocol=protocol,
+                experiment=experiment,
+                parent_ui=self,
+            )
+        if workflow == "select-landing-positions":
+            from autolamella.workflows import serial as serial_workflow
+
+            self.experiment = serial_workflow.select_landing_positions(
                 microscope=microscope,
                 protocol=protocol,
                 experiment=experiment,
