@@ -741,16 +741,15 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
             self.settings.image.path = self.experiment.path
 
         # register metadata
-        if cfg._REGISTER_METADATA:
-            import autolamella  # NB: microscope needs to be connected beforehand
+        import autolamella  # NB: microscope needs to be connected beforehand
 
-            utils._register_metadata(
-                microscope=self.microscope,
-                application_software="autolamella",
-                application_software_version=autolamella.__version__,
-                experiment_name=self.experiment.name,
-                experiment_method="null",
-            )  # TODO: add method to experiment
+        utils._register_metadata(
+            microscope=self.microscope,
+            application_software="autolamella",
+            application_software_version=autolamella.__version__,
+            experiment_name=self.experiment.name,
+            experiment_method="null",
+        )  # TODO: add method to experiment
 
         # automatically re-load protocol if available
         if not new_experiment and self.settings is not None:

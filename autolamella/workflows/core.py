@@ -28,7 +28,6 @@ from fibsem.structures import (
 )
 from autolamella.structures import AutoLamellaProtocol
 
-from autolamella.config import USE_BEAM_SHIFT_ALIGNMENT_V2
 from autolamella.protocol.validation import (
     DEFAULT_ALIGNMENT_AREA,
     DEFAULT_FIDUCIAL_PROTOCOL,

@@ -1,5 +1,8 @@
 import os
 from pathlib import Path
+
+from fibsem.config import DEFAULT_CHECKPOINT
+
 import autolamella
 
 BASE_PATH: Path = os.path.dirname(__file__)
@@ -15,10 +18,5 @@ EXPERIMENT_NAME = "AutoLamella"
 LIFTOUT_JOIN_METHODS = ["None", "Weld"]
 LIFTOUT_LANDING_JOIN_METHODS = ["Weld"]
 
-# machine learning
-from fibsem.config import DEFAULT_CHECKPOINT
 
 ####### FEATURE FLAGS
-_REGISTER_METADATA = True
-
-USE_BEAM_SHIFT_ALIGNMENT_V2 = False
