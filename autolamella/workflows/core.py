@@ -8,6 +8,8 @@ from typing import List, Tuple
 import numpy as np
 from fibsem import acquire, alignment, calibration
 from fibsem import config as fcfg
+from fibsem.constants import DEGREE_SYMBOL
+from fibsem.transformations import is_close_to_milling_angle, move_to_milling_angle
 from fibsem.detection.detection import (
     Feature,
     LamellaBottomEdge,
@@ -493,32 +495,21 @@ def setup_lamella(
     update_status_ui(parent_ui, f"{lamella.info} Aligning Lamella...")
 
     milling_angle = protocol.options.milling_angle
-    stage_position = microscope.get_stage_position()
-    is_close = np.isclose(np.deg2rad(milling_angle), stage_position.t, atol=ATOL_STAGE_TILT)
-
-    # TODO: migrate to milling angle, rather than stage tilt, make it automatic
-    # is_close = actions.is_close_to_milling_angle(microscope=microscope, 
-    #                                              milling_angle=np.deg2rad(milling_angle),
-    #                                              atol=ATOL_STAGE_TILT * 2)
+    is_close = is_close_to_milling_angle(microscope=microscope, 
+                                        milling_angle=np.radians(milling_angle),
+                                        atol=ATOL_STAGE_TILT * 2)
 
     if not is_close and validate and method is AutoLamellaMethod.ON_GRID:
-        current_t = np.rad2deg(stage_position.t)
+        current_milling_angle = microscope.get_current_milling_angle()
         ret = ask_user(parent_ui=parent_ui,
-                    msg=f"Tilt to specified milling angle ({milling_angle:.2f} deg)? Current tilt is {current_t:.2f} deg.",
+                    msg=f"Tilt to specified milling angle ({milling_angle:.1f} {DEGREE_SYMBOL})? "
+                    f"Current milling angle is {current_milling_angle:.1f} {DEGREE_SYMBOL}.",
                     pos="Tilt", neg="Skip")
         if ret:
-            actions.move_to_lamella_angle(microscope, 
-                                          rotation=np.deg2rad(microscope.system.stage.rotation_reference),
-                                          tilt=np.deg2rad(milling_angle))
-                # actions.move_to_milling_angle(microscope=microscope,
-    #                               milling_angle=np.deg2rad(milling_angle))
+            move_to_milling_angle(microscope=microscope, milling_angle=np.radians(milling_angle))
 
     if method != AutoLamellaMethod.ON_GRID:
-        actions.move_to_lamella_angle(microscope,
-                                rotation=np.deg2rad(microscope.system.stage.rotation_reference),
-                                tilt=np.deg2rad(milling_angle))
-            # actions.move_to_milling_angle(microscope=microscope,
-    #                               milling_angle=np.deg2rad(milling_angle))
+        move_to_milling_angle(microscope=microscope, milling_angle=np.radians(milling_angle))
 
     if method is AutoLamellaMethod.LIFTOUT:
 
