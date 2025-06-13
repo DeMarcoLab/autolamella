@@ -1,12 +1,31 @@
 
+import argparse
 import os
 
 import streamlit as st
-from fibsem.structures import FibsemImage
 from fibsem.milling.patterning.plotting import draw_milling_patterns
+from fibsem.structures import FibsemImage
 
 import autolamella.config as cfg
 from autolamella.structures import Experiment
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Streamlit Review App')
+    parser.add_argument(
+        '--experiment_path',
+        type=str,
+        default=cfg.LOG_PATH,
+        dest='experiment_path',
+        help='Path to the experiment folder containing AutoLamella data.'
+    )
+    
+    # Parse only known args to avoid conflicts with streamlit's own args
+    args, unknown = parser.parse_known_args()
+    return args
+
+# Parse arguments at the top level
+args = parse_args()
 
 st.set_page_config(page_title="AutoLamella Review", page_icon=':snowflake:', layout="wide")
 page_title = st.empty()
@@ -14,7 +33,7 @@ page_title = st.empty()
 # add filepath selector ui
 st.sidebar.title("File Selection")
 st.sidebar.write("Select the folder containing the AutoLamella data.")
-experiment_path = st.sidebar.text_input("Folder Path", value=cfg.LOG_PATH)
+experiment_path = st.sidebar.text_input("Folder Path", value=args.experiment_path)
 exp = Experiment.load(os.path.join(experiment_path, "experiment.yaml"))
 
 page_title.title(f"AutoLamella Review - {exp.name}")
