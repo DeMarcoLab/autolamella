@@ -1016,9 +1016,8 @@ class AutoLamellaProtocol(FibsemProtocol):
 
                 for i,sub_stage in enumerate(milling_stages):
 
-                    [sub_stage.pop(item) for item in items_to_remove]
-
-
+                    for item in items_to_remove:
+                        sub_stage.pop(item, None)
         return milling_dict
             
     
