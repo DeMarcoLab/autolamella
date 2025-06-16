@@ -981,6 +981,45 @@ class AutoLamellaProtocol(FibsemProtocol):
         """Save the protocol to disk."""
         with open(path, "w") as f:
             yaml.safe_dump(self.to_dict(), f, indent=4)
+
+    def save_base_protocol(self, path: Path, current_milling_dict: dict = None) -> None:
+        """Saves less verbose version of full experiment protocol, 
+        similar to base protocol for methods"""
+        with open(path, "w") as f:
+            yaml.safe_dump(self.to_dict_base_protocol(current_milling_dict), f, indent=4)
+
+    def to_dict_base_protocol(self, current_milling_dict=None):
+
+        """Keep only base necessary items to not overwhelm the protocol yaml file"""
+
+        if current_milling_dict is None:
+            current_milling_dict = {k: get_protocol_from_stages(v) for k, v in self.milling.items()}
+
+        milling_dict = self._reduced_milling_options_dict(current_milling_dict) 
+
+        options_dict = self.tmp
+        
+        protocol_dict = {'milling':milling_dict,'options':options_dict}
+
+        return protocol_dict
+
+
+    def _reduced_milling_options_dict(self,milling_dict):
+        
+        # Items chosen to be removed from base protocol to reduce clutter
+
+        items_to_remove = ['alignment','imaging','num']
+
+        if self.method.name == 'AutoLamella-Waffle':
+
+            for milling_stages in milling_dict.values():
+
+                for i,sub_stage in enumerate(milling_stages):
+
+                    for item in items_to_remove:
+                        sub_stage.pop(item, None)
+        return milling_dict
+            
     
     @staticmethod
     def load(path: Path) -> 'AutoLamellaProtocol':
