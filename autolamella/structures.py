@@ -988,7 +988,7 @@ class AutoLamellaProtocol(FibsemProtocol):
         with open(path, "w") as f:
             yaml.safe_dump(self.to_dict_base_protocol(current_milling_dict), f, indent=4)
 
-    def to_dict_base_protocol(self,current_milling_dict=None):
+    def to_dict_base_protocol(self, current_milling_dict=None):
 
         """Keep only base necessary items to not overwhelm the protocol yaml file"""
 
