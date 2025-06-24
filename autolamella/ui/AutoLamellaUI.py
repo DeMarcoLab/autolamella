@@ -14,7 +14,8 @@ from typing import List, Optional
 
 import napari
 import napari.utils.notifications
-from fibsem import constants, utils
+from fibsem import utils
+from fibsem.constants import DEGREE_SYMBOL
 from fibsem.imaging.spot import run_spot_burn
 from fibsem.microscope import FibsemMicroscope
 from fibsem.milling import get_milling_stages, get_protocol_from_stages
@@ -1490,6 +1491,16 @@ class AutoLamellaUI(AutoLamellaMainUI.Ui_MainWindow, QtWidgets.QMainWindow):
         if self.experiment:
             self.protocol.save(os.path.join(self.experiment.path, "protocol.yaml"))
             self.experiment.method = self.protocol.method
+
+        milling_angle = self.protocol.options.milling_angle
+        _ = fui.message_box_ui(
+            title="Protocol Redefined",
+            text="The protocol option 'milling_angle' now represents the angle between the FIB and sample stage. "
+            "Previously, this referred to the stage tilt angle. Please update your protocol accordingly." \
+            f"\n\nThe current milling angle in the protocol is: {milling_angle} {DEGREE_SYMBOL}",
+            buttons=QtWidgets.QMessageBox.Ok,
+            parent=self,
+        )
 
         self.update_ui()
 
