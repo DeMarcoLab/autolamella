@@ -1,7 +1,7 @@
 import logging
 import time
 from copy import deepcopy
-from typing import List
+from typing import List, Optional
 
 from fibsem import milling
 from fibsem.detection import detection
@@ -26,14 +26,15 @@ def _check_for_abort(parent_ui: AutoLamellaUI, msg: str = "Workflow aborted by u
 
     if parent_ui.STOP_WORKFLOW:
         raise InterruptedError(msg)
+    return False
 
 def update_milling_ui(microscope: FibsemMicroscope, 
                       stages: List[FibsemMillingStage], 
                       parent_ui: AutoLamellaUI, 
                       msg:str, 
                       validate: bool, 
-                      milling_enabled: bool = True):
-    
+                      milling_enabled: bool = True) -> List[FibsemMillingStage]:
+
     # headless mode
     if parent_ui is None:
         if milling_enabled:
@@ -119,7 +120,7 @@ def update_detection_ui(
     checkpoint: str,
     features: List[Feature], 
     parent_ui: AutoLamellaUI, validate: bool, 
-    msg: str = "Lamella", position: FibsemStagePosition = None,
+    msg: str = "Lamella", position: Optional[FibsemStagePosition] = None,
 ) -> DetectedFeatures:
     feat_str = ", ".join([f.name for f in features])
     if len(feat_str) > 15:
@@ -203,10 +204,10 @@ def ask_user(
     parent_ui: AutoLamellaUI,
     msg: str,
     pos: str,
-    neg: str = None,
-    mill: bool = None,
-    det: DetectedFeatures = None,
-    spot_burn: bool = None,
+    neg: Optional[str] = None,
+    mill: Optional[bool] = None,
+    det: Optional[DetectedFeatures] = None,
+    spot_burn: Optional[bool] = None,
 ) -> bool:
 
     if parent_ui is None:
